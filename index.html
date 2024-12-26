@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        #chat-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+
+        #chat-window {
+            display: none;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            height: 400px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        #chat-history {
+            height: 70%;
+            overflow-y: auto;
+        }
+
+        #chat-input {
+            height: 20%;
+            resize: none;
+        }
+
+        #chat-controls {
+            height: 10%;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-icon">
+        <p>Chat Icon</p>
+    </div>
+
+    <div id="chat-window">
+        <div id="chat-history">
+            <!-- Chat history goes here -->
+        </div>
+
+        <textarea id="chat-input"></textarea>
+
+        <div id="chat-controls">
+            <div>
+                <p>Brain Icon</p>
+                <p>Microphone Icon</p>
+                <p>Interruption Icon</p>
+                <p>Auto-Submit Icon</p>
+            </div>
+            <div>
+                <p>Submit Icon</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
