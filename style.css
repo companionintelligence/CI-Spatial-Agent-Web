@@ -80,10 +80,13 @@ body {
     padding: 10px;
     border-radius: 5px;
     resize: none;
+    border-style: none;
+    border-color: transparent;
     outline: none;
     background-color: var(--color-teal);
     filter: brightness(1.2);
     color: var(--color-white);
+    overflow: auto;
 }
 
 .button-bar {
