@@ -5,6 +5,7 @@
     --color-green: #00A9A7;
     --color-gray-1: #8F94AA;
     --color-gray-2: #454B59;
+    --color-black: #1A1A1A;
     --background-color: var(--color-white);
     --text-color: var(--color-teal);
 }
