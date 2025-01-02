@@ -58,6 +58,7 @@ body {
     max-width: 70%;
     margin-right: auto;
     text-align: left;
+    filter: brightness(1.2);
 }
 
 .chat-message.participant {
@@ -65,7 +66,6 @@ body {
     padding: 10px;
     border-radius: 5px;
     background-color: var(--color-teal);
-    filter: brightness(1.2);
 }
 
 .chat-input {
