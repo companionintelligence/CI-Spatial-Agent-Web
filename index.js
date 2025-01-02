@@ -15,8 +15,8 @@ sys({
 		'https://cdn.jsdelivr.net/npm/orbital-volume@latest/volume.js',
 
 		// puppet behavior system manager
-		// 'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.1/puppet-wrapper.js',
-		'orbital/orbital-puppet/puppet-chat.js',
+		'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.2/puppet-chat.js',
+		//'orbital/orbital-puppet/puppet-chat.js',
 
 		// declare instances of scene geometry including puppet geometry and animations
 		import.meta.url + '/../geometry001.js',
