@@ -11,10 +11,20 @@
             padding: 0;
             display: flex;
             flex-direction: column;
+            align-items: center;
             height: 100vh;
             background-color: var(--background-color);
             color: var(--text-color);
             transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         :root {
@@ -34,12 +44,24 @@
             overflow-y: auto;
             padding: 20px;
             border-bottom: 1px solid #ccc;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #e0e0e0;
         }
 
         .chat-input {
             display: flex;
             padding: 10px;
             border-top: 1px solid #ccc;
+            background-color: #f9f9f9;
+            border-radius: 5px;
         }
 
         .chat-input textarea {
@@ -77,22 +99,46 @@
     </style>
 </head>
 <body>
-    <div class="chat-history">
-        <!-- Chat messages will appear here -->
-    </div>
-    <div class="chat-input">
-        <textarea placeholder="Type your message here..."></textarea>
-    </div>
-    <div class="button-bar">
-        <div class="left-buttons">
-            <button>Microphone</button>
-            <button>Agent</button>
-            <button>Barge-in</button>
-            <button>Auto-submit</button>
+    <div class="container">
+        <div class="chat-history">
+            <div class="chat-message">Hello! How can I help you today?</div>
+            <!-- More chat messages will appear here -->
         </div>
-        <div class="right-buttons">
-            <button>Submit</button>
+        <div class="chat-input">
+            <textarea id="chat-input" placeholder="Type your message here..." onkeydown="handleKeyDown(event)"></textarea>
+        </div>
+        <div class="button-bar">
+            <div class="left-buttons">
+                <button>Microphone</button>
+                <button>Agent</button>
+                <button>Barge-in</button>
+                <button>Auto-submit</button>
+            </div>
+            <div class="right-buttons">
+                <button onclick="submitMessage()">Submit</button>
+            </div>
         </div>
     </div>
-</body>
+<script>
+    function handleKeyDown(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            submitMessage();
+        }
+    }
+
+    function submitMessage() {
+        const input = document.getElementById('chat-input');
+        const message = input.value.trim();
+        if (message) {
+            const chatHistory = document.querySelector('.chat-history');
+            const newMessage = document.createElement('div');
+            newMessage.className = 'chat-message';
+            newMessage.textContent = message;
+            chatHistory.appendChild(newMessage);
+            input.value = '';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    }
+</script>
 </html>
