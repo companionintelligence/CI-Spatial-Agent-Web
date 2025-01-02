@@ -117,5 +117,5 @@ body {
 }
 
 .button-bar button:hover {
-    background-color: var(--color-teal);
+    background-color: var(--color-gray-2);
 }
