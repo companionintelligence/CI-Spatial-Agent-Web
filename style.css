@@ -112,6 +112,10 @@ body {
     color: var(--color-white);
 }
 
+.button-bar button.active {
+    background-color: var(--color-teal);
+}
+
 .button-bar button:hover {
     background-color: var(--color-teal);
 }

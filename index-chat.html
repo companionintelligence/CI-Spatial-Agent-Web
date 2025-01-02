@@ -17,10 +17,10 @@
         </div>
         <div class="button-bar">
             <div class="left-buttons">
-                <button><img src="icons/microphone.svg" alt="Microphone" /></button>
-                <button><img src="icons/agent.svg" alt="Agent" /></button>
-                <button><img src="icons/barge-in.svg" alt="Barge-in" /></button>
-                <button><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
+                <button onclick="toggleButton(this)"><img src="icons/microphone.svg" alt="Microphone" /></button>
+                <button onclick="toggleButton(this)"><img src="icons/agent.svg" alt="Agent" /></button>
+                <button onclick="toggleButton(this)"><img src="icons/barge-in.svg" alt="Barge-in" /></button>
+                <button onclick="toggleButton(this)"><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
             </div>
             <div class="right-buttons">
                 <button onclick="submitMessage()"><img src="icons/submit.svg" alt="Submit" /></button>
@@ -51,6 +51,10 @@
             input.value = '';
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
+    }
+    function toggleButton(button) {
+        button.classList.toggle('active');
+        // Add your event handling logic here
     }
 </script>
 </html>
