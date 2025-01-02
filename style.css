@@ -55,7 +55,8 @@ body {
     padding: 10px;
     border-radius: 5px;
     background-color: var(--color-teal);
-    max-width: 70%;
+    max-width: 90%;
+    width: fit-content;
     margin-left: auto;
     text-align: right;
     filter: brightness(1.2);
