@@ -108,6 +108,8 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: background-color 0.3s;
+    background-color: var(--color-green);
+    color: var(--color-white);
 }
 
 .button-bar button:hover {
