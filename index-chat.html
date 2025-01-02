@@ -5,12 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat App</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
 </head>
+
 <body>
     <div class="container">
+        <canvas id="visualizer"></canvas>
         <div class="microphone-panel" id="microphone-panel" style="display: none;">
-            <!-- Microphone panel content goes here -->
         </div>
         <div class="agent-panel" id="agent-panel" style="display: none;">
             <!-- Agent panel content goes here -->
@@ -78,3 +79,6 @@
     }
 </script>
 </html>
+
+
+<script src="audio3.js" type="module"></script>
