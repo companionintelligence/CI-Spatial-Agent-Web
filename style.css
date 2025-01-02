@@ -1,3 +1,5 @@
+/************************************************************************/
+
 :root {
     --color-white: #F6F6F6;
     --color-yellow: #FCFC92;
@@ -7,28 +9,9 @@
     --color-gray-2: #454B59;
     --color-black: #1A1A1A;
     --background-color: var(--color-white);
-    --text-color: var(--color-teal);
-}
-
-.microphone-panel {
-    height: 80px;
-    background-color: var(--color-teal);
-    border-radius: 5px;
-    margin-bottom: 10px;
-    padding: 0px;
-    overflow-y: auto;
-}
-
-.agent-panel {
-    height: 512px;
-    background-color: var(--color-teal);
-    border-radius: 5px;
-    padding:0px;
-    margin:0px;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    width:100%;
-    position:relative;
+    --text-color: var(--color-white);
+    --max-width: 1024px;
+    --display-height: 2048px;
 }
 
 body {
@@ -45,21 +28,46 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.container {
-    max-width: 800px;
-    width: 100%;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-}
-
 @media (prefers-color-scheme: dark) {
     :root {
         --background-color: var(--color-black);
-        --text-color: var(--color-white);
     }
 }
+
+/************************************************************************/
+
+.container {                                                                                                                       
+    max-width: 800px;                                                                                                              
+    width: 100%;                                                                                                                   
+    margin: 0 auto;                                                                                                                
+    display: flex;                                                                                                                 
+    flex-direction: column;                                                                                                        
+    height: 100%;                                                                                                                  
+    position: relative;                                                                                                            
+}                                                                                                                                  
+
+.microphone-panel {
+    height: 80px;
+    background-color: var(--color-teal);
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 0px;
+    overflow-y: auto;
+}
+
+.agent-panel {
+    width: 100%;
+    height: 512px;
+    background-color: var(--color-teal);
+    border-radius: 5px;
+    padding:0px;
+    margin:0px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    position:relative;
+}
+
+/************************************************************************/
 
 .chat-history {
     height: 400px;
@@ -72,7 +80,6 @@ body {
 }
 
 .chat-message.user {
-    xmargin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
     background-color: var(--color-teal);
@@ -84,10 +91,18 @@ body {
 }
 
 .chat-message.participant {
-    xmargin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
     background-color: var(--color-teal);
+}
+
+.resizer {                                                                                                                         
+    height: 5px;                                                                                                                   
+    background: var(--color-gray-2);                                                                                               
+    cursor: row-resize;                                                                                                            
+    margin: 0 -10px;                                                                                                               
+    position: relative;                                                                                                            
+    z-index: 1;                                                                                                                    
 }
 
 .chat-input {
@@ -110,6 +125,8 @@ body {
     color: var(--color-white);
     overflow: auto;
 }
+
+/************************************************************************/
 
 .button-bar {
     display: flex;
