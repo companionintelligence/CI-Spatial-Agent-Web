@@ -80,6 +80,7 @@ body {
     padding: 10px;
     border-radius: 5px;
     resize: none;
+    outline: none;
 }
 
 .button-bar {
