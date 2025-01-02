@@ -9,6 +9,9 @@
 </head>
 <body>
     <div class="container">
+        <div class="microphone-panel" id="microphone-panel" style="display: none;">
+            <!-- Microphone panel content goes here -->
+        </div>
         <div class="agent-panel" id="agent-panel" style="display: none;">
             <!-- Agent panel content goes here -->
         </div>
@@ -57,7 +60,14 @@
     }
     function toggleButton(button) {
         button.classList.toggle('active');
-        if (button === document.querySelector('.left-buttons button:nth-child(2)')) {
+        if (button === document.querySelector('.left-buttons button:nth-child(1)')) {
+            const microphonePanel = document.getElementById('microphone-panel');
+            if (button.classList.contains('active')) {
+                microphonePanel.style.display = 'block';
+            } else {
+                microphonePanel.style.display = 'none';
+            }
+        } else if (button === document.querySelector('.left-buttons button:nth-child(2)')) {
             const agentPanel = document.getElementById('agent-panel');
             if (button.classList.contains('active')) {
                 agentPanel.style.display = 'block';
