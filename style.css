@@ -58,9 +58,6 @@ body {
     max-width: 70%;
     margin-right: auto;
     text-align: left;
-    max-width: 70%;
-    margin-left: auto;
-    text-align: right;
 }
 
 .chat-message.participant {
