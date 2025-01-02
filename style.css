@@ -50,7 +50,21 @@ body {
     margin-bottom: 10px;
 }
 
-.chat-message {
+.chat-message.user {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--color-teal);
+    filter: brightness(1.2);
+    max-width: 70%;
+    margin-right: auto;
+    text-align: left;
+    max-width: 70%;
+    margin-left: auto;
+    text-align: right;
+}
+
+.chat-message.participant {
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;

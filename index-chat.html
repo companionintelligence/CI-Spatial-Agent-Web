@@ -41,11 +41,11 @@
         if (message) {
             const chatHistory = document.querySelector('.chat-history');
             const newMessage = document.createElement('div');
-            newMessage.className = 'chat-message';
+            newMessage.className = 'chat-message user';
             newMessage.textContent = message;
             chatHistory.appendChild(newMessage);
             const responseMessage = document.createElement('div');
-            responseMessage.className = 'chat-message';
+            responseMessage.className = 'chat-message participant';
             responseMessage.textContent = "I see your message";
             chatHistory.appendChild(responseMessage);
             input.value = '';
