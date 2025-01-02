@@ -10,6 +10,15 @@
     --text-color: var(--color-teal);
 }
 
+.agent-panel {
+    flex: 1;
+    background-color: var(--color-teal);
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 20px;
+    overflow-y: auto;
+}
+
 body {
     font-family: 'Montserrat', 'Open Sans', sans-serif;
     margin: 0;

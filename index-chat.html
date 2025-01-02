@@ -9,6 +9,9 @@
 </head>
 <body>
     <div class="container">
+        <div class="agent-panel" id="agent-panel" style="display: none;">
+            <!-- Agent panel content goes here -->
+        </div>
         <div class="chat-history">
             <!-- More chat messages will appear here -->
         </div>
@@ -54,7 +57,14 @@
     }
     function toggleButton(button) {
         button.classList.toggle('active');
-        // Add your event handling logic here
+        if (button === document.querySelector('.left-buttons button:nth-child(2)')) {
+            const agentPanel = document.getElementById('agent-panel');
+            if (button.classList.contains('active')) {
+                agentPanel.style.display = 'block';
+            } else {
+                agentPanel.style.display = 'none';
+            }
+        }
     }
 </script>
 </html>
