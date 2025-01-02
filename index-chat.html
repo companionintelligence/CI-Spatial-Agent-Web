@@ -44,6 +44,10 @@
             newMessage.className = 'chat-message';
             newMessage.textContent = message;
             chatHistory.appendChild(newMessage);
+            const responseMessage = document.createElement('div');
+            responseMessage.className = 'chat-message';
+            responseMessage.textContent = "I see your message";
+            chatHistory.appendChild(responseMessage);
             input.value = '';
             chatHistory.scrollTop = chatHistory.scrollHeight;
         }
