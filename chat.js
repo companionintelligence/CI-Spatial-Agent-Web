@@ -33,7 +33,7 @@ function toggleButton(button) {
             microphonePanel.style.display = 'none';
         }
     } else if (button === document.querySelector('.left-buttons button:nth-child(2)')) {
-        const agentPanel = document.getElementById('agent-panel');
+        const agentPanel = document.getElementById('volume001');
         if (button.classList.contains('active')) {
             agentPanel.style.display = 'block';
         } else {
