@@ -1,0 +1,142 @@
+
+<style>
+#chat-container {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 1000;
+  font-family: Arial, sans-serif;
+}
+
+#chat-toggle {
+  cursor: pointer;
+  width: 50px;
+  height: 50px;
+  background: #0078d7;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  font-size: 20px;
+}
+
+#chat-window {
+  display: none;
+  position: absolute;
+  bottom: 60px;
+  right: 0;
+  width: 300px;
+  max-height: 400px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+#chat-window.open {
+  display: flex;
+  flex-direction: column;
+}
+
+#chat-close {
+  text-align: right;
+  padding: 10px;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+#chat-history {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+#chat-input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  outline: none;
+  resize: none;
+  box-sizing: border-box;
+}
+
+#chat-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #f0f0f0;
+  border-top: 1px solid #ccc;
+}
+
+.control {
+  cursor: pointer;
+  padding: 5px;
+  font-size: 18px;
+}
+
+#chat-submit {
+  margin-left: auto;
+}
+</style>
+
+<div id="chat-container" class="closed">
+  <!-- Chat Toggle Button -->
+  <div id="chat-toggle" onclick="toggleChat()">
+    ⬆
+  </div>
+
+  <!-- Chat Window -->
+  <div id="chat-window">
+    <!-- Close Icon -->
+    <div id="chat-close" onclick="toggleChat()">✖</div>
+
+    <!-- Chat History -->
+    <div id="chat-history"></div>
+
+    <!-- Input Area -->
+    <textarea id="chat-input" rows="1" placeholder="Type your message..." oninput="adjustInputHeight(event)"></textarea>
+
+    <!-- Controls Row -->
+    <div id="chat-controls">
+      <span class="control">🧠</span>
+      <span class="control">🎤</span>
+      <span class="control">⏸️</span>
+      <span class="control">🔁</span>
+      <span class="control" id="chat-submit" onclick="submitMessage()">⬆</span>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleChat() {
+  const chatContainer = document.getElementById('chat-container');
+  const chatWindow = document.getElementById('chat-window');
+  chatContainer.classList.toggle('closed');
+  chatWindow.classList.toggle('open');
+}
+
+function adjustInputHeight(event) {
+  const input = event.target;
+  input.style.height = 'auto'; // Reset height
+  input.style.height = input.scrollHeight + 'px'; // Adjust height based on content
+}
+
+function submitMessage() {
+  const input = document.getElementById('chat-input');
+  const history = document.getElementById('chat-history');
+  if (input.value.trim() !== '') {
+    // Add message to chat history
+    const message = document.createElement('div');
+    message.textContent = input.value.trim();
+    history.appendChild(message);
+    input.value = ''; // Clear input box
+    adjustInputHeight({ target: input }); // Reset input height
+  }
+}
+</script>
+
+

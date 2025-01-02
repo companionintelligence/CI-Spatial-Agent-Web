@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Window</title>
+    <style>
+        #chat-icon {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        #chat-window {
+            display: none;
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 300px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border: 1px solid #ccc;
+            z-index: 1000;
+            padding: 10px;
+        }
+
+        #chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        #chat-input {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            padding: 10px;
+            resize: none;
+            overflow: hidden;
+            padding: 10px;
+        }
+
+        #chat-controls {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px;
+        }
+
+        .icon {
+            cursor: pointer;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-icon" onclick="toggleChat()">
+        <p>⬆️</p>
+    </div>
+
+    <div id="chat-window">
+        <div id="chat-history">
+            <!-- Chat history will be appended here -->
+        </div>
+        <textarea id="chat-input" rows="1" oninput="autoResize(this)"></textarea>
+        <div id="chat-controls">
+            <div>
+                <span class="icon">🧠</span>
+                <span class="icon">🎤</span>
+                <span class="icon">🔄</span>
+                <span class="icon">📤</span>
+            </div>
+            <div>
+                <span class="icon" onclick="submitChat()">⬆️</span>
+                <span class="icon" onclick="toggleChat()">❌</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleChat() {
+            const chatWindow = document.getElementById('chat-window');
+            const chatIcon = document.getElementById('chat-icon');
+            if (chatWindow.style.display === 'none') {
+                chatWindow.style.display = 'block';
+                chatIcon.style.display = 'none';
+            } else {
+                chatWindow.style.display = 'none';
+                chatIcon.style.display = 'block';
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        }
+
+        function submitChat() {
+            const chatInput = document.getElementById('chat-input');
+            const chatHistory = document.getElementById('chat-history');
+            if (chatInput.value.trim() !== '') {
+                const message = document.createElement('div');
+                message.textContent = chatInput.value;
+                chatHistory.appendChild(message);
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                chatHistory.scrollTop = chatHistory.scrollHeight;
+            }
+        }
+    </script>
+</body>
+</html>

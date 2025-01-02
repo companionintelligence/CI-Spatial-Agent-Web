@@ -1,20 +1,34 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat App</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
+<title>Companion Intelligence</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script type="importmap">
+{
+"imports": {
+"three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+"three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
+"orbital/": "./shared/",
+"assets/": "./assets/",
+"here/": "./"
+}
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
+<link rel="stylesheet" href="style.css">
 </head>
-
 <body>
     <div class="container">
-        <canvas id="visualizer"></canvas>
-        <div class="microphone-panel" id="microphone-panel" style="display: none;">
-        </div>
+        <br/>
+        <img style="width:200px" src="2024_CI__Logo_Banner_Color.svg"/>
+        <br/>
+        <canvas class="microphone-panel" id="microphone-panel" style="display: none;">
+        </canvas>
         <div class="agent-panel" id="agent-panel" style="display: none;">
-            <!-- Agent panel content goes here -->
+            <div id="volume001" style="width:100%;height:512px;position:relative"></div>
         </div>
         <div class="chat-history">
             <!-- More chat messages will appear here -->
@@ -34,8 +48,10 @@
             </div>
         </div>
     </div>
-<script src="chat.js"></script>
 </html>
 
+<script src="chat.js"></script>
 
 <script src="audio3.js" type="module"></script>
+
+<script src="index.js" type="module"></script>
