@@ -34,7 +34,7 @@ body {
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --background-color: var(--color-teal);
+        --background-color: var(--color-black);
         --text-color: var(--color-white);
     }
 }
