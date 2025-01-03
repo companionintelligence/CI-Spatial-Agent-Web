@@ -56,8 +56,13 @@ html, body {
         flex-direction: row;
     }
 
-    .left-panel, .chat-container, .right-panel {
-        flex: 1;
+    .left-panel {
+        flex: 0.5;
+        padding: 10px;
+    }
+
+    .chat-container, .right-panel {
+        flex: 1.5;
         padding: 10px;
     }
 
