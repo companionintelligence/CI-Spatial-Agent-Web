@@ -70,6 +70,16 @@ html, body {
     }
 }
 
+@media (max-width: 1024px) {
+    .left-panel, .right-panel {
+        display: none;
+    }
+
+    .chat-container {
+        width: 100%;
+    }
+}
+
 @media (max-width: 768px) {
     .chat-container {
         height: 86vh;
