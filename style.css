@@ -60,6 +60,13 @@ html, body {
     position: relative;
 }
 
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1.5;
+    padding: 10px;
+}
+
 @media (min-width: 1024px) {
     .main-layout {
         flex-direction: row;
@@ -67,13 +74,6 @@ html, body {
 
     .left-panel {
         flex: 0.2;
-        padding: 10px;
-    }
-
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        flex: 1.5;
         padding: 10px;
     }
 
