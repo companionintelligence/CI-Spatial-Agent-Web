@@ -10,6 +10,21 @@
             margin: 0;
             padding: 0;
         }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        header, main, footer {
+            border: 3px solid #000;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        @media (min-width: 600px) {
+            .container {
+                display: flex;
+                flex-direction: column;
+            }
+        }
         section {
             border: 3px solid #000;
             margin: 10px;
@@ -18,17 +33,19 @@
     </style>
 </head>
 <body>
-    <section>
-        <h1>Section 1</h1>
-        <p>This is the first section.</p>
-    </section>
-    <section>
-        <h1>Section 2</h1>
-        <p>This is the second section.</p>
-    </section>
-    <section>
-        <h1>Section 3</h1>
-        <p>This is the third section.</p>
-    </section>
+    <div class="container">
+        <header>
+            <h1>Header Section</h1>
+            <p>This is the header section.</p>
+        </header>
+        <main>
+            <h1>Main Section</h1>
+            <p>This is the main section.</p>
+        </main>
+        <footer>
+            <h1>Chat Input Dialog</h1>
+            <input type="text" placeholder="Type your message here..." style="width: 100%; padding: 10px;">
+        </footer>
+    </div>
 </body>
 </html>
