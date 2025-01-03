@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('mousemove', function(e) {
         if (!isResizing) return;
         console.log("resizing2")
-        const containerHeight = document.querySelector('.container').offsetHeight;
+        const containerHeight = document.querySelector('.chat-container').offsetHeight;
         const newHeight = e.clientY - chatHistory.offsetTop;
         const maxHeight = containerHeight - chatInput.offsetHeight - resizer.offsetHeight;
         if (newHeight > 50 && newHeight < maxHeight) {

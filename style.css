@@ -56,7 +56,7 @@ html, body {
         flex-direction: row;
     }
 
-    .left-panel, .container, .right-panel {
+    .left-panel, .chat-container, .right-panel {
         flex: 1;
         padding: 10px;
     }
@@ -71,7 +71,7 @@ html, body {
 }
 
 @media (max-width: 768px) {
-    .container {
+    .chat-container {
         height: 86vh;
     }
 }
