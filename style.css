@@ -70,7 +70,14 @@ html, body {
         padding: 10px;
     }
 
-    .chat-container, .right-panel {
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1.5;
+        padding: 10px;
+    }
+
+    .right-panel {
         display: flex;
         flex-direction: column;
         flex: 1.5;
