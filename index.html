@@ -20,49 +20,47 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
 <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-    <header class="header">
-        <img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg" alt="Logo"/>
-    </header>
-    <div class="main-layout">
-        <div class="left-panel">
-            <h2>People</h2>
-            <ul>
-                <li>Person 1</li>
-                <li>Person 2</li>
-                <li>Person 3</li>
-            </ul>
-        </div>
-        <div class="chat-container">
-            <canvas class="microphone-panel" id="microphone-panel" style="display: none;"></canvas>
-            <div class="agent-panel" id="volume001" style="display:none"></div>
-            <div class="chat-history"></div>
-            <div class="chat-input">
-            <textarea id="chat-input" placeholder="Type your message here..." onkeydown="handleKeyDown(event)"></textarea>
-        </div>
-        <div class="button-bar">
-            <div class="left-buttons">
-                <button onclick="toggleButton(this)"><img src="icons/microphone.svg" alt="Microphone" /></button>
-                <button onclick="toggleButton(this)"><img src="icons/agent.svg" alt="Agent" /></button>
-                <button onclick="toggleButton(this)"><img src="icons/barge-in.svg" alt="Barge-in" /></button>
-                <button onclick="toggleButton(this)"><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
+
+    <div class="container">
+        <header>
+            <img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg" alt="Logo"/>
+        </header>
+        <main>
+            <div class="conversations">
+                <div class="chat-history"></div>
             </div>
-            <div class="right-buttons">
-                <button onclick="submitMessage()"><img src="icons/submit.svg" alt="Submit" /></button>
+            <div class="puppetry">
+                <div class="agent-panel" id="volume001" style="border-radius:5px;overflow:hidden;display:none;position:absolute;left:0;top:0;height:100%;width:100%;"></div>
             </div>
-        </div>
-        </div>
-        <div class="right-panel">
-            <div class="help-section">
-                <h2>Help Section</h2>
-                <p>Here you can find help and tips.</p>
+        </main>
+        <footer>
+            <div class="conversations">
+                <canvas class="microphone-panel" id="microphone-panel" style="display: none;"></canvas>
+                <div class="chat-input">
+                    <textarea id="chat-input" placeholder="Type your message here..."></textarea>
+                </div>
+                <div class="button-bar">
+                    <div class="left-buttons">
+                        <button id="button-microphone"><img src="icons/microphone.svg" alt="Microphone" /></button>
+                        <button id="button-agent"><img src="icons/agent.svg" alt="Agent" /></button>
+                        <button id="button-barge"><img src="icons/barge-in.svg" alt="Barge-in" /></button>
+                        <button id="button-auto"><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
+                    </div>
+                    <div class="right-buttons">
+                        <button id="button-submit"><img src="icons/submit.svg" alt="Submit" /></button>
+                    </div>
+                </div>
+                <br/>
+                <br/>
             </div>
-        </div>
+            <div class="puppetry"></div>
+        </footer>
     </div>
+</body>
 </html>
 
-<script src="chat.js"></script>
+<script src="index.js" type="module"></script>
 
 <script src="audio3.js" type="module"></script>
-
-<script src="index.js" type="module"></script>

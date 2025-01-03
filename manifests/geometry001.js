@@ -16,16 +16,18 @@ export const aaab_scene001 = {
 		cameraTarget:[0,1.5,0],
 		cameraMin: 1,
 		cameraMax: 100,
-		background: 0x202020,
-		alpha: false,
+		//background: 0x000000,
+		//alpha: false,
 		//axes: true,
-		controls: false,
+		prettier: true,
+		roomlighting: true,
 	}
 }
 
 export const aaac_camera001 = {
 	volume: {
 		geometry: 'camera',
+		nocontrols: false,
 		pose:{
 			position:[0,1.5,1],
 			love:[0,1.5,0]
@@ -33,24 +35,24 @@ export const aaac_camera001 = {
 	}
 }
 
-export const light001 = {
+const light001 = {
 	volume: {
 		geometry:'light',
 		light:'directional',
-		intensity: 1,
-		color: 0xffeae0,
+		intensity: 0.8,
+		color: 0xffffff,
 		pose:{
 			position:[1,1,1]
 		},
 	}
 }
 
-export const light002 = {
+const light002 = {
 	volume: {
 		geometry:'light',
 		light:'ambient',
-		color: 0xffeae0,
-		intensity: 1
+		color: 0xffffff,
+		intensity: 0.3
 	}
 }
 
@@ -171,7 +173,7 @@ export const alexandria = {
 	puppet: {}
 }
 
-// @note exports are not exported in order - and sadly this file is order dependent - so patch it up here
+// @todo @note exports are not exported in order - and sadly this file is order dependent - so patch it up here optionally
 // const scratch = {resources, scene001, camera001, light001, light002, alexandria }
 // const manifest = Object.entries(scratch).map(([k,v]) => { v.uuid = `world001/${k}`; return v })
 // export { manifest }
