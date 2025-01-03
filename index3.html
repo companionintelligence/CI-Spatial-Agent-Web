@@ -19,7 +19,23 @@
             margin: 10px 0;
             padding: 10px;
         }
-        @media (min-width: 600px) {
+        main {
+            display: flex;
+            flex-direction: column;
+        }
+        .agent, .history {
+            border: 3px solid #000;
+            margin: 10px 0;
+            padding: 10px;
+        }
+        @media (min-width: 768px) {
+            main {
+                flex-direction: row;
+            }
+            .agent, .history {
+                flex: 1;
+                margin: 10px;
+            }
             .container {
                 display: flex;
                 flex-direction: column;
@@ -39,8 +55,14 @@
             <p>This is the header section.</p>
         </header>
         <main>
-            <h1>Main Section</h1>
-            <p>This is the main section.</p>
+            <div class="history">
+                <h2>History Section</h2>
+                <p>This is the history section.</p>
+            </div>
+            <div class="agent">
+                <h2>Agent Section</h2>
+                <p>This is the agent section.</p>
+            </div>
         </main>
         <footer>
             <h1>Chat Input Dialog</h1>
