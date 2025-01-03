@@ -5,54 +5,144 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Layout</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        @media (max-width: 600px) {
-            .container {
-                height: 90vh; /* Reduce height on mobile */
-            }
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        header, main, footer {
-            border: 3px solid #000;
-            margin: 10px 0;
-            padding: 10px;
-        }
-        main {
-            display: flex;
-            flex-direction: column;
-        }
-        .agent, .history {
-            border: 3px solid #000;
-        }
-        @media (min-width: 1000px) {
-            main {
-                flex-direction: row;
-            }
-            .agent, .history {
-                flex: 1;
-            }
-            .container {
-                display: flex;
-                flex-direction: column;
-            }
-        }
-        section {
-            border: 3px solid #000;
-        }
+
+* {
+    margin:0px;
+    padding:0px;
+}
+
+:root {
+    --color-white: #F6F6F6;
+    --color-yellow: #FCFC92;
+    --color-teal: #095D72;
+    --color-green: #00A9A7;
+    --color-gray-1: #8F94AA;
+    --color-gray-2: #454B59;
+    --color-black: #1A1A1A;
+    --background-color: var(--color-white);
+    --text-color: var(--color-white);
+    --max-width: 1024px;
+    --display-height: 2048px;
+}
+
+body {
+    font-family: 'Montserrat', 'Open Sans', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+body2 {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    align-items: flex-start;
+    height: 100vh;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+h2 {
+    margin: 0px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: var(--color-black);
+    }
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+    flex-direction: column;
+    border:3px solid red;
+}
+@media (max-width: 800px) {
+    .contxainer {
+        height: 90vh;
+    }
+}
+header, main, footer {
+    border: 3px solid #000;
+}
+main, footer {
+    display: flex;
+    flex-direction: column;
+}
+section, .left, .right {
+    border: 3px solid #3e1313;
+}
+@media (min-width: 1000px) {
+    main, footer {
+        flex-direction: row;
+    }
+    .left, .right {
+        flex: 1;
+    }
+}
+
+/***********************************************************/
+
+.chat-input {
+    width: 100%;
+}
+
+.chat-input textarea {
+    width: 100%;
+    height: 50px;
+    border-radius: 5px;
+    resize: none;
+    border-style: none;
+    border-color: transparent;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/***********************************************************/
+
+.button-bar {
+    display: flex;
+    justify-content: space-between;
+    height: 50px;
+}
+
+.button-bar .left-buttons, .button-bar .right-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.button-bar button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    background-color: var(--color-green);
+    color: var(--color-white);
+}
+
+.button-bar button.active {
+    background-color: var(--color-teal);
+}
+
+.button-bar button:hover {
+    background-color: var(--color-gray-2);
+}
+
     </style>
 </head>
 <body>
@@ -62,22 +152,34 @@
             <p>This is the header section.</p>
         </header>
         <main>
-            <div class="agent">
-                <h2>Agent Section</h2>
-                <p>This is the agent section.</p>
-            </div>
-            <div class="history">
+            <div class="left">
                 <h2>History Section</h2>
                 <p>This is the history section.</p>
             </div>
-        </main>
-        <main>
-            <div class="agent"></div>
-            <div class="history">
-                <h1>Chat Input Dialog</h1>
-                <input type="text" placeholder="Type your message here..." style="width: 100%; padding: 10px;">
+            <div class="right">
+                <h2>Agent Section</h2>
+                <p>This is the agent section.</p>
             </div>
         </main>
+        <footer>
+            <div class="left">
+                <div class="chat-input">
+                    <textarea id="chat-input" placeholder="Type your message here..." onkeydown="handleKeyDown(event)"></textarea>
+                </div>
+                <div class="button-bar">
+                    <div class="left-buttons">
+                        <button onclick="toggleButton(this)"><img src="icons/microphone.svg" alt="Microphone" /></button>
+                        <button onclick="toggleButton(this)"><img src="icons/agent.svg" alt="Agent" /></button>
+                        <button onclick="toggleButton(this)"><img src="icons/barge-in.svg" alt="Barge-in" /></button>
+                        <button onclick="toggleButton(this)"><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
+                    </div>
+                    <div class="right-buttons">
+                        <button onclick="submitMessage()"><img src="icons/submit.svg" alt="Submit" /></button>
+                    </div>
+                </div>
+            </div>
+            <div class="right"></div>
+        </footer>
     </div>
 </body>
 </html>
