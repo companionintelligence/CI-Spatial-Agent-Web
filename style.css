@@ -71,6 +71,8 @@ html, body {
     }
 
     .chat-container, .right-panel {
+        display: flex;
+        flex-direction: column;
         flex: 1.5;
         padding: 10px;
     }
