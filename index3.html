@@ -13,6 +13,18 @@
         .container {
             max-width: 1200px;
             margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        @media (max-width: 600px) {
+            .container {
+                height: 90vh; /* Reduce height on mobile */
+            }
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
         }
         header, main, footer {
             border: 3px solid #000;
