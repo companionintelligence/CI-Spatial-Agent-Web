@@ -21,6 +21,7 @@ body {
     display: flex;
     flex-direction: column;
     flex: 1;
+    flex: 1;
     align-items: flex-start;
     height: 100vh;
     background-color: var(--background-color);
