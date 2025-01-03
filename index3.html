@@ -25,16 +25,13 @@
         }
         .agent, .history {
             border: 3px solid #000;
-            margin: 10px 0;
-            padding: 10px;
         }
-        @media (min-width: 768px) {
+        @media (min-width: 1000px) {
             main {
                 flex-direction: row;
             }
             .agent, .history {
                 flex: 1;
-                margin: 10px;
             }
             .container {
                 display: flex;
@@ -43,8 +40,6 @@
         }
         section {
             border: 3px solid #000;
-            margin: 10px;
-            padding: 10px;
         }
     </style>
 </head>
@@ -55,19 +50,22 @@
             <p>This is the header section.</p>
         </header>
         <main>
-            <div class="history">
-                <h2>History Section</h2>
-                <p>This is the history section.</p>
-            </div>
             <div class="agent">
                 <h2>Agent Section</h2>
                 <p>This is the agent section.</p>
             </div>
+            <div class="history">
+                <h2>History Section</h2>
+                <p>This is the history section.</p>
+            </div>
         </main>
-        <footer>
-            <h1>Chat Input Dialog</h1>
-            <input type="text" placeholder="Type your message here..." style="width: 100%; padding: 10px;">
-        </footer>
+        <main>
+            <div class="agent"></div>
+            <div class="history">
+                <h1>Chat Input Dialog</h1>
+                <input type="text" placeholder="Type your message here..." style="width: 100%; padding: 10px;">
+            </div>
+        </main>
     </div>
 </body>
 </html>
