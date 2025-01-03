@@ -21,15 +21,23 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <br/>
-        <img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg"/>
-        <br/>
-        <canvas class="microphone-panel" id="microphone-panel" style="display: none;"></canvas>
-        <div class="agent-panel" id="volume001" style="display:none"></div>
-        <div class="chat-history"></div>
-        <!-- <div class="resizer"></div> -->
-        <div class="chat-input">
+    <div class="main-layout">
+        <div class="left-panel">
+            <h2>People</h2>
+            <ul>
+                <li>Person 1</li>
+                <li>Person 2</li>
+                <li>Person 3</li>
+            </ul>
+        </div>
+        <div class="container">
+            <br/>
+            <img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg"/>
+            <br/>
+            <canvas class="microphone-panel" id="microphone-panel" style="display: none;"></canvas>
+            <div class="agent-panel" id="volume001" style="display:none"></div>
+            <div class="chat-history"></div>
+            <div class="chat-input">
             <textarea id="chat-input" placeholder="Type your message here..." onkeydown="handleKeyDown(event)"></textarea>
         </div>
         <div class="button-bar">
@@ -41,6 +49,13 @@
             </div>
             <div class="right-buttons">
                 <button onclick="submitMessage()"><img src="icons/submit.svg" alt="Submit" /></button>
+            </div>
+        </div>
+        </div>
+        <div class="right-panel">
+            <div class="help-section">
+                <h2>Help Section</h2>
+                <p>Here you can find help and tips.</p>
             </div>
         </div>
     </div>
