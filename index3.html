@@ -1,15 +1,26 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Layout</title>
-    <style>
-
-* {
-    margin:0px;
-    padding:0px;
+<title>Companion Intelligence</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<script type="importmap">
+{
+"imports": {
+"three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+"three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
+"orbital/": "./shared/",
+"assets/": "./assets/",
+"here/": "./"
 }
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
+</head>
+
+<style>
 
 :root {
     --color-white: #F6F6F6;
@@ -27,8 +38,6 @@
 
 body {
     font-family: 'Montserrat', 'Open Sans', sans-serif;
-    margin: 0;
-    padding: 0;
     background-color: var(--background-color);
     color: var(--text-color);
     transition: background-color 0.3s, color 0.3s;
@@ -62,54 +71,131 @@ h2 {
     }
 }
 
+/***********************************************************/
+
 .container {
     max-width: 1000px;
     margin: 0 auto;
     height: 100vh;
     display: flex;
-    align-items: stretch;
     flex-direction: column;
-    border:3px solid red;
 }
+
 @media (max-width: 800px) {
-    .contxainer {
+    .container {
         height: 90vh;
     }
 }
-header, main, footer {
-    border: 3px solid #000;
+
+.header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: left;
+    padding: 10px;
 }
-main, footer {
+
+main {
+    flex: 1;
     display: flex;
     flex-direction: column;
 }
-section, .left, .right {
-    border: 3px solid #3e1313;
+
+footer {
+    display: flex;
+    flex-direction: column;
 }
+
+.conversations, .puppetry {
+    flex: 1;
+    position: relative;
+}
+
 @media (min-width: 1000px) {
     main, footer {
         flex-direction: row;
-    }
-    .left, .right {
-        flex: 1;
     }
 }
 
 /***********************************************************/
 
+.chat-history {
+    flex-grow: 1;
+    overflow-y: auto;
+    background-color: var(--color-teal);
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
 .chat-input {
     width: 100%;
 }
 
-.chat-input textarea {
-    width: 100%;
+.chat-message.user {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--color-teal);
+    max-width: 90%;
+    width: fit-content;
+    margin-left: auto;
+    text-align: right;
+    filter: brightness(1.2);
+}
+
+.chat-message.participant {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--color-teal);
+}
+
+.resizer {
+    height: 5px;
+    background: var(--color-gray-2);
+    cursor: row-resize;
+    margin: 0 -10px;
+    position: relative;
+    z-index: 1;
+}
+
+.chat-input {
+    display: flex;
+    padding: 10px;
+    background-color: var(--color-teal);
+    border-radius: 5px;
+    margin-bottom: 10px;
     height: 50px;
+    box-sizing: border-box;
+}
+
+.chat-input textarea {
+    flex: 1;
     border-radius: 5px;
     resize: none;
     border-style: none;
     border-color: transparent;
     outline: none;
+    background-color: var(--color-teal);
+    filter: brightness(1.2);
+    color: var(--color-white);
+    overflow: auto;
     box-sizing: border-box;
+}
+
+.chxxxaxt-input texxtarea {
+    width: 100%;
+    height: 50px;
+}
+
+/***********************************************************/
+
+.microphone-panel {
+    width: 100%;
+    height: 80px;
+    background-color: var(--color-teal);
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 0px;
+    overflow-y: auto;
 }
 
 /***********************************************************/
@@ -143,26 +229,25 @@ section, .left, .right {
     background-color: var(--color-gray-2);
 }
 
-    </style>
-</head>
+</style>
+
 <body>
+
     <div class="container">
         <header>
-            <h1>Header Section</h1>
-            <p>This is the header section.</p>
+            <img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg" alt="Logo"/>
         </header>
         <main>
-            <div class="left">
-                <h2>History Section</h2>
-                <p>This is the history section.</p>
+            <div class="conversations">
+                <div class="chat-history"></div>
             </div>
-            <div class="right">
-                <h2>Agent Section</h2>
-                <p>This is the agent section.</p>
+            <div class="puppetry">
+                <div class="agent-panel" id="volume001" style="display:none;position:absolute;left:0;top:0;height:100%;width:100%;"></div>
             </div>
         </main>
         <footer>
-            <div class="left">
+            <div class="conversations">
+                <canvas class="microphone-panel" id="microphone-panel" style="display: none;"></canvas>
                 <div class="chat-input">
                     <textarea id="chat-input" placeholder="Type your message here..." onkeydown="handleKeyDown(event)"></textarea>
                 </div>
@@ -178,8 +263,14 @@ section, .left, .right {
                     </div>
                 </div>
             </div>
-            <div class="right"></div>
+            <div class="puppetry"></div>
         </footer>
     </div>
 </body>
 </html>
+
+<script src="chat.js"></script>
+
+<script src="audio3.js" type="module"></script>
+
+<script src="index.js" type="module"></script>
