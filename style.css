@@ -44,7 +44,7 @@ html, body {
 .header {
     display: flex;
     justify-content: flex-start;
-    align-items: center;
+    align-items: left;
     padding: 10px;
 }
 
