@@ -28,6 +28,11 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 @media (prefers-color-scheme: dark) {
     :root {
         --background-color: var(--color-black);
