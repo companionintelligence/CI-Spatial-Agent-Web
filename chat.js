@@ -41,3 +41,31 @@ function toggleButton(button) {
         }
     }
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const resizer = document.querySelector('.resizer');
+    if(!resizer) return
+    const chatHistory = document.querySelector('.chat-history');
+    const chatInput = document.querySelector('.chat-input');
+    let isResizing = false;
+    resizer.addEventListener('mousedown', function(e) {
+        isResizing = true;
+        document.body.style.cursor = 'row-resize';
+        console.log("resizing")
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!isResizing) return;
+        console.log("resizing2")
+        const containerHeight = document.querySelector('.container').offsetHeight;
+        const newHeight = e.clientY - chatHistory.offsetTop;
+        const maxHeight = containerHeight - chatInput.offsetHeight - resizer.offsetHeight;
+        if (newHeight > 50 && newHeight < maxHeight) {
+            chatHistory.style.height = newHeight + 'px';
+        }
+    });
+    document.addEventListener('mouseup', function() {
+        console.log("resizing3")
+        isResizing = false;
+        document.body.style.cursor = 'default';
+    });
+});

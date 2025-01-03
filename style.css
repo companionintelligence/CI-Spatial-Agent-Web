@@ -49,12 +49,11 @@ html, body {
     height: 100vh;
     margin: 0 auto;
     position: relative;
-    border: 3px solid red;
 }
 
 @media (max-width: 768px) {
     .container {
-        height: 90vh;
+        height: 86vh;
     }
 }
 
