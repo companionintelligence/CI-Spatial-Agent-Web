@@ -16,8 +16,8 @@ sys({
 		//'orbital/orbital-volume/volume.js',
 
 		// puppet behavior system manager
-		'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.5/puppet-chat.js',
-		//'orbital/orbital-puppet/puppet-chat.js',
+		//'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.5/puppet-chat.js',
+		'orbital/orbital-puppet/puppet-chat.js',
 
 		// declare instances of scene geometry including puppet geometry and animations
 		import.meta.url + '/../manifests/geometry001.js',
@@ -27,6 +27,39 @@ sys({
 	],
 
 })
+
+//
+// configure the systems above
+// @note the exposed key - this repo must not be public nor shared widely for now
+// @note it may make sense to allow for auth token such as jwt to be entered in the chat interface
+//
+
+sys({configuration:{
+	// microphone on or off
+	microphone: true,
+	// built-in stt
+	builtin_stt: false,
+	// barge in allowed - allow spoken aborts (although important for speech to speech it can be overly annoying in noisy environments)
+	bargein: false,
+	// auto-submit complete spoken utterances; a nice feature in voice to voice interactions
+	autosubmit: false,
+	// use local llm (fetched as a wasm module but sadly does not run on mobile and is compute heavy)
+	local: false,
+	// remote url of llm service if any
+	url: 'https://api.openai.com/v1/chat/completions',
+	// bearer token for authentication for remote fetch
+	auth : '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',
+	// override any llm specific pre-prompt for the system as in 'you are a helpful digital assistant'
+	prompt: null,
+	// for openai this is a low cost model
+	model: 'gpt-3.5-turbo',
+	// specific voice for piper
+	voice: null,
+}})
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// a small user interface on the document html
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 let rcounter = 1000
 
@@ -118,12 +151,4 @@ document.getElementById('button-auto').onclick = (e) => {
 document.getElementById('button-submit').onclick = submitMessage
 
 
-///////////////////////////////////////////
-// use this setup
 
-sys({llm_configure:{
-	local:false,
-	url : 'http://192.168.1.137:3008/api/chat/completions',
-	auth : 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlhZjU5ZWQ4LTgxOGUtNDk5ZC05MTE3LTIyODIzY2RiYTQwYyJ9.0Qq64aVq7Ag5x7dhHZmJmqLKvZdrvBB0iVZpCMIAujY',
-	model:  "llama3.3:latest"
-}})
