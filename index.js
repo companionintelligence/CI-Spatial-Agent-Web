@@ -62,6 +62,8 @@ sys({configuration:{
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 let rcounter = 1000
+const ChatInput = document.getElementById('chat-input');
+let typing = 0
 
 function sendToPuppet(text) {
 	if(!text || !text.length) return
@@ -83,8 +85,10 @@ function sendToPuppet(text) {
 
 function resolve(blob) {
 	if(!blob || blob.time || blob.tick) return
+	if(blob.human && blob.human.text && blob.human.spoken && blob.human.text.length && !typing) {
+		ChatInput.value = blob.human.text
+	}
 	if(blob.breath) {
-		console.log("got a breath fragment",blob.breath)
         const responseMessage = document.createElement('div');
         responseMessage.className = 'chat-message agent';
         responseMessage.textContent = blob.breath.breath;
@@ -99,24 +103,25 @@ sys({
 })
 
 function submitMessage() {
-    const input = document.getElementById('chat-input');
-    const message = input.value.trim();
-    if (message) {
+    const message = ChatInput.value.trim();
+    if (message && message.length) {
 		sendToPuppet(message)
-        const chatHistory = document.querySelector('.chat-history');
+		const chatHistory = document.querySelector('.chat-history');
         const newMessage = document.createElement('div');
         newMessage.className = 'chat-message user';
         newMessage.textContent = message;
         chatHistory.appendChild(newMessage);
-        input.value = '';
         chatHistory.scrollTop = chatHistory.scrollHeight;
+		ChatInput.value = '';
     }
 }
 
-document.getElementById('chat-input').onkeydown = (event) => {
+ChatInput.onkeydown = (event) => {
+	typing = ChatInput.value.length ? true : false
     if (event.key === 'Enter' && !event.shiftKey && !event.altKey) {
-        event.preventDefault();
+		typing = 0
         submitMessage();
+		event.preventDefault()
     }
 }
 
@@ -149,6 +154,4 @@ document.getElementById('button-auto').onclick = (e) => {
 }
 
 document.getElementById('button-submit').onclick = submitMessage
-
-
 
