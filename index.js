@@ -16,8 +16,8 @@ sys({
 		//'orbital/orbital-volume/volume.js',
 
 		// puppet behavior system manager
-		//'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.5/puppet-chat.js',
-		'orbital/orbital-puppet/puppet-chat.js',
+		'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.7/puppet-chat.js',
+		//'orbital/orbital-puppet/puppet-chat.js',
 
 		// declare instances of scene geometry including puppet geometry and animations
 		import.meta.url + '/../manifests/geometry001.js',
@@ -155,3 +155,13 @@ document.getElementById('button-auto').onclick = (e) => {
 
 document.getElementById('button-submit').onclick = submitMessage
 
+
+/*
+
+- ux overflow on mobile - should be forced to stay at 50%; also test on mobile
+- test auto submit
+- test barge in abort
+
+- i saw the puppet just say a whole pile of things that were backlogged - why?
+
+*/

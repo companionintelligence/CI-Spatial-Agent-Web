@@ -164,7 +164,8 @@ export const alexandria = {
 	uuid: 'alexandria',
 	volume: {
 		geometry: 'file',
-		url: 'assets/avatars/rpm-mixamo-t-posed.glb',
+		url: 'assets/avatars/unbranded-woman-short-hair.glb',
+		xurl: 'assets/avatars/rpm-mixamo-t-posed.glb',
 		pose: {
 			position: [0,0,0]
 		},
