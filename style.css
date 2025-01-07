@@ -103,7 +103,8 @@ body {
     margin-bottom: 10px;
 
     overflow-y: scroll;
-    max-height: calc(100vh - 240px);
+    height: 100%;
+    overflow-y: auto;
 }
 
 @media (max-width: 800px) {
