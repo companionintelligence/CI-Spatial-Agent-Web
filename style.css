@@ -103,12 +103,6 @@ body {
     margin-bottom: 10px;
 
     overflow-y: scroll;
-    height: 100%;
-    overflow-y: auto;
-}
-
-@media (max-width: 800px) {
-    max-height: calc(100vh - 440px);
 }
 
 .PuppetChatUser {
@@ -151,21 +145,22 @@ body {
     color: var(--color-white);
 
     overflow: auto;
-
-    xxx-width: 100%;
-    xxx-height: 50px;
 }
 
 /***********************************************************/
 
 .PuppetMicrophonePanel {
+
     width: 100%;
-    height: 80px;
+    height: 40px;
+
     background-color: var(--color-teal);
     border-radius: 5px;
     margin-bottom: 10px;
     padding: 0px;
+
     overflow-y: auto;
+
     display: none;
 }
 

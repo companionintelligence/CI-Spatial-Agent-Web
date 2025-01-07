@@ -1,167 +1,169 @@
 
-// @todo for some reason /+esm does something very strange with import maps - they stop working!
-import sys from 'https://cdn.jsdelivr.net/npm/orbital-sys@1.1.4/src/sys.js'
-//import sys from 'here/shared/orbital/orbital-sys/src/sys.js'
+//
+// Load the orbital pub/sub service and then load up a few systems that will handle message traffic
+//
 
-//
-// a manifest that requests 3d capabilities, puppetry and then builds a 3d scene and an llm agent in that scene
-//
+import sys from 'orbital-sys/src/sys.js'
 
 sys({
-
 	load:[
 
-		// 3d scene geometry system manager
-		'https://cdn.jsdelivr.net/npm/orbital-volume@1.1.4/volume.js',
-		//'orbital/orbital-volume/volume.js',
+		// 3d scene system - observes {volume} components and makes a 3d display on a named div or volume001
+		'orbital-volume/volume.js',
 
-		// puppet behavior system manager
-		'https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.7/puppet-chat.js',
-		//'orbital/orbital-puppet/puppet-chat.js',
+		// puppet speech to text system - publishes new {human} packet including {human.bargein}
+		'orbital-puppet/chat/stt.js',
 
-		// declare instances of scene geometry including puppet geometry and animations
-		import.meta.url + '/../manifests/geometry001.js',
+		// puppet reasoning system - observes {human} packets including {human.bargein} and may publish global {breath} packets
+		'orbital-puppet/chat/llm.js',
 
-		// declare an instance of an llm that will help drive the puppet brains
-		import.meta.url + '/../manifests/llms001.js',
-	],
+		// puppet text to speech system - observes {breath} packets and generate {speech} packets - also observes {human.bargein}
+		'orbital-puppet/chat/tts.js',
 
+		// puppet animation system - binds to a {puppet} that references 3d geometry
+		// also observes {audio} packets and animates a specified geometry - also observes {human.bargein}
+		'orbital-puppet/puppet.js',
+	]
 })
 
 //
-// configure the systems above
-// @note the exposed key - this repo must not be public nor shared widely for now
-// @note it may make sense to allow for auth token such as jwt to be entered in the chat interface
+// a 3d scene - these are messages that get piped to the 3d volume service above and rendered as 3d geometry
 //
 
-sys({configuration:{
-	// microphone on or off
-	microphone: true,
-	// built-in stt
-	builtin_stt: false,
-	// barge in allowed - allow spoken aborts (although important for speech to speech it can be overly annoying in noisy environments)
-	bargein: false,
-	// auto-submit complete spoken utterances; a nice feature in voice to voice interactions
-	autosubmit: false,
-	// use local llm (fetched as a wasm module but sadly does not run on mobile and is compute heavy)
-	local: false,
-	// remote url of llm service if any
-	url: 'https://api.openai.com/v1/chat/completions',
-	// bearer token for authentication for remote fetch
-	auth : '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',
-	// override any llm specific pre-prompt for the system as in 'you are a helpful digital assistant'
-	prompt: null,
-	// for openai this is a low cost model
-	model: 'gpt-3.5-turbo',
-	// specific voice for piper
-	voice: null,
-}})
+sys([
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////
-// a small user interface on the document html
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-let rcounter = 1000
-const ChatInput = document.getElementById('chat-input');
-let typing = 0
-
-function sendToPuppet(text) {
-	if(!text || !text.length) return
-	const interrupt = performance.now()
-	sys({
-		human:{
-			text,
-			confidence:1,
-			spoken:false,
-			final:true,
-			interrupt,
-			rcounter,
-			bcounter:1,
-			bargein:true
+	{
+		uuid: "scene001",
+		volume: {
+			geometry: 'scene',
+			div: 'volume001',
+			near: 0.1,
+			far: 100,
+			cameraPosition:[0,1.5,1], // @todo move this behavior to camera
+			cameraTarget:[0,1.5,0],
+			cameraMin: 1,
+			cameraMax: 100,
+			//background: 0x000000,
+			//alpha: false,
+			//axes: true,
+			prettier: true,
+			roomlighting: true,
 		}
-	})
-	rcounter++
-}
+	},
 
-function resolve(blob) {
-	if(!blob || blob.time || blob.tick) return
-	if(blob.human && blob.human.text && blob.human.spoken && blob.human.text.length && !typing) {
-		ChatInput.value = blob.human.text
-	}
-	if(blob.breath) {
-        const responseMessage = document.createElement('div');
-        responseMessage.className = 'chat-message agent';
-        responseMessage.textContent = blob.breath.breath;
-        const chatHistory = document.querySelector('.chat-history');
-        chatHistory.appendChild(responseMessage);		
-	}
-}
+	{
+		uuid: "camera001",
+		volume: {
+			geometry: 'camera',
+			nocontrols: false,
+			pose:{
+				position:[0,1.5,1],
+				love:[0,1.5,0]
+			}
+		}
+	},
 
-sys({
-	uuid:"companion-intelligence-chat-handler",
-	resolve
-})
+	/*
+	{
+		uuid: "light001",
+		volume: {
+			geometry:'light',
+			light:'directional',
+			intensity: 0.8,
+			color: 0xffffff,
+			pose:{
+				position:[1,1,1]
+			},
+		}
+	},
 
-function submitMessage() {
-    const message = ChatInput.value.trim();
-    if (message && message.length) {
-		sendToPuppet(message)
-		const chatHistory = document.querySelector('.chat-history');
-        const newMessage = document.createElement('div');
-        newMessage.className = 'chat-message user';
-        newMessage.textContent = message;
-        chatHistory.appendChild(newMessage);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-		ChatInput.value = '';
-    }
-}
+	{
 
-ChatInput.onkeydown = (event) => {
-	typing = ChatInput.value.length ? true : false
-    if (event.key === 'Enter' && !event.shiftKey && !event.altKey) {
-		typing = 0
-        submitMessage();
-		event.preventDefault()
-    }
-}
+		uuid: "light002",
+		volume: {
+			geometry:'light',
+			light:'ambient',
+			color: 0xffffff,
+			intensity: 0.3
+		}
+	},
+	*/
 
-document.getElementById('button-microphone').onclick = (e) => {
-    e.target.classList.toggle('active');
-	const microphonePanel = document.getElementById('microphone-panel');
-	if (e.target.classList.contains('active')) {
-		microphonePanel.style.display = 'block';
-	} else {
-		microphonePanel.style.display = 'none';
-	}
-}
+	{
+		uuid:"backdrop001",
+		volume: {
+			geometry:'file',
+			url:'assets/venues/virtual_store_cute_pastelle.glb',
+			metadata: {
+				provenance: 'https://sketchfab.com/3d-models/virtual-store-cute-pastelle-953f0f8517eb4af1b1ba5bf85601f7dd',
+				creator: 'https://sketchfab.com/mshayan02',
+				license: "CC Attribution-NonCommercial",
+			},
+			transform:{
+				whd:[1,1,1],
+				xyz:[0,0,1.5],
+				ypr:[0,3,0],
+			},
+		}
+	},
 
-document.getElementById('button-agent').onclick = (e) => {
-    e.target.classList.toggle('active');
-	const agentPanel = document.getElementById('volume001');
-	if (e.target.classList.contains('active')) {
-		agentPanel.style.display = 'block';
-	} else {
-		agentPanel.style.display = 'none';
-	}
-}
+	//
+	// puppet
+	// 		- volume {} component defines the geometry
+	//		- puppet {} component deals with animating the geometry for human faces and bodies
+	//		- llm {} component watches for breath messages and eventually drives the puppet component
+	//
 
-document.getElementById('button-barge').onclick = (e) => {
-    e.target.classList.toggle('active');
-}
+	{
+		uuid: 'alexandria',
+		volume: {
+			geometry: 'file',
+			url: 'assets/avatars/unbranded-woman-short-hair.glb',
+			xurl: 'assets/avatars/rpm-mixamo-t-posed.glb',
+			pose: {
+				position: [0,0,0]
+			},
+			animations: { default: "assets/animations/unarmed-idle.glb" },
+		},
+		puppet: {},
 
-document.getElementById('button-auto').onclick = (e) => {
-    e.target.classList.toggle('active');
-}
+		// @todo unused but may want to do this to allow configuration
+		stt: {
+			// microphone on or off
+			microphone: true,
+			// built-in stt
+			builtin_stt: false,
+			// barge in allowed - allow spoken aborts (although important for speech to speech it can be overly annoying in noisy environments)
+			bargein: false,
+			// auto-submit complete spoken utterances; a nice feature in voice to voice interactions
+			autosubmit: false,
+		
+		},
 
-document.getElementById('button-submit').onclick = submitMessage
+		llm: {
+			stream: true,
+			messages: [{
+				role: "system",
+				content: "you are a helpful digital agent",
+			}],
+			temperature: 0.3,
+			max_tokens: 256,
 
+			llm_local: false,
+			llm_url: 'https://companionintel.com/api/chat/completions',
+			llm_auth: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImVkNTdiMjE0LTIyNjgtNDkzYi1hZDljLTFmOGFiODE3NDgwYSJ9.a5hg8ZxPBssmV0MXpuD2d1CqE2z18C_IZdq2RjMTrVM',
+			llm_model: 'llama2:latest' //'llama3.3:latest',
 
-/*
+		},
 
-- ux overflow on mobile - should be forced to stay at 50%; also test on mobile
-- test auto submit
-- test barge in abort
-
-- i saw the puppet just say a whole pile of things that were backlogged - why?
-
-*/
+		// @todo hook this up
+		tts_tbd: {
+			model: "tts-1",
+			voice: "female",
+			speed: 1,
+			volume: 1,
+			language: "en",
+			trim: 0,
+		}
+	},
+])

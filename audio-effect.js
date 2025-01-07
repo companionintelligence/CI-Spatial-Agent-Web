@@ -1,4 +1,4 @@
-const canvas = document.getElementById('microphone-panel');
+const canvas = document.getElementById('PuppetMicrophonePanel');
 const canvasCtx = canvas.getContext('2d');
 
 canvas.width = window.innerWidth * 0.8;
