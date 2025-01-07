@@ -118,7 +118,7 @@ sys([
 		uuid: 'alexandria',
 		volume: {
 			geometry: 'file',
-			url: 'assets/avatars/unbranded-woman-short-hair.glb',
+			url: 'assets/avatars/25-1-3_CI_model_female_Shanee.glb',
 			xurl: 'assets/avatars/rpm-mixamo-t-posed.glb',
 			pose: {
 				position: [0,0,0]
@@ -156,14 +156,22 @@ sys([
 
 		},
 
-		// @todo hook this up
-		tts_tbd: {
+		tts: {
+			remote: true,
+			url: 'https://api.openai.com/v1/audio/speech',
+			bearer: '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',
 			model: "tts-1",
-			voice: "female",
+			// for openai the voices are alloy, echo, fable, onyx, shimmer, nova - onyx is male
+			voice: "shimmer",
+			// local voice for piper - male or female work
+			xxxvoice: 'en_US-hfc_female-medium',
 			speed: 1,
 			volume: 1,
 			language: "en",
 			trim: 0,
+
+			// do stt for whisper timings remotely
+			whisper_remote: true,
 		}
 	},
 ])
