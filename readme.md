@@ -1,3 +1,10 @@
+Video Demo
+
+
+1.  Make a hard code mode runs on space / timing
+2.  Write Script
+3.  Create video with screencapture and Over the sholder footage
+
 
 # todo
 
