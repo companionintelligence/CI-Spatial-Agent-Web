@@ -1,72 +1,63 @@
 <!doctype html>
 <html lang="en">
-
-    <head>
-        <title>Companion Intelligence</title>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <script type="importmap">
-            {
-                "imports": {
-                    "three": "https://unpkg.com/three@0.148.0/build/three.module.js",
-                    "three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
-                    "orbital-sys/": "https://cdn.jsdelivr.net/npm/orbital-sys@latest/",
-                    "orbital-volume/": "https://cdn.jsdelivr.net/npm/orbital-volume@latest/",
-                    "orbital-puppet/": "https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.9/",
-                    "xxxorbital-puppet/": "./shared/orbital-puppet/",
-                    "assets/": "./assets/",
-                    "here/": "./"
-                }
-            }
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.19.2/dist/ort.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.19/dist/bundle.min.js"></script>
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
-        <link rel="stylesheet" href="style.css">
-    </head>
-
-    <body>
-        <div class="PuppetContainer" id="PuppetContainer">
-            <div id="PuppetHeader" class="PuppetHeader">
-                <img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg" alt="Logo"/>
-            </div>
-            <div class="PuppetMain">
-                <div class="PuppetMainLeft">
-                    <div id="PuppetChatHistory"></div>
-                </div>
-                <div class="PuppetMainRight">
-                    <div style="width:100%;height:100%" id="volume001"></div>
-                </div>
-            </div>
-            <div id="PuppetBottom" class="PuppetMain PuppetBottom">
-                <div class="PuppetMainLeft">
-                    <div class="PuppetChatInput">
-                        <textarea rows=1 id="PuppetChatInputTextArea" placeholder="Type your message here..."></textarea>
-                    </div>
-                    <canvas class="PuppetMicrophonePanel" id="PuppetMicrophonePanel"></canvas>
-                    <div class="PuppetControl">
-                        <div class="PuppetControlLeft">
-                            <button id="PuppetControlMicrophone"><img src="icons/microphone.svg" alt="Microphone" /></button>
-                            <button id="PuppetControlAgent"><img src="icons/agent.svg" alt="Agent" /></button>
-                            <button id="PuppetControlBarge"><img src="icons/barge-in.svg" alt="Barge-in" /></button>
-                            <button id="PuppetControlAuto"><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
-                        </div>
-                        <div class="PuppetControlRight">
-                            <button id="PuppetControlSubmit"><img src="icons/submit.svg" alt="Submit" /></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="PuppetMainRight"></div>
-            </div>
-        </div>
-    </body>
-
+	<head>
+		<title>Companion Intelligence</title>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<script type="importmap">
+			{
+				"imports": {
+					"three": "https://unpkg.com/three@0.148.0/build/three.module.js",
+					"three/addons/": "https://unpkg.com/three@0.148.0/examples/jsm/",
+					"orbital-sys/": "https://cdn.jsdelivr.net/npm/orbital-sys@latest/",
+					"orbital-volume/": "https://cdn.jsdelivr.net/npm/orbital-volume@latest/",
+					"xxorbital-puppet/": "https://cdn.jsdelivr.net/npm/orbital-puppet@1.1.9/",
+					"xxxorbital-puppet/": "./shared/orbital-puppet/",
+					"orbital-puppet/": "./",
+					"assets/": "./assets/",
+					"here/": "./"
+				}
+			}
+		</script>
+		<link href="https://fonts.googleapis.com/css2?family=Montserrat&family=Open+Sans&display=swap" rel="stylesheet">        
+		<link rel="stylesheet" href="style.css">
+	</head>
+	<body>
+		<div class="PuppetContainer" id="PuppetContainer">
+			<div id="PuppetHeader" class="PuppetHeader">
+				<img style="width:200px" src="assets/2024_CI__Logo_Banner_Color.svg" alt="Logo"/>
+			</div>
+			<div class="PuppetMain">
+				<div class="PuppetMainLeft">
+					<div id="PuppetChatHistory"></div>
+				</div>
+				<div class="PuppetMainRight">
+					<div style="width:100%;height:100%" id="volume001"></div>
+				</div>
+			</div>
+			<div id="PuppetBottom" class="PuppetMain PuppetBottom">
+				<div class="PuppetMainLeft">
+					<div class="PuppetChatInput">
+						<textarea rows=1 id="PuppetChatInputTextArea" placeholder="Type your message here..."></textarea>
+					</div>
+					<canvas class="PuppetMicrophonePanel" id="PuppetMicrophonePanel"></canvas>
+					<div class="PuppetControl">
+						<div class="PuppetControlLeft">
+							<button id="PuppetControlMicrophone"><img src="icons/microphone.svg" alt="Microphone" /></button>
+							<button class="active" id="PuppetControlLocal">☁️</button>
+							<button class="active" id="PuppetControlAgent"><img src="icons/agent.svg" alt="Agent" /></button>
+							<button class="active" id="PuppetControlBarge"><img src="icons/barge-in.svg" alt="Barge-in" /></button>
+							<button class="active" id="PuppetControlAuto"><img src="icons/auto-submit.svg" alt="Auto-submit" /></button>
+						</div>
+						<div class="PuppetControlRight">
+							<button id="PuppetControlSubmit"><img src="icons/submit.svg" alt="Submit" /></button>
+						</div>
+					</div>
+				</div>
+				<div class="PuppetMainRight"></div>
+			</div>
+		</div>
+	</body>
 </html>
 
-
 <script src="index.js" type="module"></script>
-
-<script src="audio-effect.js" type="module"></script>
-
-<script src="chat.js" type="module"></script>
-

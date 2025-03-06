@@ -5,7 +5,6 @@ Video Demo
 2.  Write Script
 3.  Create video with screencapture and Over the sholder footage
 
-
 # todo
 
     - make sure that the barge in and auto complete are sent to stt and work
