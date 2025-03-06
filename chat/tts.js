@@ -80,12 +80,21 @@ async function perform_tts_remote(args) {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
-			Authorization: `Bearer ${args.bearer||''}`
+			Authorization: `Bearer ${args.bearer||''}`,
+			"xi-api-key": `Bearer ${args.bearer||''}`,
+			Accept: 'audio/mpeg'
 		},
 		body: JSON.stringify({
 			model: args.model || "tts-1",
+			"model_id": args.model || "tts-1",
+//			"output_format": "mp3_44100_128",
 			voice: args.voice || "shimmer",
 			input: args.text,
+			text: args.text,
+			voice_settings: {
+                stability: 0.5,   // Adjust stability (0 to 1)
+                similarity_boost: 0.8 // Adjust similarity to voice (0 to 1)
+            }
 		}),
 	}
 

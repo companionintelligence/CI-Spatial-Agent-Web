@@ -1,4 +1,21 @@
 
+
+const companionscript = 
+`
+You are a personal assistant and life coach.
+For a few specific questions you have pre-defined responses.
+For each of the following inputs please give the exact response:
+
+Input: What should I do today?
+Response: I see that you haven't exercised in a while, and your friend Kevin mentioned he was going on a hike today to Griffith Park, see if you can join him!
+
+Input: What should I do tonite?
+Response: Why not invite your girlfriend to see the full moon on Mullholland drive - here's a music playlist that I made for you."
+
+Input: Thank you 
+Respoonse: Don't forget to water the plants and call your mom back as well, have a great evening
+`
+
 //
 // Load the orbital pub/sub service and then load up a few systems that will handle message traffic
 //
@@ -39,6 +56,8 @@ sys({
 		// 'orbital-puppet/audio-effect.js'
 	]
 })
+
+
 
 //
 // a 3d scene - these are messages that get piped to the 3d volume service above and rendered as 3d geometry
@@ -133,7 +152,7 @@ sys([
 			geometry: 'file',
 			url: 'assets/avatars/25-1-3_CI_model_female_Shanee.glb',
 			xurl: 'assets/avatars/rpm-mixamo-t-posed.glb',
-			url: 'https://models.readyplayer.me/664956c743dbd726eefeb99b.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png',
+			xurl: 'https://models.readyplayer.me/664956c743dbd726eefeb99b.glb?morphTargets=ARKit,Oculus+Visemes,mouthOpen,mouthSmile,eyesClosed,eyesLookUp,eyesLookDown&textureSizeLimit=1024&textureFormat=png',
 			pose: {
 				position: [0,0,0]
 			},
@@ -155,38 +174,37 @@ sys([
 			stream: true,
 			messages: [{
 				role: "system",
-				content: `
-					Please take on the role of Alex, a female human librarian at the library of alexandria.
-					You're in a shared virtual space with some patrons and are having a voice based conversation.
-					Please be brief in your responses, a single sentence is fine.
-					`,
+				content: companionscript,
 			}],
 			temperature: 0.3,
 			max_tokens: 256,
 
 			// this is meant to refer to the in memory llm - if you want ollama set this to false
 			llm_local: false,
+			
+			//llm_url: 'https://api.openai.com/v1/chat/completions',
+			//llm_model: 'gpt-4o-mini',
+			//llm_auth: '',
 
-			llm_url: 'https://api.openai.com/v1/chat/completions',
-			llm_model: 'gpt-4o',
-			llm_auth: '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',
-
-			//llm_url: 'https://companionintel.com/api/chat/completions',
+			llm_url: 'http://localhost:11434/v1/chat/completions',
+			llm_model: 'llama3.2',
 			//llm_model: 'deepseek-r1:7b',
 			//llm_model: 'deepseek-r1:70b',
-			//llm_model: 'llama3.2:latest',
 			//llm_auth: '',
 
 		},
 
 		// decorate entity with an ability to convert text output to speech
 		tts: {
-			remote: true,
-			url: 'https://api.openai.com/v1/audio/speech',
-			bearer: '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',
-			model: "tts-1",
+			remote: false,
+			xurl: 'https://api.openai.com/v1/audio/speech',
+			xmodel: "tts-1",
+			// { "name": "Rachel", "id": "21m00Tcm4TlvDq8ikWAM" }
+			url: 'https://api.elevenlabs.io/v1/text-to-speech/Rachel',
+			model: "eleven_monolingual_v2",
+			bearer: 'sk_611e5fa7b083be66a739ceeb8bd77d3599600278f9319272',
 			// for openai the voices are alloy, echo, fable, onyx, shimmer, nova - onyx is male
-			voice: "shimmer",
+			//voice: "shimmer",
 			// local voice for piper - male or female work
 			//voice: 'en_US-hfc_female-medium',
 			speed: 1,
@@ -205,9 +223,11 @@ sys([
 	},
 ])
 
+
+
 // after a while perform an opening statement - @todo could add a timeout feature to sys nodes
 setTimeout( ()=>{
 	const text = "All systems nominal - ready to chat!"
-	sys({perform:{text,final:true,human:false,interrupt:performance.now()}})
+//	sys({perform:{text,final:true,human:false,interrupt:performance.now()}})
 },2000)
 
