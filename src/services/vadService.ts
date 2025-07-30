@@ -95,7 +95,6 @@ export const useVADService = ({ onVADResult, onSpeechStart, onSpeechEnd }: UseVA
       try {
         vadRef.current.start()
         setIsListening(true)
-        console.log('VAD started listening')
       } catch (error) {
         console.error('Failed to start VAD:', error)
       }

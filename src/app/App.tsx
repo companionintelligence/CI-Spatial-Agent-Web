@@ -231,7 +231,14 @@ export const App = () => {
           <div style={{ marginBottom: '4px' }}>🎯 STT Desired: {stt.desired ? '✅' : '❌'}</div>
           <div style={{ marginBottom: '4px' }}>📝 Interim: "{currentInterimTranscript}"</div>
           <div style={{ marginBottom: '4px' }}>🔊 TTS Speaking: {tts.isSpeaking ? '✅' : '❌'}</div>
-          <div style={{ marginBottom: '4px' }}>🤖 LLM Mode: {state.config.cloudMode ? 'Cloud' : 'Local'}</div>
+          <div style={{ marginBottom: '4px' }}>
+            🤖 LLM Mode: {state.config.cloudMode ? 'Cloud' : 'Local'} 
+            {!state.config.cloudMode && (
+              <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>
+                {' '}({import.meta.env.VITE_OLLAMA_API_URL ? 'Ollama→WebLLM' : 'WebLLM'})
+              </span>
+            )}
+          </div>
           <div
             style={{
               marginBottom: '4px',
