@@ -196,19 +196,14 @@ export const useLLMService = () => {
         },
         setThinking: (thinking) => {
           setState((prev) => ({ ...prev, thinking }))
-        },
-        webllmEngine: state.engine,
-        webllmReady: state.ready
+        }
       })
 
       if (!result.success && result.error) {
         console.error('LLM: Ollama reasoning failed:', result.error)
-        if (result.usedFallback) {
-          console.log('LLM: Successfully used WebLLM fallback')
-        }
       }
     },
-    [state._latest_interrupt, state.messages, config.ollama_url, config.ollama_model, state.engine, state.ready]
+    [state._latest_interrupt, state.messages, config.ollama_url, config.ollama_model]
   )
 
   const llmLocalWrapper = useCallback(
