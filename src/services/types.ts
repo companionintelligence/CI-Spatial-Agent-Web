@@ -13,6 +13,7 @@ export interface AppConfig {
   bargeInEnabled: boolean
   autoSubmitEnabled: boolean
   agentEnabled: boolean
+  llmLocal: boolean
 }
 
 export interface AppState {
@@ -50,6 +51,7 @@ export const initialState: AppState = {
     cloudMode: true,
     bargeInEnabled: true,
     autoSubmitEnabled: true,
-    agentEnabled: true
+    agentEnabled: true,
+    llmLocal: false
   }
 }

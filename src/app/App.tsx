@@ -1,14 +1,17 @@
-import React, { useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatHistory } from '../components/ChatHistory'
 import { Header } from '../components/Header'
 import {
   useChatService,
+  useLLMService,
   useResponsiveLayout,
   useSceneService,
   useSTTService,
   useTTSService,
-  useVADService
+  useVADService,
+  type LLMResponse,
+  type LLMStatusUpdate
 } from '../services'
 
 export const App = () => {
@@ -19,6 +22,15 @@ export const App = () => {
   // State for audio integration
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
+  const [llmStatus, setLlmStatus] = useState<LLMStatusUpdate>({ color: 'loading', text: 'Initializing...' })
+
+  // LLM service integration
+  const llmService = useLLMService()
+  const interruptCounterRef = useRef(Date.now())
+
+  // Initialize services first
+  // TTS service
+  const tts = useTTSService()
 
   // VAD service with callbacks
   const vad = useVADService({
@@ -40,8 +52,16 @@ export const App = () => {
 
       // Handle special 'stop' command like the archive
       if (result.text.startsWith('stop')) {
-        // This would be used for barge-in functionality
-        // console.log('STT: Stop command detected')
+        // Implement barge-in by interrupting LLM generation
+        const interrupt = Date.now()
+        interruptCounterRef.current = interrupt
+
+        // Stop TTS if speaking
+        if (tts.isSpeaking) {
+          tts.actions.stopSpeaking()
+        }
+
+        console.log('STT: Stop command detected - barge-in activated')
         return
       }
 
@@ -70,8 +90,72 @@ export const App = () => {
     }
   })
 
-  // TTS service
-  const tts = useTTSService()
+  // Create stable callback refs to avoid useEffect loops
+  const responseCallbackRef = useRef<(response: LLMResponse) => void>(() => {})
+
+  // Update callback ref when dependencies change
+  useEffect(() => {
+    responseCallbackRef.current = (response) => {
+      if (response.text.trim()) {
+        // For streaming responses, speak each breath immediately like archive
+        if (state.config.agentEnabled && response.breath.trim()) {
+          tts.actions.speak(response.breath.trim())
+        }
+
+        // Only add complete responses to chat history
+        if (response.final) {
+          actions.addMessage(response.text.trim(), false)
+        }
+      }
+    }
+  }, [state.config.agentEnabled, tts.actions, actions])
+
+  // Setup LLM callbacks (stable refs to avoid recursion)
+  const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
+    setLlmStatus(status)
+    console.log('LLM Status:', status)
+  }, [])
+
+  useEffect(() => {
+    llmService.actions.setStatusCallback(handleStatusUpdate)
+    llmService.actions.setResponseCallback(responseCallbackRef.current)
+  }, [llmService.actions, handleStatusUpdate])
+
+  // Update LLM config when app config changes
+  useEffect(() => {
+    if (llmService.config.llm_local === !state.config.cloudMode) return
+    llmService.actions.updateConfig({
+      llm_local: !state.config.cloudMode
+    })
+  }, [llmService.actions, llmService.config.llm_local, state.config.cloudMode])
+
+  // Handle message submission to LLM
+  const submitMessage = React.useCallback(() => {
+    if (state.currentMessage.trim()) {
+      const userMessage = state.currentMessage.trim()
+
+      // Add user message to chat
+      actions.addMessage(userMessage, true)
+      actions.clearCurrentMessage()
+
+      // Send to LLM with proper interrupt handling like the archive
+      const interrupt = Date.now()
+      interruptCounterRef.current = interrupt
+
+      llmService.actions.processUserInput({
+        text: userMessage,
+        human: true,
+        final: true,
+        bargein: state.config.bargeInEnabled,
+        interrupt
+      })
+    }
+  }, [state.currentMessage, state.config.bargeInEnabled, actions, llmService.actions])
+
+  // Override the chat service submit with LLM integration
+  React.useEffect(() => {
+    actions.submitMessage = submitMessage
+  }, [submitMessage, actions])
 
   // Handle noisy config (archived system pattern) - disable STT when TTS is speaking
   React.useEffect(() => {
@@ -85,17 +169,6 @@ export const App = () => {
       actions.submitMessage()
     }
   }
-
-  // Handle chat responses with TTS
-  React.useEffect(() => {
-    if (state.messages.length > 0) {
-      const lastMessage = state.messages[state.messages.length - 1]
-      if (!lastMessage.isUser && state.config.agentEnabled) {
-        // Speak the agent's response
-        tts.actions.speak(lastMessage.text)
-      }
-    }
-  }, [state.messages, state.config.agentEnabled, tts])
 
   const handleToggleMicrophone = () => {
     const newRecordingState = !state.isRecording
@@ -157,7 +230,17 @@ export const App = () => {
           </div>
           <div style={{ marginBottom: '4px' }}>🎯 STT Desired: {stt.desired ? '✅' : '❌'}</div>
           <div style={{ marginBottom: '4px' }}>📝 Interim: "{currentInterimTranscript}"</div>
-          <div>🔊 TTS Speaking: {tts.isSpeaking ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>🔊 TTS Speaking: {tts.isSpeaking ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>🤖 LLM Mode: {state.config.cloudMode ? 'Cloud' : 'Local'}</div>
+          <div
+            style={{
+              marginBottom: '4px',
+              color: llmStatus.color === 'ready' ? '#4ade80' : llmStatus.color === 'loading' ? '#fbbf24' : '#ef4444'
+            }}
+          >
+            🧠 LLM: {llmStatus.text}
+          </div>
+          <div>💭 LLM Thinking: {llmService.state.thinking ? '✅' : '❌'}</div>
         </div>
       )}
 
@@ -182,7 +265,7 @@ export const App = () => {
             minWidth: isMobile ? 'auto' : '300px'
           }}
         >
-          <ChatHistory 
+          <ChatHistory
             messages={state.messages}
             message={state.currentMessage}
             onMessageChange={actions.updateCurrentMessage}

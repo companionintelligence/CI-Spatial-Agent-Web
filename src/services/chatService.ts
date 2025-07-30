@@ -53,8 +53,11 @@ export const useChatService = () => {
   const submitMessage = useCallback(() => {
     if (state.currentMessage.trim()) {
       addMessage(state.currentMessage, true)
+      
+      // TODO: Send to LLM service - this will be handled by the App component
+      // The LLM service will process the message and generate a response
+      
       clearCurrentMessage()
-      // TODO: Send to LLM service
     }
   }, [state.currentMessage, addMessage, clearCurrentMessage])
 
