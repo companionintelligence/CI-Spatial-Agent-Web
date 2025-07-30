@@ -40,28 +40,23 @@ export const ChatInput = ({
     <div
       style={{
         flexShrink: 0,
-        background: 'linear-gradient(180deg, #303638 0%, #243238 100%)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        color: '#FFFFFF',
-        borderRadius: '16px',
-        margin: '24px 0',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.07)'
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
       }}
     >
+      {/* Text Input Container */}
       <div
         style={{
-          display: 'flex',
-          padding: '20px',
-          borderRadius: '16px',
-          boxSizing: 'border-box'
+          position: 'relative',
+          width: '100%'
         }}
       >
         <textarea
           className="chat-input"
           style={{
-            flex: 1,
-            padding: '12px 20px',
+            width: '100%',
+            padding: '12px 60px 12px 20px', // Right padding for send button
             borderRadius: '9999px',
             resize: 'none',
             border: 'none',
@@ -74,6 +69,7 @@ export const ChatInput = ({
             fontSize: '1rem',
             lineHeight: '1.5',
             boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            boxSizing: 'border-box',
             ...(vadDetecting && { background: 'rgba(19,196,209,0.30)' }),
             ...(sttListening && !vadDetecting && { background: 'rgba(255,107,53,0.30)' })
           }}
@@ -88,52 +84,53 @@ export const ChatInput = ({
           onKeyPress={onKeyPress}
           readOnly={isRecording}
         />
-      </div>
-
-      {/* Control Buttons */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          height: '50px',
-          paddingTop: '16px'
-        }}
-      >
-        {/* Left Controls */}
+        
+        {/* Send Button - positioned inside the text field */}
         <div
           style={{
-            display: 'flex',
-            gap: '12px'
-          }}
-        >
-          <ControlButton isActive={isRecording} onClick={onToggleMicrophone}>
-            {vadDetecting ? '🟢' : isRecording ? '🔴' : '🎤'}
-          </ControlButton>
-          <ControlButton isActive={config.cloudMode} onClick={onToggleCloudMode}>
-            ☁️
-          </ControlButton>
-          <ControlButton isActive={config.bargeInEnabled} onClick={onToggleBargeIn}>
-            ⚡
-          </ControlButton>
-          <ControlButton isActive={config.autoSubmitEnabled} onClick={onToggleAutoSubmit}>
-            🚀
-          </ControlButton>
-          <ControlButton isActive={config.agentEnabled} onClick={onToggleAgent}>
-            {ttsActive ? '🔊' : '🤖'}
-          </ControlButton>
-        </div>
-
-        {/* Right Controls */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '12px'
+            position: 'absolute',
+            right: '8px',
+            top: '50%',
+            transform: 'translateY(-60%)',
+            zIndex: 1
           }}
         >
           <ControlButton onClick={onSubmit}>
             ➤
           </ControlButton>
         </div>
+      </div>
+
+      {/* Control Buttons Container */}
+      <div
+        style={{
+          background: 'linear-gradient(355deg,rgba(122, 135, 140, 0) 0%,rgba(133, 145, 150, 0.2) 100%)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          color: '#FFFFFF',
+          borderRadius: '16px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.07)',
+          display: 'flex',
+          justifyContent: 'center',
+          padding: '16px 20px',
+          gap: '12px'
+        }}
+      >
+        <ControlButton isActive={isRecording} onClick={onToggleMicrophone}>
+          {vadDetecting ? '🟢' : isRecording ? '🔴' : '🎤'}
+        </ControlButton>
+        <ControlButton isActive={config.cloudMode} onClick={onToggleCloudMode}>
+          ☁️
+        </ControlButton>
+        <ControlButton isActive={config.bargeInEnabled} onClick={onToggleBargeIn}>
+          ⚡
+        </ControlButton>
+        <ControlButton isActive={config.autoSubmitEnabled} onClick={onToggleAutoSubmit}>
+          🚀
+        </ControlButton>
+        <ControlButton isActive={config.agentEnabled} onClick={onToggleAgent}>
+          {ttsActive ? '🔊' : '🤖'}
+        </ControlButton>
       </div>
     </div>
   )
