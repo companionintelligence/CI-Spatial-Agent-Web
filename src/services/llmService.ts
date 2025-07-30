@@ -39,13 +39,14 @@ import type {
   LLMPerformRequest,
   LLMResponse,
   LLMState,
-  LLMStatusUpdate,
-  WebLLMStreamChunk
+  LLMStatusUpdate
 } from './llmTypes'
 import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
+import { llmLocal } from './llmLocal'
+import { llmOllama } from './llmOllama'
+import { llmCloud } from './llmCloud'
 
 // Constants from the original implementation
-const MIN_BREATH_LENGTH = 20
 const selectedModel = 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
 
 // Worker string for WebLLM
@@ -67,8 +68,6 @@ export const useLLMService = () => {
   })
 
   const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
-  const rcounterRef = useRef(1000)
-  const bcounterRef = useRef(0)
   const statusCallbackRef = useRef<((update: LLMStatusUpdate) => void) | null>(null)
   const responseCallbackRef = useRef<((response: LLMResponse) => void) | null>(null)
 
@@ -144,402 +143,105 @@ export const useLLMService = () => {
 
   const llmRemote = useCallback(
     async (userMessage: string, interrupt: number) => {
-      const messages = [...state.messages, { role: 'user' as const, content: userMessage }]
-
-      const body = JSON.stringify({
-        model: config.llm_model || 'gpt-3.5-turbo',
-        messages: config.llm_flowise ? undefined : messages.map((msg) => ({ role: msg.role, content: msg.content })),
-        ...(config.llm_flowise && { question: userMessage })
-      })
-
-      console.log('LLM - sending request to remote', body)
-
-      const props: RequestInit = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(config.llm_auth && { Authorization: `Bearer ${config.llm_auth}` })
-        },
-        body
-      }
-
-      try {
-        const response = await fetch(config.llm_url!, props)
-
-        if (!response.ok) {
-          console.error('LLM: reasoning error', response)
-          return
-        }
-
-        // Check if this request is still current
-        if (interrupt < state._latest_interrupt) return
-
-        rcounterRef.current++
-        bcounterRef.current = 0
-
-        const json = await response.json()
-
-        let sentence: string | null = null
-        if (json.choices) {
-          sentence = json.choices[0].message.content
-        } else if (json.text) {
-          sentence = json.text
-        }
-
-        if (sentence && sentence.length) {
-          const { cleanedResponse, thinkBlocks } = processThinkBlocks(sentence)
-
-          if (thinkBlocks.length && statusCallbackRef.current) {
-            statusCallbackRef.current({
-              color: 'ready',
-              text: thinkBlocks.join(' ')
-            })
-          }
-
-          if (!cleanedResponse || !cleanedResponse.length) return
-
-          // Update messages
+      const result = await llmCloud({
+        userMessage,
+        interrupt,
+        messages: state.messages,
+        llmUrl: config.llm_url!,
+        llmModel: config.llm_model,
+        llmAuth: config.llm_auth,
+        isFlowise: config.llm_flowise,
+        latestInterrupt: state._latest_interrupt,
+        responseCallback: responseCallbackRef.current || undefined,
+        updateMessages: (userMsg, assistantMsg) => {
           setState((prev) => ({
             ...prev,
             messages: [
               ...prev.messages,
-              { role: 'user', content: userMessage },
-              { role: 'assistant', content: cleanedResponse }
+              { role: 'user', content: userMsg },
+              { role: 'assistant', content: assistantMsg }
             ]
           }))
+        },
+        processThinkBlocks,
+        statusCallback: statusCallbackRef.current || undefined
+      })
 
-          // Split response into fragments for TTS
-          const fragments = cleanedResponse.split(/[.!?]|,/)
-          fragments.forEach((breath) => {
-            if (responseCallbackRef.current && breath.trim()) {
-              responseCallbackRef.current({
-                text: breath,
-                breath,
-                ready: true,
-                final: true,
-                interrupt,
-                rcounter: rcounterRef.current,
-                bcounter: bcounterRef.current
-              })
-              bcounterRef.current++
-            }
-          })
-        }
-      } catch (err) {
-        console.error('LLM: reasoning catch error - bad remote url?', err)
+      if (!result.success && result.error) {
+        console.error('LLM: Remote reasoning failed:', result.error)
       }
     },
     [state.messages, state._latest_interrupt, config]
   )
 
-  const llmOllama = useCallback(
+  const llmOllamaWrapper = useCallback(
     async (userMessage: string, interrupt: number) => {
-      setState((prev) => ({ ...prev, thinking: true }))
-
-      rcounterRef.current++
-      bcounterRef.current = 0
-
-      let breath = ''
-      const breathHelper = (fragment: string | null = null, finished = false) => {
-        if (state._latest_interrupt > interrupt) {
-          console.log('LLM: skipping - work is old', interrupt)
-          return
-        }
-
-        if (!fragment || !fragment.length || finished) {
-          if (breath.length && responseCallbackRef.current) {
-            responseCallbackRef.current({
-              text: breath,
-              breath,
-              ready: true,
-              final: true,
-              interrupt
-            })
-            breath = ''
-          }
-          return
-        }
-
-        const match = fragment.match(/.*?[.,!?]/)
-        if (breath.length < MIN_BREATH_LENGTH || !match) {
-          breath += fragment
-        } else {
-          const i = match[0].length
-          breath += fragment.slice(0, i)
-
-          if (responseCallbackRef.current) {
-            responseCallbackRef.current({
-              text: breath,
-              breath,
-              ready: true,
-              final: false,
-              interrupt,
-              rcounter: rcounterRef.current,
-              bcounter: bcounterRef.current
-            })
-          }
-
-          console.log('LLM - publishing Ollama fragment =', breath, 'time =', interrupt)
-          breath = fragment.slice(i)
-          bcounterRef.current++
-        }
-      }
-
-      try {
-        const messages = [...state.messages, { role: 'user' as const, content: userMessage }]
-
-        const requestMessages = messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content
-        }))
-
-        console.log('LLM - sending Ollama request to', config.ollama_url)
-
-        const response = await fetch(config.ollama_url!, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: config.ollama_model || 'llama3.2:3b',
-            messages: requestMessages,
-            stream: true
-          })
-        })
-
-        if (!response.ok) {
-          throw new Error(`Ollama request failed: ${response.status} ${response.statusText}`)
-        }
-
-        // Handle streaming response from Ollama
-        const reader = response.body?.getReader()
-        if (!reader) {
-          throw new Error('No response stream available')
-        }
-
-        const decoder = new TextDecoder()
-        let fullResponse = ''
-
-        try {
-          while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
-
-            // Check if request is still current
-            if (state._latest_interrupt > interrupt) {
-              console.log('LLM: Ollama request outdated, stopping')
-              break
-            }
-
-            const chunk = decoder.decode(value, { stream: true })
-            const lines = chunk.split('\n').filter((line) => line.trim())
-
-            for (const line of lines) {
-              try {
-                const data = JSON.parse(line)
-                if (data.message && data.message.content) {
-                  const content = data.message.content
-                  fullResponse += content
-                  breathHelper(content, data.done)
-                }
-
-                if (data.done) {
-                  breathHelper(null, true)
-                  break
-                }
-              } catch (parseError) {
-                console.warn('Failed to parse Ollama chunk:', line, parseError)
-              }
-            }
-          }
-
-          // Update message history
+      const result = await llmOllama({
+        userMessage,
+        interrupt,
+        messages: state.messages,
+        ollamaUrl: config.ollama_url!,
+        ollamaModel: config.ollama_model,
+        latestInterrupt: state._latest_interrupt,
+        responseCallback: responseCallbackRef.current || undefined,
+        updateMessages: (userMsg, assistantMsg) => {
           setState((prev) => ({
             ...prev,
             messages: [
               ...prev.messages,
-              { role: 'user', content: userMessage },
-              { role: 'assistant', content: fullResponse }
-            ],
-            thinking: false
+              { role: 'user', content: userMsg },
+              { role: 'assistant', content: assistantMsg }
+            ]
           }))
-        } finally {
-          reader.releaseLock()
-        }
-      } catch (err) {
-        console.error('LLM: Ollama reasoning error', err)
-        setState((prev) => ({ ...prev, thinking: false }))
+        },
+        setThinking: (thinking) => {
+          setState((prev) => ({ ...prev, thinking }))
+        },
+        webllmEngine: state.engine,
+        webllmReady: state.ready
+      })
 
-        // If Ollama fails and we have WebLLM as fallback, try that
-        if (state.engine && state.ready) {
-          console.log('LLM: Falling back to WebLLM due to Ollama error')
-          // Call WebLLM logic directly to avoid circular dependency
-          setState((prev) => ({ ...prev, thinking: true }))
-          
-          try {
-            const messages = [...state.messages, { role: 'user' as const, content: userMessage }]
-            const requestMessages = messages.map((msg) => ({
-              role: msg.role,
-              content: msg.content
-            }))
-
-            const asyncChunkGenerator = await state.engine.chat.completions.create({
-              messages: requestMessages,
-              stream: true
-            })
-
-            // Handle WebLLM streaming response (simplified for fallback)
-            const isAsyncIterable = (obj: unknown): obj is AsyncIterable<WebLLMStreamChunk> => {
-              return obj != null && typeof obj === 'object' && Symbol.asyncIterator in obj
-            }
-
-            if (isAsyncIterable(asyncChunkGenerator)) {
-              for await (const chunk of asyncChunkGenerator) {
-                if (!chunk.choices || !chunk.choices.length || !chunk.choices[0].delta) continue
-                const content = chunk.choices[0].delta.content
-                const finished = chunk.choices[0].finish_reason
-                breathHelper(content, finished === 'stop')
-              }
-            }
-
-            const paragraph = await state.engine.getMessage()
-            setState((prev) => ({
-              ...prev,
-              messages: [
-                ...prev.messages,
-                { role: 'user', content: userMessage },
-                { role: 'assistant', content: paragraph }
-              ],
-              thinking: false
-            }))
-          } catch (fallbackErr) {
-            console.error('LLM: WebLLM fallback also failed', fallbackErr)
-            setState((prev) => ({ ...prev, thinking: false }))
-            throw fallbackErr
-          }
-        } else {
-          throw err // Re-throw if no fallback available
+      if (!result.success && result.error) {
+        console.error('LLM: Ollama reasoning failed:', result.error)
+        if (result.usedFallback) {
+          console.log('LLM: Successfully used WebLLM fallback')
         }
       }
     },
     [state._latest_interrupt, state.messages, config.ollama_url, config.ollama_model, state.engine, state.ready]
   )
 
-  const llmLocal = useCallback(
+  const llmLocalWrapper = useCallback(
     async (userMessage: string, interrupt: number) => {
       if (!state.engine || !state.ready) {
         console.error('LLM: Engine not ready')
         return
       }
 
-      setState((prev) => ({ ...prev, thinking: true }))
-
-      rcounterRef.current++
-      bcounterRef.current = 0
-
-      let breath = ''
-      const breathHelper = (fragment: string | null = null, finished = false) => {
-        if (state._latest_interrupt > interrupt) {
-          console.log('LLM: skipping - work is old', interrupt)
-          return
+      const result = await llmLocal({
+        userMessage,
+        interrupt,
+        messages: state.messages,
+        engine: state.engine,
+        latestInterrupt: state._latest_interrupt,
+        responseCallback: responseCallbackRef.current || undefined,
+        updateMessages: (userMsg, assistantMsg) => {
+          setState((prev) => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              { role: 'user', content: userMsg },
+              { role: 'assistant', content: assistantMsg }
+            ]
+          }))
+        },
+        setThinking: (thinking) => {
+          setState((prev) => ({ ...prev, thinking }))
         }
+      })
 
-        if (!fragment || !fragment.length || finished) {
-          if (breath.length && responseCallbackRef.current) {
-            responseCallbackRef.current({
-              text: breath,
-              breath,
-              ready: true,
-              final: true,
-              interrupt
-            })
-            breath = ''
-          }
-          return
-        }
-
-        const match = fragment.match(/.*?[.,!?]/)
-        if (breath.length < MIN_BREATH_LENGTH || !match) {
-          breath += fragment
-        } else {
-          const i = match[0].length
-          breath += fragment.slice(0, i)
-
-          if (responseCallbackRef.current) {
-            responseCallbackRef.current({
-              text: breath,
-              breath,
-              ready: true,
-              final: false,
-              interrupt,
-              rcounter: rcounterRef.current,
-              bcounter: bcounterRef.current
-            })
-          }
-
-          console.log('LLM - publishing fragment =', breath, 'time =', interrupt)
-          breath = fragment.slice(i)
-          bcounterRef.current++
-        }
-      }
-
-      try {
-        const messages = [...state.messages, { role: 'user' as const, content: userMessage }]
-
-        // Create chat completion request
-        const requestMessages = messages.map((msg) => ({
-          role: msg.role,
-          content: msg.content
-        }))
-        console.log('LLM - sending local request', requestMessages)
-
-        const asyncChunkGenerator = await state.engine.chat.completions.create({
-          messages: requestMessages,
-          stream: true
-        })
-
-        console.log(asyncChunkGenerator)
-
-        // Type guard for async iterable
-        const isAsyncIterable = (obj: unknown): obj is AsyncIterable<WebLLMStreamChunk> => {
-          return obj != null && typeof obj === 'object' && Symbol.asyncIterator in obj
-        }
-
-        // Handle streaming response
-        if (isAsyncIterable(asyncChunkGenerator)) {
-          for await (const chunk of asyncChunkGenerator) {
-            console.log({ chunk })
-            if (!chunk.choices || !chunk.choices.length || !chunk.choices[0].delta) continue
-            const content = chunk.choices[0].delta.content
-            const finished = chunk.choices[0].finish_reason
-            breathHelper(content, finished === 'stop')
-          }
-        } else {
-          // Non-streaming response
-          const response = asyncChunkGenerator as unknown as webllm.ChatCompletion
-          const choices = response.choices
-          if (choices && choices.length) {
-            const content = choices[0].message.content
-            const finished = choices[0].finish_reason
-            breathHelper(content, finished === 'stop')
-          }
-        }
-
-        // Get the complete message and add to history
-        const paragraph = await state.engine.getMessage()
-        console.log({ paragraph })
-        setState((prev) => ({
-          ...prev,
-          messages: [
-            ...prev.messages,
-            { role: 'user', content: userMessage },
-            { role: 'assistant', content: paragraph }
-          ],
-          thinking: false
-        }))
-      } catch (err) {
-        console.error('LLM: Local reasoning error', err)
-        setState((prev) => ({ ...prev, thinking: false }))
+      if (!result.success && result.error) {
+        console.error('LLM: Local reasoning failed:', result.error)
       }
     },
     [state.engine, state.ready, state._latest_interrupt, state.messages]
@@ -586,10 +288,10 @@ export const useLLMService = () => {
           // Check if Ollama is configured and available
           if (config.ollama_url && config.ollama_url.trim()) {
             console.log('LLM - using Ollama for local processing')
-            await llmOllama(text, request.interrupt)
+            await llmOllamaWrapper(text, request.interrupt)
           } else if (state.ready && state.engine) {
             console.log('LLM - using WebLLM for local processing')
-            await llmLocal(text, request.interrupt)
+            await llmLocalWrapper(text, request.interrupt)
           } else {
             console.error('LLM - no local options available')
             if (statusCallbackRef.current) {
@@ -621,9 +323,9 @@ export const useLLMService = () => {
       config.llm_local,
       config.ollama_url,
       load,
-      llmLocal,
+      llmLocalWrapper,
       llmRemote,
-      llmOllama
+      llmOllamaWrapper
     ]
   )
 

@@ -48,7 +48,7 @@ export const initialState: AppState = {
   isRecording: false,
   config: {
     microphone: false,
-    cloudMode: true,
+    cloudMode: false,
     bargeInEnabled: true,
     autoSubmitEnabled: true,
     agentEnabled: true,

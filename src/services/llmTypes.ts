@@ -90,7 +90,7 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   llm_auth: import.meta.env.VITE_OPENAI_API_KEY || '',
   llm_flowise: false,
   ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
-  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'llama3.2:3b'
+  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b'
 }
 
 // Available local models (matching archive implementation)
@@ -113,13 +113,14 @@ export const COMMON_REMOTE_MODELS = [
 
 // Common Ollama models
 export const COMMON_OLLAMA_MODELS = [
-  'llama3.2:3b',
+  'llama3.2',
   'llama3.2:1b',
   'llama3.1:8b',
   'llama3.1:70b',
   'mistral:7b',
   'codellama:7b',
   'phi3:3.8b',
+  'gemma3:1b',
   'gemma2:2b'
 ]
 
