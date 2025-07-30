@@ -1,10 +1,44 @@
-import type { ChatMessage } from '../services/types'
+import type { ChatMessage, AppConfig } from '../services/types'
+import { ChatInput } from './ChatInput'
 
 interface ChatHistoryProps {
   messages: ChatMessage[]
+  // Chat input props
+  message: string
+  onMessageChange: (message: string) => void
+  onSubmit: () => void
+  onKeyPress: (e: React.KeyboardEvent) => void
+  config: AppConfig
+  isRecording: boolean
+  onToggleMicrophone: () => void
+  onToggleCloudMode: () => void
+  onToggleBargeIn: () => void
+  onToggleAutoSubmit: () => void
+  onToggleAgent: () => void
+  vadDetecting: boolean
+  sttTranscript: string
+  ttsActive: boolean
+  sttListening: boolean
 }
 
-export const ChatHistory = ({ messages }: ChatHistoryProps) => {
+export const ChatHistory = ({ 
+  messages, 
+  message,
+  onMessageChange,
+  onSubmit,
+  onKeyPress,
+  config,
+  isRecording,
+  onToggleMicrophone,
+  onToggleCloudMode,
+  onToggleBargeIn,
+  onToggleAutoSubmit,
+  onToggleAgent,
+  vadDetecting,
+  sttTranscript,
+  ttsActive,
+  sttListening
+}: ChatHistoryProps) => {
   return (
     <div
       style={{
@@ -52,6 +86,27 @@ export const ChatHistory = ({ messages }: ChatHistoryProps) => {
             {message.text}
           </div>
         ))}
+      </div>
+      
+      {/* Chat Input at the bottom */}
+      <div style={{ padding: '24px' }}>
+        <ChatInput
+          message={message}
+          onMessageChange={onMessageChange}
+          onSubmit={onSubmit}
+          onKeyPress={onKeyPress}
+          config={config}
+          isRecording={isRecording}
+          onToggleMicrophone={onToggleMicrophone}
+          onToggleCloudMode={onToggleCloudMode}
+          onToggleBargeIn={onToggleBargeIn}
+          onToggleAutoSubmit={onToggleAutoSubmit}
+          onToggleAgent={onToggleAgent}
+          vadDetecting={vadDetecting}
+          sttTranscript={sttTranscript}
+          ttsActive={ttsActive}
+          sttListening={sttListening}
+        />
       </div>
     </div>
   )

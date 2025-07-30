@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatHistory } from '../components/ChatHistory'
-import { ChatInput } from '../components/ChatInput'
 import { Header } from '../components/Header'
 import {
   useChatService,
@@ -169,7 +168,7 @@ export const App = () => {
       <div
         style={{
           display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
+          flexDirection: isMobile ? 'column-reverse' : 'row',
           flex: 1,
           height: '100%',
           gap: '24px',
@@ -184,7 +183,24 @@ export const App = () => {
             minWidth: isMobile ? 'auto' : '300px'
           }}
         >
-          <ChatHistory messages={state.messages} />
+          <ChatHistory 
+            messages={state.messages}
+            message={state.currentMessage}
+            onMessageChange={actions.updateCurrentMessage}
+            onSubmit={actions.submitMessage}
+            onKeyPress={handleKeyPress}
+            config={state.config}
+            isRecording={state.isRecording}
+            onToggleMicrophone={handleToggleMicrophone}
+            onToggleCloudMode={() => actions.updateConfig({ cloudMode: !state.config.cloudMode })}
+            onToggleBargeIn={() => actions.updateConfig({ bargeInEnabled: !state.config.bargeInEnabled })}
+            onToggleAutoSubmit={() => actions.updateConfig({ autoSubmitEnabled: !state.config.autoSubmitEnabled })}
+            onToggleAgent={() => actions.updateConfig({ agentEnabled: !state.config.agentEnabled })}
+            vadDetecting={vadDetecting}
+            sttTranscript={currentInterimTranscript}
+            ttsActive={tts.isSpeaking}
+            sttListening={stt.isListening}
+          />
         </div>
         <div
           style={{
@@ -195,30 +211,6 @@ export const App = () => {
         >
           <AvatarViewport sceneConfig={sceneConfig} avatarConfig={avatarConfig} />
         </div>
-      </div>
-
-      <div
-        style={{
-          padding: '0 24px 24px 24px'
-        }}
-      >
-        <ChatInput
-          message={state.currentMessage}
-          onMessageChange={actions.updateCurrentMessage}
-          onSubmit={actions.submitMessage}
-          onKeyPress={handleKeyPress}
-          config={state.config}
-          isRecording={state.isRecording}
-          onToggleMicrophone={handleToggleMicrophone}
-          onToggleCloudMode={() => actions.updateConfig({ cloudMode: !state.config.cloudMode })}
-          onToggleBargeIn={() => actions.updateConfig({ bargeInEnabled: !state.config.bargeInEnabled })}
-          onToggleAutoSubmit={() => actions.updateConfig({ autoSubmitEnabled: !state.config.autoSubmitEnabled })}
-          onToggleAgent={() => actions.updateConfig({ agentEnabled: !state.config.agentEnabled })}
-          vadDetecting={vadDetecting}
-          sttTranscript={currentInterimTranscript}
-          ttsActive={tts.isSpeaking}
-          sttListening={stt.isListening}
-        />
       </div>
     </div>
   )
