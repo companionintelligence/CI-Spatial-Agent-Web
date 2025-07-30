@@ -40,37 +40,42 @@ export const ChatInput = ({
     <div
       style={{
         flexShrink: 0,
-        backgroundColor: '#095D72',
-        color: '#F6F6F6',
-        borderRadius: '10px',
-        marginTop: '10px',
-        marginBottom: '10px'
+        background: 'linear-gradient(180deg, #303638 0%, #243238 100%)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        color: '#FFFFFF',
+        borderRadius: '16px',
+        margin: '24px 0',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.07)'
       }}
     >
       <div
         style={{
           display: 'flex',
-          padding: '10px',
-          backgroundColor: '#008997',
-          borderRadius: '5px',
+          padding: '20px',
+          borderRadius: '16px',
           boxSizing: 'border-box'
         }}
       >
         <textarea
+          className="chat-input"
           style={{
             flex: 1,
-            padding: '8px',
-            borderRadius: '5px',
+            padding: '12px 20px',
+            borderRadius: '9999px',
             resize: 'none',
             border: 'none',
             outline: 'none',
-            backgroundColor: '#095D72',
-            filter: 'brightness(1.2)',
-            color: '#F6F6F6',
+            background: 'rgba(255,255,255,0.04)',
+            backdropFilter: 'blur(16px)',
+            color: '#FFFFFF',
             overflow: 'auto',
-            fontFamily: 'inherit',
-            ...(vadDetecting && { backgroundColor: '#00A651', filter: 'brightness(1.3)' }),
-            ...(sttListening && !vadDetecting && { backgroundColor: '#FF6B35', filter: 'brightness(1.1)' })
+            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+            fontSize: '1rem',
+            lineHeight: '1.5',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            ...(vadDetecting && { background: 'rgba(19,196,209,0.30)' }),
+            ...(sttListening && !vadDetecting && { background: 'rgba(255,107,53,0.30)' })
           }}
           rows={1}
           placeholder={
@@ -91,14 +96,14 @@ export const ChatInput = ({
           display: 'flex',
           justifyContent: 'space-between',
           height: '50px',
-          paddingTop: '10px'
+          paddingTop: '16px'
         }}
       >
         {/* Left Controls */}
         <div
           style={{
             display: 'flex',
-            gap: '10px'
+            gap: '12px'
           }}
         >
           <ControlButton isActive={isRecording} onClick={onToggleMicrophone}>
@@ -122,7 +127,7 @@ export const ChatInput = ({
         <div
           style={{
             display: 'flex',
-            gap: '10px'
+            gap: '12px'
           }}
         >
           <ControlButton onClick={onSubmit}>

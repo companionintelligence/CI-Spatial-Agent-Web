@@ -8,17 +8,23 @@ export const ControlButton = ({ isActive = false, onClick, children }: ControlBu
   return (
     <button
       style={{
-        padding: '10px',
+        width: '40px',
+        height: '40px',
+        padding: '0',
         border: 'none',
-        borderRadius: '5px',
+        borderRadius: '9999px',
         cursor: 'pointer',
-        transition: 'background-color 0.3s',
-        backgroundColor: isActive ? '#00A9A7' : '#008997',
-        color: '#F6F6F6'
+        transition: 'background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+        background: isActive ? 'rgba(19,196,209,0.30)' : 'rgba(255,255,255,0.06)',
+        color: '#FFFFFF',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '1rem'
       }}
       onClick={onClick}
-      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#00c9c7'}
-      onMouseOut={(e) => e.currentTarget.style.backgroundColor = isActive ? '#00A9A7' : '#008997'}
+      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(19,196,209,0.18)'}
+      onMouseOut={(e) => e.currentTarget.style.background = isActive ? 'rgba(19,196,209,0.30)' : 'rgba(255,255,255,0.06)'}
     >
       {children}
     </button>

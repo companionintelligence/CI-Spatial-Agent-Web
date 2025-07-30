@@ -120,11 +120,13 @@ export const App = () => {
         flexDirection: 'column',
         height: '100vh',
         overflow: 'hidden',
-        maxWidth: '1000px',
+        maxWidth: '1280px',
         margin: '0 auto',
-        backgroundColor: '#1A1A1A',
-        color: '#095D72',
-        fontFamily: "'Montserrat', 'Open Sans', sans-serif"
+        background: 'radial-gradient(circle at top, #0F1113 0%, #1B1E20 100%)',
+        color: '#FFFFFF',
+        fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+        fontWeight: 400,
+        lineHeight: 1.5
       }}
     >
       {/* Audio Debug Status (optional, can be removed in production) */}
@@ -132,24 +134,31 @@ export const App = () => {
         <div
           style={{
             position: 'fixed',
-            top: '10px',
-            right: '10px',
-            background: 'rgba(0,0,0,0.8)',
-            color: 'white',
-            padding: '10px',
-            borderRadius: '5px',
-            fontSize: '12px',
-            zIndex: 1000
+            top: '16px',
+            right: '16px',
+            background: 'rgba(255,255,255,0.06)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.10)',
+            color: '#FFFFFF',
+            padding: '16px',
+            borderRadius: '16px',
+            fontSize: '0.75rem',
+            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+            fontWeight: 400,
+            lineHeight: 1.5,
+            zIndex: 1000,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.32)',
+            transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)'
           }}
         >
-          <div>🎤 Recording: {state.isRecording ? '✅' : '❌'}</div>
-          <div>🟢 VAD Detecting: {vadDetecting ? '✅' : '❌'}</div>
-          <div>🗣️ STT Listening: {stt.isListening ? '✅' : '❌'}</div>
-          <div>
-            � STT Allowed: {stt.allowed ? '✅' : '❌'} (noisy={!stt.allowed})
+          <div style={{ marginBottom: '4px' }}>🎤 Recording: {state.isRecording ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>🟢 VAD Detecting: {vadDetecting ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>🗣️ STT Listening: {stt.isListening ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>
+            🔇 STT Allowed: {stt.allowed ? '✅' : '❌'} (noisy={!stt.allowed})
           </div>
-          <div>🎯 STT Desired: {stt.desired ? '✅' : '❌'}</div>
-          <div>�📝 Interim: "{currentInterimTranscript}"</div>
+          <div style={{ marginBottom: '4px' }}>🎯 STT Desired: {stt.desired ? '✅' : '❌'}</div>
+          <div style={{ marginBottom: '4px' }}>📝 Interim: "{currentInterimTranscript}"</div>
           <div>🔊 TTS Speaking: {tts.isSpeaking ? '✅' : '❌'}</div>
         </div>
       )}
@@ -162,31 +171,55 @@ export const App = () => {
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
           flex: 1,
-          gap: '10px',
+          height: '100%',
+          gap: '24px',
+          padding: '0 24px 24px 24px',
           overflow: 'hidden'
         }}
       >
-        <ChatHistory messages={state.messages} />
-        <AvatarViewport sceneConfig={sceneConfig} avatarConfig={avatarConfig} />
+        <div
+          style={{
+            height: '100%',
+            width: isMobile ? '100%' : '36%',
+            minWidth: isMobile ? 'auto' : '300px'
+          }}
+        >
+          <ChatHistory messages={state.messages} />
+        </div>
+        <div
+          style={{
+            height: '100%',
+            width: isMobile ? '100%' : '64%',
+            minWidth: isMobile ? 'auto' : '400px'
+          }}
+        >
+          <AvatarViewport sceneConfig={sceneConfig} avatarConfig={avatarConfig} />
+        </div>
       </div>
 
-      <ChatInput
-        message={state.currentMessage}
-        onMessageChange={actions.updateCurrentMessage}
-        onSubmit={actions.submitMessage}
-        onKeyPress={handleKeyPress}
-        config={state.config}
-        isRecording={state.isRecording}
-        onToggleMicrophone={handleToggleMicrophone}
-        onToggleCloudMode={() => actions.updateConfig({ cloudMode: !state.config.cloudMode })}
-        onToggleBargeIn={() => actions.updateConfig({ bargeInEnabled: !state.config.bargeInEnabled })}
-        onToggleAutoSubmit={() => actions.updateConfig({ autoSubmitEnabled: !state.config.autoSubmitEnabled })}
-        onToggleAgent={() => actions.updateConfig({ agentEnabled: !state.config.agentEnabled })}
-        vadDetecting={vadDetecting}
-        sttTranscript={currentInterimTranscript}
-        ttsActive={tts.isSpeaking}
-        sttListening={stt.isListening}
-      />
+      <div
+        style={{
+          padding: '0 24px 24px 24px'
+        }}
+      >
+        <ChatInput
+          message={state.currentMessage}
+          onMessageChange={actions.updateCurrentMessage}
+          onSubmit={actions.submitMessage}
+          onKeyPress={handleKeyPress}
+          config={state.config}
+          isRecording={state.isRecording}
+          onToggleMicrophone={handleToggleMicrophone}
+          onToggleCloudMode={() => actions.updateConfig({ cloudMode: !state.config.cloudMode })}
+          onToggleBargeIn={() => actions.updateConfig({ bargeInEnabled: !state.config.bargeInEnabled })}
+          onToggleAutoSubmit={() => actions.updateConfig({ autoSubmitEnabled: !state.config.autoSubmitEnabled })}
+          onToggleAgent={() => actions.updateConfig({ agentEnabled: !state.config.agentEnabled })}
+          vadDetecting={vadDetecting}
+          sttTranscript={currentInterimTranscript}
+          ttsActive={tts.isSpeaking}
+          sttListening={stt.isListening}
+        />
+      </div>
     </div>
   )
 }

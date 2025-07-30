@@ -1,5 +1,5 @@
+import type { AvatarConfig, SceneConfig } from '../services/sceneTypes'
 import { Scene3D } from './Scene3D'
-import type { SceneConfig, AvatarConfig } from '../services/sceneTypes'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
@@ -11,18 +11,22 @@ export const AvatarViewport = ({ sceneConfig, avatarConfig }: AvatarViewportProp
     <div
       style={{
         flex: 1,
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#095D72',
-        borderRadius: '10px',
-        overflow: 'hidden'
+        background: 'linear-gradient(180deg, #0C1418 0%, #17252A 100%)',
+        backdropFilter: 'blur(16px)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.07)'
       }}
     >
       <div
         style={{
           width: '100%',
           height: '100%',
-          backgroundColor: '#2A2A2A',
+          backgroundColor: '#1B1E20',
           position: 'relative'
         }}
       >

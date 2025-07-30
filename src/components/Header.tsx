@@ -6,7 +6,7 @@ export const Header = ({ logoSrc = '/assets/2024_CI__Logo_Banner_Color.svg' }: H
   return (
     <div
       style={{
-        padding: '10px',
+        padding: '24px',
         textAlign: 'center'
       }}
     >
