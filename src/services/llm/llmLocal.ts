@@ -5,34 +5,12 @@
  * Handles breath chunking for TTS integration and interrupt management.
  */
 
-import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
-import type { LLMMessage, LLMResponse, WebLLMStreamChunk } from './llmTypes'
+import type { LLMParams, LLMResult, WebLLMStreamChunk } from './llmTypes'
 
-// Constants
 const MIN_BREATH_LENGTH = 20
 
-export interface LLMLocalParams {
-  userMessage: string
-  interrupt: number
-  messages: LLMMessage[]
-  engine: WebWorkerMLCEngine
-  latestInterrupt: number
-  responseCallback?: (response: LLMResponse) => void
-  updateMessages?: (userMessage: string, assistantMessage: string) => void
-  setThinking?: (thinking: boolean) => void
-}
-
-export interface LLMLocalResult {
-  success: boolean
-  fullResponse?: string
-  error?: Error
-}
-
-/**
- * Process user input using local WebLLM engine
- */
-export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> {
+export async function llmLocal(params: LLMParams): Promise<LLMResult> {
   const { userMessage, interrupt, messages, engine, latestInterrupt, responseCallback, updateMessages, setThinking } =
     params
 
@@ -95,7 +73,6 @@ export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> 
   try {
     const allMessages = [...messages, { role: 'user' as const, content: userMessage }]
 
-    // Create chat completion request
     const requestMessages = allMessages.map((msg) => ({
       role: msg.role,
       content: msg.content
@@ -109,12 +86,10 @@ export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> 
 
     console.log(asyncChunkGenerator)
 
-    // Type guard for async iterable
     const isAsyncIterable = (obj: unknown): obj is AsyncIterable<WebLLMStreamChunk> => {
       return obj != null && typeof obj === 'object' && Symbol.asyncIterator in obj
     }
 
-    // Handle streaming response
     if (isAsyncIterable(asyncChunkGenerator)) {
       for await (const chunk of asyncChunkGenerator) {
         console.log({ chunk })
@@ -124,7 +99,6 @@ export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> 
         breathHelper(content, finished === 'stop')
       }
     } else {
-      // Non-streaming response
       const response = asyncChunkGenerator as unknown as webllm.ChatCompletion
       const choices = response.choices
       if (choices && choices.length) {
@@ -134,7 +108,6 @@ export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> 
       }
     }
 
-    // Get the complete message and add to history
     const paragraph = await engine.getMessage()
     console.log({ paragraph })
 

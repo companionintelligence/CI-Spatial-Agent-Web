@@ -15,7 +15,6 @@ export interface LLMConfig {
   ollama_model?: string
 }
 
-// WebLLM response interfaces
 export interface WebLLMStreamChunk {
   choices: Array<{
     delta: {
@@ -36,7 +35,6 @@ export interface WebLLMNonStreamResponse {
 
 export type WebLLMResponse = AsyncIterable<WebLLMStreamChunk> & WebLLMNonStreamResponse
 
-// WebLLM Engine interface for type safety
 export interface WebLLMEngine {
   chat: {
     completions: {
@@ -83,6 +81,30 @@ export interface LLMPerformRequest {
   interrupt: number
 }
 
+export interface LLMParams {
+  userMessage: string
+  interrupt: number
+  messages: LLMMessage[]
+  latestInterrupt: number
+  responseCallback?: (response: LLMResponse) => void
+  updateMessages?: (userMessage: string, assistantMessage: string) => void
+  setThinking?: (thinking: boolean) => void
+  statusCallback?: (update: LLMStatusUpdate) => void
+  processThinkBlocks?: (input: string) => { cleanedResponse: string; thinkBlocks: string[] }
+  engine?: WebWorkerMLCEngine
+  llmUrl?: string
+  llmModel?: string
+  llmAuth?: string
+  isFlowise?: boolean
+}
+
+export interface LLMResult {
+  success: boolean
+  fullResponse?: string
+  thinkBlocks?: string[]
+  error?: Error
+}
+
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
   llm_local: import.meta.env.VITE_LOCAL_LLM_ENABLED !== 'false',
   llm_model: import.meta.env.VITE_DEFAULT_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
@@ -93,7 +115,6 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b'
 }
 
-// Available local models (matching archive implementation)
 export const AVAILABLE_LOCAL_MODELS = [
   'gemma-2-2b-it-q4f16_1-MLC',
   'Llama-3.1-8B-Instruct-q4f32_1-MLC',
@@ -101,7 +122,6 @@ export const AVAILABLE_LOCAL_MODELS = [
   'SmolLM2-360M-Instruct-q4f16_1-MLC'
 ]
 
-// Common remote models
 export const COMMON_REMOTE_MODELS = [
   'gpt-4',
   'gpt-4-turbo',
@@ -111,7 +131,6 @@ export const COMMON_REMOTE_MODELS = [
   'claude-3-haiku-20240307'
 ]
 
-// Common Ollama models
 export const COMMON_OLLAMA_MODELS = [
   'llama3.2',
   'llama3.2:1b',

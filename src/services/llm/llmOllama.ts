@@ -6,44 +6,26 @@
  */
 
 import { Ollama } from 'ollama/browser'
-import type { LLMMessage, LLMResponse } from './llmTypes'
+import type { LLMParams, LLMResult } from './llmTypes'
 
-// Constants
 const MIN_BREATH_LENGTH = 20
 
-export interface LLMOllamaParams {
-  userMessage: string
-  interrupt: number
-  messages: LLMMessage[]
-  ollamaUrl: string
-  ollamaModel?: string
-  latestInterrupt: number
-  responseCallback?: (response: LLMResponse) => void
-  updateMessages?: (userMessage: string, assistantMessage: string) => void
-  setThinking?: (thinking: boolean) => void
-}
-
-export interface LLMOllamaResult {
-  success: boolean
-  fullResponse?: string
-  error?: Error
-}
-
-/**
- * Process user input using Ollama JavaScript library
- */
-export async function llmOllama(params: LLMOllamaParams): Promise<LLMOllamaResult> {
+export async function llmOllama(params: LLMParams): Promise<LLMResult> {
   const {
     userMessage,
     interrupt,
     messages,
-    ollamaUrl,
-    ollamaModel = 'llama3.2',
+    llmUrl,
+    llmModel = 'llama3.2',
     latestInterrupt,
     responseCallback,
     updateMessages,
     setThinking
   } = params
+
+  if (!llmUrl) {
+    return { success: false, error: new Error('Ollama URL is required') }
+  }
 
   setThinking?.(true)
 
@@ -94,33 +76,28 @@ export async function llmOllama(params: LLMOllamaParams): Promise<LLMOllamaResul
   }
 
   try {
-    // Initialize Ollama client with custom host
     const ollama = new Ollama({
-      host: ollamaUrl
+      host: llmUrl
     })
 
     const allMessages = [...messages, { role: 'user' as const, content: userMessage }]
 
-    // Convert messages to ollama format
     const requestMessages = allMessages.map((msg) => ({
       role: msg.role,
       content: msg.content
     }))
 
-    console.log('LLM - sending Ollama request to', ollamaUrl, 'with model', ollamaModel)
+    console.log('LLM - sending Ollama request to', llmUrl, 'with model', llmModel)
 
-    // Use streaming chat completion
     const response = await ollama.chat({
-      model: ollamaModel,
+      model: llmModel,
       messages: requestMessages,
       stream: true
     })
 
     let fullResponse = ''
 
-    // Handle streaming response
     for await (const chunk of response) {
-      // Check if request is still current
       if (latestInterrupt > interrupt) {
         console.log('LLM: Ollama request outdated, stopping')
         break
@@ -129,12 +106,10 @@ export async function llmOllama(params: LLMOllamaParams): Promise<LLMOllamaResul
       if (chunk.message?.content) {
         const content = chunk.message.content
         fullResponse += content
-        // @todo chunk.done seems to never be true in streaming mode
         breathHelper(content, chunk.done)
       }
     }
 
-    // Update message history
     updateMessages?.(userMessage, fullResponse)
     setThinking?.(false)
 

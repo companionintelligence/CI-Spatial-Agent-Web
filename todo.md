@@ -1,6 +1,6 @@
 # CI-XR-Web Implementation Plan
 
-`/archive` contains the old plain javascript implementation. Our goal with the new project structure is to modernise and rebuild this using react, typescript and react-three-fiber.
+`/archive` contains the old plain javascript implementation. Our goal with the new project structure is to modernise and rebuild this using react and typescript.
 
 DO NOT add notes to this file, just check off checkboxes as progress is made.
 

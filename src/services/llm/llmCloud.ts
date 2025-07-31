@@ -5,33 +5,8 @@
  * Supports both standard chat completions and Flowise integration.
  */
 
-import type { LLMMessage, LLMResponse } from './llmTypes'
+import type { LLMParams, LLMResult } from './llmTypes'
 
-export interface LLMCloudParams {
-  userMessage: string
-  interrupt: number
-  messages: LLMMessage[]
-  llmUrl: string
-  llmModel?: string
-  llmAuth?: string
-  isFlowise?: boolean
-  latestInterrupt: number
-  responseCallback?: (response: LLMResponse) => void
-  updateMessages?: (userMessage: string, assistantMessage: string) => void
-  processThinkBlocks?: (input: string) => { cleanedResponse: string; thinkBlocks: string[] }
-  statusCallback?: (update: { color: 'ready' | 'loading' | 'error'; text: string }) => void
-}
-
-export interface LLMCloudResult {
-  success: boolean
-  fullResponse?: string
-  thinkBlocks?: string[]
-  error?: Error
-}
-
-/**
- * Process think blocks from models like DeepSeek
- */
 function defaultProcessThinkBlocks(input: string) {
   const thinkBlocks: string[] = []
 
@@ -43,10 +18,7 @@ function defaultProcessThinkBlocks(input: string) {
   return { cleanedResponse, thinkBlocks }
 }
 
-/**
- * Process user input using remote/cloud LLM API
- */
-export async function llmCloud(params: LLMCloudParams): Promise<LLMCloudResult> {
+export async function llmCloud(params: LLMParams): Promise<LLMResult> {
   const {
     userMessage,
     interrupt,
@@ -61,6 +33,10 @@ export async function llmCloud(params: LLMCloudParams): Promise<LLMCloudResult> 
     processThinkBlocks = defaultProcessThinkBlocks,
     statusCallback
   } = params
+
+  if (!llmUrl) {
+    return { success: false, error: new Error('LLM URL is required') }
+  }
 
   const allMessages = [...messages, { role: 'user' as const, content: userMessage }]
 
@@ -89,7 +65,6 @@ export async function llmCloud(params: LLMCloudParams): Promise<LLMCloudResult> 
       return { success: false, error: new Error(`HTTP ${response.status}: ${response.statusText}`) }
     }
 
-    // Check if this request is still current
     if (interrupt < latestInterrupt) {
       console.log('LLM: Cloud request outdated, stopping')
       return { success: false, error: new Error('Request outdated') }
@@ -97,7 +72,6 @@ export async function llmCloud(params: LLMCloudParams): Promise<LLMCloudResult> 
 
     const rcounter = 1000
     let bcounter = 0
-
     const json = await response.json()
 
     let sentence: string | null = null
@@ -121,10 +95,8 @@ export async function llmCloud(params: LLMCloudParams): Promise<LLMCloudResult> 
         return { success: true, fullResponse: '', thinkBlocks }
       }
 
-      // Update messages
       updateMessages?.(userMessage, cleanedResponse)
 
-      // Split response into fragments for TTS
       const fragments = cleanedResponse.split(/[.!?]|,/)
       fragments.forEach((breath) => {
         if (responseCallback && breath.trim()) {

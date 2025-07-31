@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { STTConfig } from './audioTypes'
-import { defaultSTTConfig } from './audioTypes'
+import type { STTConfig } from '../audioTypes'
+import { defaultSTTConfig } from '../audioTypes'
 
 interface STTPerformResult {
   text: string
@@ -20,7 +20,6 @@ interface UseSTTServiceProps {
   onInterimTranscript?: (text: string) => void
 }
 
-// Define SpeechRecognition types since they might not be available globally
 interface SpeechRecognitionAlternative {
   transcript: string
   confidence: number
@@ -54,14 +53,12 @@ interface BaseSpeechRecognition {
   onresult: ((event: SpeechRecognitionEventType) => void) | null
 }
 
-// Extended SpeechRecognition interface with our custom methods
 interface ExtendedSpeechRecognition extends BaseSpeechRecognition {
   start2: () => void
   stop2: () => void
   kick: (event?: Event) => void
 }
 
-// Window interface for SpeechRecognition
 interface WindowWithSpeech extends Window {
   SpeechRecognition?: { new (): BaseSpeechRecognition }
   webkitSpeechRecognition?: { new (): BaseSpeechRecognition }
@@ -70,8 +67,8 @@ interface WindowWithSpeech extends Window {
 export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceProps = {}) => {
   const [config, setConfig] = useState<STTConfig>(defaultSTTConfig)
   const [isListening, setIsListening] = useState(false)
-  const [allowed, setAllowed] = useState(true) // corresponds to noisy config (inverted)
-  const [desired, setDesired] = useState(false) // corresponds to microphone config
+  const [allowed, setAllowed] = useState(true)
+  const [desired, setDesired] = useState(false)
 
   const recognitionRef = useRef<ExtendedSpeechRecognition | null>(null)
   const rcounterRef = useRef(1)
@@ -96,36 +93,30 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
 
     const recognition = new SpeechRecognitionClass() as ExtendedSpeechRecognition
 
-    // Configure recognition exactly like the archive
     recognition.lang = 'en-US'
     recognition.continuous = true
     recognition.interimResults = true
 
-    // Add custom start2 method
     const start2 = () => {
       if (activeRef.current) return
       try {
         recognition.start()
-        // console.log('STT: recognizer start')
       } catch {
         console.error('STT: recognizer started but with error')
       }
       activeRef.current = true
     }
 
-    // Add custom stop2 method
     const stop2 = () => {
       if (!activeRef.current) return
       try {
         recognition.stop()
-        // console.log('STT: recognizer stopped')
       } catch {
         console.error('STT: recognizer stopped but with error')
       }
       activeRef.current = false
     }
 
-    // Add kick method for auto-restart
     const kick = (event?: Event) => {
       if (event) {
         console.error('STT: speech recognition error, restarting', event)
@@ -138,7 +129,6 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
       }, 200)
     }
 
-    // Set up event handlers exactly like archive
     recognition.onerror = kick
 
     recognition.onstart = () => {
@@ -151,10 +141,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
       activeRef.current = false
     }
 
-    // Handle results exactly like the archive
     recognition.onresult = (event: SpeechRecognitionEventType) => {
-      console.log('STT: onresult event:', event)
-      // Only process the first result like the archive (i < 1 condition)
       for (let i = event.resultIndex; i < 1 && i < event.results.length; ++i) {
         const data = event.results[i]
         const text = data[0].transcript
@@ -175,10 +162,8 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
           bargein: true
         }
 
-        // Call the perform callback
         onPerform?.(performResult)
 
-        // Call interim transcript callback for non-final results
         if (!final) {
           onInterimTranscript?.(text.trim())
           bcounterRef.current++
@@ -186,12 +171,11 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
           onInterimTranscript?.('')
           rcounterRef.current++
           bcounterRef.current = 1
-          kick() // restart recognition after final result
+          kick()
         }
       }
     }
 
-    // Store methods on the recognition object like the archive
     recognition.start2 = start2
     recognition.stop2 = stop2
     recognition.kick = kick
@@ -223,7 +207,6 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
     [initRecognition]
   )
 
-  // Update listening state when allowed/desired changes
   useEffect(() => {
     updateListening()
   }, [updateListening])
@@ -232,7 +215,6 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
     setConfig((prev) => ({ ...prev, ...newConfig }))
   }, [])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -250,7 +232,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
       setAllowed: setAllowedState,
       setDesired: setDesiredState,
       updateConfig,
-      // Legacy methods for compatibility
+
       startListening: () => setDesiredState(true),
       stopListening: () => setDesiredState(false)
     }

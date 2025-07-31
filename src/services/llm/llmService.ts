@@ -65,7 +65,7 @@ export const useLLMService = () => {
   const statusCallbackRef = useRef<((update: LLMStatusUpdate) => void) | null>(null)
   const responseCallbackRef = useRef<((response: LLMResponse) => void) | null>(null)
 
-  const processThinkBlocks = (input: string) => {
+  const processThinkBlocks = useCallback((input: string) => {
     const thinkBlocks: string[] = []
 
     const cleanedResponse = input.replace(/<think>(.*?)<\/think>/gs, (_, content) => {
@@ -74,7 +74,7 @@ export const useLLMService = () => {
     })
 
     return { cleanedResponse, thinkBlocks }
-  }
+  }, [])
 
   const load = useCallback(async () => {
     if (state.loading) return
@@ -135,110 +135,8 @@ export const useLLMService = () => {
     }
   }, [state.loading, state.ready])
 
-  const llmRemote = useCallback(
-    async (userMessage: string, interrupt: number) => {
-      const result = await llmCloud({
-        userMessage,
-        interrupt,
-        messages: state.messages,
-        llmUrl: config.llm_url!,
-        llmModel: config.llm_model,
-        llmAuth: config.llm_auth,
-        isFlowise: config.llm_flowise,
-        latestInterrupt: state._latest_interrupt,
-        responseCallback: responseCallbackRef.current || undefined,
-        updateMessages: (userMsg, assistantMsg) => {
-          setState((prev) => ({
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { role: 'user', content: userMsg },
-              { role: 'assistant', content: assistantMsg }
-            ]
-          }))
-        },
-        processThinkBlocks,
-        statusCallback: statusCallbackRef.current || undefined
-      })
-
-      if (!result.success && result.error) {
-        console.error('LLM: Remote reasoning failed:', result.error)
-      }
-    },
-    [state.messages, state._latest_interrupt, config]
-  )
-
-  const llmOllamaWrapper = useCallback(
-    async (userMessage: string, interrupt: number) => {
-      const result = await llmOllama({
-        userMessage,
-        interrupt,
-        messages: state.messages,
-        ollamaUrl: config.ollama_url!,
-        ollamaModel: config.ollama_model,
-        latestInterrupt: state._latest_interrupt,
-        responseCallback: responseCallbackRef.current || undefined,
-        updateMessages: (userMsg, assistantMsg) => {
-          setState((prev) => ({
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { role: 'user', content: userMsg },
-              { role: 'assistant', content: assistantMsg }
-            ]
-          }))
-        },
-        setThinking: (thinking) => {
-          setState((prev) => ({ ...prev, thinking }))
-        }
-      })
-
-      if (!result.success && result.error) {
-        console.error('LLM: Ollama reasoning failed:', result.error)
-      }
-    },
-    [state._latest_interrupt, state.messages, config.ollama_url, config.ollama_model]
-  )
-
-  const llmLocalWrapper = useCallback(
-    async (userMessage: string, interrupt: number) => {
-      if (!state.engine || !state.ready) {
-        console.error('LLM: Engine not ready')
-        return
-      }
-
-      const result = await llmLocal({
-        userMessage,
-        interrupt,
-        messages: state.messages,
-        engine: state.engine,
-        latestInterrupt: state._latest_interrupt,
-        responseCallback: responseCallbackRef.current || undefined,
-        updateMessages: (userMsg, assistantMsg) => {
-          setState((prev) => ({
-            ...prev,
-            messages: [
-              ...prev.messages,
-              { role: 'user', content: userMsg },
-              { role: 'assistant', content: assistantMsg }
-            ]
-          }))
-        },
-        setThinking: (thinking) => {
-          setState((prev) => ({ ...prev, thinking }))
-        }
-      })
-
-      if (!result.success && result.error) {
-        console.error('LLM: Local reasoning failed:', result.error)
-      }
-    },
-    [state.engine, state.ready, state._latest_interrupt, state.messages]
-  )
-
   const processUserInput = useCallback(
     async (request: LLMPerformRequest) => {
-      // Only process final utterances with bargein enabled
       if (!request.final || !request.bargein) return
 
       const text = request.text?.trim()
@@ -246,41 +144,71 @@ export const useLLMService = () => {
 
       console.log('LLM - processing user input:', text, 'time:', request.interrupt)
 
-      // Stop local reasoning if in progress
       if (state.thinking && state.engine && state.engine.interruptGenerate) {
         console.log('LLM - interrupting previous generation')
         state.engine.interruptGenerate()
         setState((prev) => ({ ...prev, thinking: false }))
       }
 
-      // Load local model if needed (only for WebLLM, Ollama doesn't need loading)
       if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
         console.log('LLM - loading WebLLM model for first use')
         await load()
         return
       }
 
-      // Don't process if we're still loading (only relevant for WebLLM)
       if (state.loading) {
         console.log('LLM - still loading WebLLM, skipping request')
         return
       }
 
-      // Update latest interrupt timestamp
       setState((prev) => ({ ...prev, _latest_interrupt: request.interrupt }))
 
       console.log('LLM - routing to', config.llm_local ? 'local' : 'remote', 'implementation')
 
-      // Route to appropriate LLM implementation
+      const baseParams = {
+        userMessage: text,
+        interrupt: request.interrupt,
+        messages: state.messages,
+        latestInterrupt: state._latest_interrupt,
+        responseCallback: responseCallbackRef.current || undefined,
+        updateMessages: (userMsg: string, assistantMsg: string) => {
+          setState((prev) => ({
+            ...prev,
+            messages: [
+              ...prev.messages,
+              { role: 'user', content: userMsg },
+              { role: 'assistant', content: assistantMsg }
+            ]
+          }))
+        },
+        setThinking: (thinking: boolean) => {
+          setState((prev) => ({ ...prev, thinking }))
+        },
+        statusCallback: statusCallbackRef.current || undefined,
+        processThinkBlocks
+      }
+
       try {
         if (config.llm_local) {
-          // Check if Ollama is configured and available
           if (config.ollama_url && config.ollama_url.trim()) {
             console.log('LLM - using Ollama for local processing')
-            await llmOllamaWrapper(text, request.interrupt)
+            const result = await llmOllama({
+              ...baseParams,
+              llmUrl: config.ollama_url,
+              llmModel: config.ollama_model
+            })
+            if (!result.success && result.error) {
+              console.error('LLM: Ollama reasoning failed:', result.error)
+            }
           } else if (state.ready && state.engine) {
             console.log('LLM - using WebLLM for local processing')
-            await llmLocalWrapper(text, request.interrupt)
+            const result = await llmLocal({
+              ...baseParams,
+              engine: state.engine
+            })
+            if (!result.success && result.error) {
+              console.error('LLM: Local reasoning failed:', result.error)
+            }
           } else {
             console.error('LLM - no local options available')
             if (statusCallbackRef.current) {
@@ -292,7 +220,16 @@ export const useLLMService = () => {
             return
           }
         } else {
-          await llmRemote(text, request.interrupt)
+          const result = await llmCloud({
+            ...baseParams,
+            llmUrl: config.llm_url!,
+            llmModel: config.llm_model,
+            llmAuth: config.llm_auth,
+            isFlowise: config.llm_flowise
+          })
+          if (!result.success && result.error) {
+            console.error('LLM: Remote reasoning failed:', result.error)
+          }
         }
       } catch (error) {
         console.error('LLM - error processing input:', error)
@@ -309,12 +246,11 @@ export const useLLMService = () => {
       state.engine,
       state.ready,
       state.loading,
-      config.llm_local,
-      config.ollama_url,
+      state.messages,
+      state._latest_interrupt,
+      config,
       load,
-      llmLocalWrapper,
-      llmRemote,
-      llmOllamaWrapper
+      processThinkBlocks
     ]
   )
 

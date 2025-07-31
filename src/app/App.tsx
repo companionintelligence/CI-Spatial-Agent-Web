@@ -2,20 +2,17 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatHistory } from '../components/ChatHistory'
 import { Header } from '../components/Header'
-import {
-  useChatService,
-  useLLMService,
-  useResponsiveLayout,
-  useSceneService,
-  useSTTService,
-  useTTSService,
-  useVADService,
-  type LLMResponse,
-  type LLMStatusUpdate
-} from '../services'
+import { useChatService } from '../services/chatService'
+import { useResponsiveLayout } from '../services/layoutService'
+import { useLLMService } from '../services/llm/llmService'
+import type { LLMResponse, LLMStatusUpdate } from '../services/llm/llmTypes'
+import { useSceneService } from '../services/sceneService'
+import { useSTTService } from '../services/stt/sttService'
+import { useTTSService } from '../services/tts/ttsService'
+import { useVADService } from '../services/stt/vadService'
 
 export const App = () => {
-  const { state, actions } = useChatService()
+  const chat = useChatService()
   const { isMobile } = useResponsiveLayout()
   const { sceneConfig, avatarConfig } = useSceneService()
 
@@ -25,6 +22,31 @@ export const App = () => {
 
   const llmService = useLLMService()
   const interruptCounterRef = useRef(Date.now())
+
+  const submitMessage = React.useCallback(
+    (message: string) => {
+      console.log('Submitting message:', message)
+      if (message.trim()) {
+        const userMessage = message.trim()
+
+        chat.actions.addMessage(userMessage, true)
+        chat.actions.clearCurrentMessage()
+
+        const interrupt = Date.now()
+        interruptCounterRef.current = interrupt
+
+        llmService.actions.processUserInput({
+          text: userMessage,
+          human: true,
+          final: true,
+          bargein: chat.state.config.bargeInEnabled,
+          interrupt
+        })
+        chat.actions.clearCurrentMessage()
+      }
+    },
+    [chat.state.config.bargeInEnabled, chat.actions, llmService.actions]
+  )
 
   const tts = useTTSService()
 
@@ -36,31 +58,28 @@ export const App = () => {
 
   const stt = useSTTService({
     onPerform: (result) => {
-      if (state.currentMessage.trim().length > 0) {
-        return
-      }
-
-      if (result.text.startsWith('stop')) {
-        const interrupt = Date.now()
-        interruptCounterRef.current = interrupt
-
-        if (tts.isSpeaking) {
-          tts.actions.stopSpeaking()
-        }
-
-        console.log('STT: Stop command detected - barge-in activated')
-        return
-      }
+      console.log('STT: Result received:', result)
 
       if (result.final) {
-        if (state.config.autoSubmitEnabled) {
-          actions.updateCurrentMessage(result.text)
-          setTimeout(() => {
-            actions.submitMessage()
-            setCurrentInterimTranscript('')
-          }, 100)
+        if (result.text.trim() === 'stop') {
+          const interrupt = Date.now()
+          interruptCounterRef.current = interrupt
+
+          if (tts.isSpeaking) {
+            tts.actions.stopSpeaking()
+          }
+
+          console.log('STT: Stop command detected - barge-in activated')
+          return
+        }
+
+        if (chat.state.config.autoSubmitEnabled) {
+          chat.actions.updateCurrentMessage(result.text)
+          setCurrentInterimTranscript('')
+          /** @todo use proper state handling rather than timeout */
+          submitMessage(result.text)
         } else {
-          actions.updateCurrentMessage(result.text)
+          chat.actions.updateCurrentMessage(result.text)
           setCurrentInterimTranscript('')
         }
       } else {
@@ -79,15 +98,15 @@ export const App = () => {
       const trimmedText = response.text.trim()
       if (trimmedText) {
         const breath = response.breath.trim()
-        if (state.config.agentEnabled && breath) {
+        if (chat.state.config.agentEnabled && breath) {
           tts.actions.speak(breath)
         }
         if (response.final) {
-          actions.addMessage(trimmedText, false)
+          chat.actions.addMessage(trimmedText, false)
         }
       }
     }
-  }, [state.config.agentEnabled, tts.actions, actions])
+  }, [chat.state.config.agentEnabled, tts.actions, chat.actions])
 
   const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
     setLlmStatus(status)
@@ -99,35 +118,11 @@ export const App = () => {
   }, [llmService.actions, handleStatusUpdate])
 
   useEffect(() => {
-    if (llmService.config.llm_local === !state.config.cloudMode) return
+    if (llmService.config.llm_local === !chat.state.config.cloudMode) return
     llmService.actions.updateConfig({
-      llm_local: !state.config.cloudMode
+      llm_local: !chat.state.config.cloudMode
     })
-  }, [llmService.actions, llmService.config.llm_local, state.config.cloudMode])
-
-  const submitMessage = React.useCallback(() => {
-    if (state.currentMessage.trim()) {
-      const userMessage = state.currentMessage.trim()
-
-      actions.addMessage(userMessage, true)
-      actions.clearCurrentMessage()
-
-      const interrupt = Date.now()
-      interruptCounterRef.current = interrupt
-
-      llmService.actions.processUserInput({
-        text: userMessage,
-        human: true,
-        final: true,
-        bargein: state.config.bargeInEnabled,
-        interrupt
-      })
-    }
-  }, [state.currentMessage, state.config.bargeInEnabled, actions, llmService.actions])
-
-  React.useEffect(() => {
-    actions.submitMessage = submitMessage
-  }, [submitMessage, actions])
+  }, [llmService.actions, llmService.config.llm_local, chat.state.config.cloudMode])
 
   React.useEffect(() => {
     stt.actions.setAllowed(!tts.isSpeaking)
@@ -136,15 +131,15 @@ export const App = () => {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      actions.submitMessage()
+      submitMessage(chat.state.currentMessage)
     }
   }
 
   const handleToggleMicrophone = () => {
-    const newRecordingState = !state.isRecording
+    const newRecordingState = !chat.state.isRecording
 
-    actions.setRecording(newRecordingState)
-    actions.updateConfig({ microphone: newRecordingState })
+    chat.actions.setRecording(newRecordingState)
+    chat.actions.updateConfig({ microphone: newRecordingState })
 
     vad.actions.updateConfig({ microphoneEnabled: newRecordingState })
 
@@ -167,55 +162,6 @@ export const App = () => {
         lineHeight: 1.5
       }}
     >
-      {process.env.NODE_ENV === 'development' && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '16px',
-            right: '16px',
-            background: 'rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,0.10)',
-            color: '#FFFFFF',
-            padding: '16px',
-            borderRadius: '16px',
-            fontSize: '0.75rem',
-            fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-            fontWeight: 400,
-            lineHeight: 1.5,
-            zIndex: 1000,
-            boxShadow: '0 8px 40px rgba(0,0,0,0.32)',
-            transition: 'all 150ms cubic-bezier(0.4, 0, 0.2, 1)'
-          }}
-        >
-          <div style={{ marginBottom: '4px' }}>🎤 Recording: {state.isRecording ? '✅' : '❌'}</div>
-          <div style={{ marginBottom: '4px' }}>🟢 VAD Detecting: {vadDetecting ? '✅' : '❌'}</div>
-          <div style={{ marginBottom: '4px' }}>🗣️ STT Listening: {stt.isListening ? '✅' : '❌'}</div>
-          <div style={{ marginBottom: '4px' }}>
-            🔇 STT Allowed: {stt.allowed ? '✅' : '❌'} (noisy={!stt.allowed})
-          </div>
-          <div style={{ marginBottom: '4px' }}>🎯 STT Desired: {stt.desired ? '✅' : '❌'}</div>
-          <div style={{ marginBottom: '4px' }}>📝 Interim: "{currentInterimTranscript}"</div>
-          <div style={{ marginBottom: '4px' }}>🔊 TTS Speaking: {tts.isSpeaking ? '✅' : '❌'}</div>
-          <div style={{ marginBottom: '4px' }}>
-            🤖 LLM Mode: {state.config.cloudMode ? 'Cloud' : 'Local'}
-            {!state.config.cloudMode && (
-              <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>
-                ({import.meta.env.VITE_OLLAMA_API_URL ? 'Ollama→WebLLM' : 'WebLLM'})
-              </span>
-            )}
-          </div>
-          <div
-            style={{
-              marginBottom: '4px',
-              color: llmStatus.color === 'ready' ? '#4ade80' : llmStatus.color === 'loading' ? '#fbbf24' : '#ef4444'
-            }}
-          >
-            🧠 LLM: {llmStatus.text}
-          </div>
-          <div>💭 LLM Thinking: {llmService.state.thinking ? '✅' : '❌'}</div>
-        </div>
-      )}
       <Header />
       <div
         style={{
@@ -236,18 +182,20 @@ export const App = () => {
           }}
         >
           <ChatHistory
-            messages={state.messages}
-            message={state.currentMessage}
-            onMessageChange={actions.updateCurrentMessage}
-            onSubmit={actions.submitMessage}
+            messages={chat.state.messages}
+            message={chat.state.currentMessage}
+            onMessageChange={chat.actions.updateCurrentMessage}
+            onSubmit={submitMessage}
             onKeyPress={handleKeyPress}
-            config={state.config}
-            isRecording={state.isRecording}
+            config={chat.state.config}
+            isRecording={chat.state.isRecording}
             onToggleMicrophone={handleToggleMicrophone}
-            onToggleCloudMode={() => actions.updateConfig({ cloudMode: !state.config.cloudMode })}
-            onToggleBargeIn={() => actions.updateConfig({ bargeInEnabled: !state.config.bargeInEnabled })}
-            onToggleAutoSubmit={() => actions.updateConfig({ autoSubmitEnabled: !state.config.autoSubmitEnabled })}
-            onToggleAgent={() => actions.updateConfig({ agentEnabled: !state.config.agentEnabled })}
+            onToggleCloudMode={() => chat.actions.updateConfig({ cloudMode: !chat.state.config.cloudMode })}
+            onToggleBargeIn={() => chat.actions.updateConfig({ bargeInEnabled: !chat.state.config.bargeInEnabled })}
+            onToggleAutoSubmit={() =>
+              chat.actions.updateConfig({ autoSubmitEnabled: !chat.state.config.autoSubmitEnabled })
+            }
+            onToggleAgent={() => chat.actions.updateConfig({ agentEnabled: !chat.state.config.agentEnabled })}
             vadDetecting={vadDetecting}
             sttTranscript={currentInterimTranscript}
             ttsActive={tts.isSpeaking}

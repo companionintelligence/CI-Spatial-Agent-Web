@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AudioConfig, VADResult } from './audioTypes'
-import { defaultAudioConfig } from './audioTypes'
+import type { AudioConfig, VADResult } from '../audioTypes'
+import { defaultAudioConfig } from '../audioTypes'
 
 // Type for VAD instance
 interface VADInstance {

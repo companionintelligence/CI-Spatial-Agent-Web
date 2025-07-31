@@ -6,7 +6,7 @@ interface ChatHistoryProps {
   // Chat input props
   message: string
   onMessageChange: (message: string) => void
-  onSubmit: () => void
+  onSubmit: (message: string) => void
   onKeyPress: (e: React.KeyboardEvent) => void
   config: AppConfig
   isRecording: boolean

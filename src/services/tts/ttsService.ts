@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import type { TTSConfig } from './audioTypes'
-import { defaultTTSConfig } from './audioTypes'
+import type { TTSConfig } from '../audioTypes'
+import { defaultTTSConfig } from '../audioTypes'
 
 export const useTTSService = () => {
   const [config, setConfig] = useState<TTSConfig>(defaultTTSConfig)
@@ -9,7 +9,6 @@ export const useTTSService = () => {
 
   const speakLocal = useCallback(
     async (text: string): Promise<void> => {
-      // Use Web Speech API for local TTS
       return new Promise((resolve, reject) => {
         if (!('speechSynthesis' in window)) {
           reject(new Error('Speech synthesis not supported'))
@@ -18,7 +17,6 @@ export const useTTSService = () => {
 
         const utterance = new SpeechSynthesisUtterance(text)
 
-        // Configure voice
         const voices = speechSynthesis.getVoices()
         const voice = voices.find((v) => v.name.includes('en')) || voices[0]
         if (voice) utterance.voice = voice
@@ -44,9 +42,7 @@ export const useTTSService = () => {
 
   const speakRemote = useCallback(
     async (text: string): Promise<void> => {
-      // Placeholder for remote TTS implementation
-      // This would integrate with OpenAI TTS, ElevenLabs, etc.
-      console.log('Remote TTS not implemented yet, falling back to local')
+      console.warn('Remote TTS not implemented yet, falling back to local')
       return speakLocal(text)
     },
     [speakLocal]
@@ -59,10 +55,8 @@ export const useTTSService = () => {
       try {
         setIsSpeaking(true)
         if (config.remote) {
-          // Use remote TTS service (OpenAI, ElevenLabs, etc.)
           await speakRemote(text)
         } else {
-          // Use local TTS (Web Speech API or local service)
           await speakLocal(text)
         }
       } catch (error) {

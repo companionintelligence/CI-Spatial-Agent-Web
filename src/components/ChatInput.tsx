@@ -4,7 +4,7 @@ import { ControlButton } from './ControlButton'
 interface ChatInputProps {
   message: string
   onMessageChange: (message: string) => void
-  onSubmit: () => void
+  onSubmit: (message: string) => void
   onKeyPress: (e: React.KeyboardEvent) => void
   config: AppConfig
   isRecording: boolean
@@ -99,7 +99,7 @@ export const ChatInput = ({
             zIndex: 1
           }}
         >
-          <ControlButton onClick={onSubmit}>➤</ControlButton>
+          <ControlButton onClick={() => onSubmit(message)}>➤</ControlButton>
         </div>
       </div>
 
