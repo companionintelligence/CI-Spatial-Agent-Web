@@ -73,7 +73,6 @@ export const useTTSService = () => {
       speechSynthesis.cancel()
     }
     setIsSpeaking(false)
-    console.log('TTS: Stopped speaking')
   }, [])
 
   const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {

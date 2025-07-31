@@ -1,9 +1,10 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
+import { useSimpleStore } from '../utils/SimpleStore'
 import type { AppConfig, AppState, ChatMessage } from './types'
 import { initialState } from './types'
 
 export const useChatService = () => {
-  const [state, setState] = useState<AppState>(initialState)
+  const [state, setState] = useSimpleStore<AppState>(() => initialState)
 
   const addMessage = useCallback((text: string, isUser: boolean) => {
     const newMessage: ChatMessage = {
@@ -13,47 +14,63 @@ export const useChatService = () => {
       timestamp: Date.now()
     }
 
-    setState((prev) => ({
-      ...prev,
-      messages: [...prev.messages, newMessage]
-    }))
+    setState((prev) => {
+      prev.messages.push(newMessage)
+      return prev
+    })
   }, [])
 
+  const streamMessage = useCallback(
+    (fragment: string, finished: boolean) => {
+      const lastLLMStreamingMessage = state.messages.findIndex(
+        (msg) => msg.isUser === false && msg.text.endsWith('...')
+      )
+      if (lastLLMStreamingMessage !== -1) {
+        setState((prev) => {
+          const updatedMessages = prev.messages
+          updatedMessages[lastLLMStreamingMessage].text =
+            updatedMessages[lastLLMStreamingMessage].text.slice(0, -3) + fragment + (finished ? '' : '...')
+          return prev
+        })
+      } else {
+        addMessage(fragment + (finished ? '' : '...'), false)
+      }
+    },
+    [addMessage, setState, state.messages]
+  )
+
   const updateCurrentMessage = useCallback((message: string) => {
-    setState((prev) => ({
-      ...prev,
-      currentMessage: message
-    }))
+    state.currentMessage = message
+    setState(state)
   }, [])
 
   const clearCurrentMessage = useCallback(() => {
-    setState((prev) => ({
-      ...prev,
-      currentMessage: ''
-    }))
+    state.currentMessage = ''
+    setState(state)
   }, [])
 
   const setRecording = useCallback((isRecording: boolean) => {
-    setState((prev) => ({
-      ...prev,
-      isRecording
-    }))
+    setState((state) => {
+      state.isRecording = isRecording
+      return state
+    })
   }, [])
 
   const updateConfig = useCallback((configUpdate: Partial<AppConfig>) => {
-    setState((prev) => ({
-      ...prev,
-      config: {
-        ...prev.config,
+    setState((state) => {
+      state.config = {
+        ...state.config,
         ...configUpdate
       }
-    }))
+      return state
+    })
   }, [])
 
   return {
     state,
     actions: {
       addMessage,
+      streamMessage,
       updateCurrentMessage,
       clearCurrentMessage,
       setRecording,

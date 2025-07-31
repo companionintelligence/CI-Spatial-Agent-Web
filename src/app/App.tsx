@@ -8,8 +8,8 @@ import { useLLMService } from '../services/llm/llmService'
 import type { LLMResponse, LLMStatusUpdate } from '../services/llm/llmTypes'
 import { useSceneService } from '../services/sceneService'
 import { useSTTService } from '../services/stt/sttService'
-import { useTTSService } from '../services/tts/ttsService'
 import { useVADService } from '../services/stt/vadService'
+import { useTTSService } from '../services/tts/ttsService'
 
 export const App = () => {
   const chat = useChatService()
@@ -25,7 +25,6 @@ export const App = () => {
 
   const submitMessage = React.useCallback(
     (message: string) => {
-      console.log('Submitting message:', message)
       if (message.trim()) {
         const userMessage = message.trim()
 
@@ -58,8 +57,6 @@ export const App = () => {
 
   const stt = useSTTService({
     onPerform: (result) => {
-      console.log('STT: Result received:', result)
-
       if (result.final) {
         if (result.text.trim() === 'stop') {
           const interrupt = Date.now()
@@ -91,22 +88,19 @@ export const App = () => {
     }
   })
 
-  const responseCallbackRef = useRef<(response: LLMResponse) => void>(() => {})
-
-  useEffect(() => {
-    responseCallbackRef.current = (response) => {
+  const responseCallbackRef = useCallback(
+    (response: LLMResponse) => {
       const trimmedText = response.text.trim()
       if (trimmedText) {
         const breath = response.breath.trim()
         if (chat.state.config.agentEnabled && breath) {
           tts.actions.speak(breath)
         }
-        if (response.final) {
-          chat.actions.addMessage(trimmedText, false)
-        }
+        chat.actions.streamMessage(trimmedText, response.final)
       }
-    }
-  }, [chat.state.config.agentEnabled, tts.actions, chat.actions])
+    },
+    [chat.state.config.agentEnabled, tts.actions, chat.actions]
+  )
 
   const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
     setLlmStatus(status)
@@ -114,8 +108,8 @@ export const App = () => {
 
   useEffect(() => {
     llmService.actions.setStatusCallback(handleStatusUpdate)
-    llmService.actions.setResponseCallback(responseCallbackRef.current)
-  }, [llmService.actions, handleStatusUpdate])
+    llmService.actions.setResponseCallback(responseCallbackRef)
+  }, [llmService.actions, handleStatusUpdate, responseCallbackRef])
 
   useEffect(() => {
     if (llmService.config.llm_local === !chat.state.config.cloudMode) return

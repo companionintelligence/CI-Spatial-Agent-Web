@@ -30,7 +30,8 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
   setThinking?.(true)
 
   const rcounter = 1000
-  let bcounter = 0
+  let fragmentCounter = 0
+  let fullResponse = ''
   let breath = ''
 
   const breathHelper = (fragment: string | null = null, finished = false) => {
@@ -40,15 +41,15 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
     }
 
     if (!fragment || !fragment.length || finished) {
-      if (breath.length && responseCallback) {
+      if (fullResponse.length && responseCallback) {
         responseCallback({
-          text: breath,
-          breath,
+          text: fullResponse,
+          breath: '',
           ready: true,
           final: true,
           interrupt
         })
-        breath = ''
+        fullResponse = ''
       }
       return
     }
@@ -62,16 +63,17 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
 
       if (responseCallback) {
         responseCallback({
-          text: breath,
+          text: fullResponse,
           breath,
           ready: true,
           final: false,
           interrupt,
           rcounter,
-          bcounter
+          bcounter: fragmentCounter
         })
       }
-      bcounter++
+      breath = ''
+      fragmentCounter++
     }
   }
 
@@ -94,8 +96,6 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
       messages: requestMessages,
       stream: true
     })
-
-    let fullResponse = ''
 
     for await (const chunk of response) {
       if (latestInterrupt > interrupt) {

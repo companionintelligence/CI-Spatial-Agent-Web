@@ -142,28 +142,21 @@ export const useLLMService = () => {
       const text = request.text?.trim()
       if (!text || !text.length) return
 
-      console.log('LLM - processing user input:', text, 'time:', request.interrupt)
-
       if (state.thinking && state.engine && state.engine.interruptGenerate) {
-        console.log('LLM - interrupting previous generation')
         state.engine.interruptGenerate()
         setState((prev) => ({ ...prev, thinking: false }))
       }
 
       if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
-        console.log('LLM - loading WebLLM model for first use')
         await load()
         return
       }
 
       if (state.loading) {
-        console.log('LLM - still loading WebLLM, skipping request')
         return
       }
 
       setState((prev) => ({ ...prev, _latest_interrupt: request.interrupt }))
-
-      console.log('LLM - routing to', config.llm_local ? 'local' : 'remote', 'implementation')
 
       const baseParams = {
         userMessage: text,
@@ -191,7 +184,6 @@ export const useLLMService = () => {
       try {
         if (config.llm_local) {
           if (config.ollama_url && config.ollama_url.trim()) {
-            console.log('LLM - using Ollama for local processing')
             const result = await llmOllama({
               ...baseParams,
               llmUrl: config.ollama_url,
@@ -201,7 +193,6 @@ export const useLLMService = () => {
               console.error('LLM: Ollama reasoning failed:', result.error)
             }
           } else if (state.ready && state.engine) {
-            console.log('LLM - using WebLLM for local processing')
             const result = await llmLocal({
               ...baseParams,
               engine: state.engine
