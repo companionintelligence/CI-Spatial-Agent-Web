@@ -90,14 +90,11 @@ export const App = () => {
 
   const responseCallbackRef = useCallback(
     (response: LLMResponse) => {
-      const trimmedText = response.text.trim()
-      if (trimmedText) {
-        const breath = response.breath.trim()
-        if (chat.state.config.agentEnabled && breath) {
-          tts.actions.speak(breath)
-        }
-        chat.actions.streamMessage(trimmedText, response.final)
+      const breath = response.breath
+      if (chat.state.config.agentEnabled && breath) {
+        tts.actions.speak(breath)
       }
+      chat.actions.streamMessage(breath, response.final)
     },
     [chat.state.config.agentEnabled, tts.actions, chat.actions]
   )

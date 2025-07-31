@@ -22,14 +22,10 @@ export const useChatService = () => {
 
   const streamMessage = useCallback(
     (fragment: string, finished: boolean) => {
-      const lastLLMStreamingMessage = state.messages.findIndex(
-        (msg) => msg.isUser === false && msg.text.endsWith('...')
-      )
-      if (lastLLMStreamingMessage !== -1) {
+      const lastLLMStreamingMessage = state.messages.find((msg) => msg.isUser === false && msg.text.endsWith('...'))
+      if (lastLLMStreamingMessage) {
         setState((prev) => {
-          const updatedMessages = prev.messages
-          updatedMessages[lastLLMStreamingMessage].text =
-            updatedMessages[lastLLMStreamingMessage].text.slice(0, -3) + fragment + (finished ? '' : '...')
+          lastLLMStreamingMessage.text = lastLLMStreamingMessage.text.slice(0, -3) + fragment + (finished ? '' : '...')
           return prev
         })
       } else {
