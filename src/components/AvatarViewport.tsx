@@ -1,12 +1,11 @@
-import type { AvatarConfig, SceneConfig } from '../services/sceneTypes'
-import { Scene3D } from './Scene3D'
+import type { SceneConfig } from '../services/sceneTypes'
+import { Scene3D } from '../xr/Scene3D'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
-  avatarConfig: AvatarConfig
 }
 
-export const AvatarViewport = ({ sceneConfig, avatarConfig }: AvatarViewportProps) => {
+export const AvatarViewport = ({ sceneConfig }: AvatarViewportProps) => {
   return (
     <div
       style={{
@@ -30,7 +29,7 @@ export const AvatarViewport = ({ sceneConfig, avatarConfig }: AvatarViewportProp
           position: 'relative'
         }}
       >
-        <Scene3D sceneConfig={sceneConfig} avatarConfig={avatarConfig} />
+        <Scene3D sceneConfig={sceneConfig} />
       </div>
     </div>
   )

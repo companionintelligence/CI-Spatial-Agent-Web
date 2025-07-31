@@ -1,15 +1,14 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import type { AvatarConfig, SceneConfig } from '../services/sceneTypes'
+import type { SceneConfig } from '../services/sceneTypes'
 import { AvatarModel } from './AvatarModel'
 import { SimpleAvatar } from './SimpleAvatar'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
-  avatarConfig: AvatarConfig
 }
 
-const SceneContent = ({ sceneConfig, avatarConfig }: Scene3DProps) => {
+const SceneContent = ({ sceneConfig }: Scene3DProps) => {
   return (
     <>
       {/* Camera setup */}
@@ -34,15 +33,7 @@ const SceneContent = ({ sceneConfig, avatarConfig }: Scene3DProps) => {
       <Environment preset="studio" />
 
       {/* Avatar with external animations */}
-      <AvatarModel
-        modelUrl={avatarConfig.modelUrl}
-        animationUrl={avatarConfig.animationUrl}
-        position={avatarConfig.position}
-        visible={avatarConfig.visible}
-      />
-
-      {/* Simple avatar test (positioned to the side) */}
-      <SimpleAvatar position={[2, 0, 0]} />
+      <AvatarModel />
 
       {/* Ground plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
@@ -53,7 +44,7 @@ const SceneContent = ({ sceneConfig, avatarConfig }: Scene3DProps) => {
   )
 }
 
-export const Scene3D = ({ sceneConfig, avatarConfig }: Scene3DProps) => {
+export const Scene3D = ({ sceneConfig }: Scene3DProps) => {
   return (
     <div style={{ width: '100%', height: '100%' }}>
       <Canvas
@@ -66,7 +57,7 @@ export const Scene3D = ({ sceneConfig, avatarConfig }: Scene3DProps) => {
         shadows
         style={{ background: `#${sceneConfig.background?.toString(16).padStart(6, '0') || '1a1a1a'}` }}
       >
-        <SceneContent sceneConfig={sceneConfig} avatarConfig={avatarConfig} />
+        <SceneContent sceneConfig={sceneConfig} />
       </Canvas>
     </div>
   )

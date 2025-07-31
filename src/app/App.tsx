@@ -14,7 +14,7 @@ import { useTTSService } from '../services/tts/ttsService'
 export const App = () => {
   const chat = useChatService()
   const { isMobile } = useResponsiveLayout()
-  const { sceneConfig, avatarConfig } = useSceneService()
+  const { sceneConfig } = useSceneService()
 
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
@@ -200,7 +200,7 @@ export const App = () => {
             minWidth: isMobile ? 'auto' : '400px'
           }}
         >
-          <AvatarViewport sceneConfig={sceneConfig} avatarConfig={avatarConfig} />
+          <AvatarViewport sceneConfig={sceneConfig}/>
         </div>
       </div>
     </div>

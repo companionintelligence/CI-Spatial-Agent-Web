@@ -26,8 +26,8 @@ export interface LightConfig {
 export const defaultSceneConfig: SceneConfig = {
   near: 0.1,
   far: 100,
-  cameraPosition: [0, 1.5, 1],
-  cameraTarget: [0, 1.5, 0],
+  cameraPosition: [0, 1.8, 2],
+  cameraTarget: [0, 1.2, 0],
   background: 0x1a1a1a,
   roomLighting: true
 }
@@ -36,6 +36,6 @@ export const defaultAvatarConfig: AvatarConfig = {
   uuid: 'alexandria',
   modelUrl: '/assets/avatars/25-1-3_CI_model_female_Shanee.glb',
   position: [0, 0, 0],
-  animationUrl: '/assets/animations/basic-idle.glb',
+  animationUrl: '/assets/animations/unarmed-idle.glb',
   visible: true
 }

@@ -1,8 +1,0 @@
-export { AvatarModel } from './AvatarModel'
-export { AvatarViewport } from './AvatarViewport'
-export { ChatHistory } from './ChatHistory'
-export { ChatInput } from './ChatInput'
-export { ControlButton } from './ControlButton'
-export { Header } from './Header'
-export { Scene3D } from './Scene3D'
-export { SimpleAvatar } from './SimpleAvatar'
