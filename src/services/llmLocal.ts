@@ -1,6 +1,6 @@
 /**
  * Local LLM Implementation using WebLLM
- * 
+ *
  * This module provides local LLM processing using WebLLM engine with streaming support.
  * Handles breath chunking for TTS integration and interrupt management.
  */
@@ -33,16 +33,8 @@ export interface LLMLocalResult {
  * Process user input using local WebLLM engine
  */
 export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> {
-  const {
-    userMessage,
-    interrupt,
-    messages,
-    engine,
-    latestInterrupt,
-    responseCallback,
-    updateMessages,
-    setThinking
-  } = params
+  const { userMessage, interrupt, messages, engine, latestInterrupt, responseCallback, updateMessages, setThinking } =
+    params
 
   if (!engine) {
     console.error('LLM: Engine not ready')
@@ -145,7 +137,7 @@ export async function llmLocal(params: LLMLocalParams): Promise<LLMLocalResult> 
     // Get the complete message and add to history
     const paragraph = await engine.getMessage()
     console.log({ paragraph })
-    
+
     updateMessages?.(userMessage, paragraph)
     setThinking?.(false)
 

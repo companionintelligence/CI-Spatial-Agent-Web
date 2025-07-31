@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react'
+import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useGLTF, useAnimations } from '@react-three/drei'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
 interface SimpleAvatarProps {
@@ -9,15 +9,15 @@ interface SimpleAvatarProps {
 
 export const SimpleAvatar = ({ position }: SimpleAvatarProps) => {
   const group = useRef<THREE.Group>(null)
-  
+
   // Try loading an avatar that has built-in animations
   const { scene, animations } = useGLTF('/assets/avatars/25-1-3_CI_model_female_Shanee.glb')
   const { actions, mixer } = useAnimations(animations, group)
 
   useEffect(() => {
-    console.log('Avatar animations:', animations?.map(anim => anim.name))
+    console.log('Avatar animations:', animations?.map((anim) => anim.name))
     console.log('Avatar actions:', Object.keys(actions))
-    
+
     // If avatar has built-in animations, use those
     if (animations && animations.length > 0) {
       const firstAnimation = animations[0]

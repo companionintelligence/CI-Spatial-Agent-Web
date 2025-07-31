@@ -39,7 +39,7 @@ export const initialState: AppState = {
     },
     {
       id: '3',
-      text: 'Hello! Thanks for the audio features overview. I\'ll try speaking to test the voice input.',
+      text: "Hello! Thanks for the audio features overview. I'll try speaking to test the voice input.",
       isUser: true,
       timestamp: Date.now() - 5000
     }

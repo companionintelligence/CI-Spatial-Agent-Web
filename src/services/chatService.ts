@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import type { ChatMessage, AppState, AppConfig } from './types'
+import { useCallback, useState } from 'react'
+import type { AppConfig, AppState, ChatMessage } from './types'
 import { initialState } from './types'
 
 export const useChatService = () => {
@@ -12,36 +12,36 @@ export const useChatService = () => {
       isUser,
       timestamp: Date.now()
     }
-    
-    setState(prev => ({
+
+    setState((prev) => ({
       ...prev,
       messages: [...prev.messages, newMessage]
     }))
   }, [])
 
   const updateCurrentMessage = useCallback((message: string) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       currentMessage: message
     }))
   }, [])
 
   const clearCurrentMessage = useCallback(() => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       currentMessage: ''
     }))
   }, [])
 
   const setRecording = useCallback((isRecording: boolean) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isRecording
     }))
   }, [])
 
   const updateConfig = useCallback((configUpdate: Partial<AppConfig>) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       config: {
         ...prev.config,
@@ -53,10 +53,10 @@ export const useChatService = () => {
   const submitMessage = useCallback(() => {
     if (state.currentMessage.trim()) {
       addMessage(state.currentMessage, true)
-      
+
       // TODO: Send to LLM service - this will be handled by the App component
       // The LLM service will process the message and generate a response
-      
+
       clearCurrentMessage()
     }
   }, [state.currentMessage, addMessage, clearCurrentMessage])

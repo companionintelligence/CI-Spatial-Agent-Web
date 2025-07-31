@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export const useResponsiveLayout = (breakpoint: number = 1000) => {
   const [isMobile, setIsMobile] = useState(false)

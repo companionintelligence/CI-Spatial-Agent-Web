@@ -23,8 +23,10 @@ export const ControlButton = ({ isActive = false, onClick, children }: ControlBu
         fontSize: '1rem'
       }}
       onClick={onClick}
-      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(19,196,209,0.18)'}
-      onMouseOut={(e) => e.currentTarget.style.background = isActive ? 'rgba(19,196,209,0.30)' : 'rgba(255,255,255,0.06)'}
+      onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(19,196,209,0.18)')}
+      onMouseOut={(e) =>
+        (e.currentTarget.style.background = isActive ? 'rgba(19,196,209,0.30)' : 'rgba(255,255,255,0.06)')
+      }
     >
       {children}
     </button>

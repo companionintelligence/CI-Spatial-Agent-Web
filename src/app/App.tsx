@@ -19,44 +19,31 @@ export const App = () => {
   const { isMobile } = useResponsiveLayout()
   const { sceneConfig, avatarConfig } = useSceneService()
 
-  // State for audio integration
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
   const [llmStatus, setLlmStatus] = useState<LLMStatusUpdate>({ color: 'loading', text: 'Initializing...' })
 
-  // LLM service integration
   const llmService = useLLMService()
   const interruptCounterRef = useRef(Date.now())
 
-  // Initialize services first
-  // TTS service
   const tts = useTTSService()
 
-  // VAD service with callbacks
   const vad = useVADService({
     onVADResult: (result) => {
       setVadDetecting(result.isSpeech)
     }
   })
 
-  // STT service with callbacks (archived system style)
   const stt = useSTTService({
     onPerform: (result) => {
-      //   console.log('STT: Perform result:', result)
-
-      // Handle typing interference like the archive
       if (state.currentMessage.trim().length > 0) {
-        // console.log('STT: Blocking spoken utterance while typing:', result.text)
         return
       }
 
-      // Handle special 'stop' command like the archive
       if (result.text.startsWith('stop')) {
-        // Implement barge-in by interrupting LLM generation
         const interrupt = Date.now()
         interruptCounterRef.current = interrupt
 
-        // Stop TTS if speaking
         if (tts.isSpeaking) {
           tts.actions.stopSpeaking()
         }
@@ -65,23 +52,18 @@ export const App = () => {
         return
       }
 
-      // Handle interim vs final results like the archive
       if (result.final) {
-        // Final result
         if (state.config.autoSubmitEnabled) {
-          // Auto-submit like the archive
           actions.updateCurrentMessage(result.text)
           setTimeout(() => {
             actions.submitMessage()
             setCurrentInterimTranscript('')
           }, 100)
         } else {
-          // Just update the input without submitting
           actions.updateCurrentMessage(result.text)
           setCurrentInterimTranscript('')
         }
       } else {
-        // Interim result - show in input field but don't submit
         setCurrentInterimTranscript(result.text)
       }
     },
@@ -90,30 +72,25 @@ export const App = () => {
     }
   })
 
-  // Create stable callback refs to avoid useEffect loops
   const responseCallbackRef = useRef<(response: LLMResponse) => void>(() => {})
 
-  // Update callback ref when dependencies change
   useEffect(() => {
     responseCallbackRef.current = (response) => {
-      if (response.text.trim()) {
-        // For streaming responses, speak each breath immediately like archive
-        if (state.config.agentEnabled && response.breath.trim()) {
-          tts.actions.speak(response.breath.trim())
+      const trimmedText = response.text.trim()
+      if (trimmedText) {
+        const breath = response.breath.trim()
+        if (state.config.agentEnabled && breath) {
+          tts.actions.speak(breath)
         }
-
-        // Only add complete responses to chat history
         if (response.final) {
-          actions.addMessage(response.text.trim(), false)
+          actions.addMessage(trimmedText, false)
         }
       }
     }
   }, [state.config.agentEnabled, tts.actions, actions])
 
-  // Setup LLM callbacks (stable refs to avoid recursion)
   const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
     setLlmStatus(status)
-    console.log('LLM Status:', status)
   }, [])
 
   useEffect(() => {
@@ -121,7 +98,6 @@ export const App = () => {
     llmService.actions.setResponseCallback(responseCallbackRef.current)
   }, [llmService.actions, handleStatusUpdate])
 
-  // Update LLM config when app config changes
   useEffect(() => {
     if (llmService.config.llm_local === !state.config.cloudMode) return
     llmService.actions.updateConfig({
@@ -129,16 +105,13 @@ export const App = () => {
     })
   }, [llmService.actions, llmService.config.llm_local, state.config.cloudMode])
 
-  // Handle message submission to LLM
   const submitMessage = React.useCallback(() => {
     if (state.currentMessage.trim()) {
       const userMessage = state.currentMessage.trim()
 
-      // Add user message to chat
       actions.addMessage(userMessage, true)
       actions.clearCurrentMessage()
 
-      // Send to LLM with proper interrupt handling like the archive
       const interrupt = Date.now()
       interruptCounterRef.current = interrupt
 
@@ -152,14 +125,11 @@ export const App = () => {
     }
   }, [state.currentMessage, state.config.bargeInEnabled, actions, llmService.actions])
 
-  // Override the chat service submit with LLM integration
   React.useEffect(() => {
     actions.submitMessage = submitMessage
   }, [submitMessage, actions])
 
-  // Handle noisy config (archived system pattern) - disable STT when TTS is speaking
   React.useEffect(() => {
-    // setAllowed(false) when TTS is speaking, setAllowed(true) when not
     stt.actions.setAllowed(!tts.isSpeaking)
   }, [tts.isSpeaking, stt.actions])
 
@@ -172,15 +142,12 @@ export const App = () => {
 
   const handleToggleMicrophone = () => {
     const newRecordingState = !state.isRecording
-    // console.log('Toggling microphone:', { from: state.isRecording, to: newRecordingState })
 
     actions.setRecording(newRecordingState)
     actions.updateConfig({ microphone: newRecordingState })
 
-    // Update VAD service
     vad.actions.updateConfig({ microphoneEnabled: newRecordingState })
 
-    // Update STT service using archived system pattern (setDesired)
     stt.actions.setDesired(true)
     setCurrentInterimTranscript('')
   }
@@ -200,7 +167,6 @@ export const App = () => {
         lineHeight: 1.5
       }}
     >
-      {/* Audio Debug Status (optional, can be removed in production) */}
       {process.env.NODE_ENV === 'development' && (
         <div
           style={{
@@ -232,10 +198,10 @@ export const App = () => {
           <div style={{ marginBottom: '4px' }}>📝 Interim: "{currentInterimTranscript}"</div>
           <div style={{ marginBottom: '4px' }}>🔊 TTS Speaking: {tts.isSpeaking ? '✅' : '❌'}</div>
           <div style={{ marginBottom: '4px' }}>
-            🤖 LLM Mode: {state.config.cloudMode ? 'Cloud' : 'Local'} 
+            🤖 LLM Mode: {state.config.cloudMode ? 'Cloud' : 'Local'}
             {!state.config.cloudMode && (
               <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>
-                {' '}({import.meta.env.VITE_OLLAMA_API_URL ? 'Ollama→WebLLM' : 'WebLLM'})
+                ({import.meta.env.VITE_OLLAMA_API_URL ? 'Ollama→WebLLM' : 'WebLLM'})
               </span>
             )}
           </div>
@@ -250,10 +216,7 @@ export const App = () => {
           <div>💭 LLM Thinking: {llmService.state.thinking ? '✅' : '❌'}</div>
         </div>
       )}
-
       <Header />
-
-      {/* Main Content */}
       <div
         style={{
           display: 'flex',

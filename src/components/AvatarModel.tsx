@@ -1,6 +1,6 @@
-import { useRef, useEffect } from 'react'
+import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useGLTF, useAnimations } from '@react-three/drei'
+import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
 interface AvatarModelProps {
@@ -12,28 +12,28 @@ interface AvatarModelProps {
 
 export const AvatarModel = ({ modelUrl, animationUrl, position, visible }: AvatarModelProps) => {
   const group = useRef<THREE.Group>(null)
-  
+
   // Load the main avatar model
   const { scene: avatarScene } = useGLTF(modelUrl)
-  
+
   // Load animations separately
   const animUrl = animationUrl || '/assets/animations/basic-idle.glb'
   const { animations } = useGLTF(animUrl)
-  
+
   // Use animations with the avatar group
   const { actions, mixer } = useAnimations(animations, group)
 
   // Debug and play animations
   useEffect(() => {
-    console.log('Loaded animations:', animations?.map(anim => anim.name))
+    console.log('Loaded animations:', animations?.map((anim) => anim.name))
     console.log('Available actions:', Object.keys(actions))
-    
+
     if (actions && Object.keys(actions).length > 0) {
       // Try to play the first available animation
       const actionNames = Object.keys(actions)
       const actionName = actionNames[0]
       const action = actions[actionName]
-      
+
       if (action) {
         console.log(`Playing animation: ${actionName}`)
         action.reset()

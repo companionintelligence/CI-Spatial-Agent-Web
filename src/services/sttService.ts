@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { STTConfig } from './audioTypes'
 import { defaultSTTConfig } from './audioTypes'
 
@@ -63,8 +63,8 @@ interface ExtendedSpeechRecognition extends BaseSpeechRecognition {
 
 // Window interface for SpeechRecognition
 interface WindowWithSpeech extends Window {
-  SpeechRecognition?: { new(): BaseSpeechRecognition }
-  webkitSpeechRecognition?: { new(): BaseSpeechRecognition }
+  SpeechRecognition?: { new (): BaseSpeechRecognition }
+  webkitSpeechRecognition?: { new (): BaseSpeechRecognition }
 }
 
 export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceProps = {}) => {
@@ -72,7 +72,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
   const [isListening, setIsListening] = useState(false)
   const [allowed, setAllowed] = useState(true) // corresponds to noisy config (inverted)
   const [desired, setDesired] = useState(false) // corresponds to microphone config
-  
+
   const recognitionRef = useRef<ExtendedSpeechRecognition | null>(null)
   const rcounterRef = useRef(1)
   const bcounterRef = useRef(1)
@@ -93,7 +93,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
       console.error('STT: Speech recognition constructor not found')
       return
     }
-    
+
     const recognition = new SpeechRecognitionClass() as ExtendedSpeechRecognition
 
     // Configure recognition exactly like the archive
@@ -113,7 +113,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
       activeRef.current = true
     }
 
-    // Add custom stop2 method  
+    // Add custom stop2 method
     const stop2 = () => {
       if (!activeRef.current) return
       try {
@@ -131,9 +131,9 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
         console.error('STT: speech recognition error, restarting', event)
       }
       recognition.stop()
-      setTimeout(() => { 
+      setTimeout(() => {
         if (desired && allowed) {
-          recognition.start() 
+          recognition.start()
         }
       }, 200)
     }
@@ -153,7 +153,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
 
     // Handle results exactly like the archive
     recognition.onresult = (event: SpeechRecognitionEventType) => {
-    console.log('STT: onresult event:', event)
+      console.log('STT: onresult event:', event)
       // Only process the first result like the archive (i < 1 condition)
       for (let i = event.resultIndex; i < 1 && i < event.results.length; ++i) {
         const data = event.results[i]
@@ -201,7 +201,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
 
   const updateListening = useCallback(() => {
     if (!recognitionRef.current) return
-    
+
     if (allowed && desired) {
       recognitionRef.current.start2()
     } else {
@@ -213,12 +213,15 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
     setAllowed(state)
   }, [])
 
-  const setDesiredState = useCallback((state: boolean) => {
-    setDesired(state)
-    if (state) {
-      initRecognition()
-    }
-  }, [initRecognition])
+  const setDesiredState = useCallback(
+    (state: boolean) => {
+      setDesired(state)
+      if (state) {
+        initRecognition()
+      }
+    },
+    [initRecognition]
+  )
 
   // Update listening state when allowed/desired changes
   useEffect(() => {
@@ -226,7 +229,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
   }, [updateListening])
 
   const updateConfig = useCallback((newConfig: Partial<STTConfig>) => {
-    setConfig(prev => ({ ...prev, ...newConfig }))
+    setConfig((prev) => ({ ...prev, ...newConfig }))
   }, [])
 
   // Cleanup on unmount
@@ -249,7 +252,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
       updateConfig,
       // Legacy methods for compatibility
       startListening: () => setDesiredState(true),
-      stopListening: () => setDesiredState(false),
+      stopListening: () => setDesiredState(false)
     }
   }
 }

@@ -12,7 +12,7 @@
  * - System prompt management
  * - Conversation context handling
  * - Environment variable configuration
- * 
+ *
  * Local LLM Priority:
  * 1. Ollama (if VITE_OLLAMA_API_URL is configured)
  * 2. WebLLM (as fallback if Ollama unavailable)
@@ -34,17 +34,11 @@
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
 import { useCallback, useRef, useState } from 'react'
-import type {
-  LLMConfig,
-  LLMPerformRequest,
-  LLMResponse,
-  LLMState,
-  LLMStatusUpdate
-} from './llmTypes'
-import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
+import { llmCloud } from './llmCloud'
 import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
-import { llmCloud } from './llmCloud'
+import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMState, LLMStatusUpdate } from './llmTypes'
+import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
 
 // Constants from the original implementation
 const selectedModel = 'Llama-3.2-3B-Instruct-q4f16_1-MLC'

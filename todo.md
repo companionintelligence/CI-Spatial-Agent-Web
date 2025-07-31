@@ -2,25 +2,16 @@
 
 `/archive` contains the old plain javascript implementation. Our goal with the new project structure is to modernise and rebuild this using react, typescript and react-three-fiber.
 
+DO NOT add notes to this file, just check off checkboxes as progress is made.
+
 ## Project Structure
 
 ### Directory Organization
 ```
 src/
 ├── app/           # Main application structure and orchestration
-│   └── App.tsx    # Main app component that combines services and components
 ├── components/    # Reusable UI components (pure, declarative)
-│   ├── Header.tsx
-│   ├── ChatHistory.tsx
-│   ├── AvatarViewport.tsx
-│   ├── ChatInput.tsx
-│   ├── ControlButton.tsx
-│   └── index.ts
 ├── services/      # State management and API integrations
-│   ├── types.ts
-│   ├── chatService.ts
-│   ├── layoutService.ts
-│   └── index.ts
 └── App.tsx        # Entry point that renders app/App.tsx
 ```
 
@@ -105,56 +96,3 @@ src/
 - [ ] Create conversation export/import
 - [ ] Implement usage analytics
 - [ ] Add accessibility features
-
----
-
-## Implementation Status Summary
-
-### ✅ Completed Phases
-
-#### Phase 1: Core UI & Data Structure
-Complete React-based chat interface with TypeScript, responsive design, and service layer architecture.
-
-#### Phase 2: 3D Avatar System  
-Full Three.js integration with React Three Fiber, GLB model loading, lighting, and camera controls.
-
-#### Phase 3: Audio Input/Output
-Complete audio pipeline with VAD, STT (Web Speech API), TTS, and audio queue management with echo cancellation.
-
-#### Phase 4: LLM Integration
-**Recently Completed** - Comprehensive LLM system with:
-
-**Core Components:**
-- `src/services/llmTypes.ts` - Type definitions and interfaces
-- `src/services/llmService.ts` - Main service with local/remote support  
-- `public/sw.js` - WebLLM service worker for local models
-- `.env.example` - Environment configuration template
-
-**Features Implemented:**
-- ✅ **Local LLM Support**: WebLLM integration with Llama-3.1-8B-Instruct-q4f32_1-MLC
-- ✅ **Remote API Integration**: OpenAI, Anthropic, Ollama support with environment config
-- ✅ **Streaming Responses**: "Breath" chunking pattern for natural TTS integration
-- ✅ **System Prompt Management**: Avatar-aware conversational prompts
-- ✅ **Conversation Context**: Full message history with role-based structure
-- ✅ **Barge-in Interruption**: Real-time interruption with "stop" command support
-
-**Technical Achievements:**
-- Direct port from `archive/chat/llm.js` with modern React/TypeScript patterns
-- Web worker implementation for local model performance
-- Recursive useEffect bug fixes for stable callback management
-- Real-time streaming to TTS with natural sentence breaks
-- Environment variable configuration for API keys and endpoints
-- Comprehensive error handling and status reporting
-- Debug panel integration showing LLM status and thinking state
-
-**Archive Functionality Preserved:**
-- Message flow: `{human:{text:"..."}} → {llm:{breath:"...",final:true|false}}`
-- MIN_BREATH_LENGTH=20 threshold for TTS chunking
-- `<think>...</think>` block processing for models like DeepSeek
-- Interrupt timestamp handling for preventing stale responses
-- Worker pattern for optimal local model performance
-
-The LLM integration is now fully functional and ready for avatar animation integration in Phase 5.
-
-### 🚧 Next Priority: Phase 5 - Avatar Animation
-Ready to implement viseme-based lip sync, facial expressions, and gesture animations.

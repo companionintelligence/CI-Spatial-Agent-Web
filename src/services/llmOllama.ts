@@ -89,9 +89,6 @@ export async function llmOllama(params: LLMOllamaParams): Promise<LLMOllamaResul
           bcounter
         })
       }
-
-      console.log('LLM - publishing Ollama fragment =', breath, 'time =', interrupt)
-      breath = fragment.slice(i)
       bcounter++
     }
   }
@@ -132,18 +129,16 @@ export async function llmOllama(params: LLMOllamaParams): Promise<LLMOllamaResul
       if (chunk.message?.content) {
         const content = chunk.message.content
         fullResponse += content
+        // @todo chunk.done seems to never be true in streaming mode
         breathHelper(content, chunk.done)
-      }
-
-      if (chunk.done) {
-        breathHelper(null, true)
-        break
       }
     }
 
     // Update message history
     updateMessages?.(userMessage, fullResponse)
     setThinking?.(false)
+
+    breathHelper(null, true)
 
     return { success: true, fullResponse }
   } catch (err) {

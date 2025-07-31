@@ -1,8 +1,8 @@
+import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls, Environment } from '@react-three/drei'
+import type { AvatarConfig, SceneConfig } from '../services/sceneTypes'
 import { AvatarModel } from './AvatarModel'
 import { SimpleAvatar } from './SimpleAvatar'
-import type { SceneConfig, AvatarConfig } from '../services/sceneTypes'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
@@ -26,12 +26,7 @@ const SceneContent = ({ sceneConfig, avatarConfig }: Scene3DProps) => {
       {sceneConfig.roomLighting && (
         <>
           <ambientLight intensity={0.3} color={0xffffff} />
-          <directionalLight
-            position={[1, 1, 1]}
-            intensity={0.8}
-            color={0xffffff}
-            castShadow
-          />
+          <directionalLight position={[1, 1, 1]} intensity={0.8} color={0xffffff} castShadow />
         </>
       )}
 

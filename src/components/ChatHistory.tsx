@@ -1,4 +1,4 @@
-import type { ChatMessage, AppConfig } from '../services/types'
+import type { AppConfig, ChatMessage } from '../services/types'
 import { ChatInput } from './ChatInput'
 
 interface ChatHistoryProps {
@@ -21,8 +21,8 @@ interface ChatHistoryProps {
   sttListening: boolean
 }
 
-export const ChatHistory = ({ 
-  messages, 
+export const ChatHistory = ({
+  messages,
   message,
   onMessageChange,
   onSubmit,
@@ -70,7 +70,7 @@ export const ChatHistory = ({
               margin: '16px 0',
               padding: message.isUser ? '12px 16px' : '0 12px',
               borderRadius: '16px',
-              background: message.isUser 
+              background: message.isUser
                 ? 'linear-gradient(135deg, rgba(0,131,145,0.35) 0%, rgba(0,131,145,0.18) 100%)'
                 : 'transparent',
               border: message.isUser ? '1px solid rgba(255,255,255,0.12)' : 'none',
@@ -87,7 +87,7 @@ export const ChatHistory = ({
           </div>
         ))}
       </div>
-      
+
       {/* Chat Input at the bottom */}
       <div style={{ padding: '24px' }}>
         <ChatInput

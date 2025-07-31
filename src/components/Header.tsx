@@ -10,11 +10,7 @@ export const Header = ({ logoSrc = '/assets/2024_CI__Logo_Banner_Color.svg' }: H
         textAlign: 'center'
       }}
     >
-      <img 
-        style={{ width: '200px' }} 
-        src={logoSrc} 
-        alt="Logo"
-      />
+      <img style={{ width: '200px' }} src={logoSrc} alt="Logo" />
     </div>
   )
 }

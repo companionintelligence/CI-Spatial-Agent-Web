@@ -1,5 +1,5 @@
-import { ControlButton } from './ControlButton'
 import type { AppConfig } from '../services/types'
+import { ControlButton } from './ControlButton'
 
 interface ChatInputProps {
   message: string
@@ -75,8 +75,12 @@ export const ChatInput = ({
           }}
           rows={1}
           placeholder={
-            isRecording 
-              ? (vadDetecting ? '🎤 Listening...' : sttListening ? '🎤 STT Ready - Speak now' : '🎤 Starting...')
+            isRecording
+              ? vadDetecting
+                ? '🎤 Listening...'
+                : sttListening
+                ? '🎤 STT Ready - Speak now'
+                : '🎤 Starting...'
               : 'Type your message here...'
           }
           value={isRecording && sttTranscript ? (message + ' ' + sttTranscript).trim() : message}
@@ -84,7 +88,7 @@ export const ChatInput = ({
           onKeyPress={onKeyPress}
           readOnly={isRecording}
         />
-        
+
         {/* Send Button - positioned inside the text field */}
         <div
           style={{
@@ -95,9 +99,7 @@ export const ChatInput = ({
             zIndex: 1
           }}
         >
-          <ControlButton onClick={onSubmit}>
-            ➤
-          </ControlButton>
+          <ControlButton onClick={onSubmit}>➤</ControlButton>
         </div>
       </div>
 
