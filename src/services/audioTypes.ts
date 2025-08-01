@@ -11,6 +11,13 @@ export interface VADResult {
   audio?: ArrayBuffer
 }
 
+// Whisper data interface for visemes
+export interface WhisperData {
+  words?: string[]
+  wtimes?: number[]
+  wdurations?: number[]
+}
+
 export interface TTSConfig {
   voice: string
   speed: number
@@ -25,6 +32,23 @@ export interface STTConfig {
   continuous: boolean
   remote: boolean
   apiKey?: string
+}
+
+// Whisper-specific configuration
+export interface WhisperConfig {
+  model: string
+  language?: string
+  quantized: boolean
+  multilingual: boolean
+}
+
+// STT result interface for consistency across services
+export interface STTResult {
+  text: string
+  confidence: number
+  final: boolean
+  interim?: boolean
+  timestamp?: number
 }
 
 export const defaultAudioConfig: AudioConfig = {
@@ -46,4 +70,11 @@ export const defaultSTTConfig: STTConfig = {
   language: 'en-US',
   continuous: true,
   remote: false
+}
+
+export const defaultWhisperConfig: WhisperConfig = {
+  model: 'Xenova/whisper-tiny',
+  language: 'en',
+  quantized: true,
+  multilingual: false
 }

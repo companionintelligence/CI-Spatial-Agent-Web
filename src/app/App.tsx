@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatHistory } from '../components/ChatHistory'
 import { Header } from '../components/Header'
+import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
 import { useResponsiveLayout } from '../services/layoutService'
 import { useLLMService } from '../services/llm/llmService'
@@ -10,6 +11,7 @@ import { useSceneService } from '../services/sceneService'
 import { useSTTService } from '../services/stt/sttService'
 import { useVADService } from '../services/stt/vadService'
 import { useTTSService } from '../services/tts/ttsService'
+import { useVisemeService } from '../services/visemes/useVisemeService'
 
 export const App = () => {
   const chat = useChatService()
@@ -18,10 +20,27 @@ export const App = () => {
 
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
-  const [llmStatus, setLlmStatus] = useState<LLMStatusUpdate>({ color: 'loading', text: 'Initializing...' })
+  // const [llmStatus, setLlmStatus] = useState<LLMStatusUpdate>({ color: 'loading', text: 'Initializing...' })
 
   const llmService = useLLMService()
   const interruptCounterRef = useRef(Date.now())
+
+  const visemes = useVisemeService()
+
+  const handleSpeechStart = useCallback(
+    (_text: string, whisperData: WhisperData) => {
+      const startTime = Date.now()
+      visemes.actions.generateSequence(whisperData, startTime)
+    },
+    [visemes.actions]
+  )
+
+  const handleSpeechEnd = useCallback(() => {}, [])
+
+  const tts = useTTSService({
+    onSpeechStart: handleSpeechStart,
+    onSpeechEnd: handleSpeechEnd
+  })
 
   const submitMessage = React.useCallback(
     (message: string) => {
@@ -46,8 +65,6 @@ export const App = () => {
     },
     [chat.state.config.bargeInEnabled, chat.actions, llmService.actions]
   )
-
-  const tts = useTTSService()
 
   const vad = useVADService({
     onVADResult: (result) => {
@@ -100,7 +117,8 @@ export const App = () => {
   )
 
   const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
-    setLlmStatus(status)
+    // setLlmStatus(status)
+    console.log('LLM Status update:', status)
   }, [])
 
   useEffect(() => {
@@ -200,7 +218,7 @@ export const App = () => {
             minWidth: isMobile ? 'auto' : '400px'
           }}
         >
-          <AvatarViewport sceneConfig={sceneConfig}/>
+          <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} />
         </div>
       </div>
     </div>

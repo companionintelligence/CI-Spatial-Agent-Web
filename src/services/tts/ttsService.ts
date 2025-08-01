@@ -1,63 +1,78 @@
 import { useCallback, useState } from 'react'
-import type { TTSConfig } from '../audioTypes'
+import type { TTSConfig, WhisperData } from '../audioTypes'
 import { defaultTTSConfig } from '../audioTypes'
+import { approximateWhisperDataFromText } from './whisperDataGenerator'
 
-export const useTTSService = () => {
+interface TTSServiceOptions {
+  onSpeechStart?: (text: string, whisperData: WhisperData) => void
+  onSpeechEnd?: () => void
+}
+
+export const useTTSService = (options: TTSServiceOptions = {}) => {
   const [config, setConfig] = useState<TTSConfig>(defaultTTSConfig)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [audioQueue, setAudioQueue] = useState<ArrayBuffer[]>([])
 
+  const { onSpeechStart, onSpeechEnd } = options
+
   const speakLocal = useCallback(
-    async (text: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        if (!('speechSynthesis' in window)) {
-          reject(new Error('Speech synthesis not supported'))
-          return
+    async (text: string) => {
+      if (!('speechSynthesis' in window)) {
+        throw new Error('Speech synthesis not supported')
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text)
+
+      /** @todo for the very first utterance, there appear to be no voices registered. maybe a chrome bug? for now just use system default */
+      // const voices = speechSynthesis.getVoices()
+      // console.log('Available voices:', voices)
+      // const voice = voices.find((v) => v.lang === 'en-US') || voices[0]
+      // if (voice) utterance.voice = voice
+
+      utterance.rate = config.speed
+      utterance.pitch = config.pitch
+      utterance.volume = config.volume
+
+      // Generate whisper data for visemes
+      const whisperData = approximateWhisperDataFromText(text, config.speed, 0)
+
+      // Notify speech start with whisper data
+      if (onSpeechStart) {
+        onSpeechStart(text, whisperData)
+      }
+
+      utterance.onend = () => {
+        if (onSpeechEnd) {
+          onSpeechEnd()
         }
+      }
 
-        const utterance = new SpeechSynthesisUtterance(text)
-
-        const voices = speechSynthesis.getVoices()
-        const voice = voices.find((v) => v.name.includes('en')) || voices[0]
-        if (voice) utterance.voice = voice
-
-        utterance.rate = config.speed
-        utterance.pitch = config.pitch
-        utterance.volume = config.volume
-
-        utterance.onend = () => {
-          resolve()
+      utterance.onerror = (event) => {
+        console.error('TTS Error:', event.error)
+        if (onSpeechEnd) {
+          onSpeechEnd()
         }
+      }
 
-        utterance.onerror = (event) => {
-          console.error('TTS Error:', event.error)
-          reject(new Error(event.error))
-        }
-
-        speechSynthesis.speak(utterance)
-      })
+      speechSynthesis.speak(utterance)
     },
-    [config.speed, config.pitch, config.volume]
+    [config.speed, config.pitch, config.volume, onSpeechStart, onSpeechEnd]
   )
 
-  const speakRemote = useCallback(
-    async (text: string): Promise<void> => {
-      console.warn('Remote TTS not implemented yet, falling back to local')
-      return speakLocal(text)
-    },
-    [speakLocal]
-  )
+  const speakRemote = useCallback(async (text: string) => {
+    console.warn('Remote TTS not implemented yet')
+  }, [])
 
   const speak = useCallback(
-    async (text: string): Promise<void> => {
-      if (!text.trim()) return
+    async (text: string) => {
+      if (!text.trim()) return null
 
       try {
         setIsSpeaking(true)
         if (config.remote) {
-          await speakRemote(text)
+          speakRemote(text)
         } else {
-          await speakLocal(text)
+          speakLocal(text)
         }
       } catch (error) {
         console.error('TTS Error:', error)

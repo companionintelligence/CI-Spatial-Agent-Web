@@ -1,11 +1,13 @@
 import type { SceneConfig } from '../services/sceneTypes'
+import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { Scene3D } from '../xr/Scene3D'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
+  visemeService?: ReturnType<typeof useVisemeService>
 }
 
-export const AvatarViewport = ({ sceneConfig }: AvatarViewportProps) => {
+export const AvatarViewport = ({ sceneConfig, visemeService }: AvatarViewportProps) => {
   return (
     <div
       style={{
@@ -29,7 +31,7 @@ export const AvatarViewport = ({ sceneConfig }: AvatarViewportProps) => {
           position: 'relative'
         }}
       >
-        <Scene3D sceneConfig={sceneConfig} />
+        <Scene3D sceneConfig={sceneConfig} visemeService={visemeService} />
       </div>
     </div>
   )

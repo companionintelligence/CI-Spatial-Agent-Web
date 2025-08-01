@@ -1,15 +1,17 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import type { SceneConfig } from '../services/sceneTypes'
+import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { useSimpleStore } from '../utils/SimpleStore'
 import { AvatarModel, AvatarState } from './AvatarModel'
 import { AnimationOptions, AvatarOptions } from './AvatarOptions'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
+  visemeService?: ReturnType<typeof useVisemeService>
 }
 
-const SceneContent = ({ sceneConfig }: Scene3DProps) => {
+const SceneContent = ({ sceneConfig, visemeService }: Scene3DProps) => {
   return (
     <>
       {/* Camera setup */}
@@ -34,7 +36,7 @@ const SceneContent = ({ sceneConfig }: Scene3DProps) => {
       <Environment preset="studio" />
 
       {/* Avatar with external animations */}
-      <AvatarModel />
+      <AvatarModel visemeService={visemeService} />
 
       {/* Ground plane */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
@@ -45,7 +47,7 @@ const SceneContent = ({ sceneConfig }: Scene3DProps) => {
   )
 }
 
-export const Scene3D = ({ sceneConfig }: Scene3DProps) => {
+export const Scene3D = ({ sceneConfig, visemeService }: Scene3DProps) => {
   const [state, setState] = useSimpleStore(AvatarState)
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -132,7 +134,7 @@ export const Scene3D = ({ sceneConfig }: Scene3DProps) => {
         shadows
         style={{ background: `#${sceneConfig.background?.toString(16).padStart(6, '0') || '1a1a1a'}` }}
       >
-        <SceneContent sceneConfig={sceneConfig} />
+        <SceneContent sceneConfig={sceneConfig} visemeService={visemeService} />
       </Canvas>
     </div>
   )
