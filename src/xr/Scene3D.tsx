@@ -2,7 +2,8 @@ import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import type { SceneConfig } from '../services/sceneTypes'
 import { useSimpleStore } from '../utils/SimpleStore'
-import { AnimationOptions, AvatarModel, AvatarOptions, AvatarState } from './AvatarModel'
+import { AvatarModel, AvatarState } from './AvatarModel'
+import { AnimationOptions, AvatarOptions } from './AvatarOptions'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
