@@ -1,6 +1,6 @@
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import * as THREE from 'three'
 import { createSimpleStore, useSimpleStore } from '../utils/SimpleStore'
 
@@ -10,18 +10,18 @@ export const AvatarState = createSimpleStore({
 })
 
 export const AvatarOptions = [
-  { label: 'Ash', value: '25-1-3_CI_model_female_Ash.glb' },
-  { label: 'Greg', value: '25-1-3_CI_model_male_Greg.glb' },
-  { label: 'Brit', value: '25-1-3_CI_model_female_Brit.glb' },
-  { label: 'Jack', value: '25-1-3_CI_model_male_Jack.glb' },
-  { label: 'Courtney', value: '25-1-3_CI_model_female_Courtney.glb' },
-  { label: 'Liam', value: 'LiamCES2.glb' },
-  { label: 'Glasses Short Hair', value: '25-1-3_CI_model_female_glasses_short_hair.glb' },
-  { label: 'Liam CES', value: 'LiamCES.glb' },
-  { label: 'Shanee', value: '25-1-3_CI_model_female_Shanee.glb' },
-  { label: 'RPM Mixamo T-Pose', value: 'rpm-mixamo-t-posed.glb' },
-  { label: 'Brad', value: '25-1-3_CI_model_male_Brad.glb ' },
-  { label: 'Unbranded Woman Short Hair', value: 'unbranded-woman-short-hair.glb' }
+  { label: 'Ash', value: '/assets/avatars/25-1-3_CI_model_female_Ash.glb' },
+  { label: 'Greg', value: '/assets/avatars/25-1-3_CI_model_male_Greg.glb' },
+  { label: 'Brit', value: '/assets/avatars/25-1-3_CI_model_female_Brit.glb' },
+  { label: 'Jack', value: '/assets/avatars/25-1-3_CI_model_male_Jack.glb' },
+  { label: 'Courtney', value: '/assets/avatars/25-1-3_CI_model_female_Courtney.glb' },
+  { label: 'Liam', value: '/assets/avatars/LiamCES2.glb' },
+  { label: 'Glasses Short Hair', value: '/assets/avatars/25-1-3_CI_model_female_glasses_short_hair.glb' },
+  { label: 'Liam CES', value: '/assets/avatars/LiamCES.glb' },
+  { label: 'Shanee', value: '/assets/avatars/25-1-3_CI_model_female_Shanee.glb' },
+  { label: 'RPM Mixamo T-Pose', value: '/assets/avatars/rpm-mixamo-t-posed.glb' },
+  { label: 'Brad', value: '/assets/avatars/25-1-3_CI_model_male_Brad.glb ' },
+  { label: 'Unbranded Woman Short Hair', value: '/assets/avatars/unbranded-woman-short-hair.glb' }
 ]
 
 export const AnimationOptions = [
@@ -70,31 +70,31 @@ export const AnimationOptions = [
 ]
 
 export const AvatarModel = () => {
-  const group = useRef<THREE.Group>(null)
-
-  const [state, setState] = useSimpleStore(AvatarState)
+  const [state] = useSimpleStore(AvatarState)
 
   const { selectedAnimation, selectedModel } = state
   const { scene: avatarScene } = useGLTF(selectedModel)
   const { animations } = useGLTF(selectedAnimation)
 
-  const { actions, mixer } = useAnimations(animations, group)
+  const { actions, mixer } = useAnimations(animations, avatarScene)
 
   useEffect(() => {
-    if (actions && Object.keys(actions).length > 0) {
-      const actionNames = Object.keys(actions)
-      const actionName = actionNames[0]
-      const action = actions[actionName]
+    if (!actions || !Object.keys(actions).length) return
 
-      if (action) {
-        console.log(`Playing animation: ${actionName}`)
-        action.reset()
-        action.setLoop(THREE.LoopRepeat, Infinity)
-        action.clampWhenFinished = false
-        action.play()
-      }
+    const actionNames = Object.keys(actions)
+    const actionName = actionNames[0]
+    const action = actions[actionName]
+
+    if (!action) return
+
+    action.reset()
+    action.setLoop(THREE.LoopRepeat, Infinity)
+    action.clampWhenFinished = false
+    action.play()
+    return () => {
+      action.stop()
     }
-  }, [actions, animations])
+  }, [actions, avatarScene])
 
   useFrame((_, delta) => {
     if (mixer) {
@@ -102,11 +102,7 @@ export const AvatarModel = () => {
     }
   })
 
-  return (
-    <group ref={group}>
-      <primitive object={avatarScene} />
-    </group>
-  )
+  return <primitive object={avatarScene} />
 }
 
 useGLTF.preload('/assets/avatars/25-1-3_CI_model_female_Shanee.glb')
