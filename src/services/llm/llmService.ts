@@ -25,7 +25,7 @@
  * - Web worker implementation for local models
  *
  * Integration points:
- * - Connects to TTS service for speaking responses
+ * - Connects to local TTS service for speaking responses (remote TTS not yet implemented)
  * - Integrates with chat service for message history
  * - Responds to app config changes (local vs cloud mode)
  * - Provides status callbacks for UI updates
