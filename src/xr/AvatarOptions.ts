@@ -48,7 +48,6 @@ export const AnimationOptions = [
   { label: 'Talking 2', value: '/assets/animations/Talking-2.glb' },
   { label: 'Talking', value: '/assets/animations/Talking.glb' },
   { label: 'Telling A Secret', value: '/assets/animations/Telling-A-Secret.glb' },
-  { label: 'Test', value: '/assets/animations/test.js' },
   { label: 'Think', value: '/assets/animations/think.glb' },
   { label: 'Thinking', value: '/assets/animations/Thinking.glb' },
   { label: 'Throw', value: '/assets/animations/throw.glb' },
