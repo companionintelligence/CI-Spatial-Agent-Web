@@ -90,8 +90,6 @@ export const App = () => {
         if (chat.state.config.autoSubmitEnabled) {
           chat.actions.updateCurrentMessage(result.text)
           setCurrentInterimTranscript('')
-          /** @todo use proper state handling rather than timeout */
-          submitMessage(result.text)
         } else {
           chat.actions.updateCurrentMessage(result.text)
           setCurrentInterimTranscript('')
