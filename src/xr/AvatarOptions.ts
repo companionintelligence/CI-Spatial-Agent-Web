@@ -36,7 +36,6 @@ export const AnimationOptions = [
   { label: 'Pointing Forward', value: '/assets/animations/Pointing-Forward.glb' },
   { label: 'Praying', value: '/assets/animations/Praying.glb' },
   { label: 'Reacting', value: '/assets/animations/Reacting.glb' },
-  { label: 'Rename', value: '/assets/animations/rename.sh' },
   { label: 'Salute', value: '/assets/animations/Salute.glb' },
   { label: 'Shaking It Off', value: '/assets/animations/Shaking-It-Off.glb' },
   { label: 'Shoulder Rubbing', value: '/assets/animations/Shoulder-Rubbing.glb' },
