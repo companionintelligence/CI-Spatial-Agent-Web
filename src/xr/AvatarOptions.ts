@@ -10,7 +10,7 @@ export const AvatarOptions = [
   { label: 'Liam CES', value: '/assets/avatars/LiamCES.glb' },
   { label: 'Shanee', value: '/assets/avatars/25-1-3_CI_model_female_Shanee.glb' },
   { label: 'RPM Mixamo T-Pose', value: '/assets/avatars/rpm-mixamo-t-posed.glb' },
-  { label: 'Brad', value: '/assets/avatars/25-1-3_CI_model_male_Brad.glb ' },
+  { label: 'Brad', value: '/assets/avatars/25-1-3_CI_model_male_Brad.glb' },
   { label: 'Unbranded Woman Short Hair', value: '/assets/avatars/unbranded-woman-short-hair.glb' }
 ]
 
