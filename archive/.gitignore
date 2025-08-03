@@ -1,0 +1,6 @@
+.aider*
+shared
+shared/
+shared*
+.env
+node_modules

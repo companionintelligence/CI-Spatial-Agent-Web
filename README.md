@@ -1,0 +1,14 @@
+# CI-XR-Web
+
+## COPYRIGHT COMPANION INTELLIGENCE - LIFESCOPE INC
+
+## DO NOT DISTRIBUTE
+
+## PRIVATE AND CONFIDENTIAL
+
+# Technologies used
+
+- Vite
+- Typescript
+- React
+- threejs

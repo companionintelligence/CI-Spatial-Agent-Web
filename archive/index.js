@@ -180,7 +180,7 @@ sys([
 			max_tokens: 256,
 
 			// this is meant to refer to the in memory llm - if you want ollama set this to false
-			llm_local: false,
+			llm_local: true,
 			
 			//llm_url: 'https://api.openai.com/v1/chat/completions',
 			//llm_model: 'gpt-4o-mini',
