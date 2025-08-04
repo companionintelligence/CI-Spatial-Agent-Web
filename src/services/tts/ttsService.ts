@@ -23,11 +23,11 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       const utterance = new SpeechSynthesisUtterance(text)
 
-      // Ensure voices are loaded before selecting one (fixes Chrome bug)
-      const voices = await getVoicesAsync()
-      // Select an English (US) voice if available, otherwise fallback to first
-      const voice = voices.find((v) => v.lang === 'en-US') || voices[0]
-      if (voice) utterance.voice = voice
+      /** @todo for the very first utterance, there appear to be no voices registered. maybe a chrome bug? for now just use system default */
+      // const voices = speechSynthesis.getVoices()
+      // console.log('Available voices:', voices)
+      // const voice = voices.find((v) => v.lang === 'en-US') || voices[0]
+      // if (voice) utterance.voice = voice
 
       utterance.rate = config.speed
       utterance.pitch = config.pitch
