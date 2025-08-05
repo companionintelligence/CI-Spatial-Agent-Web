@@ -1,10 +1,9 @@
 import type { XRStore } from '@react-three/xr'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
-import { AvatarControls } from '../components/AvatarControls'
-import { ChatPanel } from '../components/ChatPanel'
-import { ChatOverlay } from '../components/ChatOverlay'
-import { LogoOverlay } from '../components/LogoOverlay'
+import { ChatPanel } from '../components/chat/ChatPanel'
+import { ChatOverlay } from '../components/chat/ChatOverlay'
+import { LogoOverlay } from '../components/common/LogoOverlay'
 import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
 import { useResponsiveLayout } from '../services/layoutService'
@@ -125,10 +124,12 @@ export const App = () => {
 
     const responseCallbackRef = useCallback(
       (response: LLMResponse) => {
+        console.log('responseCallback called:', response)
         const breath = response.breath
         if (chat.state.config.agentEnabled && breath) {
           tts.actions.speak(breath)
         }
+        console.log('Calling streamMessage with:', breath, response.final)
         chat.actions.streamMessage(breath, response.final)
       },
       [chat.state.config.agentEnabled, tts.actions, chat.actions]
