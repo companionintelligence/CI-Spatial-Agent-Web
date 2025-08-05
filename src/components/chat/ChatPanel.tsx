@@ -1,6 +1,7 @@
 import type { ChatMessage } from '../../services/types'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatBubble } from './ChatBubble'
+import { useEffect, useRef } from 'react'
 
 interface ChatPanelProps {
   messages: ChatMessage[]
@@ -10,6 +11,38 @@ interface ChatPanelProps {
 
 export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanelProps) => {
   const isMobile = window.innerWidth <= 768
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (scrollContainerRef.current && isVisible) {
+      const scrollContainer = scrollContainerRef.current
+      
+      const scrollToBottom = () => {
+        // Ensure we scroll to the very bottom
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }
+      
+      // Use a small delay to ensure DOM is fully updated
+      const timeoutId = setTimeout(scrollToBottom, 50)
+      
+      // Also try with requestAnimationFrame for immediate updates
+      requestAnimationFrame(scrollToBottom)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [messages, isVisible])
+  
+  // Additional effect to handle visibility changes
+  useEffect(() => {
+    if (isVisible && scrollContainerRef.current) {
+      const scrollContainer = scrollContainerRef.current
+      // Scroll to bottom when panel becomes visible
+      setTimeout(() => {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight
+      }, 100)
+    }
+  }, [isVisible])
   
   return (
     <>
@@ -76,6 +109,7 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
           </div>
 
           <div
+            ref={scrollContainerRef}
             style={{
               flex: 1,
               overflowY: 'auto',
@@ -84,13 +118,19 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
               paddingRight: '0.5rem',
               // Custom scrollbar styling
               scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+              scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
+              // Smooth scrolling
+              scrollBehavior: 'smooth',
+              // Ensure proper scroll margins
+              scrollMarginBottom: '1rem'
             }}
             className="custom-scrollbar"
           >
             {messages.map((message) => (
               <ChatBubble key={message.id} message={message} />
             ))}
+            {/* Invisible element at the bottom to ensure proper scrolling */}
+            <div style={{ height: '5rem' }} />
           </div>
         </div>
       </div>

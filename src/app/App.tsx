@@ -124,7 +124,6 @@ export const App = () => {
 
     const responseCallbackRef = useCallback(
       (response: LLMResponse) => {
-        console.log('responseCallback called:', response)
         const breath = response.breath
         if (chat.state.config.agentEnabled && breath) {
           tts.actions.speak(breath)

@@ -33,7 +33,7 @@
 
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useRef, useState, useEffect } from 'react'
 import { llmCloud } from './llmCloud'
 import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
@@ -64,6 +64,7 @@ export const useLLMService = () => {
   const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
   const statusCallbackRef = useRef<((update: LLMStatusUpdate) => void) | null>(null)
   const responseCallbackRef = useRef<((response: LLMResponse) => void) | null>(null)
+  const initializedRef = useRef(false)
 
   const processThinkBlocks = useCallback((input: string) => {
     const thinkBlocks: string[] = []
@@ -134,6 +135,44 @@ export const useLLMService = () => {
       }
     }
   }, [state.loading, state.ready])
+
+  // Initialize function that starts loading the LLM
+  const initialize = useCallback(async () => {
+    if (initializedRef.current) return
+    initializedRef.current = true
+
+    console.log('LLM: Initializing service...')
+    
+    // Auto-initialize local LLM if configured
+    if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
+      console.log('LLM: Auto-initializing local model...')
+      await load()
+    } else if (config.llm_local && config.ollama_url) {
+      console.log('LLM: Ollama configured - local model ready')
+      setState((prev) => ({ ...prev, ready: true }))
+    } else if (!config.llm_local) {
+      console.log('LLM: Cloud mode configured - ready for remote requests')
+      setState((prev) => ({ ...prev, ready: true }))
+    }
+  }, [config.llm_local, config.ollama_url, state.ready, state.loading, load])
+
+  // Auto-initialize when the service is created
+  useEffect(() => {
+    // Small delay to ensure the service is fully mounted
+    const timer = setTimeout(() => {
+      initialize()
+    }, 100)
+
+    return () => clearTimeout(timer)
+  }, [initialize])
+
+  // Re-initialize when config changes
+  useEffect(() => {
+    if (initializedRef.current) {
+      console.log('LLM: Config changed, re-initializing...')
+      initialize()
+    }
+  }, [config.llm_local, config.ollama_url, initialize])
 
   const processUserInput = useCallback(
     async (request: LLMPerformRequest) => {
@@ -269,6 +308,7 @@ export const useLLMService = () => {
     config,
     actions: {
       load,
+      initialize,
       processUserInput,
       updateConfig,
       setStatusCallback,
