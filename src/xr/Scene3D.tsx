@@ -42,10 +42,10 @@ const SceneContent = ({ sceneConfig, visemeService, store }: Scene3DProps & { st
       <AvatarModel visemeService={visemeService} />
 
       {/* Ground plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[10, 10]} />
         <meshStandardMaterial color="#2A2A2A" />
-      </mesh>
+      </mesh> */}
     </XR>
   )
 }
