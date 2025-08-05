@@ -174,20 +174,6 @@ export const App = () => {
     console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
   }, [chat.actions, vad.actions, stt.actions])
 
-  // Listen for XR state changes
-  useEffect(() => {
-    if (!xrStore.current) return
-    const unsubscribe = xrStore.current.subscribe((state) => {
-      const isInXR = state.session !== null
-      if (isInXR) {
-        //
-      } else {
-        //
-      }
-    })
-    return unsubscribe
-  }, [xrStore, handleEnterARMode])
-
   return (
     <div
       style={{
