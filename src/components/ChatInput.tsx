@@ -13,6 +13,7 @@ interface ChatInputProps {
   onToggleBargeIn: () => void
   onToggleAutoSubmit: () => void
   onToggleAgent: () => void
+  onEnterARMode?: () => void
   vadDetecting?: boolean
   sttTranscript?: string
   ttsActive?: boolean
@@ -31,6 +32,7 @@ export const ChatInput = ({
   onToggleBargeIn,
   onToggleAutoSubmit,
   onToggleAgent,
+  onEnterARMode,
   vadDetecting = false,
   sttTranscript = '',
   ttsActive = false,
@@ -133,6 +135,11 @@ export const ChatInput = ({
         <ControlButton isActive={config.agentEnabled} onClick={onToggleAgent}>
           {ttsActive ? '🔊' : '🤖'}
         </ControlButton>
+        {onEnterARMode && (
+          <ControlButton onClick={onEnterARMode}>
+            🥽
+          </ControlButton>
+        )}
       </div>
     </div>
   )
