@@ -1,5 +1,7 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
+import { createXRStore, XR, type XRStore } from '@react-three/xr'
+import { useEffect } from 'react'
 import type { SceneConfig } from '../services/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { useSimpleStore } from '../utils/SimpleStore'
@@ -9,11 +11,12 @@ import { AnimationOptions, AvatarOptions } from './AvatarOptions'
 interface Scene3DProps {
   sceneConfig: SceneConfig
   visemeService?: ReturnType<typeof useVisemeService>
+  setXRStore?: (store: XRStore) => void
 }
 
-const SceneContent = ({ sceneConfig, visemeService }: Scene3DProps) => {
+const SceneContent = ({ sceneConfig, visemeService, store }: Scene3DProps & { store: XRStore }) => {
   return (
-    <>
+    <XR store={store}>
       {/* Camera setup */}
       <OrbitControls
         target={sceneConfig.cameraTarget}
@@ -43,12 +46,19 @@ const SceneContent = ({ sceneConfig, visemeService }: Scene3DProps) => {
         <planeGeometry args={[10, 10]} />
         <meshStandardMaterial color="#2A2A2A" />
       </mesh>
-    </>
+    </XR>
   )
 }
 
-export const Scene3D = ({ sceneConfig, visemeService }: Scene3DProps) => {
+export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps) => {
   const [state, setState] = useSimpleStore(AvatarState)
+  const store = createXRStore()
+
+  useEffect(() => {
+    if (setXRStore) {
+      setXRStore(store)
+    }
+  }, [setXRStore, store])
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     setState((state) => {
@@ -134,7 +144,7 @@ export const Scene3D = ({ sceneConfig, visemeService }: Scene3DProps) => {
         shadows
         style={{ background: `#${sceneConfig.background?.toString(16).padStart(6, '0') || '1a1a1a'}` }}
       >
-        <SceneContent sceneConfig={sceneConfig} visemeService={visemeService} />
+        <SceneContent sceneConfig={sceneConfig} visemeService={visemeService} store={store} />
       </Canvas>
     </div>
   )

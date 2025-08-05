@@ -15,6 +15,7 @@ interface ChatHistoryProps {
   onToggleBargeIn: () => void
   onToggleAutoSubmit: () => void
   onToggleAgent: () => void
+  onEnterARMode?: () => void
   vadDetecting: boolean
   sttTranscript: string
   ttsActive: boolean
@@ -34,6 +35,7 @@ export const ChatHistory = ({
   onToggleBargeIn,
   onToggleAutoSubmit,
   onToggleAgent,
+  onEnterARMode,
   vadDetecting,
   sttTranscript,
   ttsActive,
@@ -102,6 +104,7 @@ export const ChatHistory = ({
           onToggleBargeIn={onToggleBargeIn}
           onToggleAutoSubmit={onToggleAutoSubmit}
           onToggleAgent={onToggleAgent}
+          onEnterARMode={onEnterARMode}
           vadDetecting={vadDetecting}
           sttTranscript={sttTranscript}
           ttsActive={ttsActive}

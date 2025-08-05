@@ -23,7 +23,8 @@ export const AvatarModel = ({ visemeService }: AvatarModelProps) => {
   const { scene: avatarScene } = useGLTF(selectedModel)
   const { animations } = useGLTF(selectedAnimation)
 
-  const { actions, mixer } = useAnimations(animations, avatarScene)
+  const avatarRef = useRef<THREE.Object3D>(null)
+  const { actions, mixer } = useAnimations(animations, avatarRef)
 
   useEffect(() => {
     if (!avatarScene || !visemesEnabled || !visemeService) return
@@ -84,7 +85,7 @@ export const AvatarModel = ({ visemeService }: AvatarModelProps) => {
     }
   })
 
-  return <primitive object={avatarScene} />
+  return <primitive ref={avatarRef} object={avatarScene} />
 }
 
 useGLTF.preload('/assets/avatars/25-1-3_CI_model_female_Shanee.glb')

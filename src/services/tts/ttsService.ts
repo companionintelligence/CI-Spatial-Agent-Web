@@ -59,7 +59,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     [config.speed, config.pitch, config.volume, onSpeechStart, onSpeechEnd]
   )
 
-  const speakRemote = useCallback(async (text: string) => {
+  const speakRemote = useCallback(async (_text: string) => {
     console.warn('Remote TTS not implemented yet')
   }, [])
 

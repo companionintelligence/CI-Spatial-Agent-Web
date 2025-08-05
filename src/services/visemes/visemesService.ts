@@ -77,9 +77,7 @@ export function visemesUpdate(volume: VisemeState, time: number): void {
       const visemeKey = key as keyof VisemeTarget
       if (visemeKey in visemes) {
         visemes[visemeKey] = value
-        if (VISEMES_DEBUG) {
-          console.log(`Viseme ${visemeKey} updated to ${value.toFixed(3)} at time ${time}`)
-        }
+        // console.log(`Viseme ${visemeKey} updated to ${value.toFixed(3)} at time ${time}`)
       }
     })
   }

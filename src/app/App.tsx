@@ -1,3 +1,4 @@
+import type { XRStore } from '@react-three/xr'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatHistory } from '../components/ChatHistory'
@@ -17,6 +18,12 @@ export const App = () => {
   const chat = useChatService()
   const { isMobile } = useResponsiveLayout()
   const { sceneConfig } = useSceneService()
+
+  const xrStore = useRef<XRStore | null>(null)
+
+  const setXRStore = useCallback((store: XRStore) => {
+    xrStore.current = store
+  }, [])
 
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
@@ -154,6 +161,33 @@ export const App = () => {
     setCurrentInterimTranscript('')
   }
 
+  const handleEnterARMode = useCallback(() => {
+    if (!xrStore.current) return
+    xrStore.current.enterAR().then(() => {
+      // Enable STT when entering AR mode
+      chat.actions.setRecording(true)
+      chat.actions.updateConfig({ microphone: true })
+      vad.actions.updateConfig({ microphoneEnabled: true })
+      stt.actions.setDesired(true)
+      setCurrentInterimTranscript('')
+    })
+    console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
+  }, [chat.actions, vad.actions, stt.actions])
+
+  // Listen for XR state changes
+  useEffect(() => {
+    if (!xrStore.current) return
+    const unsubscribe = xrStore.current.subscribe((state) => {
+      const isInXR = state.session !== null
+      if (isInXR) {
+        //
+      } else {
+        //
+      }
+    })
+    return unsubscribe
+  }, [xrStore, handleEnterARMode])
+
   return (
     <div
       style={{
@@ -203,6 +237,7 @@ export const App = () => {
               chat.actions.updateConfig({ autoSubmitEnabled: !chat.state.config.autoSubmitEnabled })
             }
             onToggleAgent={() => chat.actions.updateConfig({ agentEnabled: !chat.state.config.agentEnabled })}
+            onEnterARMode={handleEnterARMode}
             vadDetecting={vadDetecting}
             sttTranscript={currentInterimTranscript}
             ttsActive={tts.isSpeaking}
@@ -216,7 +251,7 @@ export const App = () => {
             minWidth: isMobile ? 'auto' : '400px'
           }}
         >
-          <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} />
+          <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} setXRStore={setXRStore} />
         </div>
       </div>
     </div>

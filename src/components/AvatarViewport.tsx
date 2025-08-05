@@ -1,3 +1,4 @@
+import type { XRStore } from '@react-three/xr'
 import type { SceneConfig } from '../services/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { Scene3D } from '../xr/Scene3D'
@@ -5,9 +6,10 @@ import { Scene3D } from '../xr/Scene3D'
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
   visemeService?: ReturnType<typeof useVisemeService>
+  setXRStore?: (store: XRStore) => void
 }
 
-export const AvatarViewport = ({ sceneConfig, visemeService }: AvatarViewportProps) => {
+export const AvatarViewport = ({ sceneConfig, visemeService, setXRStore }: AvatarViewportProps) => {
   return (
     <div
       style={{
@@ -31,7 +33,7 @@ export const AvatarViewport = ({ sceneConfig, visemeService }: AvatarViewportPro
           position: 'relative'
         }}
       >
-        <Scene3D sceneConfig={sceneConfig} visemeService={visemeService} />
+        <Scene3D sceneConfig={sceneConfig} visemeService={visemeService} setXRStore={setXRStore} />
       </div>
     </div>
   )
