@@ -83,27 +83,27 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Enhanced Controls overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 15,
-          left: 15,
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px',
-          background: 'linear-gradient(180deg, #10191E 0%, #112B30 100%)',
-          backdropFilter: 'blur(16px)',
-          padding: '20px',
-          borderRadius: '16px',
-          border: '1px solid rgba(255,255,255,0.10)',
-          width: `${avatarPanelWidth}px`,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.07)',
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          transform: isControlsVisible ? 'translateX(0)' : 'translateX(-100%)',
-          opacity: isControlsVisible ? 1 : 0
-        }}
-      >
+              <div
+          style={{
+            position: 'absolute',
+            top: 15,
+            left: 15,
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px',
+            background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
+            backdropFilter: 'blur(20px)',
+            padding: '20px',
+            borderRadius: '16px',
+            border: '1px solid rgba(255,255,255,0.08)',
+            width: `${avatarPanelWidth}px`,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: isControlsVisible ? 'translateX(0)' : 'translateX(-100%)',
+            opacity: isControlsVisible ? 1 : 0
+          }}
+        >
         <div style={{ 
           marginBottom: '16px', 
           paddingBottom: '12px', 
@@ -145,15 +145,16 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
             style={{
               padding: '8px 12px',
               borderRadius: '6px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'rgba(255, 255, 255, 0.6)',
               color: '#333',
               fontSize: '12px',
               fontWeight: '500',
               cursor: 'pointer',
               outline: 'none',
               transition: 'all 0.2s ease',
-              minWidth: '180px'
+              minWidth: '180px',
+              backdropFilter: 'blur(20px)'
             }}
             onFocus={(e) => {
               e.target.style.borderColor = '#4a90e2'
@@ -189,15 +190,16 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
             style={{
               padding: '8px 12px',
               borderRadius: '6px',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'rgba(255, 255, 255, 0.6)',
               color: '#333',
               fontSize: '12px',
               fontWeight: '500',
               cursor: 'pointer',
               outline: 'none',
               transition: 'all 0.2s ease',
-              minWidth: '180px'
+              minWidth: '180px',
+              backdropFilter: 'blur(20px)'
             }}
             onFocus={(e) => {
               e.target.style.borderColor = '#4a90e2'
@@ -221,10 +223,11 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
           alignItems: 'center',
           gap: '8px',
           padding: '8px 12px',
-          background: 'rgba(74, 144, 226, 0.1)',
+          background: 'rgba(74, 144, 226, 0.08)',
           borderRadius: '6px',
-          border: '1px solid rgba(74, 144, 226, 0.2)',
-          marginTop: '8px'
+          border: '1px solid rgba(74, 144, 226, 0.15)',
+          marginTop: '8px',
+          backdropFilter: 'blur(20px)'
         }}>
           <div style={{
             width: '6px',
@@ -279,7 +282,7 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
         }}
       >
         {isControlsVisible ? '◀' : '▶'}
-        {!isControlsVisible && <span style={{ marginLeft: '4px' }}>Controls</span>}
+        {!isControlsVisible && <span style={{ marginLeft: '4px' }}>Avatar</span>}
       </button>
 
       <Canvas

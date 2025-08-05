@@ -11,38 +11,40 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
   return (
     <>
       {/* Minimizable Chat History Side Panel */}
-      <div
+            <div
         style={{
           position: 'absolute',
           top: 0,
           right: 0,
-          height: '100%',
+          height: '80%',
           width: isVisible ? '400px' : '0px',
           zIndex: 999,
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          background: 'linear-gradient(180deg, #10191E 0%, #112B30 100%)',
-          backdropFilter: 'blur(16px)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: '16px 0 0 16px',
           overflow: 'hidden',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.07)',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.04)',
           margin: '0'
         }}
       >
         {/* Chat History Content */}
-        <div
-          style={{
-            opacity: isVisible ? 1 : 0,
-            transition: 'opacity 0.3s ease',
-            height: '100%',
-            paddingTop: '60px',
-            paddingLeft: '20px',
-            paddingRight: '20px',
-            paddingBottom: '20px',
-            overflow: 'hidden',
-            pointerEvents: isVisible ? 'auto' : 'none'
-          }}
-        >
+                  <div
+            style={{
+              opacity: isVisible ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+              height: '100%',
+              paddingTop: '60px',
+              paddingLeft: '20px',
+              paddingRight: '20px',
+              paddingBottom: '20px',
+              overflow: 'hidden',
+              pointerEvents: isVisible ? 'auto' : 'none',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
           {/* Chat Log Header */}
           <div
             style={{
@@ -71,14 +73,15 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
             </span>
           </div>
 
-          <div
-            style={{
-              height: '100%',
-              overflowY: 'auto',
-              color: '#FFFFFF',
-              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
-            }}
-          >
+                      <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                color: '#FFFFFF',
+                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                paddingRight: '8px'
+              }}
+            >
             {messages.map((message) => (
               <div
                 key={message.id}
@@ -87,9 +90,9 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
                   padding: message.isUser ? '12px 16px' : '0 12px',
                   borderRadius: '16px',
                   background: message.isUser
-                    ? 'linear-gradient(135deg, rgba(0,131,145,0.35) 0%, rgba(0,131,145,0.18) 100%)'
+                    ? 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)'
                     : 'transparent',
-                  border: message.isUser ? '1px solid rgba(255,255,255,0.12)' : 'none',
+                  border: message.isUser ? '1px solid rgba(255,255,255,0.08)' : 'none',
                   maxWidth: message.isUser ? '90%' : 'auto',
                   width: message.isUser ? 'fit-content' : 'auto',
                   marginLeft: message.isUser ? 'auto' : '0',

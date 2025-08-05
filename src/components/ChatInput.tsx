@@ -116,8 +116,14 @@ export const ChatInput = ({
           boxShadow: '0 2px 4px rgba(0,0,0,0.07)',
           display: 'flex',
           justifyContent: 'center',
-          padding: '16px 20px',
-          gap: '12px'
+          padding: '16px 24px',
+          gap: '16px',
+          flexWrap: 'wrap',
+          minHeight: '72px',
+          alignItems: 'center',
+          width: 'fit-content',
+          margin: '0 auto',
+          maxWidth: '400px'
         }}
       >
         <ControlButton isActive={isRecording} onClick={onToggleMicrophone}>

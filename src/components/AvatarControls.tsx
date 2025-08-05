@@ -225,7 +225,7 @@ export const AvatarControls = ({ isVisible, onToggleVisibility }: AvatarControls
         }}
       >
         {isVisible ? '◀' : '▶'}
-        {!isVisible && <span style={{ marginLeft: '4px' }}>Controls</span>}
+        {!isVisible && <span style={{ marginLeft: '4px' }}>Avatar</span>}
       </button>
     </>
   )
