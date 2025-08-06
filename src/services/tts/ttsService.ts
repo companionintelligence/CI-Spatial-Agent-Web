@@ -42,6 +42,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       }
 
       utterance.onend = () => {
+        setIsSpeaking(false)
         if (onSpeechEnd) {
           onSpeechEnd()
         }
@@ -49,6 +50,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       utterance.onerror = (event) => {
         console.error('TTS Error:', event.error)
+        setIsSpeaking(false)
         if (onSpeechEnd) {
           onSpeechEnd()
         }
@@ -76,11 +78,14 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         }
       } catch (error) {
         console.error('TTS Error:', error)
-      } finally {
         setIsSpeaking(false)
+        // Call speech end callback if there's an error during speech initiation
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
       }
     },
-    [config.remote, speakLocal, speakRemote]
+    [config.remote, speakLocal, speakRemote, onSpeechEnd]
   )
 
   const stopSpeaking = useCallback(() => {
@@ -88,7 +93,12 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       speechSynthesis.cancel()
     }
     setIsSpeaking(false)
-  }, [])
+    
+    // Call speech end callback when speech is stopped
+    if (onSpeechEnd) {
+      onSpeechEnd()
+    }
+  }, [onSpeechEnd])
 
   const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -134,8 +144,12 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       console.error('Queue processing error:', error)
     } finally {
       setIsSpeaking(false)
+      // Call speech end callback when queue processing is complete
+      if (onSpeechEnd) {
+        onSpeechEnd()
+      }
     }
-  }, [audioQueue, isSpeaking, playAudioBuffer])
+  }, [audioQueue, isSpeaking, playAudioBuffer, onSpeechEnd])
 
   const updateConfig = useCallback((newConfig: Partial<TTSConfig>) => {
     setConfig((prev) => ({ ...prev, ...newConfig }))

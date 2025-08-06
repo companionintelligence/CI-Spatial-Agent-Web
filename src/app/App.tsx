@@ -47,7 +47,13 @@ export const App = () => {
     [visemes.actions]
   )
 
-  const handleSpeechEnd = useCallback(() => {}, [])
+  const handleSpeechEnd = useCallback(() => {
+    // Reset emote state to neutral after a brief delay when agent finishes speaking
+    // This makes the emotional transition feel more natural
+    setTimeout(() => {
+      emotes.reset()
+    }, 500) // 500ms delay for natural transition
+  }, [emotes])
 
   const tts = useTTSService({
     onSpeechStart: handleSpeechStart,
@@ -152,7 +158,6 @@ export const App = () => {
         // Trigger emote performance based on the response
         emotes.performAction(performanceData)
       }
-      console.log('Calling streamMessage with:', breath, response.final)
       chat.actions.streamMessage(breath, response.final)
     },
     [chat.state.config.agentEnabled, chat.state.messages.length, tts.actions, chat.actions, emotes]

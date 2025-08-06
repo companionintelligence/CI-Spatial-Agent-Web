@@ -42,6 +42,7 @@ export const resetEmoteState = (state: EmoteState): void => {
   state.isPerforming = false
   state.relaxationTime = 0
   applyEmotion(state, 'neutral')
+  console.log('Emote state reset to neutral')
 }
 
 /**

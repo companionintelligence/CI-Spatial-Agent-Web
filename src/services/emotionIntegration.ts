@@ -127,6 +127,7 @@ export const analyzeMessageForActions = (message: ChatMessage): string | undefin
   // Detect greeting behaviors
   if (
     lowerText.includes('hello') ||
+    lowerText.includes('to meet you') ||
     lowerText.includes('hi there') ||
     lowerText.includes('good morning') ||
     lowerText.includes('good afternoon') ||
