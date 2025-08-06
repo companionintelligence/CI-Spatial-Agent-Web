@@ -1,5 +1,5 @@
 import type { XRStore } from '@react-three/xr'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
 import { ChatPanel } from '../components/chat/ChatPanel'
@@ -16,6 +16,7 @@ import { useSTTService } from '../services/stt/sttService'
 import { useVADService } from '../services/stt/vadService'
 import { useTTSService } from '../services/tts/ttsService'
 import { useVisemeService } from '../services/visemes/useVisemeService'
+import { useSimpleStore } from '../utils/SimpleStore'
 
 export const App = () => {
   const chat = useChatService()
@@ -23,14 +24,14 @@ export const App = () => {
   const { sceneConfig } = useSceneService()
 
   const xrStore = useRef<XRStore | null>(null)
-  const [isChatVisible, setIsChatVisible] = useState(true)
+  const [isChatVisible, setIsChatVisible] = useSimpleStore(() => true)
 
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
 
-  const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
-  const [vadDetecting, setVadDetecting] = useState(false)
+  const [currentInterimTranscript, setCurrentInterimTranscript] = useSimpleStore(() => '')
+  const [vadDetecting, setVadDetecting] = useSimpleStore(() => false)
 
   const llmService = useLLMService({
     onStatus: (status: LLMStatusUpdate) => {

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, } from 'react'
 import type { AudioConfig, VADResult } from '../audioTypes'
 import { defaultAudioConfig } from '../audioTypes'
+import { useSimpleStore } from '../../utils/SimpleStore'
 
 // Type for VAD instance
 interface VADInstance {
@@ -20,11 +21,11 @@ interface UseVADServiceProps {
 }
 
 export const useVADService = ({ onVADResult, onSpeechStart, onSpeechEnd }: UseVADServiceProps = {}) => {
-  const [config, setConfig] = useState<AudioConfig>(defaultAudioConfig)
-  const [isListening, setIsListening] = useState(false)
-  const [isDetecting, setIsDetecting] = useState(false)
+  const [config, setConfig] = useSimpleStore<AudioConfig>(() => defaultAudioConfig)
+  const [isListening, setIsListening] = useSimpleStore(() => false)
+  const [isDetecting, setIsDetecting] = useSimpleStore(() => false)
   const vadRef = useRef<VADInstance | null>(null)
-  const [vadInstance, setVadInstance] = useState<VADInstance | null>(null)
+  const [vadInstance, setVadInstance] = useSimpleStore<VADInstance | null>(() => null)
 
   const handleVADResult = useCallback(
     (result: VADResult) => {

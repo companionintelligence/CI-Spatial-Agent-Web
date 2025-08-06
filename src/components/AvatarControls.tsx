@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, } from 'react'
 import { useSimpleStore } from '../utils/SimpleStore'
 import { AvatarState } from '../xr/AvatarModel'
 import { AnimationOptions, AvatarOptions } from '../xr/AvatarOptions'
@@ -26,8 +26,8 @@ const Dropdown = ({
   placeholder = 'Select option',
   searchable = false
 }: DropdownProps) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
+  const [isOpen, setIsOpen] = useSimpleStore(() => false)
+  const [searchTerm, setSearchTerm] = useSimpleStore(() => '')
   const dropdownRef = useRef<HTMLDivElement>(null)
   const isMobile = window.innerWidth <= 768
 

@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, } from 'react'
+import { useSimpleStore } from '../utils/SimpleStore'
 
 export const useResponsiveLayout = (breakpoint: number = 1000) => {
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useSimpleStore(() => false)
 
   useEffect(() => {
     const checkScreenSize = () => {

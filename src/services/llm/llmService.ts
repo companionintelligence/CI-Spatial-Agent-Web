@@ -33,12 +33,13 @@
 
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, } from 'react'
 import { llmCloud } from './llmCloud'
 import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
 import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMState, LLMStatusUpdate } from './llmTypes'
 import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
+import { useSimpleStore } from '../../utils/SimpleStore'
 
 // Constants from the original implementation
 const selectedModel = 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
@@ -56,7 +57,7 @@ type LLMServiceProps = {
 }
 
 export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
-  const [state, setState] = useState<LLMState>({
+  const [state, setState] = useSimpleStore<LLMState>(() => ({
     messages: [{ role: 'system', content: SYSTEM_PROMPT }],
     thinking: false,
     ready: false,
@@ -64,9 +65,9 @@ export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
     selectedModel,
     engine: null,
     _latest_interrupt: 0
-  })
+  }))
 
-  const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
+  const [config, setConfig] = useSimpleStore<LLMConfig>(() => DEFAULT_LLM_CONFIG)
   const initializedRef = useRef(false)
 
   const processThinkBlocks = useCallback((input: string) => {

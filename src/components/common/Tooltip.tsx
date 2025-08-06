@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useSimpleStore } from "../../utils/SimpleStore"
 
 interface TooltipProps {
   children: React.ReactNode
@@ -8,8 +8,8 @@ interface TooltipProps {
 }
 
 export const Tooltip = ({ children, content, position = 'top', delay = 500 }: TooltipProps) => {
-  const [isVisible, setIsVisible] = useState(false)
-  const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null)
+  const [isVisible, setIsVisible] = useSimpleStore(() => false)
+  const [timeoutId, setTimeoutId] = useSimpleStore<NodeJS.Timeout | null>(() => null)
 
   const handleMouseEnter = () => {
     if (timeoutId) {

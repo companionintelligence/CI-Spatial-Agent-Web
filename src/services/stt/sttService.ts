@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, } from 'react'
 import type { STTConfig } from '../audioTypes'
 import { defaultSTTConfig } from '../audioTypes'
+import { useSimpleStore } from '../../utils/SimpleStore'
 
 interface STTPerformResult {
   text: string
@@ -65,10 +66,10 @@ interface WindowWithSpeech extends Window {
 }
 
 export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceProps = {}) => {
-  const [config, setConfig] = useState<STTConfig>(defaultSTTConfig)
-  const [isListening, setIsListening] = useState(false)
-  const [allowed, setAllowed] = useState(true)
-  const [desired, setDesired] = useState(false)
+  const [config, setConfig] = useSimpleStore<STTConfig>(() => defaultSTTConfig)
+  const [isListening, setIsListening] = useSimpleStore(() => false)
+  const [allowed, setAllowed] = useSimpleStore(() => true)
+  const [desired, setDesired] = useSimpleStore(() => false)
 
   const recognitionRef = useRef<ExtendedSpeechRecognition | null>(null)
   const rcounterRef = useRef(1)

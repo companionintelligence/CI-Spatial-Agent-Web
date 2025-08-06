@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, } from 'react'
 import type { TTSConfig, WhisperData } from '../audioTypes'
 import { defaultTTSConfig } from '../audioTypes'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'
+import { useSimpleStore } from '../../utils/SimpleStore'
 
 interface TTSServiceOptions {
   onSpeechStart?: (text: string, whisperData: WhisperData) => void
@@ -9,9 +10,9 @@ interface TTSServiceOptions {
 }
 
 export const useTTSService = (options: TTSServiceOptions = {}) => {
-  const [config, setConfig] = useState<TTSConfig>(defaultTTSConfig)
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const [audioQueue, setAudioQueue] = useState<ArrayBuffer[]>([])
+  const [config, setConfig] = useSimpleStore<TTSConfig>(() => defaultTTSConfig)
+  const [isSpeaking, setIsSpeaking] = useSimpleStore(() => false)
+  const [audioQueue, setAudioQueue] = useSimpleStore<ArrayBuffer[]>(() => [])
 
   const { onSpeechStart, onSpeechEnd } = options
 

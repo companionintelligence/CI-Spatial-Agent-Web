@@ -1,5 +1,5 @@
-import { useState } from 'react'
 import type { AppConfig } from '../../services/types'
+import { useSimpleStore } from '../../utils/SimpleStore'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
 import { ControlButtons } from './ControlButtons'
@@ -41,7 +41,7 @@ export const ChatOverlay = ({
   ttsActive = false,
   sttListening = false
 }: ChatOverlayProps) => {
-  const [isButtonsVisible, setIsButtonsVisible] = useState(true)
+  const [isButtonsVisible, setIsButtonsVisible] = useSimpleStore(() => true)
 
   return (
     <>

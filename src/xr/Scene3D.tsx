@@ -1,12 +1,13 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { useEffect, useState } from 'react'
+import { useEffect, } from 'react'
 import { AvatarControls } from '../components/AvatarControls'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { SceneConfig } from '../services/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { AvatarModel } from './AvatarModel'
+import { useSimpleStore } from '../utils/SimpleStore'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
@@ -53,7 +54,7 @@ const SceneContent = ({ sceneConfig, visemeService, emoteService, store }: Scene
 
 export const Scene3D = ({ sceneConfig, visemeService, emoteService, setXRStore }: Scene3DProps) => {
   const store = createXRStore()
-  const [isControlsVisible, setIsControlsVisible] = useState(true)
+  const [isControlsVisible, setIsControlsVisible] = useSimpleStore(() => true)
 
   useEffect(() => {
     if (setXRStore) {
