@@ -58,8 +58,7 @@ export const App = () => {
       }
       
       chat.actions.streamMessage(breath, response.final)
-    },
-    directedMode: chat.state.config.directedMode
+    }
   })
 
   const interruptCounterRef = useRef(Date.now())
@@ -160,6 +159,13 @@ export const App = () => {
       llm_local: !chat.state.config.cloudMode
     })
   }, [llmService.actions, llmService.config.llm_local, chat.state.config.cloudMode])
+
+  useEffect(() => {
+    if (llmService.config.directed_mode === chat.state.config.directedMode) return
+    llmService.actions.updateConfig({
+      directed_mode: chat.state.config.directedMode
+    })
+  }, [llmService.actions, llmService.config.directed_mode, chat.state.config.directedMode])
 
   React.useEffect(() => {
     stt.actions.setAllowed(!tts.isSpeaking)

@@ -37,9 +37,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { llmCloud } from './llmCloud'
 import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
+import { llmDirected } from './llmDirected'
 import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMState, LLMStatusUpdate } from './llmTypes'
 import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
-import { useDirectedService } from '../directed/directedService'
 
 // Constants from the original implementation
 const selectedModel = 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
@@ -54,10 +54,12 @@ self.onmessage = (msg) => { handler.onmessage(msg); };
 type LLMServiceProps = {
   onStatus?: (update: LLMStatusUpdate) => void
   onResponse?: (response: LLMResponse) => void
-  directedMode?: boolean
 }
 
-export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LLMServiceProps) => {
+export const useLLMService = ({ 
+  onStatus, 
+  onResponse
+}: LLMServiceProps) => {
   const [state, setState] = useState<LLMState>({
     messages: [{ role: 'system', content: SYSTEM_PROMPT }],
     thinking: false,
@@ -70,7 +72,6 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
 
   const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
   const initializedRef = useRef(false)
-  const directedService = useDirectedService()
 
   const processThinkBlocks = useCallback((input: string) => {
     const thinkBlocks: string[] = []
@@ -149,30 +150,21 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
 
     console.log('LLM: Initializing service...')
 
-    // Handle directed mode initialization
-    if (directedMode) {
-      try {
-        await directedService.actions.loadResponses()
-        setState((prev) => ({ ...prev, ready: true }))
-        return
-      } catch (error) {
-        console.error('LLM: Failed to load', error)
-        return
-      }
-    }
-
-    // Auto-initialize local LLM if configured
-    if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
-      console.log('LLM: Auto-initializing local model...')
-      await load()
+    // Determine which mode to use and set ready state
+    if (config.directed_mode) {
+      console.log('LLM: Directed mode enabled - ready for directed responses')
+      setState((prev) => ({ ...prev, ready: true }))
     } else if (config.llm_local && config.ollama_url) {
       console.log('LLM: Ollama configured - local model ready')
       setState((prev) => ({ ...prev, ready: true }))
     } else if (!config.llm_local) {
       console.log('LLM: Cloud mode configured - ready for remote requests')
       setState((prev) => ({ ...prev, ready: true }))
+    } else if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
+      console.log('LLM: Auto-initializing local model...')
+      await load()
     }
-  }, [config.llm_local, config.ollama_url, state.ready, state.loading, load, directedMode, directedService.actions, onStatus])
+  }, [config.llm_local, config.ollama_url, config.directed_mode, state.ready, state.loading, load])
 
   // Auto-initialize when the service is created
   useEffect(() => {
@@ -190,7 +182,7 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
       console.log('LLM: Config changed, re-initializing...')
       initialize()
     }
-  }, [config.llm_local, config.ollama_url, directedMode, initialize])
+  }, [config.llm_local, config.ollama_url, config.directed_mode, initialize])
 
   const processUserInput = useCallback(
     async (request: LLMPerformRequest) => {
@@ -199,56 +191,18 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
       const text = request.text?.trim()
       if (!text || !text.length) return
 
-      // Handle directed mode
-      if (directedMode) {
-        // Load responses if not already loaded
-        if (!directedService.state.config) {
-          await directedService.actions.loadResponses()
+      // Early return if loading or not ready
+      if (state.loading || (!config.directed_mode && !state.ready)) {
+        if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
+          await load()
         }
-
-        // Find matching response
-        const directedResponse = directedService.actions.findResponse(text) || 
-                               directedService.actions.getDefaultResponse()
-
-        if (directedResponse && onResponse) {
-          // Simulate streaming response like LLM
-          const sentences = directedResponse.response.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0)
-          let currentResponse = ''
-          
-          for (let i = 0; i < sentences.length; i++) {
-            const sentence = sentences[i].trim()
-            currentResponse += (i > 0 ? '. ' : '') + sentence
-            
-            onResponse({
-              text: currentResponse,
-              breath: sentence,
-              ready: true,
-              final: i === sentences.length - 1,
-              interrupt: request.interrupt,
-              rcounter: 1000,
-              bcounter: i
-            })
-            
-            // Small delay to simulate streaming
-            await new Promise(resolve => setTimeout(resolve, 200))
-          }
-          
-          return
-        }
+        return
       }
 
-      if (state.thinking && state.engine && state.engine.interruptGenerate) {
+      // Handle interruptions
+      if (state.thinking && state.engine?.interruptGenerate) {
         state.engine.interruptGenerate()
         setState((prev) => ({ ...prev, thinking: false }))
-      }
-
-      if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
-        await load()
-        return
-      }
-
-      if (state.loading) {
-        return
       }
 
       setState((prev) => ({ ...prev, _latest_interrupt: request.interrupt }))
@@ -277,8 +231,14 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
       }
 
       try {
-        if (config.llm_local) {
-          if (config.ollama_url && config.ollama_url.trim()) {
+        // Route to appropriate LLM based on config
+        if (config.directed_mode) {
+          const result = await llmDirected(baseParams)
+          if (!result.success && result.error) {
+            console.error('LLM: Directed reasoning failed:', result.error)
+          }
+        } else if (config.llm_local) {
+          if (config.ollama_url?.trim()) {
             const result = await llmOllama({
               ...baseParams,
               llmUrl: config.ollama_url,
@@ -287,7 +247,7 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
             if (!result.success && result.error) {
               console.error('LLM: Ollama reasoning failed:', result.error)
             }
-          } else if (state.ready && state.engine) {
+          } else if (state.engine) {
             const result = await llmLocal({
               ...baseParams,
               engine: state.engine
@@ -297,13 +257,10 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
             }
           } else {
             console.error('LLM - no local options available')
-            if (onStatus) {
-              onStatus({
-                color: 'error',
-                text: 'No local LLM options configured'
-              })
-            }
-            return
+            onStatus?.({
+              color: 'error',
+              text: 'No local LLM options configured'
+            })
           }
         } else {
           const result = await llmCloud({
@@ -319,12 +276,10 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
         }
       } catch (error) {
         console.error('LLM - error processing input:', error)
-        if (onStatus) {
-          onStatus({
-            color: 'error',
-            text: 'Error processing request'
-          })
-        }
+        onStatus?.({
+          color: 'error',
+          text: 'Error processing request'
+        })
       }
     },
     [
@@ -334,13 +289,7 @@ export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LL
       state.loading,
       state.messages,
       state._latest_interrupt,
-      config.llm_local,
-      config.ollama_url,
-      config.ollama_model,
-      config.llm_url,
-      config.llm_model,
-      config.llm_auth,
-      config.llm_flowise,
+      config,
       onResponse,
       onStatus,
       processThinkBlocks,
