@@ -19,3 +19,12 @@
 - **Emote Service**: Automatic facial expressions based on conversation sentiment
 - **Voice Integration**: STT, TTS, and viseme-based lip sync
 - **XR Support**: WebXR-compatible for AR/VR experiences
+
+## Install & Run
+
+```
+ollama run llama3.2
+
+npm i
+npm run dev
+```
