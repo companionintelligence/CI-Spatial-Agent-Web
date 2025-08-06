@@ -10,14 +10,14 @@ export interface FacialTarget {
   eyeWideRight: number
   eyesLookDown: number
   eyesClosed: number
-  
+
   // Brow expressions
   browDownLeft: number
   browDownRight: number
   browInnerUp: number
   browOuterUpLeft: number
   browOuterUpRight: number
-  
+
   // Mouth expressions
   mouthSmile: number
   mouthFrownLeft: number
@@ -38,30 +38,30 @@ export interface FacialTarget {
   mouthClose: number
   mouthUpperUpLeft: number
   mouthUpperUpRight: number
-  
+
   // Nose expressions
   noseSneerLeft: number
   noseSneerRight: number
-  
+
   // Cheek expressions
   cheekSquintLeft: number
   cheekSquintRight: number
-  
+
   // Jaw expressions
   jawForward: number
-  
+
   // Hand expressions (if supported)
   handFistLeft: number
   handFistRight: number
-  
+
   // Body expressions (if supported)
   chestInhale: number
-  
+
   // Head rotation (for gaze)
   headRotateX: number
   headRotateY: number
   headRotateZ: number
-  
+
   // Eye rotation (for gaze)
   eyesRotateX: number
   eyesRotateY: number
@@ -73,14 +73,14 @@ export interface EmoteState {
   isPerforming: boolean
   performanceStartTime: number
   relaxationTime: number
-  
+
   // Animation state
   blinkState: {
     nextBlinkTime: number
     isBlinking: boolean
     blinkStartTime: number
   }
-  
+
   // Gaze state
   gazeState: {
     isGazing: boolean
@@ -91,19 +91,19 @@ export interface EmoteState {
     headTargetQuaternion: [number, number, number, number] | null
     isPlayerVisible: boolean
   }
-  
+
   // Facial ticks state
   tickState: {
     currentTick: keyof FacialTarget | null
     tickStartTime: number
   }
-  
+
   // Integration interfaces
   vrm?: { expressionManager: { setValue: (key: string, value: number) => void } }
   morphs?: { morphTargetInfluences: number[] }[]
   dictionary?: Record<string, number[]>
   bones?: Record<string, { quaternion: { copy: (q: unknown) => void }; matrixWorld: unknown; up: unknown }>
-  node?: { 
+  node?: {
     quaternion: { copy: (q: unknown) => void }
     getWorldQuaternion: (q: unknown) => unknown
     parent?: { children: unknown[] }
@@ -179,5 +179,5 @@ export const createEmptyFacialTarget = (): Partial<FacialTarget> => ({
   headRotateY: 0,
   headRotateZ: 0,
   eyesRotateX: 0,
-  eyesRotateY: 0,
+  eyesRotateY: 0
 })

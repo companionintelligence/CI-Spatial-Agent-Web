@@ -8,7 +8,7 @@ import type { ChatMessage } from './types'
  */
 export const detectEmotionFromText = (text: string): EmotionType => {
   const lowerText = text.toLowerCase()
-  
+
   // Happy indicators
   if (
     lowerText.includes('happy') ||
@@ -28,7 +28,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
   ) {
     return 'happy'
   }
-  
+
   // Sad indicators
   if (
     lowerText.includes('sad') ||
@@ -45,7 +45,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
   ) {
     return 'sad'
   }
-  
+
   // Angry indicators
   if (
     lowerText.includes('angry') ||
@@ -62,7 +62,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
   ) {
     return 'angry'
   }
-  
+
   // Fear indicators
   if (
     lowerText.includes('scared') ||
@@ -79,7 +79,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
   ) {
     return 'fear'
   }
-  
+
   // Disgust indicators
   if (
     lowerText.includes('disgusting') ||
@@ -95,7 +95,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
   ) {
     return 'disgust'
   }
-  
+
   // Love/affection indicators
   if (
     lowerText.includes('love you') ||
@@ -113,7 +113,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
   ) {
     return 'love'
   }
-  
+
   // Default to neutral
   return 'neutral'
 }
@@ -123,7 +123,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
  */
 export const analyzeMessageForActions = (message: ChatMessage): string | undefined => {
   const lowerText = message.text.toLowerCase()
-  
+
   // Detect greeting behaviors
   if (
     lowerText.includes('hello') ||
@@ -134,7 +134,7 @@ export const analyzeMessageForActions = (message: ChatMessage): string | undefin
   ) {
     return 'greeting'
   }
-  
+
   // Detect farewell behaviors
   if (
     lowerText.includes('goodbye') ||
@@ -145,7 +145,7 @@ export const analyzeMessageForActions = (message: ChatMessage): string | undefin
   ) {
     return 'farewell'
   }
-  
+
   // Detect agreement
   if (
     lowerText.includes('yes') ||
@@ -156,7 +156,7 @@ export const analyzeMessageForActions = (message: ChatMessage): string | undefin
   ) {
     return 'agreement'
   }
-  
+
   // Detect disagreement
   if (
     lowerText.includes('no way') ||
@@ -167,25 +167,22 @@ export const analyzeMessageForActions = (message: ChatMessage): string | undefin
   ) {
     return 'disagreement'
   }
-  
+
   return undefined
 }
 
 /**
  * Create performance data based on a chat message
  */
-export const createPerformanceFromMessage = (
-  message: ChatMessage,
-  messageIndex: number = 0
-): PerformanceData => {
+export const createPerformanceFromMessage = (message: ChatMessage, messageIndex: number = 0): PerformanceData => {
   const emotion = detectEmotionFromText(message.text)
   const action = analyzeMessageForActions(message)
-  
+
   return {
     emotion,
     action,
     bcounter: messageIndex, // Used for gaze behavior
-    whisper: message.visemeData as { words?: string[]; wtimes?: number[]; wdurations?: number[] } | undefined, // If available from TTS
+    whisper: message.visemeData as { words?: string[]; wtimes?: number[]; wdurations?: number[] } | undefined // If available from TTS
   }
 }
 
@@ -204,31 +201,33 @@ export const shouldTriggerBargeIn = (message: ChatMessage): boolean => {
  */
 export const getEmotionIntensity = (text: string): number => {
   const lowerText = text.toLowerCase()
-  
+
   // High intensity indicators
   const highIntensityWords = [
-    'extremely', 'incredibly', 'absolutely', 'completely', 'totally',
-    'amazing', 'fantastic', 'terrible', 'awful', 'furious', 'thrilled'
+    'extremely',
+    'incredibly',
+    'absolutely',
+    'completely',
+    'totally',
+    'amazing',
+    'fantastic',
+    'terrible',
+    'awful',
+    'furious',
+    'thrilled'
   ]
-  
+
   // Medium intensity indicators
-  const mediumIntensityWords = [
-    'very', 'really', 'quite', 'pretty', 'rather',
-    'good', 'bad', 'nice', 'great', 'okay'
-  ]
-  
+  const mediumIntensityWords = ['very', 'really', 'quite', 'pretty', 'rather', 'good', 'bad', 'nice', 'great', 'okay']
+
   // Count intensity markers
-  const highCount = highIntensityWords.reduce((count, word) => 
-    lowerText.includes(word) ? count + 1 : count, 0
-  )
-  
-  const mediumCount = mediumIntensityWords.reduce((count, word) => 
-    lowerText.includes(word) ? count + 1 : count, 0
-  )
-  
-  if (highCount > 0) return 0.8 + (Math.min(highCount, 3) * 0.067) // 0.8 to 1.0
-  if (mediumCount > 0) return 0.5 + (Math.min(mediumCount, 3) * 0.1) // 0.5 to 0.8
-  
+  const highCount = highIntensityWords.reduce((count, word) => (lowerText.includes(word) ? count + 1 : count), 0)
+
+  const mediumCount = mediumIntensityWords.reduce((count, word) => (lowerText.includes(word) ? count + 1 : count), 0)
+
+  if (highCount > 0) return 0.8 + Math.min(highCount, 3) * 0.067 // 0.8 to 1.0
+  if (mediumCount > 0) return 0.5 + Math.min(mediumCount, 3) * 0.1 // 0.5 to 0.8
+
   return 0.3 // Default low intensity
 }
 

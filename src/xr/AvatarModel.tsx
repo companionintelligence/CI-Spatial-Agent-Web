@@ -2,8 +2,8 @@ import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
-import type { useVisemeService } from '../services/visemes/useVisemeService'
 import type { useEmoteService } from '../services/emote/useEmoteService'
+import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { createSimpleStore, useSimpleStore } from '../utils/SimpleStore'
 
 export const AvatarState = createSimpleStore({
@@ -76,8 +76,14 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
         // Map morph targets for emotional expressions
         Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
           // Include all relevant facial expression morph targets
-          if (name.includes('eye') || name.includes('brow') || name.includes('mouth') || 
-              name.includes('nose') || name.includes('cheek') || name.includes('jaw')) {
+          if (
+            name.includes('eye') ||
+            name.includes('brow') ||
+            name.includes('mouth') ||
+            name.includes('nose') ||
+            name.includes('cheek') ||
+            name.includes('jaw')
+          ) {
             if (!emoteDictionary[name]) {
               emoteDictionary[name] = []
             }
@@ -141,16 +147,16 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
     // Update emotes for facial expressions and behaviors
     if (emotesEnabled && emoteService) {
       emoteService.update(currentTime)
-      
+
       // Apply to morph targets if available
       if (morphTargetsRef.current.length > 0) {
         const dictionary = emoteService.getState().dictionary
         if (dictionary) {
           // Filter to only meshes with morph targets
-          const validMorphs = morphTargetsRef.current.filter(
-            mesh => mesh.morphTargetInfluences !== undefined
-          ) as { morphTargetInfluences: number[] }[]
-          
+          const validMorphs = morphTargetsRef.current.filter((mesh) => mesh.morphTargetInfluences !== undefined) as {
+            morphTargetInfluences: number[]
+          }[]
+
           if (validMorphs.length > 0) {
             emoteService.applyToMorphTargets(validMorphs, dictionary)
           }

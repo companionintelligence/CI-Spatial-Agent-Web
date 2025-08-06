@@ -1,24 +1,18 @@
 import { useCallback, useRef } from 'react'
-import type { 
-  EmoteState, 
-  EmotionType, 
-  PerformanceData, 
-  GazeOptions, 
-  FacialTarget 
-} from './emoteTypes'
 import {
-  initializeEmoteState,
-  resetEmoteState,
-  applyEmotion,
-  updateEmoteState,
-  startPerformance,
-  handleBargeIn,
-  applyEmoteStateToVRM,
   applyEmoteStateToMorphTargets,
-  setupEmoteStateForVRM,
+  applyEmoteStateToVRM,
+  applyEmotion,
+  handleBargeIn,
+  initializeEmoteState,
+  initiateGaze,
+  resetEmoteState,
   setupEmoteStateForMorphTargets,
-  initiateGaze
+  setupEmoteStateForVRM,
+  startPerformance,
+  updateEmoteState
 } from './emoteService'
+import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData } from './emoteTypes'
 
 export const useEmoteService = () => {
   const emoteStateRef = useRef<EmoteState>(initializeEmoteState())
@@ -82,16 +76,15 @@ export const useEmoteService = () => {
     return emoteStateRef.current.isPerforming
   }, [])
 
-  const setAvatarReferences = useCallback((references: {
-    bones?: Record<string, unknown>
-    node?: unknown
-    scene?: { camera: unknown }
-  }) => {
-    const state = emoteStateRef.current
-    if (references.bones) state.bones = references.bones as EmoteState['bones']
-    if (references.node) state.node = references.node as EmoteState['node']
-    if (references.scene) state.scene = references.scene as EmoteState['scene']
-  }, [])
+  const setAvatarReferences = useCallback(
+    (references: { bones?: Record<string, unknown>; node?: unknown; scene?: { camera: unknown } }) => {
+      const state = emoteStateRef.current
+      if (references.bones) state.bones = references.bones as EmoteState['bones']
+      if (references.node) state.node = references.node as EmoteState['node']
+      if (references.scene) state.scene = references.scene as EmoteState['scene']
+    },
+    []
+  )
 
   return {
     // Core emotion controls
@@ -100,24 +93,24 @@ export const useEmoteService = () => {
     triggerGaze,
     reset,
     onBargeIn,
-    
+
     // Update loop
     update,
-    
+
     // Setup and integration
     setupForVRM,
     setupForMorphTargets,
     setAvatarReferences,
-    
+
     // Application
     applyToVRM,
     applyToMorphTargets,
-    
+
     // State access
     getCurrentTargets,
     getCurrentEmotion,
     isPerforming,
-    
+
     // Direct state access (for advanced use cases)
     getState: () => emoteStateRef.current
   }

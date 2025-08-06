@@ -6,6 +6,8 @@ import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
 import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
+import { useEmoteService } from '../services/emote/useEmoteService'
+import { emotionIntegrationService } from '../services/emotionIntegration'
 import { useResponsiveLayout } from '../services/layoutService'
 import { useLLMService } from '../services/llm/llmService'
 import type { LLMResponse, LLMStatusUpdate } from '../services/llm/llmTypes'
@@ -14,8 +16,6 @@ import { useSTTService } from '../services/stt/sttService'
 import { useVADService } from '../services/stt/vadService'
 import { useTTSService } from '../services/tts/ttsService'
 import { useVisemeService } from '../services/visemes/useVisemeService'
-import { useEmoteService } from '../services/emote/useEmoteService'
-import { emotionIntegrationService } from '../services/emotionIntegration'
 
 export const App = () => {
   const chat = useChatService()
@@ -94,7 +94,7 @@ export const App = () => {
           if (tts.isSpeaking) {
             tts.actions.stopSpeaking()
           }
-          
+
           // Trigger barge-in behavior in emote system
           emotes.onBargeIn()
 
@@ -136,19 +136,19 @@ export const App = () => {
       const breath = response.breath
       if (chat.state.config.agentEnabled && breath) {
         tts.actions.speak(breath)
-        
+
         // Analyze the response for emotional content and trigger appropriate emote
-        const message = { 
-          id: Date.now().toString(), 
-          text: breath, 
-          isUser: false, 
-          timestamp: Date.now() 
+        const message = {
+          id: Date.now().toString(),
+          text: breath,
+          isUser: false,
+          timestamp: Date.now()
         }
         const performanceData = emotionIntegrationService.createPerformanceFromMessage(
           message,
           chat.state.messages.length
         )
-        
+
         // Trigger emote performance based on the response
         emotes.performAction(performanceData)
       }
@@ -234,7 +234,12 @@ export const App = () => {
           width: '100%'
         }}
       >
-        <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} emoteService={emotes} setXRStore={setXRStore} />
+        <AvatarViewport
+          sceneConfig={sceneConfig}
+          visemeService={visemes}
+          emoteService={emotes}
+          setXRStore={setXRStore}
+        />
 
         <LogoOverlay />
 
