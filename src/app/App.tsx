@@ -97,11 +97,13 @@ export const App = () => {
         }
 
         if (chat.state.config.autoSubmitEnabled) {
-          chat.actions.updateCurrentMessage(result.text)
+          chat.actions.addMessage(result.text, true)
           setCurrentInterimTranscript('')
         } else {
+          
           setCurrentInterimTranscript(result.text)
         }
+
 
         const interrupt = Date.now()
         interruptCounterRef.current = interrupt
@@ -117,10 +119,10 @@ export const App = () => {
         setCurrentInterimTranscript(result.text)
               }
       },
-      onInterimTranscript: (text) => {
-        setCurrentInterimTranscript(text)
-      }
-    })
+    onInterimTranscript: (text) => {
+      setCurrentInterimTranscript(text)
+    }
+  })
 
     const responseCallbackRef = useCallback(
       (response: LLMResponse) => {
@@ -164,13 +166,11 @@ export const App = () => {
 
   const handleToggleMicrophone = () => {
     const newRecordingState = !chat.state.isRecording
-
     chat.actions.setRecording(newRecordingState)
     chat.actions.updateConfig({ microphone: newRecordingState })
 
     vad.actions.updateConfig({ microphoneEnabled: newRecordingState })
 
-    stt.actions.setDesired(true)
     setCurrentInterimTranscript('')
   }
 

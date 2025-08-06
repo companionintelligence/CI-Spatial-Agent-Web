@@ -1,11 +1,22 @@
+import React from 'react'
+import { Tooltip } from './Tooltip'
+
 interface ControlButtonProps {
   isActive?: boolean
   onClick: () => void
   children: React.ReactNode
+  tooltipContent?: string
+  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
 }
 
-export const ControlButton = ({ isActive = false, onClick, children }: ControlButtonProps) => {
-  return (
+export const ControlButton = ({ 
+  isActive = false, 
+  onClick, 
+  children, 
+  tooltipContent,
+  tooltipPosition = 'top'
+}: ControlButtonProps) => {
+  const buttonElement = (
     <button
       style={{
         width: '40px',
@@ -45,4 +56,16 @@ export const ControlButton = ({ isActive = false, onClick, children }: ControlBu
       {children}
     </button>
   )
+
+  // If tooltip content is provided, wrap the button with tooltip
+  if (tooltipContent) {
+    return (
+      <Tooltip content={tooltipContent} position={tooltipPosition}>
+        {buttonElement}
+      </Tooltip>
+    )
+  }
+
+  // Otherwise return just the button
+  return buttonElement
 } 
