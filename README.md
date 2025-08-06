@@ -25,6 +25,8 @@
 ```
 ollama run llama3.2
 
+cp .env.local.default .env.local
+
 npm i
 npm run dev
 ```
