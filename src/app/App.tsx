@@ -14,10 +14,12 @@ import { useSTTService } from '../services/stt/sttService'
 import { useVADService } from '../services/stt/vadService'
 import { useTTSService } from '../services/tts/ttsService'
 import { useVisemeService } from '../services/visemes/useVisemeService'
+import { useEmoteService } from '../services/emote/useEmoteService'
+import { emotionIntegrationService } from '../services/emotionIntegration'
 
 export const App = () => {
   const chat = useChatService()
-  const { isMobile } = useResponsiveLayout()
+  useResponsiveLayout() // Layout service for responsive behavior
   const { sceneConfig } = useSceneService()
 
   const xrStore = useRef<XRStore | null>(null)
@@ -35,6 +37,7 @@ export const App = () => {
   const interruptCounterRef = useRef(Date.now())
 
   const visemes = useVisemeService()
+  const emotes = useEmoteService()
 
   const handleSpeechStart = useCallback(
     (_text: string, whisperData: WhisperData) => {
@@ -81,10 +84,6 @@ export const App = () => {
     }
   })
 
-  useEffect(() => {
-    stt.actions.setDesired(vad.isDetecting)
-  }, [vad.isDetecting])
-
   const stt = useSTTService({
     onPerform: (result) => {
       if (result.final) {
@@ -95,6 +94,9 @@ export const App = () => {
           if (tts.isSpeaking) {
             tts.actions.stopSpeaking()
           }
+          
+          // Trigger barge-in behavior in emote system
+          emotes.onBargeIn()
 
           console.log('STT: Stop command detected - barge-in activated')
           return
@@ -125,16 +127,35 @@ export const App = () => {
     }
   })
 
+  useEffect(() => {
+    stt.actions.setDesired(vad.isDetecting)
+  }, [vad.isDetecting, stt.actions])
+
   const responseCallbackRef = useCallback(
     (response: LLMResponse) => {
       const breath = response.breath
       if (chat.state.config.agentEnabled && breath) {
         tts.actions.speak(breath)
+        
+        // Analyze the response for emotional content and trigger appropriate emote
+        const message = { 
+          id: Date.now().toString(), 
+          text: breath, 
+          isUser: false, 
+          timestamp: Date.now() 
+        }
+        const performanceData = emotionIntegrationService.createPerformanceFromMessage(
+          message,
+          chat.state.messages.length
+        )
+        
+        // Trigger emote performance based on the response
+        emotes.performAction(performanceData)
       }
       console.log('Calling streamMessage with:', breath, response.final)
       chat.actions.streamMessage(breath, response.final)
     },
-    [chat.state.config.agentEnabled, tts.actions, chat.actions]
+    [chat.state.config.agentEnabled, chat.state.messages.length, tts.actions, chat.actions, emotes]
   )
 
   const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
@@ -213,7 +234,7 @@ export const App = () => {
           width: '100%'
         }}
       >
-        <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} setXRStore={setXRStore} />
+        <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} emoteService={emotes} setXRStore={setXRStore} />
 
         <LogoOverlay />
 

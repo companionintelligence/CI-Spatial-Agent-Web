@@ -1,15 +1,17 @@
 import type { XRStore } from '@react-three/xr'
 import type { SceneConfig } from '../services/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
+import type { useEmoteService } from '../services/emote/useEmoteService'
 import { Scene3D } from '../xr/Scene3D'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
   visemeService?: ReturnType<typeof useVisemeService>
+  emoteService?: ReturnType<typeof useEmoteService>
   setXRStore?: (store: XRStore) => void
 }
 
-export const AvatarViewport = ({ sceneConfig, visemeService, setXRStore }: AvatarViewportProps) => {
+export const AvatarViewport = ({ sceneConfig, visemeService, emoteService, setXRStore }: AvatarViewportProps) => {
   return (
     <div
       style={{
@@ -33,7 +35,7 @@ export const AvatarViewport = ({ sceneConfig, visemeService, setXRStore }: Avata
           position: 'relative'
         }}
       >
-        <Scene3D sceneConfig={sceneConfig} visemeService={visemeService} setXRStore={setXRStore} />
+        <Scene3D sceneConfig={sceneConfig} visemeService={visemeService} emoteService={emoteService} setXRStore={setXRStore} />
       </div>
     </div>
   )
