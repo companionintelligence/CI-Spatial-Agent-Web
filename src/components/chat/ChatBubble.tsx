@@ -23,7 +23,7 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
           width: '2rem',
           height: '2rem',
           borderRadius: '50%',
-          background: message.isUser 
+          background: message.isUser
             ? 'linear-gradient(135deg, #4a90e2, #7b68ee)'
             : 'linear-gradient(135deg, #00A0AF, #13C4D1)',
           display: 'flex',
@@ -48,9 +48,7 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
           background: message.isUser
             ? 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)'
             : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-          border: message.isUser 
-            ? '0.0625rem solid rgba(255,255,255,0.08)' 
-            : '0.0625rem solid rgba(255,255,255,0.06)',
+          border: message.isUser ? '0.0625rem solid rgba(255,255,255,0.08)' : '0.0625rem solid rgba(255,255,255,0.06)',
           boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.07)',
           fontSize: '0.875rem',
           lineHeight: '1.4'
@@ -63,4 +61,4 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
       </div>
     </div>
   )
-} 
+}

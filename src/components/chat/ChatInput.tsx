@@ -25,11 +25,11 @@ export const ChatInput = ({
     <div
       style={{
         position: 'absolute',
-        bottom: '7.5rem', 
+        bottom: '7.5rem',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 1000,
-        width: isMobile ? '18.75rem' : '25rem', 
+        width: isMobile ? '18.75rem' : '25rem',
         maxWidth: '90%',
         pointerEvents: 'none'
       }}
@@ -63,7 +63,8 @@ export const ChatInput = ({
                 backdropFilter: 'blur(1.25rem)',
                 color: '#FFFFFF',
                 overflow: 'auto',
-                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                fontFamily:
+                  "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
                 fontSize: '1rem',
                 lineHeight: '1.5',
                 boxShadow: '0 0.0625rem 0.125rem rgba(0,0,0,0.03)',
@@ -133,4 +134,4 @@ export const ChatInput = ({
       </div>
     </div>
   )
-} 
+}

@@ -28,18 +28,18 @@ export const LogoOverlay = ({ logoSrc = '/assets/2024_CI__Logo_Banner_Color.svg'
           pointerEvents: 'none'
         }}
       >
-        <img 
-          style={{ 
+        <img
+          style={{
             width: 'clamp(100px, 12vw, 180px)',
             height: 'auto',
             maxWidth: '100%',
             filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))',
             pointerEvents: 'none'
-          }} 
-          src={logoSrc} 
-          alt="Logo" 
+          }}
+          src={logoSrc}
+          alt="Logo"
         />
       </div>
     </div>
   )
-} 
+}

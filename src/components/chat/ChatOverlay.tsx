@@ -1,8 +1,8 @@
-import type { AppConfig } from '../../services/types'
 import { useState } from 'react'
+import type { AppConfig } from '../../services/types'
+import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
 import { ControlButtons } from './ControlButtons'
-import { ToggleButton } from '../common/ToggleButton'
 
 interface ChatOverlayProps {
   message: string
@@ -81,4 +81,4 @@ export const ChatOverlay = ({
       />
     </>
   )
-} 
+}

@@ -54,7 +54,9 @@ export const Tooltip = ({ children, content, position = 'top', delay = 500 }: To
           ...baseStyles,
           bottom: '100%',
           left: '50%',
-          transform: isVisible ? 'translateX(-50%) translateY(-0.5rem) scale(1)' : 'translateX(-50%) translateY(-0.5rem) scale(0.95)',
+          transform: isVisible
+            ? 'translateX(-50%) translateY(-0.5rem) scale(1)'
+            : 'translateX(-50%) translateY(-0.5rem) scale(0.95)',
           marginBottom: '0.5rem'
         }
       case 'bottom':
@@ -62,7 +64,9 @@ export const Tooltip = ({ children, content, position = 'top', delay = 500 }: To
           ...baseStyles,
           top: '100%',
           left: '50%',
-          transform: isVisible ? 'translateX(-50%) translateY(0.5rem) scale(1)' : 'translateX(-50%) translateY(0.5rem) scale(0.95)',
+          transform: isVisible
+            ? 'translateX(-50%) translateY(0.5rem) scale(1)'
+            : 'translateX(-50%) translateY(0.5rem) scale(0.95)',
           marginTop: '0.5rem'
         }
       case 'left':
@@ -70,7 +74,9 @@ export const Tooltip = ({ children, content, position = 'top', delay = 500 }: To
           ...baseStyles,
           right: '100%',
           top: '50%',
-          transform: isVisible ? 'translateX(-0.5rem) translateY(-50%) scale(1)' : 'translateX(-0.5rem) translateY(-50%) scale(0.95)',
+          transform: isVisible
+            ? 'translateX(-0.5rem) translateY(-50%) scale(1)'
+            : 'translateX(-0.5rem) translateY(-50%) scale(0.95)',
           marginRight: '0.5rem'
         }
       case 'right':
@@ -78,7 +84,9 @@ export const Tooltip = ({ children, content, position = 'top', delay = 500 }: To
           ...baseStyles,
           left: '100%',
           top: '50%',
-          transform: isVisible ? 'translateX(0.5rem) translateY(-50%) scale(1)' : 'translateX(0.5rem) translateY(-50%) scale(0.95)',
+          transform: isVisible
+            ? 'translateX(0.5rem) translateY(-50%) scale(1)'
+            : 'translateX(0.5rem) translateY(-50%) scale(0.95)',
           marginLeft: '0.5rem'
         }
       default:
@@ -93,9 +101,7 @@ export const Tooltip = ({ children, content, position = 'top', delay = 500 }: To
       onMouseLeave={handleMouseLeave}
     >
       {children}
-      <div style={getPositionStyles()}>
-        {content}
-      </div>
+      <div style={getPositionStyles()}>{content}</div>
     </div>
   )
-} 
+}

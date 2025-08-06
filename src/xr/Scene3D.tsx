@@ -5,9 +5,7 @@ import { useEffect, useState } from 'react'
 import { AvatarControls } from '../components/AvatarControls'
 import type { SceneConfig } from '../services/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
-import { AvatarModel, AvatarState } from './AvatarModel'
-import { useSimpleStore } from '../utils/SimpleStore'
-import { AvatarOptions, AnimationOptions } from './AvatarOptions'
+import { AvatarModel } from './AvatarModel'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
@@ -64,17 +62,13 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Avatar Controls Component */}
-      <AvatarControls 
+      <AvatarControls
         isVisible={isControlsVisible}
         onToggleVisibility={() => setIsControlsVisible(!isControlsVisible)}
       />
 
       {/* Canvas */}
-      <Canvas
-        camera={{ position: [0, 1.6, 3], fov: 50 }}
-        style={{ background: 'transparent' }}
-        shadows
-      >
+      <Canvas camera={{ position: [0, 1.6, 3], fov: 50 }} style={{ background: 'transparent' }} shadows>
         <SceneContent sceneConfig={sceneConfig} visemeService={visemeService} store={store} />
       </Canvas>
     </div>

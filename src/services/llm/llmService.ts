@@ -33,7 +33,7 @@
 
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
-import { useCallback, useRef, useState, useEffect } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { llmCloud } from './llmCloud'
 import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
@@ -142,7 +142,7 @@ export const useLLMService = () => {
     initializedRef.current = true
 
     console.log('LLM: Initializing service...')
-    
+
     // Auto-initialize local LLM if configured
     if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
       console.log('LLM: Auto-initializing local model...')

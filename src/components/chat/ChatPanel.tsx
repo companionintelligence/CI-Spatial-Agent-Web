@@ -1,7 +1,7 @@
+import { useEffect, useRef } from 'react'
 import type { ChatMessage } from '../../services/types'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatBubble } from './ChatBubble'
-import { useEffect, useRef } from 'react'
 
 interface ChatPanelProps {
   messages: ChatMessage[]
@@ -12,27 +12,27 @@ interface ChatPanelProps {
 export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanelProps) => {
   const isMobile = window.innerWidth <= 768
   const scrollContainerRef = useRef<HTMLDivElement>(null)
-  
+
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     if (scrollContainerRef.current && isVisible) {
       const scrollContainer = scrollContainerRef.current
-      
+
       const scrollToBottom = () => {
         // Ensure we scroll to the very bottom
         scrollContainer.scrollTop = scrollContainer.scrollHeight
       }
-      
+
       // Use a small delay to ensure DOM is fully updated
       const timeoutId = setTimeout(scrollToBottom, 50)
-      
+
       // Also try with requestAnimationFrame for immediate updates
       requestAnimationFrame(scrollToBottom)
-      
+
       return () => clearTimeout(timeoutId)
     }
   }, [messages, isVisible])
-  
+
   // Additional effect to handle visibility changes
   useEffect(() => {
     if (isVisible && scrollContainerRef.current) {
@@ -43,13 +43,13 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
       }, 100)
     }
   }, [isVisible])
-  
+
   return (
     <>
       <div
         style={{
           position: 'absolute',
-          top: "1rem",
+          top: '1rem',
           right: 0,
           height: '80%',
           width: isVisible ? (isMobile ? '12.5rem' : '17.5rem') : '0',
@@ -91,19 +91,23 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
               gap: '0.5rem'
             }}
           >
-            <div style={{
-              width: isMobile ? '0.375rem' : '0.5rem',
-              height: isMobile ? '0.375rem' : '0.5rem',
-              borderRadius: '50%',
-              background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
-              boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
-            }} />
-            <span style={{ 
-              color: 'white', 
-              fontSize: isMobile ? '0.75rem' : '0.875rem', 
-              fontWeight: '600',
-              letterSpacing: '0.03125rem'
-            }}>
+            <div
+              style={{
+                width: isMobile ? '0.375rem' : '0.5rem',
+                height: isMobile ? '0.375rem' : '0.5rem',
+                borderRadius: '50%',
+                background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
+                boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
+              }}
+            />
+            <span
+              style={{
+                color: 'white',
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                fontWeight: '600',
+                letterSpacing: '0.03125rem'
+              }}
+            >
               Chat Log
             </span>
           </div>
@@ -114,7 +118,8 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
               flex: 1,
               overflowY: 'auto',
               color: '#FFFFFF',
-              fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+              fontFamily:
+                "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
               paddingRight: '0.5rem',
               // Custom scrollbar styling
               scrollbarWidth: 'thin',
@@ -145,4 +150,4 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
       />
     </>
   )
-} 
+}

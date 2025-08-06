@@ -66,9 +66,9 @@ export const ControlButtons = ({
           isActive={isRecording}
           onClick={onToggleMicrophone}
           tooltipContent={
-            isRecording 
-              ? vadDetecting 
-                ? 'Voice Detected - STT Active' 
+            isRecording
+              ? vadDetecting
+                ? 'Voice Detected - STT Active'
                 : 'VAD Listening - Speak to Start STT'
               : 'Enable Voice Detection'
           }
@@ -109,15 +109,11 @@ export const ControlButtons = ({
         </ControlButton>
 
         {onEnterARMode && (
-          <ControlButton
-            isActive={false}
-            onClick={onEnterARMode}
-            tooltipContent="Enter AR Mode"
-          >
+          <ControlButton isActive={false} onClick={onEnterARMode} tooltipContent="Enter AR Mode">
             🥽
           </ControlButton>
         )}
       </div>
     </div>
   )
-} 
+}

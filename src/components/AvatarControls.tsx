@@ -1,8 +1,8 @@
+import { useEffect, useRef, useState } from 'react'
 import { useSimpleStore } from '../utils/SimpleStore'
 import { AvatarState } from '../xr/AvatarModel'
 import { AnimationOptions, AvatarOptions } from '../xr/AvatarOptions'
 import { ToggleButton } from './common/ToggleButton'
-import { useState, useRef, useEffect } from 'react'
 
 interface AvatarControlsProps {
   isVisible: boolean
@@ -18,18 +18,23 @@ interface DropdownProps {
   searchable?: boolean
 }
 
-const Dropdown = ({ label, value, options, onChange, placeholder = "Select option", searchable = false }: DropdownProps) => {
+const Dropdown = ({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = 'Select option',
+  searchable = false
+}: DropdownProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
   const isMobile = window.innerWidth <= 768
 
-  const selectedOption = options.find(option => option.value === value)
+  const selectedOption = options.find((option) => option.value === value)
 
-  const filteredOptions = searchable 
-    ? options.filter(option => 
-        option.label.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+  const filteredOptions = searchable
+    ? options.filter((option) => option.label.toLowerCase().includes(searchTerm.toLowerCase()))
     : options
 
   useEffect(() => {
@@ -46,16 +51,18 @@ const Dropdown = ({ label, value, options, onChange, placeholder = "Select optio
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-      <label style={{ 
-        color: 'rgba(255, 255, 255, 0.9)', 
-        fontSize: '0.6875rem', 
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        letterSpacing: '0.03125rem'
-      }}>
+      <label
+        style={{
+          color: 'rgba(255, 255, 255, 0.9)',
+          fontSize: '0.6875rem',
+          fontWeight: '600',
+          textTransform: 'uppercase',
+          letterSpacing: '0.03125rem'
+        }}
+      >
         {label}
       </label>
-      
+
       <div ref={dropdownRef} style={{ position: 'relative' }}>
         <button
           onClick={() => setIsOpen(!isOpen)}
@@ -86,47 +93,55 @@ const Dropdown = ({ label, value, options, onChange, placeholder = "Select optio
             e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)'
           }}
         >
-          <span style={{ 
-            color: selectedOption ? 'white' : 'rgba(255, 255, 255, 0.6)',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap'
-          }}>
+          <span
+            style={{
+              color: selectedOption ? 'white' : 'rgba(255, 255, 255, 0.6)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
             {selectedOption ? selectedOption.label : placeholder}
           </span>
-          <span style={{ 
-            fontSize: '0.75rem',
-            transition: 'transform 0.2s ease',
-            transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
-          }}>
+          <span
+            style={{
+              fontSize: '0.75rem',
+              transition: 'transform 0.2s ease',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}
+          >
             ▼
           </span>
         </button>
 
         {isOpen && (
-          <div style={{
-            width: '100%',
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 1000,
-            background: 'linear-gradient(180deg, rgba(16,25,30,0.95) 0%, rgba(17,43,48,0.95) 100%)',
-            backdropFilter: 'blur(1.25rem)',
-            border: '0.0625rem solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '0.5rem',
-            boxShadow: '0 0.5rem 1rem rgba(0,0,0,0.3)',
-            marginTop: '0.25rem',
-            maxHeight: '12.5rem',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column'
-          }}>
+          <div
+            style={{
+              width: '100%',
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              zIndex: 1000,
+              background: 'linear-gradient(180deg, rgba(16,25,30,0.95) 0%, rgba(17,43,48,0.95) 100%)',
+              backdropFilter: 'blur(1.25rem)',
+              border: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '0.5rem',
+              boxShadow: '0 0.5rem 1rem rgba(0,0,0,0.3)',
+              marginTop: '0.25rem',
+              maxHeight: '12.5rem',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
             {searchable && (
-              <div style={{
-                padding: '0.75rem',
-                borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)'
-              }}>
+              <div
+                style={{
+                  padding: '0.75rem',
+                  borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.1)'
+                }}
+              >
                 <input
                   type="text"
                   placeholder="Search..."
@@ -155,20 +170,24 @@ const Dropdown = ({ label, value, options, onChange, placeholder = "Select optio
                 />
               </div>
             )}
-            
-            <div style={{
-              maxHeight: '10rem',
-              overflowY: 'auto',
-              scrollbarWidth: 'thin',
-              scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
-            }}>
+
+            <div
+              style={{
+                maxHeight: '10rem',
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent'
+              }}
+            >
               {filteredOptions.length === 0 ? (
-                <div style={{
-                  padding: '0.75rem',
-                  color: 'rgba(255, 255, 255, 0.6)',
-                  fontSize: '0.75rem',
-                  textAlign: 'center'
-                }}>
+                <div
+                  style={{
+                    padding: '0.75rem',
+                    color: 'rgba(255, 255, 255, 0.6)',
+                    fontSize: '0.75rem',
+                    textAlign: 'center'
+                  }}
+                >
                   No options found
                 </div>
               ) : (
@@ -202,13 +221,13 @@ const Dropdown = ({ label, value, options, onChange, placeholder = "Select optio
                       e.currentTarget.style.backgroundColor = 'transparent'
                     }}
                   >
-                    {option.value === value && (
-                      <span style={{ color: '#4a90e2', fontSize: '0.875rem' }}>✓</span>
-                    )}
-                    <span style={{ 
-                      flex: 1,
-                      color: option.value === value ? '#4a90e2' : 'white'
-                    }}>
+                    {option.value === value && <span style={{ color: '#4a90e2', fontSize: '0.875rem' }}>✓</span>}
+                    <span
+                      style={{
+                        flex: 1,
+                        color: option.value === value ? '#4a90e2' : 'white'
+                      }}
+                    >
                       {option.label}
                     </span>
                   </button>
@@ -265,27 +284,33 @@ export const AvatarControls = ({ isVisible, onToggleVisibility }: AvatarControls
         }}
       >
         {/* Header */}
-        <div style={{ 
-          marginBottom: isMobile ? '0.75rem' : '1rem', 
-          paddingBottom: isMobile ? '0.75rem' : '1rem', 
-          borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem'
-        }}>
-          <div style={{
-            width: isMobile ? '0.5rem' : '0.625rem',
-            height: isMobile ? '0.5rem' : '0.625rem',
-            borderRadius: '50%',
-            background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
-            boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
-          }} />
-          <span style={{ 
-            color: 'white', 
-            fontSize: isMobile ? '0.875rem' : '1rem', 
-            fontWeight: '600',
-            letterSpacing: '0.03125rem'
-          }}>
+        <div
+          style={{
+            marginBottom: isMobile ? '0.75rem' : '1rem',
+            paddingBottom: isMobile ? '0.75rem' : '1rem',
+            borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem'
+          }}
+        >
+          <div
+            style={{
+              width: isMobile ? '0.5rem' : '0.625rem',
+              height: isMobile ? '0.5rem' : '0.625rem',
+              borderRadius: '50%',
+              background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
+              boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
+            }}
+          />
+          <span
+            style={{
+              color: 'white',
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              fontWeight: '600',
+              letterSpacing: '0.03125rem'
+            }}
+          >
             Avatar Controls
           </span>
         </div>
@@ -322,4 +347,4 @@ export const AvatarControls = ({ isVisible, onToggleVisibility }: AvatarControls
       />
     </>
   )
-} 
+}

@@ -1,8 +1,8 @@
 import type { XRStore } from '@react-three/xr'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
-import { ChatPanel } from '../components/chat/ChatPanel'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
+import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
 import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
@@ -83,7 +83,7 @@ export const App = () => {
 
   useEffect(() => {
     stt.actions.setDesired(vad.isDetecting)
-  } ,[vad.isDetecting])
+  }, [vad.isDetecting])
 
   const stt = useSTTService({
     onPerform: (result) => {
@@ -104,10 +104,8 @@ export const App = () => {
           chat.actions.addMessage(result.text, true)
           setCurrentInterimTranscript('')
         } else {
-          
           setCurrentInterimTranscript(result.text)
         }
-
 
         const interrupt = Date.now()
         interruptCounterRef.current = interrupt
@@ -120,45 +118,45 @@ export const App = () => {
         })
       } else {
         setCurrentInterimTranscript(result.text)
-              }
-      },
+      }
+    },
     onInterimTranscript: (text) => {
       setCurrentInterimTranscript(text)
     }
   })
 
-    const responseCallbackRef = useCallback(
-      (response: LLMResponse) => {
-        const breath = response.breath
-        if (chat.state.config.agentEnabled && breath) {
-          tts.actions.speak(breath)
-        }
-        console.log('Calling streamMessage with:', breath, response.final)
-        chat.actions.streamMessage(breath, response.final)
-      },
-      [chat.state.config.agentEnabled, tts.actions, chat.actions]
-    )
+  const responseCallbackRef = useCallback(
+    (response: LLMResponse) => {
+      const breath = response.breath
+      if (chat.state.config.agentEnabled && breath) {
+        tts.actions.speak(breath)
+      }
+      console.log('Calling streamMessage with:', breath, response.final)
+      chat.actions.streamMessage(breath, response.final)
+    },
+    [chat.state.config.agentEnabled, tts.actions, chat.actions]
+  )
 
-    const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
-      // setLlmStatus(status)
-      console.log('LLM Status update:', status)
-    }, [])
+  const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
+    // setLlmStatus(status)
+    console.log('LLM Status update:', status)
+  }, [])
 
-    useEffect(() => {
-      llmService.actions.setStatusCallback(handleStatusUpdate)
-      llmService.actions.setResponseCallback(responseCallbackRef)
-    }, [llmService.actions, handleStatusUpdate, responseCallbackRef])
+  useEffect(() => {
+    llmService.actions.setStatusCallback(handleStatusUpdate)
+    llmService.actions.setResponseCallback(responseCallbackRef)
+  }, [llmService.actions, handleStatusUpdate, responseCallbackRef])
 
-    useEffect(() => {
-      if (llmService.config.llm_local === !chat.state.config.cloudMode) return
-      llmService.actions.updateConfig({
-        llm_local: !chat.state.config.cloudMode
-      })
-    }, [llmService.actions, llmService.config.llm_local, chat.state.config.cloudMode])
+  useEffect(() => {
+    if (llmService.config.llm_local === !chat.state.config.cloudMode) return
+    llmService.actions.updateConfig({
+      llm_local: !chat.state.config.cloudMode
+    })
+  }, [llmService.actions, llmService.config.llm_local, chat.state.config.cloudMode])
 
-    React.useEffect(() => {
-      stt.actions.setAllowed(!tts.isSpeaking)
-    }, [tts.isSpeaking, stt.actions])
+  React.useEffect(() => {
+    stt.actions.setAllowed(!tts.isSpeaking)
+  }, [tts.isSpeaking, stt.actions])
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -216,9 +214,9 @@ export const App = () => {
         }}
       >
         <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} setXRStore={setXRStore} />
-        
+
         <LogoOverlay />
-        
+
         <ChatOverlay
           message={chat.state.currentMessage}
           onMessageChange={chat.actions.updateCurrentMessage}
@@ -240,7 +238,7 @@ export const App = () => {
           sttListening={stt.isListening}
         />
 
-        <ChatPanel 
+        <ChatPanel
           messages={chat.state.messages}
           isVisible={isChatVisible}
           onToggleVisibility={() => setIsChatVisible(!isChatVisible)}

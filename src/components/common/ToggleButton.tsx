@@ -7,12 +7,12 @@ interface ToggleButtonProps {
   panelWidth?: { mobile: string; desktop: string }
 }
 
-export const ToggleButton = ({ 
-  isVisible, 
-  onToggle, 
-  label, 
-  position, 
-  isMobile = false, 
+export const ToggleButton = ({
+  isVisible,
+  onToggle,
+  label,
+  position,
+  isMobile = false,
   panelWidth = { mobile: '0.625rem', desktop: '1.25rem' }
 }: ToggleButtonProps) => {
   const getPosition = () => {
@@ -20,10 +20,14 @@ export const ToggleButton = ({
       return { bottom: '1.25rem', left: '1.25rem' }
     }
 
-    const basePosition = isVisible 
-      ? (isMobile ? panelWidth.mobile : panelWidth.desktop)
-      : (isMobile ? '0.625rem' : '1.25rem')
-    
+    const basePosition = isVisible
+      ? isMobile
+        ? panelWidth.mobile
+        : panelWidth.desktop
+      : isMobile
+      ? '0.625rem'
+      : '1.25rem'
+
     if (position === 'left') {
       return { left: basePosition }
     } else {
@@ -41,8 +45,8 @@ export const ToggleButton = ({
     if (position === 'bottom-left') {
       return isVisible ? '▼' : '▲'
     }
-    
-    return isVisible ? (position === 'left' ? '◀' : '▶') : (position === 'left' ? '▶' : '◀')
+
+    return isVisible ? (position === 'left' ? '◀' : '▶') : position === 'left' ? '▶' : '◀'
   }
 
   const getTransform = () => {
@@ -93,4 +97,4 @@ export const ToggleButton = ({
       {!isVisible && <span style={{ marginLeft: '0.25rem' }}>{label}</span>}
     </button>
   )
-} 
+}
