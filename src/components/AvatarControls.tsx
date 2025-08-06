@@ -309,34 +309,6 @@ export const AvatarControls = ({ isVisible, onToggleVisibility }: AvatarControls
           placeholder="Select animation"
           searchable={true}
         />
-
-        {/* Status indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          padding: '0.75rem 1rem',
-          background: 'rgba(74, 144, 226, 0.1)',
-          borderRadius: '0.5rem',
-          border: '0.0625rem solid rgba(74, 144, 226, 0.2)',
-          marginTop: '0.75rem',
-          backdropFilter: 'blur(1.25rem)'
-        }}>
-          <div style={{
-            width: '0.5rem',
-            height: '0.5rem',
-            borderRadius: '50%',
-            background: '#4a90e2',
-            boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.6)'
-          }} />
-          <span style={{
-            color: 'rgba(255, 255, 255, 0.9)',
-            fontSize: '0.75rem',
-            fontWeight: '500'
-          }}>
-            Scene Active
-          </span>
-        </div>
       </div>
 
       {/* Toggle Button */}
