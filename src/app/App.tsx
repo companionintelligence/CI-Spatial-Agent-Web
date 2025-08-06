@@ -6,6 +6,8 @@ import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
 import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
+import { useEmoteService } from '../services/emote/useEmoteService'
+import { emotionIntegrationService } from '../services/emotionIntegration'
 import { useResponsiveLayout } from '../services/layoutService'
 import { useLLMService } from '../services/llm/llmService'
 import type { LLMResponse, LLMStatusUpdate } from '../services/llm/llmTypes'
@@ -17,7 +19,7 @@ import { useVisemeService } from '../services/visemes/useVisemeService'
 
 export const App = () => {
   const chat = useChatService()
-  const { isMobile } = useResponsiveLayout()
+  useResponsiveLayout() // Layout service for responsive behavior
   const { sceneConfig } = useSceneService()
 
   const xrStore = useRef<XRStore | null>(null)
@@ -29,26 +31,48 @@ export const App = () => {
 
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
-  // const [llmStatus, setLlmStatus] = useState<LLMStatusUpdate>({ color: 'loading', text: 'Initializing...' })
 
-  const llmService = useLLMService()
+  const llmService = useLLMService({
+    onStatus: (status: LLMStatusUpdate) => {
+      console.log('LLM Status update:', status)
+    },
+    onResponse: (response: LLMResponse) => {
+      const breath = response.breath
+      if (chat.state.config.agentEnabled && breath) {
+        tts.actions.speak(breath)
+
+        // Analyze the response for emotional content and trigger appropriate emote
+        const message = {
+          id: Date.now().toString(),
+          text: breath,
+          isUser: false,
+          timestamp: Date.now()
+        }
+        const performanceData = emotionIntegrationService.createPerformanceFromMessage(
+          message,
+          chat.state.messages.length
+        )
+
+        // Trigger emote performance based on the response
+        emotes.performAction(performanceData)
+      }
+      chat.actions.streamMessage(breath, response.final)
+    }
+  })
+
   const interruptCounterRef = useRef(Date.now())
 
   const visemes = useVisemeService()
+  const emotes = useEmoteService()
 
-  const handleSpeechStart = useCallback(
-    (_text: string, whisperData: WhisperData) => {
+  const tts = useTTSService({
+    onSpeechStart: (_text: string, whisperData: WhisperData) => {
       const startTime = Date.now()
       visemes.actions.generateSequence(whisperData, startTime)
     },
-    [visemes.actions]
-  )
-
-  const handleSpeechEnd = useCallback(() => {}, [])
-
-  const tts = useTTSService({
-    onSpeechStart: handleSpeechStart,
-    onSpeechEnd: handleSpeechEnd
+    onSpeechEnd: () => {
+      emotes.reset()
+    }
   })
 
   const submitMessage = React.useCallback(
@@ -81,10 +105,6 @@ export const App = () => {
     }
   })
 
-  useEffect(() => {
-    stt.actions.setDesired(vad.isDetecting)
-  }, [vad.isDetecting])
-
   const stt = useSTTService({
     onPerform: (result) => {
       if (result.final) {
@@ -95,6 +115,9 @@ export const App = () => {
           if (tts.isSpeaking) {
             tts.actions.stopSpeaking()
           }
+
+          // Trigger barge-in behavior in emote system
+          emotes.onBargeIn()
 
           console.log('STT: Stop command detected - barge-in activated')
           return
@@ -125,27 +148,9 @@ export const App = () => {
     }
   })
 
-  const responseCallbackRef = useCallback(
-    (response: LLMResponse) => {
-      const breath = response.breath
-      if (chat.state.config.agentEnabled && breath) {
-        tts.actions.speak(breath)
-      }
-      console.log('Calling streamMessage with:', breath, response.final)
-      chat.actions.streamMessage(breath, response.final)
-    },
-    [chat.state.config.agentEnabled, tts.actions, chat.actions]
-  )
-
-  const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
-    // setLlmStatus(status)
-    console.log('LLM Status update:', status)
-  }, [])
-
   useEffect(() => {
-    llmService.actions.setStatusCallback(handleStatusUpdate)
-    llmService.actions.setResponseCallback(responseCallbackRef)
-  }, [llmService.actions, handleStatusUpdate, responseCallbackRef])
+    stt.actions.setDesired(vad.isDetecting)
+  }, [vad.isDetecting, stt.actions])
 
   useEffect(() => {
     if (llmService.config.llm_local === !chat.state.config.cloudMode) return
@@ -213,7 +218,12 @@ export const App = () => {
           width: '100%'
         }}
       >
-        <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} setXRStore={setXRStore} />
+        <AvatarViewport
+          sceneConfig={sceneConfig}
+          visemeService={visemes}
+          emoteService={emotes}
+          setXRStore={setXRStore}
+        />
 
         <LogoOverlay />
 

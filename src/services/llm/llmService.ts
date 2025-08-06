@@ -50,7 +50,12 @@ const handler = new webllm.WebWorkerMLCEngineHandler();
 self.onmessage = (msg) => { handler.onmessage(msg); };
 `
 
-export const useLLMService = () => {
+type LLMServiceProps = {
+  onStatus?: (update: LLMStatusUpdate) => void
+  onResponse?: (response: LLMResponse) => void
+}
+
+export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
   const [state, setState] = useState<LLMState>({
     messages: [{ role: 'system', content: SYSTEM_PROMPT }],
     thinking: false,
@@ -62,8 +67,6 @@ export const useLLMService = () => {
   })
 
   const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
-  const statusCallbackRef = useRef<((update: LLMStatusUpdate) => void) | null>(null)
-  const responseCallbackRef = useRef<((response: LLMResponse) => void) | null>(null)
   const initializedRef = useRef(false)
 
   const processThinkBlocks = useCallback((input: string) => {
@@ -84,8 +87,8 @@ export const useLLMService = () => {
 
     try {
       const initProgressCallback = (status: { text: string }) => {
-        if (statusCallbackRef.current) {
-          statusCallbackRef.current({
+        if (onStatus) {
+          onStatus({
             color: state.ready ? 'ready' : 'loading',
             text: status.text
           })
@@ -100,16 +103,16 @@ export const useLLMService = () => {
           loading: false
         }))
 
-        if (statusCallbackRef.current) {
-          statusCallbackRef.current({
+        if (onStatus) {
+          onStatus({
             color: 'ready',
             text: 'Ready'
           })
         }
       }
 
-      if (statusCallbackRef.current) {
-        statusCallbackRef.current({
+      if (onStatus) {
+        onStatus({
           color: state.ready ? 'ready' : 'loading',
           text: `Loading local model ${selectedModel}`
         })
@@ -127,14 +130,14 @@ export const useLLMService = () => {
       console.error('LLM - worker fetch error', err)
       setState((prev) => ({ ...prev, loading: false }))
 
-      if (statusCallbackRef.current) {
-        statusCallbackRef.current({
+      if (onStatus) {
+        onStatus({
           color: 'error',
           text: 'Failed to load model'
         })
       }
     }
-  }, [state.loading, state.ready])
+  }, [state.loading, state.ready, onStatus])
 
   // Initialize function that starts loading the LLM
   const initialize = useCallback(async () => {
@@ -202,7 +205,7 @@ export const useLLMService = () => {
         interrupt: request.interrupt,
         messages: state.messages,
         latestInterrupt: state._latest_interrupt,
-        responseCallback: responseCallbackRef.current || undefined,
+        responseCallback: onResponse,
         updateMessages: (userMsg: string, assistantMsg: string) => {
           setState((prev) => ({
             ...prev,
@@ -216,7 +219,7 @@ export const useLLMService = () => {
         setThinking: (thinking: boolean) => {
           setState((prev) => ({ ...prev, thinking }))
         },
-        statusCallback: statusCallbackRef.current || undefined,
+        statusCallback: onStatus,
         processThinkBlocks
       }
 
@@ -241,8 +244,8 @@ export const useLLMService = () => {
             }
           } else {
             console.error('LLM - no local options available')
-            if (statusCallbackRef.current) {
-              statusCallbackRef.current({
+            if (onStatus) {
+              onStatus({
                 color: 'error',
                 text: 'No local LLM options configured'
               })
@@ -263,8 +266,8 @@ export const useLLMService = () => {
         }
       } catch (error) {
         console.error('LLM - error processing input:', error)
-        if (statusCallbackRef.current) {
-          statusCallbackRef.current({
+        if (onStatus) {
+          onStatus({
             color: 'error',
             text: 'Error processing request'
           })
@@ -278,22 +281,22 @@ export const useLLMService = () => {
       state.loading,
       state.messages,
       state._latest_interrupt,
-      config,
-      load,
-      processThinkBlocks
+      config.llm_local,
+      config.ollama_url,
+      config.ollama_model,
+      config.llm_url,
+      config.llm_model,
+      config.llm_auth,
+      config.llm_flowise,
+      onResponse,
+      onStatus,
+      processThinkBlocks,
+      load
     ]
   )
 
   const updateConfig = useCallback((newConfig: Partial<LLMConfig>) => {
     setConfig((prev) => ({ ...prev, ...newConfig }))
-  }, [])
-
-  const setStatusCallback = useCallback((callback: (update: LLMStatusUpdate) => void) => {
-    statusCallbackRef.current = callback
-  }, [])
-
-  const setResponseCallback = useCallback((callback: (response: LLMResponse) => void) => {
-    responseCallbackRef.current = callback
   }, [])
 
   const clearHistory = useCallback(() => {
@@ -311,8 +314,6 @@ export const useLLMService = () => {
       initialize,
       processUserInput,
       updateConfig,
-      setStatusCallback,
-      setResponseCallback,
       clearHistory
     }
   }
