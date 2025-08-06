@@ -31,33 +31,48 @@ export const App = () => {
 
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
-  // const [llmStatus, setLlmStatus] = useState<LLMStatusUpdate>({ color: 'loading', text: 'Initializing...' })
 
-  const llmService = useLLMService()
+  const llmService = useLLMService({
+    onStatus: (status: LLMStatusUpdate) => {
+      console.log('LLM Status update:', status)
+    },
+    onResponse: (response: LLMResponse) => {
+      const breath = response.breath
+      if (chat.state.config.agentEnabled && breath) {
+        tts.actions.speak(breath)
+
+        // Analyze the response for emotional content and trigger appropriate emote
+        const message = {
+          id: Date.now().toString(),
+          text: breath,
+          isUser: false,
+          timestamp: Date.now()
+        }
+        const performanceData = emotionIntegrationService.createPerformanceFromMessage(
+          message,
+          chat.state.messages.length
+        )
+
+        // Trigger emote performance based on the response
+        emotes.performAction(performanceData)
+      }
+      chat.actions.streamMessage(breath, response.final)
+    }
+  })
+
   const interruptCounterRef = useRef(Date.now())
 
   const visemes = useVisemeService()
   const emotes = useEmoteService()
 
-  const handleSpeechStart = useCallback(
-    (_text: string, whisperData: WhisperData) => {
+  const tts = useTTSService({
+    onSpeechStart: (_text: string, whisperData: WhisperData) => {
       const startTime = Date.now()
       visemes.actions.generateSequence(whisperData, startTime)
     },
-    [visemes.actions]
-  )
-
-  const handleSpeechEnd = useCallback(() => {
-    // Reset emote state to neutral after a brief delay when agent finishes speaking
-    // This makes the emotional transition feel more natural
-    setTimeout(() => {
+    onSpeechEnd: () => {
       emotes.reset()
-    }, 500) // 500ms delay for natural transition
-  }, [emotes])
-
-  const tts = useTTSService({
-    onSpeechStart: handleSpeechStart,
-    onSpeechEnd: handleSpeechEnd
+    }
   })
 
   const submitMessage = React.useCallback(
@@ -136,42 +151,6 @@ export const App = () => {
   useEffect(() => {
     stt.actions.setDesired(vad.isDetecting)
   }, [vad.isDetecting, stt.actions])
-
-  const responseCallbackRef = useCallback(
-    (response: LLMResponse) => {
-      const breath = response.breath
-      if (chat.state.config.agentEnabled && breath) {
-        tts.actions.speak(breath)
-
-        // Analyze the response for emotional content and trigger appropriate emote
-        const message = {
-          id: Date.now().toString(),
-          text: breath,
-          isUser: false,
-          timestamp: Date.now()
-        }
-        const performanceData = emotionIntegrationService.createPerformanceFromMessage(
-          message,
-          chat.state.messages.length
-        )
-
-        // Trigger emote performance based on the response
-        emotes.performAction(performanceData)
-      }
-      chat.actions.streamMessage(breath, response.final)
-    },
-    [chat.state.config.agentEnabled, chat.state.messages.length, tts.actions, chat.actions, emotes]
-  )
-
-  const handleStatusUpdate = useCallback((status: LLMStatusUpdate) => {
-    // setLlmStatus(status)
-    console.log('LLM Status update:', status)
-  }, [])
-
-  useEffect(() => {
-    llmService.actions.setStatusCallback(handleStatusUpdate)
-    llmService.actions.setResponseCallback(responseCallbackRef)
-  }, [llmService.actions, handleStatusUpdate, responseCallbackRef])
 
   useEffect(() => {
     if (llmService.config.llm_local === !chat.state.config.cloudMode) return
