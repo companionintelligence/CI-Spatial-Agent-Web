@@ -81,6 +81,10 @@ export const App = () => {
     }
   })
 
+  useEffect(() => {
+    stt.actions.setDesired(vad.isDetecting)
+  } ,[vad.isDetecting])
+
   const stt = useSTTService({
     onPerform: (result) => {
       if (result.final) {
@@ -107,7 +111,6 @@ export const App = () => {
 
         const interrupt = Date.now()
         interruptCounterRef.current = interrupt
-
         llmService.actions.processUserInput({
           text: result.text,
           human: true,
@@ -171,6 +174,7 @@ export const App = () => {
 
     vad.actions.updateConfig({ microphoneEnabled: newRecordingState })
 
+    stt.actions.setDesired(newRecordingState)
     setCurrentInterimTranscript('')
   }
 
