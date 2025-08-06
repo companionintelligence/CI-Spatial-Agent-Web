@@ -56,8 +56,10 @@ export const App = () => {
         // Trigger emote performance based on the response
         emotes.performAction(performanceData)
       }
+      
       chat.actions.streamMessage(breath, response.final)
-    }
+    },
+    directedMode: chat.state.config.directedMode
   })
 
   const interruptCounterRef = useRef(Date.now())

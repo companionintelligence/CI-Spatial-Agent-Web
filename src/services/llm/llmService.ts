@@ -39,6 +39,7 @@ import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
 import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMState, LLMStatusUpdate } from './llmTypes'
 import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
+import { useDirectedService } from '../directed/directedService'
 
 // Constants from the original implementation
 const selectedModel = 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
@@ -53,9 +54,10 @@ self.onmessage = (msg) => { handler.onmessage(msg); };
 type LLMServiceProps = {
   onStatus?: (update: LLMStatusUpdate) => void
   onResponse?: (response: LLMResponse) => void
+  directedMode?: boolean
 }
 
-export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
+export const useLLMService = ({ onStatus, onResponse, directedMode = false }: LLMServiceProps) => {
   const [state, setState] = useState<LLMState>({
     messages: [{ role: 'system', content: SYSTEM_PROMPT }],
     thinking: false,
@@ -68,6 +70,7 @@ export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
 
   const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
   const initializedRef = useRef(false)
+  const directedService = useDirectedService()
 
   const processThinkBlocks = useCallback((input: string) => {
     const thinkBlocks: string[] = []
@@ -146,6 +149,18 @@ export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
 
     console.log('LLM: Initializing service...')
 
+    // Handle directed mode initialization
+    if (directedMode) {
+      try {
+        await directedService.actions.loadResponses()
+        setState((prev) => ({ ...prev, ready: true }))
+        return
+      } catch (error) {
+        console.error('LLM: Failed to load', error)
+        return
+      }
+    }
+
     // Auto-initialize local LLM if configured
     if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
       console.log('LLM: Auto-initializing local model...')
@@ -157,7 +172,7 @@ export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
       console.log('LLM: Cloud mode configured - ready for remote requests')
       setState((prev) => ({ ...prev, ready: true }))
     }
-  }, [config.llm_local, config.ollama_url, state.ready, state.loading, load])
+  }, [config.llm_local, config.ollama_url, state.ready, state.loading, load, directedMode, directedService.actions, onStatus])
 
   // Auto-initialize when the service is created
   useEffect(() => {
@@ -175,7 +190,7 @@ export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
       console.log('LLM: Config changed, re-initializing...')
       initialize()
     }
-  }, [config.llm_local, config.ollama_url, initialize])
+  }, [config.llm_local, config.ollama_url, directedMode, initialize])
 
   const processUserInput = useCallback(
     async (request: LLMPerformRequest) => {
@@ -183,6 +198,44 @@ export const useLLMService = ({ onStatus, onResponse }: LLMServiceProps) => {
 
       const text = request.text?.trim()
       if (!text || !text.length) return
+
+      // Handle directed mode
+      if (directedMode) {
+        // Load responses if not already loaded
+        if (!directedService.state.config) {
+          await directedService.actions.loadResponses()
+        }
+
+        // Find matching response
+        const directedResponse = directedService.actions.findResponse(text) || 
+                               directedService.actions.getDefaultResponse()
+
+        if (directedResponse && onResponse) {
+          // Simulate streaming response like LLM
+          const sentences = directedResponse.response.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0)
+          let currentResponse = ''
+          
+          for (let i = 0; i < sentences.length; i++) {
+            const sentence = sentences[i].trim()
+            currentResponse += (i > 0 ? '. ' : '') + sentence
+            
+            onResponse({
+              text: currentResponse,
+              breath: sentence,
+              ready: true,
+              final: i === sentences.length - 1,
+              interrupt: request.interrupt,
+              rcounter: 1000,
+              bcounter: i
+            })
+            
+            // Small delay to simulate streaming
+            await new Promise(resolve => setTimeout(resolve, 200))
+          }
+          
+          return
+        }
+      }
 
       if (state.thinking && state.engine && state.engine.interruptGenerate) {
         state.engine.interruptGenerate()
