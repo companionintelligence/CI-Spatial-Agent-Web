@@ -31,8 +31,8 @@ export async function llmLocal(params: LLMParams): Promise<LLMResult> {
       return
     }
 
-    if (!fragment || !fragment.length || finished) {
-      if (breath.length && responseCallback) {
+    if (!fragment || !fragment.length) {
+      if (finished && responseCallback) {
         responseCallback({
           text: breath,
           breath,

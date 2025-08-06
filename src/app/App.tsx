@@ -1,8 +1,9 @@
 import type { XRStore } from '@react-three/xr'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
-import { ChatHistory } from '../components/ChatHistory'
-import { Header } from '../components/Header'
+import { ChatOverlay } from '../components/chat/ChatOverlay'
+import { ChatPanel } from '../components/chat/ChatPanel'
+import { LogoOverlay } from '../components/common/LogoOverlay'
 import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
 import { useResponsiveLayout } from '../services/layoutService'
@@ -20,6 +21,7 @@ export const App = () => {
   const { sceneConfig } = useSceneService()
 
   const xrStore = useRef<XRStore | null>(null)
+  const [isChatVisible, setIsChatVisible] = useState(true)
 
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
@@ -79,6 +81,10 @@ export const App = () => {
     }
   })
 
+  useEffect(() => {
+    stt.actions.setDesired(vad.isDetecting)
+  }, [vad.isDetecting])
+
   const stt = useSTTService({
     onPerform: (result) => {
       if (result.final) {
@@ -95,12 +101,21 @@ export const App = () => {
         }
 
         if (chat.state.config.autoSubmitEnabled) {
-          chat.actions.updateCurrentMessage(result.text)
+          chat.actions.addMessage(result.text, true)
           setCurrentInterimTranscript('')
         } else {
-          chat.actions.updateCurrentMessage(result.text)
-          setCurrentInterimTranscript('')
+          setCurrentInterimTranscript(result.text)
         }
+
+        const interrupt = Date.now()
+        interruptCounterRef.current = interrupt
+        llmService.actions.processUserInput({
+          text: result.text,
+          human: true,
+          final: true,
+          bargein: chat.state.config.bargeInEnabled,
+          interrupt
+        })
       } else {
         setCurrentInterimTranscript(result.text)
       }
@@ -116,6 +131,7 @@ export const App = () => {
       if (chat.state.config.agentEnabled && breath) {
         tts.actions.speak(breath)
       }
+      console.log('Calling streamMessage with:', breath, response.final)
       chat.actions.streamMessage(breath, response.final)
     },
     [chat.state.config.agentEnabled, tts.actions, chat.actions]
@@ -151,13 +167,12 @@ export const App = () => {
 
   const handleToggleMicrophone = () => {
     const newRecordingState = !chat.state.isRecording
-
     chat.actions.setRecording(newRecordingState)
     chat.actions.updateConfig({ microphone: newRecordingState })
 
     vad.actions.updateConfig({ microphoneEnabled: newRecordingState })
 
-    stt.actions.setDesired(true)
+    stt.actions.setDesired(newRecordingState)
     setCurrentInterimTranscript('')
   }
 
@@ -189,56 +204,45 @@ export const App = () => {
         lineHeight: 1.5
       }}
     >
-      <Header />
+      {/* Main 3D Viewport - Full Screen */}
       <div
         style={{
-          display: 'flex',
-          flexDirection: isMobile ? 'column-reverse' : 'row',
           flex: 1,
+          position: 'relative',
           height: '100%',
-          gap: '24px',
-          padding: '0 24px 24px 24px',
-          overflow: 'hidden'
+          width: '100%'
         }}
       >
-        <div
-          style={{
-            height: '100%',
-            width: isMobile ? '100%' : '36%',
-            minWidth: isMobile ? 'auto' : '300px'
-          }}
-        >
-          <ChatHistory
-            messages={chat.state.messages}
-            message={chat.state.currentMessage}
-            onMessageChange={chat.actions.updateCurrentMessage}
-            onSubmit={submitMessage}
-            onKeyPress={handleKeyPress}
-            config={chat.state.config}
-            isRecording={chat.state.isRecording}
-            onToggleMicrophone={handleToggleMicrophone}
-            onToggleCloudMode={() => chat.actions.updateConfig({ cloudMode: !chat.state.config.cloudMode })}
-            onToggleBargeIn={() => chat.actions.updateConfig({ bargeInEnabled: !chat.state.config.bargeInEnabled })}
-            onToggleAutoSubmit={() =>
-              chat.actions.updateConfig({ autoSubmitEnabled: !chat.state.config.autoSubmitEnabled })
-            }
-            onToggleAgent={() => chat.actions.updateConfig({ agentEnabled: !chat.state.config.agentEnabled })}
-            onEnterARMode={handleEnterARMode}
-            vadDetecting={vadDetecting}
-            sttTranscript={currentInterimTranscript}
-            ttsActive={tts.isSpeaking}
-            sttListening={stt.isListening}
-          />
-        </div>
-        <div
-          style={{
-            height: '100%',
-            width: isMobile ? '100%' : '64%',
-            minWidth: isMobile ? 'auto' : '400px'
-          }}
-        >
-          <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} setXRStore={setXRStore} />
-        </div>
+        <AvatarViewport sceneConfig={sceneConfig} visemeService={visemes} setXRStore={setXRStore} />
+
+        <LogoOverlay />
+
+        <ChatOverlay
+          message={chat.state.currentMessage}
+          onMessageChange={chat.actions.updateCurrentMessage}
+          onSubmit={submitMessage}
+          onKeyPress={handleKeyPress}
+          config={chat.state.config}
+          isRecording={chat.state.isRecording}
+          onToggleMicrophone={handleToggleMicrophone}
+          onToggleCloudMode={() => chat.actions.updateConfig({ cloudMode: !chat.state.config.cloudMode })}
+          onToggleBargeIn={() => chat.actions.updateConfig({ bargeInEnabled: !chat.state.config.bargeInEnabled })}
+          onToggleAutoSubmit={() =>
+            chat.actions.updateConfig({ autoSubmitEnabled: !chat.state.config.autoSubmitEnabled })
+          }
+          onToggleAgent={() => chat.actions.updateConfig({ agentEnabled: !chat.state.config.agentEnabled })}
+          onEnterARMode={handleEnterARMode}
+          vadDetecting={vadDetecting}
+          sttTranscript={currentInterimTranscript}
+          ttsActive={tts.isSpeaking}
+          sttListening={stt.isListening}
+        />
+
+        <ChatPanel
+          messages={chat.state.messages}
+          isVisible={isChatVisible}
+          onToggleVisibility={() => setIsChatVisible(!isChatVisible)}
+        />
       </div>
     </div>
   )

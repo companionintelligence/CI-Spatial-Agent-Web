@@ -1,12 +1,11 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AvatarControls } from '../components/AvatarControls'
 import type { SceneConfig } from '../services/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
-import { useSimpleStore } from '../utils/SimpleStore'
-import { AvatarModel, AvatarState } from './AvatarModel'
-import { AnimationOptions, AvatarOptions } from './AvatarOptions'
+import { AvatarModel } from './AvatarModel'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
@@ -51,8 +50,8 @@ const SceneContent = ({ sceneConfig, visemeService, store }: Scene3DProps & { st
 }
 
 export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps) => {
-  const [state, setState] = useSimpleStore(AvatarState)
   const store = createXRStore()
+  const [isControlsVisible, setIsControlsVisible] = useState(true)
 
   useEffect(() => {
     if (setXRStore) {
@@ -60,90 +59,16 @@ export const Scene3D = ({ sceneConfig, visemeService, setXRStore }: Scene3DProps
     }
   }, [setXRStore, store])
 
-  const handleAvatarChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setState((state) => {
-      state.selectedModel = event.target.value
-      return state
-    })
-  }
-
-  const handleAnimationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setState((state) => {
-      state.selectedAnimation = event.target.value
-      return state
-    })
-  }
-
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      {/* Controls overlay */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 10,
-          left: 10,
-          zIndex: 1000,
-          display: 'flex',
-          gap: '10px',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
-          padding: '10px',
-          borderRadius: '5px',
-          flexWrap: 'wrap'
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>Avatar:</label>
-          <select
-            value={state.selectedModel}
-            onChange={handleAvatarChange}
-            style={{
-              padding: '5px',
-              borderRadius: '3px',
-              border: 'none',
-              backgroundColor: 'white',
-              minWidth: '150px'
-            }}
-          >
-            {AvatarOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      {/* Avatar Controls Component */}
+      <AvatarControls
+        isVisible={isControlsVisible}
+        onToggleVisibility={() => setIsControlsVisible(!isControlsVisible)}
+      />
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          <label style={{ color: 'white', fontSize: '12px', fontWeight: 'bold' }}>Animation:</label>
-          <select
-            value={state.selectedAnimation}
-            onChange={handleAnimationChange}
-            style={{
-              padding: '5px',
-              borderRadius: '3px',
-              border: 'none',
-              backgroundColor: 'white',
-              minWidth: '150px'
-            }}
-          >
-            {AnimationOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <Canvas
-        camera={{
-          position: sceneConfig.cameraPosition,
-          near: sceneConfig.near,
-          far: sceneConfig.far,
-          fov: 50
-        }}
-        shadows
-        style={{ background: `#${sceneConfig.background?.toString(16).padStart(6, '0') || '1a1a1a'}` }}
-      >
+      {/* Canvas */}
+      <Canvas camera={{ position: [0, 1.6, 3], fov: 50 }} style={{ background: 'transparent' }} shadows>
         <SceneContent sceneConfig={sceneConfig} visemeService={visemeService} store={store} />
       </Canvas>
     </div>

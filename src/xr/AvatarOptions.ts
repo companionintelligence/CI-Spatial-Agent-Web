@@ -1,4 +1,3 @@
-
 export const AvatarOptions = [
   { label: 'Ash', value: '/assets/avatars/25-1-3_CI_model_female_Ash.glb' },
   { label: 'Greg', value: '/assets/avatars/25-1-3_CI_model_male_Greg.glb' },
