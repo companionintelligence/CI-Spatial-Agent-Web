@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { STTConfig } from '../audioTypes'
+import type { STTConfigPartial } from '../audioTypes'
 import { defaultSTTConfig } from '../audioTypes'
 
 interface STTPerformResult {
@@ -16,6 +16,7 @@ interface STTPerformResult {
 }
 
 interface UseSTTServiceProps {
+  config?: STTConfigPartial
   onPerform?: (result: STTPerformResult) => void
   onInterimTranscript?: (text: string) => void
 }
@@ -64,8 +65,12 @@ interface WindowWithSpeech extends Window {
   webkitSpeechRecognition?: { new (): BaseSpeechRecognition }
 }
 
-export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceProps = {}) => {
-  const [config, setConfig] = useState<STTConfig>(defaultSTTConfig)
+export const useSTTService = ({
+  config: configPartial = {},
+  onPerform,
+  onInterimTranscript
+}: UseSTTServiceProps = {}) => {
+  const config = { ...defaultSTTConfig, ...configPartial }
   const [isListening, setIsListening] = useState(false)
   const [allowed, setAllowed] = useState(true)
   const [desired, setDesired] = useState(false)
@@ -93,8 +98,8 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
 
     const recognition = new SpeechRecognitionClass() as ExtendedSpeechRecognition
 
-    recognition.lang = 'en-US'
-    recognition.continuous = true
+    recognition.lang = config.language
+    recognition.continuous = config.continuous
     recognition.interimResults = true
 
     const start2 = () => {
@@ -181,7 +186,7 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
     recognition.kick = kick
 
     recognitionRef.current = recognition
-  }, [desired, allowed, onPerform, onInterimTranscript])
+  }, [desired, allowed, onPerform, onInterimTranscript, config.continuous, config.language])
 
   const updateListening = useCallback(() => {
     if (!recognitionRef.current) return
@@ -211,10 +216,6 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
     updateListening()
   }, [updateListening])
 
-  const updateConfig = useCallback((newConfig: Partial<STTConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }))
-  }, [])
-
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -224,14 +225,12 @@ export const useSTTService = ({ onPerform, onInterimTranscript }: UseSTTServiceP
   }, [])
 
   return {
-    config,
     isListening,
     allowed,
     desired,
     actions: {
       setAllowed: setAllowedState,
       setDesired: setDesiredState,
-      updateConfig,
 
       startListening: () => setDesiredState(true),
       stopListening: () => setDesiredState(false)

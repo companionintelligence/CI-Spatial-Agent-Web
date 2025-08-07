@@ -12,7 +12,5 @@
   "arrowParens": "always",
   "proseWrap": "never",
   "endOfLine": "lf",
-  "importOrder": ["<THIRD_PARTY_MODULES>", "", "^[./]"],
-  "plugins": ["prettier-plugin-organize-imports"],
-  "tailwindFunctions": ["twMerge"]
+  "plugins": ["prettier-plugin-organize-imports"]
 }

@@ -23,7 +23,7 @@ async function loadDirectedResponses(): Promise<DirectedConfig> {
     if (!response.ok) {
       throw new Error(`Failed to load responses: ${response.statusText}`)
     }
-    
+
     const config = await response.json()
     directedConfig = config
     return config
@@ -35,35 +35,24 @@ async function loadDirectedResponses(): Promise<DirectedConfig> {
 
 function findResponse(userMessage: string, config: DirectedConfig): DirectedResponse | null {
   const lowerMessage = userMessage.toLowerCase().trim()
-  
+
   // Find exact trigger match first
-  const exactMatch = config.responses.find(
-    response => response.trigger.toLowerCase() === lowerMessage
-  )
+  const exactMatch = config.responses.find((response) => response.trigger.toLowerCase() === lowerMessage)
   if (exactMatch) return exactMatch
-  
+
   // Find partial trigger match
-  const partialMatch = config.responses.find(
-    response => lowerMessage.includes(response.trigger.toLowerCase())
-  )
+  const partialMatch = config.responses.find((response) => lowerMessage.includes(response.trigger.toLowerCase()))
   if (partialMatch) return partialMatch
-  
+
   return null
 }
 
 function getDefaultResponse(config: DirectedConfig): DirectedResponse | null {
-  return config.responses.find(response => response.trigger === 'default') || null
+  return config.responses.find((response) => response.trigger === 'default') || null
 }
 
 export async function llmDirected(params: LLMParams): Promise<LLMResult> {
-  const {
-    userMessage,
-    interrupt,
-    latestInterrupt,
-    responseCallback,
-    updateMessages,
-    setThinking
-  } = params
+  const { userMessage, interrupt, latestInterrupt, responseCallback, updateMessages, setThinking } = params
 
   if (interrupt < latestInterrupt) {
     console.log('LLM: Directed request outdated, stopping')
@@ -75,7 +64,7 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
   try {
     // Load responses
     const config = await loadDirectedResponses()
-    
+
     // Find matching response
     const directedResponse = findResponse(userMessage, config) || getDefaultResponse(config)
 
@@ -98,7 +87,6 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
       const sentence = sentences[i].trimEnd()
       fullResponse += (i > 0 ? '. ' : '') + sentence
 
-
       if (responseCallback) {
         responseCallback({
           text: fullResponse,
@@ -112,9 +100,9 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
       }
 
       bcounter++
-      
+
       // Small delay to simulate streaming
-      await new Promise(resolve => setTimeout(resolve, 200))
+      await new Promise((resolve) => setTimeout(resolve, 200))
     }
 
     updateMessages?.(userMessage, fullResponse)
@@ -126,4 +114,4 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
     setThinking?.(false)
     return { success: false, error: error as Error }
   }
-} 
+}

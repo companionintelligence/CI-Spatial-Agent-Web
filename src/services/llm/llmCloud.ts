@@ -58,6 +58,7 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
   }
 
   try {
+    console.log('LLM - sending request to', llmUrl, props)
     const response = await fetch(llmUrl, props)
 
     if (!response.ok) {

@@ -6,14 +6,13 @@ export interface LLMMessage {
 }
 
 export interface LLMConfig {
-  llm_local: boolean
-  llm_model?: string
-  llm_url?: string
-  llm_auth?: string
-  llm_flowise?: boolean
+  llm_provider?: 'script' | 'mlc' | 'ollama' | 'openai' // | 'flowise' | 'anthropic'
+  mlc_model?: string
   ollama_url?: string
   ollama_model?: string
-  directed_mode?: boolean
+  openai_api_url?: string
+  openai_api_key?: string
+  openai_model?: string
 }
 
 export interface WebLLMStreamChunk {
@@ -107,14 +106,14 @@ export interface LLMResult {
 }
 
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
-  llm_local: import.meta.env.VITE_LOCAL_LLM_ENABLED !== 'false',
-  llm_model: import.meta.env.VITE_DEFAULT_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
-  llm_url: import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
-  llm_auth: import.meta.env.VITE_OPENAI_API_KEY || '',
-  llm_flowise: false,
+  llm_provider: import.meta.env.VITE_LLM_PROVIDER || 'mlc',
+  mlc_model: import.meta.env.VITE_DEFAULT_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+  openai_api_url: import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
+  openai_api_key: import.meta.env.VITE_OPENAI_API_KEY || '',
+  openai_model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo',
+  // llm_flowise: false,
   ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
-  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b',
-  directed_mode: false
+  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b'
 }
 
 export const AVAILABLE_LOCAL_MODELS = [

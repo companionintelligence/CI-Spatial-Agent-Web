@@ -25,6 +25,12 @@ export interface TTSConfig {
   volume: number
   remote: boolean
   apiKey?: string
+  url?: string
+  model?: string
+  voiceSettings?: {
+    stability?: number
+    similarity_boost?: number
+  }
 }
 
 export interface STTConfig {
@@ -63,7 +69,13 @@ export const defaultTTSConfig: TTSConfig = {
   speed: 1.0,
   pitch: 1.0,
   volume: 1.0,
-  remote: false
+  remote: false,
+  url: 'https://api.openai.com/v1/audio/speech',
+  model: 'tts-1',
+  voiceSettings: {
+    stability: 0.5,
+    similarity_boost: 0.8
+  }
 }
 
 export const defaultSTTConfig: STTConfig = {
@@ -78,3 +90,9 @@ export const defaultWhisperConfig: WhisperConfig = {
   quantized: true,
   multilingual: false
 }
+
+// Partial config types for services
+export type AudioConfigPartial = Partial<AudioConfig>
+export type TTSConfigPartial = Partial<TTSConfig>
+export type STTConfigPartial = Partial<STTConfig>
+export type WhisperConfigPartial = Partial<WhisperConfig>

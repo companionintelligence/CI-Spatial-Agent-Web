@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { AudioConfig, VADResult } from '../audioTypes'
+import type { AudioConfigPartial, VADResult } from '../audioTypes'
 import { defaultAudioConfig } from '../audioTypes'
 
 // Type for VAD instance
@@ -14,13 +14,19 @@ interface VADProbs {
 }
 
 interface UseVADServiceProps {
+  config?: AudioConfigPartial
   onVADResult?: (result: VADResult) => void
   onSpeechStart?: () => void
   onSpeechEnd?: (audio: ArrayBuffer) => void
 }
 
-export const useVADService = ({ onVADResult, onSpeechStart, onSpeechEnd }: UseVADServiceProps = {}) => {
-  const [config, setConfig] = useState<AudioConfig>(defaultAudioConfig)
+export const useVADService = ({
+  config: configPartial = {},
+  onVADResult,
+  onSpeechStart,
+  onSpeechEnd
+}: UseVADServiceProps = {}) => {
+  const config = { ...defaultAudioConfig, ...configPartial }
   const [isListening, setIsListening] = useState(false)
   const [isDetecting, setIsDetecting] = useState(false)
   const vadRef = useRef<VADInstance | null>(null)
@@ -114,10 +120,6 @@ export const useVADService = ({ onVADResult, onSpeechStart, onSpeechEnd }: UseVA
     }
   }, [])
 
-  const updateConfig = useCallback((newConfig: Partial<AudioConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }))
-  }, [])
-
   // Auto-start/stop based on microphone enabled setting
   useEffect(() => {
     if (config.microphoneEnabled && config.vadEnabled) {
@@ -137,11 +139,9 @@ export const useVADService = ({ onVADResult, onSpeechStart, onSpeechEnd }: UseVA
   }, [])
 
   return {
-    config,
     isListening,
     isDetecting,
     actions: {
-      updateConfig,
       startListening,
       stopListening,
       initializeVAD

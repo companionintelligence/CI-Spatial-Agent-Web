@@ -1,19 +1,19 @@
-import { useCallback, useState } from 'react'
-import type { TTSConfig, WhisperData } from '../audioTypes'
+import { useCallback, useMemo, useState } from 'react'
+import type { TTSConfigPartial, WhisperData } from '../audioTypes'
 import { defaultTTSConfig } from '../audioTypes'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'
 
 interface TTSServiceOptions {
+  config?: TTSConfigPartial
   onSpeechStart?: (text: string, whisperData: WhisperData) => void
   onSpeechEnd?: () => void
 }
 
 export const useTTSService = (options: TTSServiceOptions = {}) => {
-  const [config, setConfig] = useState<TTSConfig>(defaultTTSConfig)
+  const { config: configPartial = {}, onSpeechStart, onSpeechEnd } = options
+  const config = useMemo(() => ({ ...defaultTTSConfig, ...configPartial }), [configPartial])
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [audioQueue, setAudioQueue] = useState<ArrayBuffer[]>([])
-
-  const { onSpeechStart, onSpeechEnd } = options
 
   const speakLocal = useCallback(
     async (text: string) => {
@@ -21,7 +21,11 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         throw new Error('Speech synthesis not supported')
       }
 
-      const utterance = new SpeechSynthesisUtterance(text)
+      // Clean up text
+      const cleanText = text.replace(/[*<>#%-]/g, '')
+      if (!cleanText.trim()) return
+
+      const utterance = new SpeechSynthesisUtterance(cleanText)
 
       /** @todo for the very first utterance, there appear to be no voices registered. maybe a chrome bug? for now just use system default */
       // const voices = speechSynthesis.getVoices()
@@ -34,11 +38,11 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       utterance.volume = config.volume
 
       // Generate whisper data for visemes
-      const whisperData = approximateWhisperDataFromText(text, config.speed, 0)
+      const whisperData = approximateWhisperDataFromText(cleanText, config.speed, 0)
 
       // Notify speech start with whisper data
       if (onSpeechStart) {
-        onSpeechStart(text, whisperData)
+        onSpeechStart(cleanText, whisperData)
       }
 
       utterance.onend = () => {
@@ -61,9 +65,124 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     [config.speed, config.pitch, config.volume, onSpeechStart, onSpeechEnd]
   )
 
-  const speakRemote = useCallback(async (_text: string) => {
-    console.warn('Remote TTS not implemented yet')
+  const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const audioContext = new AudioContext()
+
+      audioContext
+        .decodeAudioData(audioBuffer.slice(0))
+        .then((decodedAudio) => {
+          const source = audioContext.createBufferSource()
+          source.buffer = decodedAudio
+          source.connect(audioContext.destination)
+
+          source.onended = () => {
+            resolve()
+          }
+
+          source.start(0)
+        })
+        .catch((error) => {
+          console.error('Audio decode error:', error)
+          reject(error)
+        })
+    })
   }, [])
+
+  const speakRemote = useCallback(
+    async (text: string) => {
+      if (!config.apiKey) {
+        throw new Error('API key required for remote TTS')
+      }
+
+      // Clean up text
+      const cleanText = text.replace(/[*<>#%-]/g, '')
+      if (!cleanText || !cleanText.length) {
+        return
+      }
+
+      const url = config.url || 'https://api.openai.com/v1/audio/speech'
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg'
+      }
+
+      // Set appropriate authorization header based on URL
+      if (url.includes('elevenlabs')) {
+        headers['xi-api-key'] = config.apiKey
+      } else {
+        headers['Authorization'] = `Bearer ${config.apiKey}`
+      }
+
+      const requestBody: Record<string, unknown> = {
+        text: cleanText,
+        input: cleanText
+      }
+
+      // Set model and voice based on service
+      if (url.includes('elevenlabs')) {
+        requestBody.model_id = config.model || 'eleven_monolingual_v1'
+        requestBody.voice_settings = {
+          stability: config.voiceSettings?.stability || 0.5,
+          similarity_boost: config.voiceSettings?.similarity_boost || 0.8
+        }
+      } else {
+        // OpenAI format
+        requestBody.model = config.model || 'tts-1'
+        requestBody.voice = config.voice || 'shimmer'
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody)
+        })
+
+        if (!response.ok) {
+          throw new Error(`Remote TTS API error: ${response.status} ${response.statusText}`)
+        }
+
+        const audioBuffer = await response.arrayBuffer()
+
+        // Generate whisper data for visemes (approximate timing)
+        const whisperData = approximateWhisperDataFromText(cleanText, config.speed, 0)
+
+        // Notify speech start with whisper data
+        if (onSpeechStart) {
+          onSpeechStart(cleanText, whisperData)
+        }
+
+        // Play the audio buffer
+        await playAudioBuffer(audioBuffer)
+
+        setIsSpeaking(false)
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+      } catch (error) {
+        console.error('Remote TTS Error:', error)
+        setIsSpeaking(false)
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+        throw error
+      }
+    },
+    [
+      config.apiKey,
+      config.url,
+      config.model,
+      config.voiceSettings?.stability,
+      config.voiceSettings?.similarity_boost,
+      config.voice,
+      config.speed,
+      onSpeechStart,
+      playAudioBuffer,
+      onSpeechEnd
+    ]
+  )
 
   const speak = useCallback(
     async (text: string) => {
@@ -93,37 +212,12 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       speechSynthesis.cancel()
     }
     setIsSpeaking(false)
-    
+
     // Call speech end callback when speech is stopped
     if (onSpeechEnd) {
       onSpeechEnd()
     }
   }, [onSpeechEnd])
-
-  const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const audioContext = new AudioContext()
-
-      audioContext
-        .decodeAudioData(audioBuffer.slice(0))
-        .then((decodedAudio) => {
-          const source = audioContext.createBufferSource()
-          source.buffer = decodedAudio
-          source.connect(audioContext.destination)
-
-          source.onended = () => {
-            console.log('Audio playback finished')
-            resolve()
-          }
-
-          source.start(0)
-        })
-        .catch((error) => {
-          console.error('Audio decode error:', error)
-          reject(error)
-        })
-    })
-  }, [])
 
   const addToQueue = useCallback((audioBuffer: ArrayBuffer) => {
     setAudioQueue((prev) => [...prev, audioBuffer])
@@ -151,12 +245,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     }
   }, [audioQueue, isSpeaking, playAudioBuffer, onSpeechEnd])
 
-  const updateConfig = useCallback((newConfig: Partial<TTSConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }))
-  }, [])
-
   return {
-    config,
     isSpeaking,
     audioQueue: audioQueue.length,
     actions: {
@@ -164,8 +253,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       stopSpeaking,
       playAudioBuffer,
       addToQueue,
-      processQueue,
-      updateConfig
+      processQueue
     }
   }
 }
