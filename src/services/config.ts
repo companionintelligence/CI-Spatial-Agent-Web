@@ -38,12 +38,11 @@ export const sttConfig: STTConfigPartial = {
 
 // LLM service configuration
 export const llmConfig: Partial<LLMConfig> = {
-  llm_local: import.meta.env.VITE_LOCAL_LLM_ENABLED !== 'false',
-  llm_model: import.meta.env.VITE_DEFAULT_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
-  llm_url: import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
-  llm_auth: import.meta.env.VITE_OPENAI_API_KEY || '',
-  llm_flowise: import.meta.env.VITE_LLM_FLOWISE === 'true',
+  llm_provider: import.meta.env.VITE_LLM_PROVIDER || 'mlc',
+  mlc_model: import.meta.env.VITE_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
   ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
   ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b',
-  directed_mode: import.meta.env.VITE_DIRECTED_MODE === 'true'
+  openai_api_key: import.meta.env.VITE_OPENAI_API_KEY || '',
+  openai_api_url: import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
+  openai_model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo'
 }

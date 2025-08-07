@@ -83,6 +83,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
   }, [])
 
   const load = useCallback(async () => {
+    if (config.llm_provider !== 'mlc' || !config.mlc_model) return
     if (state.loading) return
 
     setState((prev) => ({ ...prev, loading: true }))
@@ -139,7 +140,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         })
       }
     }
-  }, [state.loading, state.ready, onStatus])
+  }, [config.llm_provider, config.mlc_model, state.loading, state.ready, onStatus])
 
   // Initialize function that starts loading the LLM
   const initialize = useCallback(async () => {
@@ -147,16 +148,29 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
     initializedRef.current = true
 
     // Determine which mode to use and set ready state
-    if (config.directed_mode) {
+    if (config.llm_provider === 'script') {
       setState((prev) => ({ ...prev, ready: true }))
-    } else if (config.llm_local && config.ollama_url) {
+    } else if (config.llm_provider === 'ollama' && config.ollama_url) {
       setState((prev) => ({ ...prev, ready: true }))
-    } else if (!config.llm_local) {
-      setState((prev) => ({ ...prev, ready: true }))
-    } else if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
+    } else if (config.llm_provider === 'mlc' && config.mlc_model) {
       await load()
+    } else if (
+      config.llm_provider === 'openai' &&
+      config.openai_api_key &&
+      config.openai_api_url &&
+      config.openai_model
+    ) {
+      setState((prev) => ({ ...prev, ready: true }))
     }
-  }, [config.llm_local, config.ollama_url, config.directed_mode, state.ready, state.loading, load])
+  }, [
+    config.llm_provider,
+    config.mlc_model,
+    config.ollama_url,
+    config.openai_api_key,
+    config.openai_api_url,
+    config.openai_model,
+    load
+  ])
 
   // Auto-initialize when the service is created
   useEffect(() => {
@@ -168,14 +182,6 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
     return () => clearTimeout(timer)
   }, [initialize])
 
-  // Re-initialize when config changes
-  useEffect(() => {
-    if (initializedRef.current) {
-      console.log('LLM: Config changed, re-initializing...')
-      initialize()
-    }
-  }, [config.llm_local, config.ollama_url, config.directed_mode, initialize])
-
   const processUserInput = useCallback(
     async (request: LLMPerformRequest) => {
       if (!request.final || !request.bargein) return
@@ -184,10 +190,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       if (!text || !text.length) return
 
       // Early return if loading or not ready
-      if (state.loading || (!config.directed_mode && !state.ready)) {
-        if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
-          await load()
-        }
+      if (state.loading || !state.ready) {
         return
       }
 
@@ -224,46 +227,51 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
 
       try {
         // Route to appropriate LLM based on config
-        if (config.directed_mode) {
+        if (config.llm_provider === 'script') {
           const result = await llmDirected(baseParams)
           if (!result.success && result.error) {
             console.error('LLM: Directed reasoning failed:', result.error)
           }
-        } else if (config.llm_local) {
-          if (config.ollama_url?.trim()) {
-            const result = await llmOllama({
-              ...baseParams,
-              llmUrl: config.ollama_url,
-              llmModel: config.ollama_model
-            })
-            if (!result.success && result.error) {
-              console.error('LLM: Ollama reasoning failed:', result.error)
-            }
-          } else if (state.engine) {
-            const result = await llmLocal({
-              ...baseParams,
-              engine: state.engine
-            })
-            if (!result.success && result.error) {
-              console.error('LLM: Local reasoning failed:', result.error)
-            }
-          } else {
-            console.error('LLM - no local options available')
-            onStatus?.({
-              color: 'error',
-              text: 'No local LLM options configured'
-            })
+        } else if (config.llm_provider === 'ollama' && config.ollama_model) {
+          const result = await llmOllama({
+            ...baseParams,
+            llmUrl: config.ollama_url,
+            llmModel: config.ollama_model
+          })
+          if (!result.success && result.error) {
+            console.error('LLM: Ollama reasoning failed:', result.error)
           }
-        } else {
+        } else if (config.llm_provider === 'mlc' && config.mlc_model && state.engine) {
+          const result = await llmLocal({
+            ...baseParams,
+            engine: state.engine
+          })
+          if (!result.success && result.error) {
+            console.error('LLM: Local reasoning failed:', result.error)
+          }
+        } else if (
+          config.llm_provider === 'openai' &&
+          config.openai_api_key &&
+          config.openai_api_url &&
+          config.openai_model
+        ) {
+          // Use cloud API for OpenAI
           const result = await llmCloud({
             ...baseParams,
-            llmUrl: config.llm_url!,
-            llmModel: config.llm_model,
-            llmAuth: config.llm_auth,
-            isFlowise: config.llm_flowise
+            llmModel: config.openai_model,
+            llmAuth: config.openai_api_key,
+            llmUrl: config.openai_api_url
           })
           if (!result.success && result.error) {
             console.error('LLM: Remote reasoning failed:', result.error)
+          }
+        } else {
+          console.error('LLM: Unsupported provider or missing configuration', config.llm_provider)
+          if (onStatus) {
+            onStatus({
+              color: 'error',
+              text: 'Unsupported LLM provider or missing configuration'
+            })
           }
         }
       } catch (error) {
@@ -281,18 +289,16 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       state.engine,
       state.messages,
       state._latest_interrupt,
-      config.directed_mode,
-      config.llm_local,
-      config.ollama_url,
-      config.ollama_model,
-      config.llm_url,
-      config.llm_model,
-      config.llm_auth,
-      config.llm_flowise,
       onResponse,
       onStatus,
       processThinkBlocks,
-      load
+      config.llm_provider,
+      config.ollama_model,
+      config.mlc_model,
+      config.openai_api_key,
+      config.openai_api_url,
+      config.openai_model,
+      config.ollama_url
     ]
   )
 
@@ -307,7 +313,6 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
     state,
     actions: {
       load,
-      initialize,
       processUserInput,
       clearHistory
     }

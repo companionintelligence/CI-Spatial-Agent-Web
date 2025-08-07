@@ -32,15 +32,8 @@ export const App = () => {
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
 
-  // Initialize services with config partials
-  const llmConfigWithState = {
-    ...llmConfig,
-    llm_local: (llmConfig.llm_local ?? true) && !chat.state.config.cloudMode,
-    directed_mode: (llmConfig.directed_mode ?? false) || chat.state.config.directedMode
-  }
-
   const llmService = useLLMService({
-    config: llmConfigWithState,
+    config: llmConfig,
     onStatus: (status: LLMStatusUpdate) => {
       console.log('LLM Status update:', status)
     },
