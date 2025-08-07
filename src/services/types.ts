@@ -14,6 +14,7 @@ export interface AppConfig {
   autoSubmitEnabled: boolean
   agentEnabled: boolean
   llmLocal: boolean
+  directedMode: boolean
 }
 
 export interface AppState {
@@ -33,6 +34,7 @@ export const initialState: AppState = {
     bargeInEnabled: true,
     autoSubmitEnabled: true,
     agentEnabled: true,
-    llmLocal: false
+    llmLocal: false,
+    directedMode : true
   }
 }

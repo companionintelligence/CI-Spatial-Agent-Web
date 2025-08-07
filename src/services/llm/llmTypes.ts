@@ -13,6 +13,7 @@ export interface LLMConfig {
   llm_flowise?: boolean
   ollama_url?: string
   ollama_model?: string
+  directed_mode?: boolean
 }
 
 export interface WebLLMStreamChunk {
@@ -112,7 +113,8 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   llm_auth: import.meta.env.VITE_OPENAI_API_KEY || '',
   llm_flowise: false,
   ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
-  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b'
+  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b',
+  directed_mode: false
 }
 
 export const AVAILABLE_LOCAL_MODELS = [

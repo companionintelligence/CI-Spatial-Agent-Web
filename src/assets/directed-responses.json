@@ -1,0 +1,52 @@
+{
+  "responses": [
+    {
+      "id": "welcome",
+      "trigger": "hello",
+      "response": "Hello! I'm here to help you with any questions you might have.",
+      "emotion": "friendly"
+    },
+    {
+      "id": "weather",
+      "trigger": "weather",
+      "response": "I can't check the weather right now, but I hope it's nice where you are!",
+      "emotion": "neutral"
+    },
+    {
+      "id": "help",
+      "trigger": "help",
+      "response": "I'm here to assist you. What would you like to know?",
+      "emotion": "helpful"
+    },
+    {
+      "id": "name",
+      "trigger": "name",
+      "response": "My name is AI Assistant. I'm here to help you with various tasks and questions.",
+      "emotion": "friendly"
+    },
+    {
+      "id": "time",
+      "trigger": "time",
+      "response": "I don't have access to real-time information, but I can help you with other questions!",
+      "emotion": "neutral"
+    },
+    {
+      "id": "thanks",
+      "trigger": "thank",
+      "response": "You're very welcome! I'm glad I could help.",
+      "emotion": "happy"
+    },
+    {
+      "id": "goodbye",
+      "trigger": "bye",
+      "response": "Goodbye! Have a great day!",
+      "emotion": "friendly"
+    },
+    {
+      "id": "default",
+      "trigger": "default",
+      "response": "I understand your question. Let me think about that for a moment.",
+      "emotion": "thoughtful"
+    }
+  ]
+} 

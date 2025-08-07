@@ -56,6 +56,7 @@ export const App = () => {
         // Trigger emote performance based on the response
         emotes.performAction(performanceData)
       }
+      
       chat.actions.streamMessage(breath, response.final)
     }
   })
@@ -158,6 +159,13 @@ export const App = () => {
       llm_local: !chat.state.config.cloudMode
     })
   }, [llmService.actions, llmService.config.llm_local, chat.state.config.cloudMode])
+
+  useEffect(() => {
+    if (llmService.config.directed_mode === chat.state.config.directedMode) return
+    llmService.actions.updateConfig({
+      directed_mode: chat.state.config.directedMode
+    })
+  }, [llmService.actions, llmService.config.directed_mode, chat.state.config.directedMode])
 
   React.useEffect(() => {
     stt.actions.setAllowed(!tts.isSpeaking)
