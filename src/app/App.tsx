@@ -1,5 +1,5 @@
 import type { XRStore } from '@react-three/xr'
-import React, { useCallback, useRef } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
@@ -8,6 +8,8 @@ import { LogoOverlay } from '../components/common/LogoOverlay'
 import { config } from '../services/config'
 import { useResponsiveLayout } from '../services/layoutService'
 import { sceneConfig } from '../services/sceneTypes'
+import type { AppConfig } from '../services/types'
+import { initialAppConfig } from '../services/types'
 import { useAgent } from '../services/useAgent'
 
 export const App = () => {
@@ -15,11 +17,26 @@ export const App = () => {
 
   const xrStore = useRef<XRStore | null>(null)
 
+  // Manage app state locally
+  const [appConfig, setAppConfig] = useState<AppConfig>(initialAppConfig)
+  const [isRecording, setIsRecording] = useState(false)
+
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
 
-  const agent = useAgent(config)
+  const updateConfig = useCallback((configUpdate: Partial<AppConfig>) => {
+    setAppConfig((prev) => ({ ...prev, ...configUpdate }))
+  }, [])
+
+  // Combine service config with app config
+  const agentConfig = {
+    ...config,
+    autoSubmitEnabled: appConfig.autoSubmitEnabled,
+    bargeInEnabled: appConfig.bargeInEnabled
+  }
+
+  const agent = useAgent(agentConfig)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -29,19 +46,22 @@ export const App = () => {
   }
 
   const handleToggleMicrophone = () => {
-    agent.actions.toggleMicrophone()
+    const newRecordingState = !isRecording
+    setIsRecording(newRecordingState)
+    updateConfig({ microphone: newRecordingState })
+    agent.actions.toggleMicrophone(isRecording)
   }
 
   const handleEnterARMode = useCallback(() => {
     if (!xrStore.current) return
     xrStore.current.enterAR().then(() => {
       // Enable STT when entering AR mode
-      agent.actions.setRecording(true)
-      agent.actions.updateConfig({ microphone: true })
+      setIsRecording(true)
+      updateConfig({ microphone: true })
       agent.actions.setSTTDesired(true)
     })
     console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
-  }, [agent.actions])
+  }, [updateConfig, agent.actions])
 
   return (
     <div
@@ -81,15 +101,15 @@ export const App = () => {
           onMessageChange={agent.actions.updateCurrentMessage}
           onSubmit={agent.actions.submitMessage}
           onKeyPress={handleKeyPress}
-          config={agent.state.config}
-          isRecording={agent.state.isRecording}
+          config={appConfig}
+          isRecording={isRecording}
           onToggleMicrophone={handleToggleMicrophone}
-          onToggleCloudMode={() => agent.actions.updateConfig({ cloudMode: !agent.state.config.cloudMode })}
-          onToggleBargeIn={() => agent.actions.updateConfig({ bargeInEnabled: !agent.state.config.bargeInEnabled })}
+          onToggleCloudMode={() => updateConfig({ cloudMode: !appConfig.cloudMode })}
+          onToggleBargeIn={() => updateConfig({ bargeInEnabled: !appConfig.bargeInEnabled })}
           onToggleAutoSubmit={() =>
-            agent.actions.updateConfig({ autoSubmitEnabled: !agent.state.config.autoSubmitEnabled })
+            updateConfig({ autoSubmitEnabled: !appConfig.autoSubmitEnabled })
           }
-          onToggleAgent={() => agent.actions.updateConfig({ agentEnabled: !agent.state.config.agentEnabled })}
+          onToggleAgent={() => updateConfig({ agentEnabled: !appConfig.agentEnabled })}
           onEnterARMode={handleEnterARMode}
           vadDetecting={agent.state.vadIsDetecting}
           sttTranscript={agent.state.currentTranscript}

@@ -17,24 +17,28 @@ export interface AppConfig {
   directedMode: boolean
 }
 
-export interface AppState {
+export interface ChatState {
   messages: ChatMessage[]
   currentMessage: string
+}
+
+export interface AppState {
+  chat: ChatState
   isRecording: boolean
   config: AppConfig
 }
 
-export const initialState: AppState = {
+export const initialChatState: ChatState = {
   messages: [],
-  currentMessage: '',
-  isRecording: false,
-  config: {
-    microphone: false,
-    cloudMode: false,
-    bargeInEnabled: true,
-    autoSubmitEnabled: true,
-    agentEnabled: true,
-    llmLocal: false,
-    directedMode: false
-  }
+  currentMessage: ''
+}
+
+export const initialAppConfig: AppConfig = {
+  microphone: false,
+  cloudMode: false,
+  bargeInEnabled: true,
+  autoSubmitEnabled: true,
+  agentEnabled: true,
+  llmLocal: false,
+  directedMode: false
 }

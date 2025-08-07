@@ -11,7 +11,9 @@
  *   llm: { llm_provider: 'ollama', ollama_url: 'http://localhost:11434' },
  *   tts: { voice: 'en_US-hfc_female-medium', speed: 1.2 },
  *   stt: { language: 'en-US', continuous: true },
- *   audio: { vadThreshold: 0.8, microphoneEnabled: true }
+ *   audio: { vadThreshold: 0.8, microphoneEnabled: true },
+ *   autoSubmitEnabled: true,
+ *   bargeInEnabled: true
  * }, {
  *   onLLMResponse: (response) => console.log('AI says:', response.breath),
  *   onVADResult: (result) => setVadIndicator(result.isSpeech),
@@ -24,8 +26,8 @@
  * // Submit a message to the AI
  * actions.submitMessage("Hello, how are you?")
  *
- * // Toggle microphone listening
- * actions.toggleMicrophone()
+ * // Toggle microphone listening (now requires isRecording parameter)
+ * actions.toggleMicrophone(isRecording)
  *
  * // Set up avatar integration
  * actions.setupVisemesForVRM(vrmAvatar)
@@ -58,11 +60,8 @@
  *     voiceSettings: { stability: 0.5, similarity_boost: 0.8 }
  *   },
  *   // App behavior
- *   app: {
- *     autoSubmitEnabled: true,
- *     bargeInEnabled: true,
- *     agentEnabled: true
- *   }
+ *   autoSubmitEnabled: true,
+ *   bargeInEnabled: true
  * })
  * ```
  */
@@ -79,7 +78,7 @@ import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMStatusUpdate } from 
 import { useSTTService } from './stt/sttService'
 import { useVADService } from './stt/vadService'
 import { useTTSService } from './tts/ttsService'
-import type { AppConfig, ChatMessage } from './types'
+import type { ChatMessage } from './types'
 import { useVisemeService } from './visemes/useVisemeService'
 
 // STT service result interface (defined locally in sttService.ts)
@@ -117,8 +116,9 @@ export interface AgentConfig {
   stt?: STTConfigPartial
   // LLM configuration
   llm?: Partial<LLMConfig>
-  // App-level configuration
-  app?: Partial<AppConfig>
+  // App behavior configuration
+  autoSubmitEnabled?: boolean
+  bargeInEnabled?: boolean
 }
 
 // Callback interfaces
@@ -175,8 +175,6 @@ export interface AgentService {
     // Chat state
     messages: ChatMessage[]
     currentMessage: string
-    isRecording: boolean
-    config: AppConfig
   }
 
   // Actions
@@ -206,12 +204,10 @@ export interface AgentService {
     addMessage: (text: string, isUser: boolean) => void
     updateCurrentMessage: (message: string) => void
     clearCurrentMessage: () => void
-    setRecording: (recording: boolean) => void
-    updateConfig: (config: Partial<AppConfig>) => void
 
     // Convenience actions
     submitMessage: (message: string) => void
-    toggleMicrophone: () => void
+    toggleMicrophone: (isRecording: boolean) => void
     triggerBargein: () => void
 
     // Viseme actions (for external avatar control)
@@ -273,6 +269,12 @@ const defaultLLMConfig: Partial<LLMConfig> = {
   mlc_model: 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
 }
 
+// Default app behavior configuration
+const defaultAppConfig = {
+  autoSubmitEnabled: true,
+  bargeInEnabled: true
+}
+
 /**
  * Unified agent hook that combines all conversational AI services
  *
@@ -283,27 +285,27 @@ const defaultLLMConfig: Partial<LLMConfig> = {
  * @param callbacks - Callback functions for service events
  * @returns AgentService object with state, actions, and service instances
  */
-export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {}): AgentService => {
+export const useAgent = (
+  config: AgentConfig = {},
+  callbacks: AgentCallbacks = {}
+): AgentService => {
   // Merge configurations with defaults
   const audioConfig = { ...defaultAudioConfig, ...config.audio }
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
   const sttConfig = { ...defaultSTTConfig, ...config.stt }
   const llmConfig = { ...defaultLLMConfig, ...config.llm }
+  const appConfig = { 
+    autoSubmitEnabled: config.autoSubmitEnabled ?? defaultAppConfig.autoSubmitEnabled, 
+    bargeInEnabled: config.bargeInEnabled ?? defaultAppConfig.bargeInEnabled 
+  }
 
   // Internal state
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
   const interruptCounterRef = useRef(Date.now())
 
-  // Initialize chat service with app config if provided
+  // Initialize chat service
   const chat = useChatService()
-
-  // Apply app config overrides if provided
-  useEffect(() => {
-    if (config.app) {
-      chat.actions.updateConfig(config.app)
-    }
-  }, [config.app, chat.actions])
 
   // Initialize viseme and emote services
   const visemes = useVisemeService()
@@ -317,7 +319,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     },
     onResponse: (response: LLMResponse) => {
       const breath = response.breath
-      if (chat.state.config.agentEnabled && breath) {
+      if (breath) {
         tts.actions.speak(breath)
 
         // Analyze the response for emotional content and trigger appropriate emote
@@ -357,8 +359,8 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
 
   // Services that need to be responsive to app state changes
   const vadConfigWithState = {
-    ...audioConfig,
-    microphoneEnabled: chat.state.isRecording
+    ...audioConfig
+    // microphoneEnabled will be controlled externally
   }
 
   // Initialize VAD service
@@ -392,7 +394,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           return
         }
 
-        if (chat.state.config.autoSubmitEnabled) {
+        if (appConfig.autoSubmitEnabled) {
           chat.actions.addMessage(result.text, true)
           setCurrentInterimTranscript('')
         } else {
@@ -405,7 +407,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           text: result.text,
           human: true,
           final: true,
-          bargein: chat.state.config.bargeInEnabled,
+          bargein: appConfig.bargeInEnabled,
           interrupt
         })
       } else {
@@ -444,23 +446,21 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           text: userMessage,
           human: true,
           final: true,
-          bargein: chat.state.config.bargeInEnabled,
+          bargein: appConfig.bargeInEnabled,
           interrupt
         })
         chat.actions.clearCurrentMessage()
       }
     },
-    [chat.state.config.bargeInEnabled, chat.actions, llmService.actions]
+    [appConfig.bargeInEnabled, chat.actions, llmService.actions]
   )
 
-  const toggleMicrophone = useCallback(() => {
-    const newRecordingState = !chat.state.isRecording
-    chat.actions.setRecording(newRecordingState)
-    chat.actions.updateConfig({ microphone: newRecordingState })
+  const toggleMicrophone = useCallback((isRecording: boolean) => {
+    const newRecordingState = !isRecording
 
     stt.actions.setDesired(newRecordingState)
     setCurrentInterimTranscript('')
-  }, [chat.state.isRecording, chat.actions, stt.actions])
+  }, [stt.actions])
 
   const triggerBargein = useCallback(() => {
     const interrupt = Date.now()
@@ -498,9 +498,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
 
       // Chat state
       messages: chat.state.messages,
-      currentMessage: chat.state.currentMessage,
-      isRecording: chat.state.isRecording,
-      config: chat.state.config
+      currentMessage: chat.state.currentMessage
     },
 
     actions: {
@@ -529,8 +527,6 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       addMessage: chat.actions.addMessage,
       updateCurrentMessage: chat.actions.updateCurrentMessage,
       clearCurrentMessage: chat.actions.clearCurrentMessage,
-      setRecording: chat.actions.setRecording,
-      updateConfig: chat.actions.updateConfig,
 
       // Convenience actions
       submitMessage,

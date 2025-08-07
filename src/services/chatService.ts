@@ -1,11 +1,11 @@
 import { useCallback } from 'react'
 
 import { useSimpleStore } from '../utils/SimpleStore'
-import type { AppConfig, AppState, ChatMessage } from './types'
-import { initialState } from './types'
+import type { ChatMessage, ChatState } from './types'
+import { initialChatState } from './types'
 
 export const useChatService = () => {
-  const [state, setState] = useSimpleStore<AppState>(() => initialState)
+  const [state, setState] = useSimpleStore<ChatState>(() => initialChatState)
 
   const addMessage = useCallback((text: string, isUser: boolean) => {
     const newMessage: ChatMessage = {
@@ -19,7 +19,7 @@ export const useChatService = () => {
       prev.messages.push(newMessage)
       return prev
     })
-  }, [])
+  }, [setState])
 
   const streamMessage = useCallback(
     (fragment: string, finished: boolean) => {
@@ -39,29 +39,12 @@ export const useChatService = () => {
   const updateCurrentMessage = useCallback((message: string) => {
     state.currentMessage = message
     setState(state)
-  }, [])
+  }, [state, setState])
 
   const clearCurrentMessage = useCallback(() => {
     state.currentMessage = ''
     setState(state)
-  }, [])
-
-  const setRecording = useCallback((isRecording: boolean) => {
-    setState((state) => {
-      state.isRecording = isRecording
-      return state
-    })
-  }, [])
-
-  const updateConfig = useCallback((configUpdate: Partial<AppConfig>) => {
-    setState((state) => {
-      state.config = {
-        ...state.config,
-        ...configUpdate
-      }
-      return state
-    })
-  }, [])
+  }, [state, setState])
 
   return {
     state,
@@ -69,9 +52,7 @@ export const useChatService = () => {
       addMessage,
       streamMessage,
       updateCurrentMessage,
-      clearCurrentMessage,
-      setRecording,
-      updateConfig
+      clearCurrentMessage
     }
   }
 }
