@@ -1,8 +1,8 @@
 // Service-specific configurations driven by environment variables
 // Each service has its own dedicated config object
 
-import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial } from './audioTypes'
-import { SYSTEM_PROMPT, type LLMConfig } from './llm/llmTypes'
+import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial } from '../services/audioTypes'
+import { SYSTEM_PROMPT, type LLMConfig } from '../services/llm/llmTypes'
 
 // Audio service configuration
 export const audioConfig: AudioConfigPartial = {

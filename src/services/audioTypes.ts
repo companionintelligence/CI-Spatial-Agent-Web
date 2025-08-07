@@ -1,3 +1,5 @@
+/** @todo move these all into their respective service */
+
 export interface AudioConfig {
   microphoneEnabled: boolean
   vadThreshold: number

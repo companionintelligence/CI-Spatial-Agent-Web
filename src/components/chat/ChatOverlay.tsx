@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import type { AppConfig } from '../../services/types'
+import type { AppConfig } from '../../app/types'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
 import { ControlButtons } from './ControlButtons'

@@ -1,4 +1,4 @@
-import type { ConversationState } from './conversation/conversationType'
+import type { ConversationState } from '../services/conversation/conversationType'
 
 export interface AppConfig {
   microphone: boolean

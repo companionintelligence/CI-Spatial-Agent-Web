@@ -1,4 +1,4 @@
-import type { AppConfig } from '../../services/types'
+import type { AppConfig } from '../../app/types'
 import { ControlButton } from '../common/ControlButton'
 
 interface ControlButtonsProps {
