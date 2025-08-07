@@ -1,25 +1,15 @@
 import type { XRStore } from '@react-three/xr'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useRef } from 'react'
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
-import type { WhisperData } from '../services/audioTypes'
-import { useChatService } from '../services/chatService'
-import { audioConfig, llmConfig, sttConfig, ttsConfig } from '../services/config'
-import { useEmoteService } from '../services/emote/useEmoteService'
-import { emotionIntegrationService } from '../services/emotionIntegration'
+import { config } from '../services/config'
 import { useResponsiveLayout } from '../services/layoutService'
-import { useLLMService } from '../services/llm/llmService'
-import type { LLMResponse, LLMStatusUpdate } from '../services/llm/llmTypes'
 import { sceneConfig } from '../services/sceneTypes'
-import { useSTTService } from '../services/stt/sttService'
-import { useVADService } from '../services/stt/vadService'
-import { useTTSService } from '../services/tts/ttsService'
-import { useVisemeService } from '../services/visemes/useVisemeService'
+import { useAgent } from '../services/useAgent'
 
 export const App = () => {
-  const chat = useChatService()
   useResponsiveLayout() // Layout service for responsive behavior
 
   const xrStore = useRef<XRStore | null>(null)
@@ -28,171 +18,29 @@ export const App = () => {
     xrStore.current = store
   }, [])
 
-  const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
-  const [vadDetecting, setVadDetecting] = useState(false)
-
-  const llmService = useLLMService({
-    config: llmConfig,
-    onStatus: (status: LLMStatusUpdate) => {
-      console.log('LLM Status update:', status)
-    },
-    onResponse: (response: LLMResponse) => {
-      const breath = response.breath
-      if (chat.state.config.agentEnabled && breath) {
-        tts.actions.speak(breath)
-
-        // Analyze the response for emotional content and trigger appropriate emote
-        const message = {
-          id: Date.now().toString(),
-          text: breath,
-          isUser: false,
-          timestamp: Date.now()
-        }
-        const performanceData = emotionIntegrationService.createPerformanceFromMessage(
-          message,
-          chat.state.messages.length
-        )
-
-        // Trigger emote performance based on the response
-        emotes.performAction(performanceData)
-      }
-
-      chat.actions.streamMessage(breath, response.final)
-    }
-  })
-
-  const interruptCounterRef = useRef(Date.now())
-
-  const visemes = useVisemeService()
-  const emotes = useEmoteService()
-
-  const tts = useTTSService({
-    config: ttsConfig,
-    onSpeechStart: (_text: string, whisperData: WhisperData) => {
-      const startTime = Date.now()
-      visemes.actions.generateSequence(whisperData, startTime)
-    },
-    onSpeechEnd: () => {
-      emotes.reset()
-    }
-  })
-
-  const submitMessage = React.useCallback(
-    (message: string) => {
-      if (message.trim()) {
-        const userMessage = message.trim()
-
-        chat.actions.addMessage(userMessage, true)
-        chat.actions.clearCurrentMessage()
-
-        const interrupt = Date.now()
-        interruptCounterRef.current = interrupt
-
-        llmService.actions.processUserInput({
-          text: userMessage,
-          human: true,
-          final: true,
-          bargein: chat.state.config.bargeInEnabled,
-          interrupt
-        })
-        chat.actions.clearCurrentMessage()
-      }
-    },
-    [chat.state.config.bargeInEnabled, chat.actions, llmService.actions]
-  )
-
-  // Services that need to be responsive to app state changes
-  const vadConfigWithState = {
-    ...audioConfig,
-    microphoneEnabled: chat.state.isRecording
-  }
-
-  const vad = useVADService({
-    config: vadConfigWithState,
-    onVADResult: (result) => {
-      setVadDetecting(result.isSpeech)
-    }
-  })
-
-  const stt = useSTTService({
-    config: sttConfig,
-    onPerform: (result) => {
-      if (result.final) {
-        if (result.text.trim() === 'stop') {
-          const interrupt = Date.now()
-          interruptCounterRef.current = interrupt
-
-          if (tts.isSpeaking) {
-            tts.actions.stopSpeaking()
-          }
-
-          // Trigger barge-in behavior in emote system
-          emotes.onBargeIn()
-
-          console.log('STT: Stop command detected - barge-in activated')
-          return
-        }
-
-        if (chat.state.config.autoSubmitEnabled) {
-          chat.actions.addMessage(result.text, true)
-          setCurrentInterimTranscript('')
-        } else {
-          setCurrentInterimTranscript(result.text)
-        }
-
-        const interrupt = Date.now()
-        interruptCounterRef.current = interrupt
-        llmService.actions.processUserInput({
-          text: result.text,
-          human: true,
-          final: true,
-          bargein: chat.state.config.bargeInEnabled,
-          interrupt
-        })
-      } else {
-        setCurrentInterimTranscript(result.text)
-      }
-    },
-    onInterimTranscript: (text) => {
-      setCurrentInterimTranscript(text)
-    }
-  })
-
-  useEffect(() => {
-    stt.actions.setDesired(vad.isDetecting)
-  }, [vad.isDetecting, stt.actions])
-
-  React.useEffect(() => {
-    stt.actions.setAllowed(!tts.isSpeaking)
-  }, [tts.isSpeaking, stt.actions])
+  const agent = useAgent(config)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      submitMessage(chat.state.currentMessage)
+      agent.actions.submitMessage(agent.state.currentMessage)
     }
   }
 
   const handleToggleMicrophone = () => {
-    const newRecordingState = !chat.state.isRecording
-    chat.actions.setRecording(newRecordingState)
-    chat.actions.updateConfig({ microphone: newRecordingState })
-
-    stt.actions.setDesired(newRecordingState)
-    setCurrentInterimTranscript('')
+    agent.actions.toggleMicrophone()
   }
 
   const handleEnterARMode = useCallback(() => {
     if (!xrStore.current) return
     xrStore.current.enterAR().then(() => {
       // Enable STT when entering AR mode
-      chat.actions.setRecording(true)
-      chat.actions.updateConfig({ microphone: true })
-      stt.actions.setDesired(true)
-      setCurrentInterimTranscript('')
+      agent.actions.setRecording(true)
+      agent.actions.updateConfig({ microphone: true })
+      agent.actions.setSTTDesired(true)
     })
     console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
-  }, [chat.actions, stt.actions])
+  }, [agent.actions])
 
   return (
     <div
@@ -220,35 +68,35 @@ export const App = () => {
       >
         <AvatarViewport
           sceneConfig={sceneConfig}
-          visemeService={visemes}
-          emoteService={emotes}
+          visemeService={agent.services.visemes}
+          emoteService={agent.services.emotes}
           setXRStore={setXRStore}
         />
 
         <LogoOverlay />
 
         <ChatOverlay
-          message={chat.state.currentMessage}
-          onMessageChange={chat.actions.updateCurrentMessage}
-          onSubmit={submitMessage}
+          message={agent.state.currentMessage}
+          onMessageChange={agent.actions.updateCurrentMessage}
+          onSubmit={agent.actions.submitMessage}
           onKeyPress={handleKeyPress}
-          config={chat.state.config}
-          isRecording={chat.state.isRecording}
+          config={agent.state.config}
+          isRecording={agent.state.isRecording}
           onToggleMicrophone={handleToggleMicrophone}
-          onToggleCloudMode={() => chat.actions.updateConfig({ cloudMode: !chat.state.config.cloudMode })}
-          onToggleBargeIn={() => chat.actions.updateConfig({ bargeInEnabled: !chat.state.config.bargeInEnabled })}
+          onToggleCloudMode={() => agent.actions.updateConfig({ cloudMode: !agent.state.config.cloudMode })}
+          onToggleBargeIn={() => agent.actions.updateConfig({ bargeInEnabled: !agent.state.config.bargeInEnabled })}
           onToggleAutoSubmit={() =>
-            chat.actions.updateConfig({ autoSubmitEnabled: !chat.state.config.autoSubmitEnabled })
+            agent.actions.updateConfig({ autoSubmitEnabled: !agent.state.config.autoSubmitEnabled })
           }
-          onToggleAgent={() => chat.actions.updateConfig({ agentEnabled: !chat.state.config.agentEnabled })}
+          onToggleAgent={() => agent.actions.updateConfig({ agentEnabled: !agent.state.config.agentEnabled })}
           onEnterARMode={handleEnterARMode}
-          vadDetecting={vadDetecting}
-          sttTranscript={currentInterimTranscript}
-          ttsActive={tts.isSpeaking}
-          sttListening={stt.isListening}
+          vadDetecting={agent.state.vadIsDetecting}
+          sttTranscript={agent.state.currentTranscript}
+          ttsActive={agent.state.ttsIsSpeaking}
+          sttListening={agent.state.sttIsListening}
         />
 
-        <ChatPanel messages={chat.state.messages} />
+        <ChatPanel messages={agent.state.messages} />
       </div>
     </div>
   )

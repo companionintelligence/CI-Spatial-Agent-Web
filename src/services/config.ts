@@ -47,3 +47,10 @@ export const llmConfig: Partial<LLMConfig> = {
   openai_model: import.meta.env.VITE_LLM_OPENAI_MODEL || 'gpt-3.5-turbo',
   system_prompt: (import.meta.env.VITE_LLM_SYSTEM_PROMPT || SYSTEM_PROMPT).replace(/\\n/g, '\n')
 }
+
+export const config = {
+  audio: audioConfig,
+  tts: ttsConfig,
+  stt: sttConfig,
+  llm: llmConfig
+}
