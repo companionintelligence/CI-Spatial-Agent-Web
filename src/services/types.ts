@@ -35,6 +35,6 @@ export const initialState: AppState = {
     autoSubmitEnabled: true,
     agentEnabled: true,
     llmLocal: false,
-    directedMode : true
+    directedMode : false
   }
 }
