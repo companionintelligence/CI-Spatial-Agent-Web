@@ -23,7 +23,6 @@ export const useChatService = () => {
   const streamMessage = useCallback(
     (fragment: string, finished: boolean) => {
       const lastLLMStreamingMessage = state.messages.find((msg) => msg.isUser === false && msg.text.endsWith('...'))
-      console.log('DEBUG', lastLLMStreamingMessage, fragment)
       if (lastLLMStreamingMessage) {
         setState((prev) => {
           lastLLMStreamingMessage.text = lastLLMStreamingMessage.text.slice(0, -3) + fragment + (finished ? '' : '...')
