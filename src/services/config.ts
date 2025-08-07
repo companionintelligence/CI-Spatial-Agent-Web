@@ -2,7 +2,7 @@
 // Each service has its own dedicated config object
 
 import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial } from './audioTypes'
-import type { LLMConfig } from './llm/llmTypes'
+import { SYSTEM_PROMPT, type LLMConfig } from './llm/llmTypes'
 
 // Audio service configuration
 export const audioConfig: AudioConfigPartial = {
@@ -39,10 +39,11 @@ export const sttConfig: STTConfigPartial = {
 // LLM service configuration
 export const llmConfig: Partial<LLMConfig> = {
   llm_provider: import.meta.env.VITE_LLM_PROVIDER || 'mlc',
-  mlc_model: import.meta.env.VITE_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
-  ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
-  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b',
-  openai_api_key: import.meta.env.VITE_OPENAI_API_KEY || '',
-  openai_api_url: import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
-  openai_model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo'
+  mlc_model: import.meta.env.VITE_LLM_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+  ollama_url: import.meta.env.VITE_LLM_OLLAMA_API_URL || '',
+  ollama_model: import.meta.env.VITE_LLM_OLLAMA_MODEL || 'gemma3:1b',
+  openai_api_key: import.meta.env.VITE_LLM_OPENAI_API_KEY || '',
+  openai_api_url: import.meta.env.VITE_LLM_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
+  openai_model: import.meta.env.VITE_LLM_OPENAI_MODEL || 'gpt-3.5-turbo',
+  system_prompt: (import.meta.env.VITE_LLM_SYSTEM_PROMPT || SYSTEM_PROMPT).replace(/\\n/g, '\n')
 }

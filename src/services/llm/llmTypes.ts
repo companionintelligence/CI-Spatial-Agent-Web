@@ -13,6 +13,7 @@ export interface LLMConfig {
   openai_api_url?: string
   openai_api_key?: string
   openai_model?: string
+  system_prompt?: string
 }
 
 export interface WebLLMStreamChunk {
@@ -105,15 +106,27 @@ export interface LLMResult {
   error?: Error
 }
 
+export const SYSTEM_PROMPT = `You are a helpful AI assistant with a friendly personality. You are embodied as a 3D avatar and can speak your responses out loud.
+
+Key behaviors:
+- Keep responses conversational and natural
+- Break longer responses into shorter sentences for better speech synthesis
+- Be engaging and personable in your interactions
+- Respond helpfully to questions and requests
+- If someone says "stop", they are interrupting you - acknowledge this briefly
+
+Remember: Your responses will be spoken aloud, so write in a way that sounds natural when spoken.`
+
 export const DEFAULT_LLM_CONFIG: LLMConfig = {
-  llm_provider: import.meta.env.VITE_LLM_PROVIDER || 'mlc',
-  mlc_model: import.meta.env.VITE_DEFAULT_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
-  openai_api_url: import.meta.env.VITE_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
-  openai_api_key: import.meta.env.VITE_OPENAI_API_KEY || '',
-  openai_model: import.meta.env.VITE_OPENAI_MODEL || 'gpt-3.5-turbo',
+  llm_provider: 'mlc',
+  mlc_model: 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
+  openai_api_url: 'https://api.openai.com/v1/chat/completions',
+  openai_api_key: '',
+  openai_model: 'gpt-3.5-turbo',
   // llm_flowise: false,
-  ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
-  ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b'
+  ollama_url: '',
+  ollama_model: 'gemma3:1b',
+  system_prompt: SYSTEM_PROMPT
 }
 
 export const AVAILABLE_LOCAL_MODELS = [
@@ -143,14 +156,3 @@ export const COMMON_OLLAMA_MODELS = [
   'gemma3:1b',
   'gemma2:2b'
 ]
-
-export const SYSTEM_PROMPT = `You are a helpful AI assistant with a friendly personality. You are embodied as a 3D avatar and can speak your responses out loud.
-
-Key behaviors:
-- Keep responses conversational and natural
-- Break longer responses into shorter sentences for better speech synthesis
-- Be engaging and personable in your interactions
-- Respond helpfully to questions and requests
-- If someone says "stop", they are interrupting you - acknowledge this briefly
-
-Remember: Your responses will be spoken aloud, so write in a way that sounds natural when spoken.`
