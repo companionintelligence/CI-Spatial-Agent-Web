@@ -1,17 +1,17 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChatMessage } from '../../services/types'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatBubble } from './ChatBubble'
 
 interface ChatPanelProps {
   messages: ChatMessage[]
-  isVisible: boolean
-  onToggleVisibility: () => void
 }
 
-export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanelProps) => {
+export const ChatPanel = ({ messages }: ChatPanelProps) => {
   const isMobile = window.innerWidth <= 768
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const [isVisible, setVisible] = useState(true)
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
@@ -142,7 +142,7 @@ export const ChatPanel = ({ messages, isVisible, onToggleVisibility }: ChatPanel
 
       <ToggleButton
         isVisible={isVisible}
-        onToggle={onToggleVisibility}
+        onToggle={() => setVisible(!isVisible)}
         label="Chat"
         position="right"
         isMobile={isMobile}

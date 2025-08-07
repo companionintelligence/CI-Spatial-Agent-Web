@@ -23,7 +23,6 @@ export const App = () => {
   useResponsiveLayout() // Layout service for responsive behavior
 
   const xrStore = useRef<XRStore | null>(null)
-  const [isChatVisible, setIsChatVisible] = useState(true)
 
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
@@ -249,11 +248,7 @@ export const App = () => {
           sttListening={stt.isListening}
         />
 
-        <ChatPanel
-          messages={chat.state.messages}
-          isVisible={isChatVisible}
-          onToggleVisibility={() => setIsChatVisible(!isChatVisible)}
-        />
+        <ChatPanel messages={chat.state.messages} />
       </div>
     </div>
   )
