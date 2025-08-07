@@ -33,11 +33,11 @@
 
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { llmCloud } from './llmCloud'
+import { llmDirected } from './llmDirected'
 import { llmLocal } from './llmLocal'
 import { llmOllama } from './llmOllama'
-import { llmDirected } from './llmDirected'
 import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMState, LLMStatusUpdate } from './llmTypes'
 import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
 
@@ -52,14 +52,13 @@ self.onmessage = (msg) => { handler.onmessage(msg); };
 `
 
 type LLMServiceProps = {
+  config?: Partial<LLMConfig>
   onStatus?: (update: LLMStatusUpdate) => void
   onResponse?: (response: LLMResponse) => void
 }
 
-export const useLLMService = ({ 
-  onStatus, 
-  onResponse
-}: LLMServiceProps) => {
+export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse }: LLMServiceProps) => {
+  const config = useMemo(() => ({ ...DEFAULT_LLM_CONFIG, ...configPartial }), [configPartial])
   const [state, setState] = useState<LLMState>({
     messages: [{ role: 'system', content: SYSTEM_PROMPT }],
     thinking: false,
@@ -70,7 +69,6 @@ export const useLLMService = ({
     _latest_interrupt: 0
   })
 
-  const [config, setConfig] = useState<LLMConfig>(DEFAULT_LLM_CONFIG)
   const initializedRef = useRef(false)
 
   const processThinkBlocks = useCallback((input: string) => {
@@ -148,20 +146,14 @@ export const useLLMService = ({
     if (initializedRef.current) return
     initializedRef.current = true
 
-    console.log('LLM: Initializing service...')
-
     // Determine which mode to use and set ready state
     if (config.directed_mode) {
-      console.log('LLM: Directed mode enabled - ready for directed responses')
       setState((prev) => ({ ...prev, ready: true }))
     } else if (config.llm_local && config.ollama_url) {
-      console.log('LLM: Ollama configured - local model ready')
       setState((prev) => ({ ...prev, ready: true }))
     } else if (!config.llm_local) {
-      console.log('LLM: Cloud mode configured - ready for remote requests')
       setState((prev) => ({ ...prev, ready: true }))
     } else if (config.llm_local && !config.ollama_url && !state.ready && !state.loading) {
-      console.log('LLM: Auto-initializing local model...')
       await load()
     }
   }, [config.llm_local, config.ollama_url, config.directed_mode, state.ready, state.loading, load])
@@ -297,10 +289,6 @@ export const useLLMService = ({
     ]
   )
 
-  const updateConfig = useCallback((newConfig: Partial<LLMConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }))
-  }, [])
-
   const clearHistory = useCallback(() => {
     setState((prev) => ({
       ...prev,
@@ -310,12 +298,10 @@ export const useLLMService = ({
 
   return {
     state,
-    config,
     actions: {
       load,
       initialize,
       processUserInput,
-      updateConfig,
       clearHistory
     }
   }

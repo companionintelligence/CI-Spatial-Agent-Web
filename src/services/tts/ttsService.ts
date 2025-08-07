@@ -1,19 +1,19 @@
-import { useCallback, useState } from 'react'
-import type { TTSConfig, WhisperData } from '../audioTypes'
+import { useCallback, useMemo, useState } from 'react'
+import type { TTSConfigPartial, WhisperData } from '../audioTypes'
 import { defaultTTSConfig } from '../audioTypes'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'
 
 interface TTSServiceOptions {
+  config?: TTSConfigPartial
   onSpeechStart?: (text: string, whisperData: WhisperData) => void
   onSpeechEnd?: () => void
 }
 
 export const useTTSService = (options: TTSServiceOptions = {}) => {
-  const [config, setConfig] = useState<TTSConfig>(defaultTTSConfig)
+  const { config: configPartial = {}, onSpeechStart, onSpeechEnd } = options
+  const config = useMemo(() => ({ ...defaultTTSConfig, ...configPartial }), [configPartial])
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [audioQueue, setAudioQueue] = useState<ArrayBuffer[]>([])
-
-  const { onSpeechStart, onSpeechEnd } = options
 
   const speakLocal = useCallback(
     async (text: string) => {
@@ -77,7 +77,6 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           source.connect(audioContext.destination)
 
           source.onended = () => {
-            console.log('Audio playback finished')
             resolve()
           }
 
@@ -232,12 +231,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     }
   }, [audioQueue, isSpeaking, playAudioBuffer, onSpeechEnd])
 
-  const updateConfig = useCallback((newConfig: Partial<TTSConfig>) => {
-    setConfig((prev) => ({ ...prev, ...newConfig }))
-  }, [])
-
   return {
-    config,
     isSpeaking,
     audioQueue: audioQueue.length,
     actions: {
@@ -245,8 +239,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       stopSpeaking,
       playAudioBuffer,
       addToQueue,
-      processQueue,
-      updateConfig
+      processQueue
     }
   }
 }

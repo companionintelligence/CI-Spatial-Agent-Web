@@ -6,12 +6,13 @@ import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
 import type { WhisperData } from '../services/audioTypes'
 import { useChatService } from '../services/chatService'
+import { audioConfig, llmConfig, sttConfig, ttsConfig } from '../services/config'
 import { useEmoteService } from '../services/emote/useEmoteService'
 import { emotionIntegrationService } from '../services/emotionIntegration'
 import { useResponsiveLayout } from '../services/layoutService'
 import { useLLMService } from '../services/llm/llmService'
 import type { LLMResponse, LLMStatusUpdate } from '../services/llm/llmTypes'
-import { useSceneService } from '../services/sceneService'
+import { sceneConfig } from '../services/sceneTypes'
 import { useSTTService } from '../services/stt/sttService'
 import { useVADService } from '../services/stt/vadService'
 import { useTTSService } from '../services/tts/ttsService'
@@ -20,7 +21,6 @@ import { useVisemeService } from '../services/visemes/useVisemeService'
 export const App = () => {
   const chat = useChatService()
   useResponsiveLayout() // Layout service for responsive behavior
-  const { sceneConfig } = useSceneService()
 
   const xrStore = useRef<XRStore | null>(null)
   const [isChatVisible, setIsChatVisible] = useState(true)
@@ -32,7 +32,15 @@ export const App = () => {
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
 
+  // Initialize services with config partials
+  const llmConfigWithState = {
+    ...llmConfig,
+    llm_local: (llmConfig.llm_local ?? true) && !chat.state.config.cloudMode,
+    directed_mode: (llmConfig.directed_mode ?? false) || chat.state.config.directedMode
+  }
+
   const llmService = useLLMService({
+    config: llmConfigWithState,
     onStatus: (status: LLMStatusUpdate) => {
       console.log('LLM Status update:', status)
     },
@@ -56,7 +64,7 @@ export const App = () => {
         // Trigger emote performance based on the response
         emotes.performAction(performanceData)
       }
-      
+
       chat.actions.streamMessage(breath, response.final)
     }
   })
@@ -67,6 +75,7 @@ export const App = () => {
   const emotes = useEmoteService()
 
   const tts = useTTSService({
+    config: ttsConfig,
     onSpeechStart: (_text: string, whisperData: WhisperData) => {
       const startTime = Date.now()
       visemes.actions.generateSequence(whisperData, startTime)
@@ -100,13 +109,21 @@ export const App = () => {
     [chat.state.config.bargeInEnabled, chat.actions, llmService.actions]
   )
 
+  // Services that need to be responsive to app state changes
+  const vadConfigWithState = {
+    ...audioConfig,
+    microphoneEnabled: chat.state.isRecording
+  }
+
   const vad = useVADService({
+    config: vadConfigWithState,
     onVADResult: (result) => {
       setVadDetecting(result.isSpeech)
     }
   })
 
   const stt = useSTTService({
+    config: sttConfig,
     onPerform: (result) => {
       if (result.final) {
         if (result.text.trim() === 'stop') {
@@ -153,20 +170,6 @@ export const App = () => {
     stt.actions.setDesired(vad.isDetecting)
   }, [vad.isDetecting, stt.actions])
 
-  useEffect(() => {
-    if (llmService.config.llm_local === !chat.state.config.cloudMode) return
-    llmService.actions.updateConfig({
-      llm_local: !chat.state.config.cloudMode
-    })
-  }, [llmService.actions, llmService.config.llm_local, chat.state.config.cloudMode])
-
-  useEffect(() => {
-    if (llmService.config.directed_mode === chat.state.config.directedMode) return
-    llmService.actions.updateConfig({
-      directed_mode: chat.state.config.directedMode
-    })
-  }, [llmService.actions, llmService.config.directed_mode, chat.state.config.directedMode])
-
   React.useEffect(() => {
     stt.actions.setAllowed(!tts.isSpeaking)
   }, [tts.isSpeaking, stt.actions])
@@ -183,8 +186,6 @@ export const App = () => {
     chat.actions.setRecording(newRecordingState)
     chat.actions.updateConfig({ microphone: newRecordingState })
 
-    vad.actions.updateConfig({ microphoneEnabled: newRecordingState })
-
     stt.actions.setDesired(newRecordingState)
     setCurrentInterimTranscript('')
   }
@@ -195,12 +196,11 @@ export const App = () => {
       // Enable STT when entering AR mode
       chat.actions.setRecording(true)
       chat.actions.updateConfig({ microphone: true })
-      vad.actions.updateConfig({ microphoneEnabled: true })
       stt.actions.setDesired(true)
       setCurrentInterimTranscript('')
     })
     console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
-  }, [chat.actions, vad.actions, stt.actions])
+  }, [chat.actions, stt.actions])
 
   return (
     <div

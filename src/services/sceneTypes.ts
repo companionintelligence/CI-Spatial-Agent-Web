@@ -23,7 +23,7 @@ export interface LightConfig {
   position?: [number, number, number]
 }
 
-export const defaultSceneConfig: SceneConfig = {
+export const sceneConfig: SceneConfig = {
   near: 0.1,
   far: 100,
   cameraPosition: [0, 1.8, 2],

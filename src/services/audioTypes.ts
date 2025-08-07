@@ -90,3 +90,9 @@ export const defaultWhisperConfig: WhisperConfig = {
   quantized: true,
   multilingual: false
 }
+
+// Partial config types for services
+export type AudioConfigPartial = Partial<AudioConfig>
+export type TTSConfigPartial = Partial<TTSConfig>
+export type STTConfigPartial = Partial<STTConfig>
+export type WhisperConfigPartial = Partial<WhisperConfig>
