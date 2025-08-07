@@ -1,11 +1,4 @@
-export interface ChatMessage {
-  id: string
-  text: string
-  isUser: boolean
-  timestamp: number
-  audioData?: ArrayBuffer
-  visemeData?: unknown[]
-}
+import type { ConversationState } from './conversation/conversationType'
 
 export interface AppConfig {
   microphone: boolean
@@ -17,20 +10,10 @@ export interface AppConfig {
   directedMode: boolean
 }
 
-export interface ChatState {
-  messages: ChatMessage[]
-  currentMessage: string
-}
-
 export interface AppState {
-  chat: ChatState
+  conversation: ConversationState
   isRecording: boolean
   config: AppConfig
-}
-
-export const initialChatState: ChatState = {
-  messages: [],
-  currentMessage: ''
 }
 
 export const initialAppConfig: AppConfig = {

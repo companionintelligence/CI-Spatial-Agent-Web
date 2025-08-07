@@ -1,25 +1,28 @@
 import { useCallback } from 'react'
 
-import { useSimpleStore } from '../utils/SimpleStore'
-import type { ChatMessage, ChatState } from './types'
-import { initialChatState } from './types'
+import { useSimpleStore } from '../../utils/SimpleStore'
+import type { ConversationMessage, ConversationState } from './conversationType'
+import { initialConversationState } from './conversationType'
 
-export const useChatService = () => {
-  const [state, setState] = useSimpleStore<ChatState>(() => initialChatState)
+export const useConversationService = () => {
+  const [state, setState] = useSimpleStore<ConversationState>(() => initialConversationState)
 
-  const addMessage = useCallback((text: string, isUser: boolean) => {
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
-      text,
-      isUser,
-      timestamp: Date.now()
-    }
+  const addMessage = useCallback(
+    (text: string, isUser: boolean) => {
+      const newMessage: ConversationMessage = {
+        id: Date.now().toString(),
+        text,
+        isUser,
+        timestamp: Date.now()
+      }
 
-    setState((prev) => {
-      prev.messages.push(newMessage)
-      return prev
-    })
-  }, [setState])
+      setState((prev) => {
+        prev.messages.push(newMessage)
+        return prev
+      })
+    },
+    [setState]
+  )
 
   const streamMessage = useCallback(
     (fragment: string, finished: boolean) => {
@@ -36,10 +39,13 @@ export const useChatService = () => {
     [addMessage, setState, state.messages]
   )
 
-  const updateCurrentMessage = useCallback((message: string) => {
-    state.currentMessage = message
-    setState(state)
-  }, [state, setState])
+  const updateCurrentMessage = useCallback(
+    (message: string) => {
+      state.currentMessage = message
+      setState(state)
+    },
+    [state, setState]
+  )
 
   const clearCurrentMessage = useCallback(() => {
     state.currentMessage = ''

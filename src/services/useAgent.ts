@@ -69,7 +69,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial, VADResult, WhisperData } from './audioTypes'
-import { useChatService } from './chatService'
+import { useConversationService } from './conversation/conversationService'
+import type { ConversationMessage } from './conversation/conversationType'
 import type { EmotionType, GazeOptions, PerformanceData } from './emote/emoteTypes'
 import { useEmoteService } from './emote/useEmoteService'
 import { emotionIntegrationService } from './emotionIntegration'
@@ -78,7 +79,6 @@ import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMStatusUpdate } from 
 import { useSTTService } from './stt/sttService'
 import { useVADService } from './stt/vadService'
 import { useTTSService } from './tts/ttsService'
-import type { ChatMessage } from './types'
 import { useVisemeService } from './visemes/useVisemeService'
 
 // STT service result interface (defined locally in sttService.ts)
@@ -140,9 +140,9 @@ export interface AgentCallbacks {
   onTTSSpeechStart?: (text: string, whisperData: WhisperData) => void
   onTTSSpeechEnd?: () => void
 
-  // Chat callbacks
-  onMessageAdded?: (message: ChatMessage) => void
-  onMessageUpdated?: (messages: ChatMessage[]) => void
+  // Conversation callbacks
+  onMessageAdded?: (message: ConversationMessage) => void
+  onMessageUpdated?: (messages: ConversationMessage[]) => void
 
   // General callbacks
   onError?: (error: Error) => void
@@ -172,8 +172,8 @@ export interface AgentService {
     ttsIsSpeaking: boolean
     ttsAudioQueue: number
 
-    // Chat state
-    messages: ChatMessage[]
+    // Conversation state
+    messages: ConversationMessage[]
     currentMessage: string
   }
 
@@ -232,7 +232,7 @@ export interface AgentService {
 
   // Service instances (for advanced usage)
   services: {
-    chat: ReturnType<typeof useChatService>
+    conversation: ReturnType<typeof useConversationService>
     vad: ReturnType<typeof useVADService>
     stt: ReturnType<typeof useSTTService>
     llm: ReturnType<typeof useLLMService>
@@ -285,18 +285,15 @@ const defaultAppConfig = {
  * @param callbacks - Callback functions for service events
  * @returns AgentService object with state, actions, and service instances
  */
-export const useAgent = (
-  config: AgentConfig = {},
-  callbacks: AgentCallbacks = {}
-): AgentService => {
+export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {}): AgentService => {
   // Merge configurations with defaults
   const audioConfig = { ...defaultAudioConfig, ...config.audio }
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
   const sttConfig = { ...defaultSTTConfig, ...config.stt }
   const llmConfig = { ...defaultLLMConfig, ...config.llm }
-  const appConfig = { 
-    autoSubmitEnabled: config.autoSubmitEnabled ?? defaultAppConfig.autoSubmitEnabled, 
-    bargeInEnabled: config.bargeInEnabled ?? defaultAppConfig.bargeInEnabled 
+  const appConfig = {
+    autoSubmitEnabled: config.autoSubmitEnabled ?? defaultAppConfig.autoSubmitEnabled,
+    bargeInEnabled: config.bargeInEnabled ?? defaultAppConfig.bargeInEnabled
   }
 
   // Internal state
@@ -304,8 +301,8 @@ export const useAgent = (
   const [vadDetecting, setVadDetecting] = useState(false)
   const interruptCounterRef = useRef(Date.now())
 
-  // Initialize chat service
-  const chat = useChatService()
+  // Initialize conversation service
+  const conversation = useConversationService()
 
   // Initialize viseme and emote services
   const visemes = useVisemeService()
@@ -331,14 +328,14 @@ export const useAgent = (
         }
         const performanceData = emotionIntegrationService.createPerformanceFromMessage(
           message,
-          chat.state.messages.length
+          conversation.state.messages.length
         )
 
         // Trigger emote performance based on the response
         emotes.performAction(performanceData)
       }
 
-      chat.actions.streamMessage(breath, response.final)
+      conversation.actions.streamMessage(breath, response.final)
       callbacks.onLLMResponse?.(response)
     }
   })
@@ -395,7 +392,7 @@ export const useAgent = (
         }
 
         if (appConfig.autoSubmitEnabled) {
-          chat.actions.addMessage(result.text, true)
+          conversation.actions.addMessage(result.text, true)
           setCurrentInterimTranscript('')
         } else {
           setCurrentInterimTranscript(result.text)
@@ -436,8 +433,8 @@ export const useAgent = (
       if (message.trim()) {
         const userMessage = message.trim()
 
-        chat.actions.addMessage(userMessage, true)
-        chat.actions.clearCurrentMessage()
+        conversation.actions.addMessage(userMessage, true)
+        conversation.actions.clearCurrentMessage()
 
         const interrupt = Date.now()
         interruptCounterRef.current = interrupt
@@ -449,18 +446,21 @@ export const useAgent = (
           bargein: appConfig.bargeInEnabled,
           interrupt
         })
-        chat.actions.clearCurrentMessage()
+        conversation.actions.clearCurrentMessage()
       }
     },
-    [appConfig.bargeInEnabled, chat.actions, llmService.actions]
+    [appConfig.bargeInEnabled, conversation.actions, llmService.actions]
   )
 
-  const toggleMicrophone = useCallback((isRecording: boolean) => {
-    const newRecordingState = !isRecording
+  const toggleMicrophone = useCallback(
+    (isRecording: boolean) => {
+      const newRecordingState = !isRecording
 
-    stt.actions.setDesired(newRecordingState)
-    setCurrentInterimTranscript('')
-  }, [stt.actions])
+      stt.actions.setDesired(newRecordingState)
+      setCurrentInterimTranscript('')
+    },
+    [stt.actions]
+  )
 
   const triggerBargein = useCallback(() => {
     const interrupt = Date.now()
@@ -496,9 +496,9 @@ export const useAgent = (
       ttsIsSpeaking: tts.isSpeaking,
       ttsAudioQueue: tts.audioQueue,
 
-      // Chat state
-      messages: chat.state.messages,
-      currentMessage: chat.state.currentMessage
+      // Conversation state
+      messages: conversation.state.messages,
+      currentMessage: conversation.state.currentMessage
     },
 
     actions: {
@@ -524,9 +524,9 @@ export const useAgent = (
       processTTSQueue: tts.actions.processQueue,
 
       // Chat actions
-      addMessage: chat.actions.addMessage,
-      updateCurrentMessage: chat.actions.updateCurrentMessage,
-      clearCurrentMessage: chat.actions.clearCurrentMessage,
+      addMessage: conversation.actions.addMessage,
+      updateCurrentMessage: conversation.actions.updateCurrentMessage,
+      clearCurrentMessage: conversation.actions.clearCurrentMessage,
 
       // Convenience actions
       submitMessage,
@@ -554,7 +554,7 @@ export const useAgent = (
     },
 
     services: {
-      chat,
+      conversation,
       vad,
       stt,
       llm: llmService,

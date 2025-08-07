@@ -106,9 +106,7 @@ export const App = () => {
           onToggleMicrophone={handleToggleMicrophone}
           onToggleCloudMode={() => updateConfig({ cloudMode: !appConfig.cloudMode })}
           onToggleBargeIn={() => updateConfig({ bargeInEnabled: !appConfig.bargeInEnabled })}
-          onToggleAutoSubmit={() =>
-            updateConfig({ autoSubmitEnabled: !appConfig.autoSubmitEnabled })
-          }
+          onToggleAutoSubmit={() => updateConfig({ autoSubmitEnabled: !appConfig.autoSubmitEnabled })}
           onToggleAgent={() => updateConfig({ agentEnabled: !appConfig.agentEnabled })}
           onEnterARMode={handleEnterARMode}
           vadDetecting={agent.state.vadIsDetecting}
