@@ -1,6 +1,6 @@
+import { useSimpleStore } from '@hexafield/simple-store/react'
 import { useCallback } from 'react'
 
-import { useSimpleStore } from '../../utils/SimpleStore'
 import type { ConversationMessage, ConversationState } from './conversationType'
 import { initialConversationState } from './conversationType'
 

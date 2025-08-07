@@ -1,3 +1,4 @@
+import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useRef } from 'react'
@@ -5,7 +6,6 @@ import * as THREE from 'three'
 
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
-import { createSimpleStore, useSimpleStore } from '../utils/SimpleStore'
 
 export const AvatarState = createSimpleStore({
   selectedAnimation: '/assets/animations/idle.glb',
