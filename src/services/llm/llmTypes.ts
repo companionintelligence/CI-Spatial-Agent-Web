@@ -114,7 +114,7 @@ export const DEFAULT_LLM_CONFIG: LLMConfig = {
   llm_flowise: false,
   ollama_url: import.meta.env.VITE_OLLAMA_API_URL || '',
   ollama_model: import.meta.env.VITE_OLLAMA_MODEL || 'gemma3:1b',
-  directed_mode: true
+  directed_mode: false
 }
 
 export const AVAILABLE_LOCAL_MODELS = [

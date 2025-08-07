@@ -85,7 +85,7 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
     }
 
     // Simulate streaming response like LLM
-    const sentences = directedResponse.response.split(/[.!?]+/).filter((sentence: string) => sentence.trim().length > 0)
+    const sentences = directedResponse.response.match(/[^.!?]+[.!?]+/g) || []
     let fullResponse = ''
     let bcounter = 0
 
@@ -95,8 +95,9 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
         break
       }
 
-      const sentence = sentences[i].trim()
+      const sentence = sentences[i].trimEnd()
       fullResponse += (i > 0 ? '. ' : '') + sentence
+
 
       if (responseCallback) {
         responseCallback({
