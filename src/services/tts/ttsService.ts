@@ -22,7 +22,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       }
 
       // Clean up text
-      const cleanText = text.replace(/[*<>#%-]/g, "")
+      const cleanText = text.replace(/[*<>#%-]/g, '')
       if (!cleanText.trim()) return
 
       const utterance = new SpeechSynthesisUtterance(cleanText)
@@ -89,86 +89,100 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     })
   }, [])
 
-  const speakRemote = useCallback(async (text: string) => {
-    if (!config.apiKey) {
-      throw new Error('API key required for remote TTS')
-    }
-
-    // Clean up text
-    const cleanText = text.replace(/[*<>#%-]/g, "")
-    if (!cleanText || !cleanText.length) {
-      return
-    }
-
-    const url = config.url || 'https://api.openai.com/v1/audio/speech'
-    
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      Accept: 'audio/mpeg'
-    }
-
-    // Set appropriate authorization header based on URL
-    if (url.includes('elevenlabs')) {
-      headers['xi-api-key'] = config.apiKey
-    } else {
-      headers['Authorization'] = `Bearer ${config.apiKey}`
-    }
-
-    const requestBody: Record<string, unknown> = {
-      text: cleanText,
-      input: cleanText
-    }
-
-    // Set model and voice based on service
-    if (url.includes('elevenlabs')) {
-      requestBody.model_id = config.model || 'eleven_monolingual_v1'
-      requestBody.voice_settings = {
-        stability: config.voiceSettings?.stability || 0.5,
-        similarity_boost: config.voiceSettings?.similarity_boost || 0.8
-      }
-    } else {
-      // OpenAI format
-      requestBody.model = config.model || 'tts-1'
-      requestBody.voice = config.voice || 'shimmer'
-    }
-
-    try {
-      const response = await fetch(url, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(requestBody)
-      })
-
-      if (!response.ok) {
-        throw new Error(`Remote TTS API error: ${response.status} ${response.statusText}`)
+  const speakRemote = useCallback(
+    async (text: string) => {
+      if (!config.apiKey) {
+        throw new Error('API key required for remote TTS')
       }
 
-      const audioBuffer = await response.arrayBuffer()
-      
-      // Generate whisper data for visemes (approximate timing)
-      const whisperData = approximateWhisperDataFromText(cleanText, config.speed, 0)
-      
-      // Notify speech start with whisper data
-      if (onSpeechStart) {
-        onSpeechStart(cleanText, whisperData)
+      // Clean up text
+      const cleanText = text.replace(/[*<>#%-]/g, '')
+      if (!cleanText || !cleanText.length) {
+        return
       }
 
-      // Play the audio buffer
-      await playAudioBuffer(audioBuffer)
-      
-      setIsSpeaking(false)
-      if (onSpeechEnd) {
-        onSpeechEnd()
+      const url = config.url || 'https://api.openai.com/v1/audio/speech'
+
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'audio/mpeg'
       }
-    } catch (error) {
-      console.error('Remote TTS Error:', error)
-      setIsSpeaking(false)
-      if (onSpeechEnd) {
-        onSpeechEnd()
+
+      // Set appropriate authorization header based on URL
+      if (url.includes('elevenlabs')) {
+        headers['xi-api-key'] = config.apiKey
+      } else {
+        headers['Authorization'] = `Bearer ${config.apiKey}`
       }
-      throw error
-    }
-  }, [config, onSpeechStart, onSpeechEnd, playAudioBuffer])
+
+      const requestBody: Record<string, unknown> = {
+        text: cleanText,
+        input: cleanText
+      }
+
+      // Set model and voice based on service
+      if (url.includes('elevenlabs')) {
+        requestBody.model_id = config.model || 'eleven_monolingual_v1'
+        requestBody.voice_settings = {
+          stability: config.voiceSettings?.stability || 0.5,
+          similarity_boost: config.voiceSettings?.similarity_boost || 0.8
+        }
+      } else {
+        // OpenAI format
+        requestBody.model = config.model || 'tts-1'
+        requestBody.voice = config.voice || 'shimmer'
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(requestBody)
+        })
+
+        if (!response.ok) {
+          throw new Error(`Remote TTS API error: ${response.status} ${response.statusText}`)
+        }
+
+        const audioBuffer = await response.arrayBuffer()
+
+        // Generate whisper data for visemes (approximate timing)
+        const whisperData = approximateWhisperDataFromText(cleanText, config.speed, 0)
+
+        // Notify speech start with whisper data
+        if (onSpeechStart) {
+          onSpeechStart(cleanText, whisperData)
+        }
+
+        // Play the audio buffer
+        await playAudioBuffer(audioBuffer)
+
+        setIsSpeaking(false)
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+      } catch (error) {
+        console.error('Remote TTS Error:', error)
+        setIsSpeaking(false)
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+        throw error
+      }
+    },
+    [
+      config.apiKey,
+      config.url,
+      config.model,
+      config.voiceSettings?.stability,
+      config.voiceSettings?.similarity_boost,
+      config.voice,
+      config.speed,
+      onSpeechStart,
+      playAudioBuffer,
+      onSpeechEnd
+    ]
+  )
 
   const speak = useCallback(
     async (text: string) => {
@@ -198,7 +212,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       speechSynthesis.cancel()
     }
     setIsSpeaking(false)
-    
+
     // Call speech end callback when speech is stopped
     if (onSpeechEnd) {
       onSpeechEnd()

@@ -47,7 +47,7 @@ describe('LipsyncEn', () => {
 
     it('should convert simple words to visemes', () => {
       const result = lipsync.wordsToVisemes('HELLO')
-      
+
       expect(result).not.toBe(null)
       if (result) {
         expect(result.visemes).toBeDefined()
@@ -61,11 +61,11 @@ describe('LipsyncEn', () => {
 
     it('should produce valid viseme names', () => {
       const result = lipsync.wordsToVisemes('HELLO')
-      
+
       if (result) {
         const validVisemes = ['aa', 'E', 'I', 'O', 'U', 'PP', 'FF', 'TH', 'DD', 'kk', 'CH', 'SS', 'nn', 'RR']
-        
-        result.visemes.forEach(viseme => {
+
+        result.visemes.forEach((viseme) => {
           expect(validVisemes).toContain(viseme)
         })
       }
@@ -73,8 +73,8 @@ describe('LipsyncEn', () => {
 
     it('should handle common English words correctly', () => {
       const testWords = ['THE', 'AND', 'IS', 'TO', 'OF']
-      
-      testWords.forEach(word => {
+
+      testWords.forEach((word) => {
         const result = lipsync.wordsToVisemes(word)
         expect(result).not.toBe(null)
         if (result) {
@@ -85,7 +85,7 @@ describe('LipsyncEn', () => {
 
     it('should produce sequential times', () => {
       const result = lipsync.wordsToVisemes('HELLO')
-      
+
       if (result && result.times.length > 1) {
         for (let i = 1; i < result.times.length; i++) {
           expect(result.times[i]).toBeGreaterThanOrEqual(result.times[i - 1])
@@ -95,9 +95,9 @@ describe('LipsyncEn', () => {
 
     it('should produce positive durations', () => {
       const result = lipsync.wordsToVisemes('HELLO')
-      
+
       if (result) {
-        result.durations.forEach(duration => {
+        result.durations.forEach((duration) => {
           expect(duration).toBeGreaterThan(0)
         })
       }
@@ -107,8 +107,8 @@ describe('LipsyncEn', () => {
   describe('phoneme to viseme mapping', () => {
     it('should handle vowel phonemes', () => {
       const vowelWords = ['A', 'E', 'I', 'O', 'U']
-      
-      vowelWords.forEach(word => {
+
+      vowelWords.forEach((word) => {
         const result = lipsync.wordsToVisemes(word)
         expect(result).not.toBe(null)
         if (result) {
@@ -119,8 +119,8 @@ describe('LipsyncEn', () => {
 
     it('should handle consonant phonemes', () => {
       const consonantWords = ['P', 'B', 'T', 'D', 'K', 'G']
-      
-      consonantWords.forEach(word => {
+
+      consonantWords.forEach((word) => {
         const result = lipsync.wordsToVisemes(word)
         expect(result).not.toBe(null)
         if (result) {
@@ -131,8 +131,8 @@ describe('LipsyncEn', () => {
 
     it('should handle complex words', () => {
       const complexWords = ['THROUGH', 'THOUGHT', 'NIGHT', 'LIGHT', 'RIGHT']
-      
-      complexWords.forEach(word => {
+
+      complexWords.forEach((word) => {
         const result = lipsync.wordsToVisemes(word)
         expect(result).not.toBe(null)
         if (result) {

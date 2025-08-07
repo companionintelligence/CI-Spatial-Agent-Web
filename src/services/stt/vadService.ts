@@ -20,7 +20,12 @@ interface UseVADServiceProps {
   onSpeechEnd?: (audio: ArrayBuffer) => void
 }
 
-export const useVADService = ({ config: configPartial = {}, onVADResult, onSpeechStart, onSpeechEnd }: UseVADServiceProps = {}) => {
+export const useVADService = ({
+  config: configPartial = {},
+  onVADResult,
+  onSpeechStart,
+  onSpeechEnd
+}: UseVADServiceProps = {}) => {
   const config = { ...defaultAudioConfig, ...configPartial }
   const [isListening, setIsListening] = useState(false)
   const [isDetecting, setIsDetecting] = useState(false)

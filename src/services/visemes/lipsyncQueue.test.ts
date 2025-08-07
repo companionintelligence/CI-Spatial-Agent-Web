@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { lipsyncPreProcessText, lipsyncWordsToVisemes, lipsyncConvert } from './lipsyncQueue'
+import { lipsyncConvert, lipsyncPreProcessText, lipsyncWordsToVisemes } from './lipsyncQueue'
 import type { WhisperData } from './visemeTypes'
 
 describe('lipsyncQueue', () => {
@@ -33,7 +33,7 @@ describe('lipsyncQueue', () => {
   describe('lipsyncWordsToVisemes', () => {
     it('should convert words to visemes using English by default', () => {
       const result = lipsyncWordsToVisemes('HELLO')
-      
+
       expect(result).not.toBe(null)
       if (result) {
         expect(result.visemes).toBeDefined()
@@ -45,7 +45,7 @@ describe('lipsyncQueue', () => {
 
     it('should handle English language explicitly', () => {
       const result = lipsyncWordsToVisemes('HELLO', 'en')
-      
+
       expect(result).not.toBe(null)
       if (result) {
         expect(result.visemes.length).toBeGreaterThan(0)
@@ -54,7 +54,7 @@ describe('lipsyncQueue', () => {
 
     it('should fallback to English for unsupported languages', () => {
       const result = lipsyncWordsToVisemes('HELLO', 'fr')
-      
+
       expect(result).not.toBe(null)
       if (result) {
         expect(result.visemes.length).toBeGreaterThan(0)
@@ -71,7 +71,7 @@ describe('lipsyncQueue', () => {
     it('should return empty result for empty whisper data', () => {
       const whisperData: WhisperData = {}
       const result = lipsyncConvert(whisperData)
-      
+
       expect(result).toEqual({})
     })
 
@@ -82,7 +82,7 @@ describe('lipsyncQueue', () => {
         wdurations: []
       }
       const result = lipsyncConvert(whisperData)
-      
+
       expect(result).toEqual({})
     })
 
@@ -93,7 +93,7 @@ describe('lipsyncQueue', () => {
         wdurations: [500, 600]
       }
       const result = lipsyncConvert(whisperData)
-      
+
       expect(result.anim).toBeDefined()
       expect(result.anim).toBeInstanceOf(Array)
       expect(result.anim!.length).toBeGreaterThan(0)
@@ -106,7 +106,7 @@ describe('lipsyncQueue', () => {
         wdurations: [500]
       }
       const result = lipsyncConvert(whisperData)
-      
+
       expect(result.anim).toBeDefined()
       if (result.anim && result.anim.length > 0) {
         const item = result.anim[0]
@@ -126,7 +126,7 @@ describe('lipsyncQueue', () => {
         wdurations: [100, 200, 400]
       }
       const result = lipsyncConvert(whisperData)
-      
+
       expect(result.anim).toBeDefined()
       // Should only generate visemes for 'HELLO', not the empty words
       expect(result.anim!.length).toBeGreaterThan(0)
@@ -139,7 +139,7 @@ describe('lipsyncQueue', () => {
         wdurations: [500]
       }
       const result = lipsyncConvert(whisperData)
-      
+
       if (result.anim && result.anim.length > 0) {
         const item = result.anim[0]
         expect(item.ts[0]).toBeLessThan(item.ts[1])
@@ -155,11 +155,11 @@ describe('lipsyncQueue', () => {
         wdurations: [400, 400]
       }
       const result = lipsyncConvert(whisperData)
-      
+
       if (result.anim && result.anim.length > 0) {
         // Check that visemes have appropriate intensity values
-        result.anim.forEach(item => {
-          Object.values(item.vs).forEach(value => {
+        result.anim.forEach((item) => {
+          Object.values(item.vs).forEach((value) => {
             if (value && value[1] !== null) {
               expect(value[1]).toBeGreaterThan(0)
               expect(value[1]).toBeLessThanOrEqual(1)
@@ -177,7 +177,7 @@ describe('lipsyncQueue', () => {
       }
       const result1 = lipsyncConvert(whisperData, 'en')
       const result2 = lipsyncConvert(whisperData, 'fr') // Should fallback to 'en'
-      
+
       expect(result1).toEqual(result2)
     })
 
@@ -188,7 +188,7 @@ describe('lipsyncQueue', () => {
         wdurations: [500, 600]
       }
       const result = lipsyncConvert(whisperData)
-      
+
       // Should only process the minimum length
       expect(result.anim).toBeDefined()
       if (result.anim) {

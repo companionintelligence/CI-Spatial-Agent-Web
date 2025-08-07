@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { LipsyncEn } from './lipsyncEn'
 
 describe('LipsyncEn Number-to-Text Conversion', () => {
@@ -79,7 +79,9 @@ describe('LipsyncEn Number-to-Text Conversion', () => {
 
       it('should convert millions with remainder', () => {
         expect(lipsync.fullTextProcessing('1000001')).toBe('ONE MILLION ONE')
-        expect(lipsync.fullTextProcessing('1234567')).toBe('ONE MILLION TWO HUNDRED THIRTY FOUR THOUSAND FIVE HUNDRED SIXTY SEVEN')
+        expect(lipsync.fullTextProcessing('1234567')).toBe(
+          'ONE MILLION TWO HUNDRED THIRTY FOUR THOUSAND FIVE HUNDRED SIXTY SEVEN'
+        )
         expect(lipsync.fullTextProcessing('2500000')).toBe('TWO MILLION FIVE HUNDRED THOUSAND')
       })
     })
@@ -140,7 +142,9 @@ describe('LipsyncEn Number-to-Text Conversion', () => {
 
       it('should handle multiple numbers', () => {
         expect(lipsync.fullTextProcessing('1 + 1 = 2')).toBe('ONE PLUS ONE EQUALS TWO')
-        expect(lipsync.fullTextProcessing('$5.99 & $3.50')).toBe('DOLLARS FIVE POINT NINETY NINE AND DOLLARS THREE POINT FIFTY')
+        expect(lipsync.fullTextProcessing('$5.99 & $3.50')).toBe(
+          'DOLLARS FIVE POINT NINETY NINE AND DOLLARS THREE POINT FIFTY'
+        )
       })
     })
 
@@ -186,11 +190,11 @@ describe('LipsyncEn Number-to-Text Conversion', () => {
       // First test with number conversion disabled (current behavior)
       const resultBasic = lipsync.wordsToVisemes('I have 5 cats')
       expect(resultBasic?.words).toBe('I HAVE CATS')
-      
+
       // Test that we can process numbers separately if needed
       const numberText = lipsync.fullTextProcessing('5')
       expect(numberText).toBe('FIVE')
-      
+
       const resultNumber = lipsync.wordsToVisemes(numberText)
       expect(resultNumber?.words).toBe('FIVE')
       expect(resultNumber?.visemes).toContain('FF') // F sound
@@ -201,7 +205,7 @@ describe('LipsyncEn Number-to-Text Conversion', () => {
     it('should handle complex number conversion scenarios', () => {
       const complexText = lipsync.fullTextProcessing('Call 911 for help')
       expect(complexText).toBe('CALL NINE ONE ONE FOR HELP')
-      
+
       const result = lipsync.wordsToVisemes(complexText)
       expect(result?.words).toBe('CALL NINE ONE ONE FOR HELP')
       expect(result?.visemes.length).toBeGreaterThan(10)
@@ -211,20 +215,24 @@ describe('LipsyncEn Number-to-Text Conversion', () => {
   describe('Performance with large numbers', () => {
     it('should handle large numbers efficiently', () => {
       const start = performance.now()
-      
+
       const results = [
         lipsync.fullTextProcessing('999999999'),
         lipsync.fullTextProcessing('123456789'),
         lipsync.fullTextProcessing('1000000000')
       ]
-      
+
       const end = performance.now()
       const duration = end - start
-      
+
       expect(duration).toBeLessThan(50) // Should complete in under 50ms
-      
-      expect(results[0]).toBe('NINE HUNDRED NINETY NINE MILLION NINE HUNDRED NINETY NINE THOUSAND NINE HUNDRED NINETY NINE')
-      expect(results[1]).toBe('ONE HUNDRED TWENTY THREE MILLION FOUR HUNDRED FIFTY SIX THOUSAND SEVEN HUNDRED EIGHTY NINE')
+
+      expect(results[0]).toBe(
+        'NINE HUNDRED NINETY NINE MILLION NINE HUNDRED NINETY NINE THOUSAND NINE HUNDRED NINETY NINE'
+      )
+      expect(results[1]).toBe(
+        'ONE HUNDRED TWENTY THREE MILLION FOUR HUNDRED FIFTY SIX THOUSAND SEVEN HUNDRED EIGHTY NINE'
+      )
       expect(results[2]).toBe('ONE BILLION')
     })
   })

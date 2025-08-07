@@ -65,7 +65,11 @@ interface WindowWithSpeech extends Window {
   webkitSpeechRecognition?: { new (): BaseSpeechRecognition }
 }
 
-export const useSTTService = ({ config: configPartial = {}, onPerform, onInterimTranscript }: UseSTTServiceProps = {}) => {
+export const useSTTService = ({
+  config: configPartial = {},
+  onPerform,
+  onInterimTranscript
+}: UseSTTServiceProps = {}) => {
   const config = { ...defaultSTTConfig, ...configPartial }
   const [isListening, setIsListening] = useState(false)
   const [allowed, setAllowed] = useState(true)
