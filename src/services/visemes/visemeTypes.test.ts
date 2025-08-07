@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import type { VisemeSequenceItem, VisemeState, VisemeTarget, WhisperData } from './visemeTypes'
 import { createEmptyVisemeTarget } from './visemeTypes'
 

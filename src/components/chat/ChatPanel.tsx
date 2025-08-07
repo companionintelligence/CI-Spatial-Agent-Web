@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ChatMessage } from '../../services/types'
+
+import type { ConversationMessage } from '../../services/conversation/conversationType'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatBubble } from './ChatBubble'
 
 interface ChatPanelProps {
-  messages: ChatMessage[]
+  messages: ConversationMessage[]
 }
 
 export const ChatPanel = ({ messages }: ChatPanelProps) => {

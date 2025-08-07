@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+
 import { useSimpleStore } from '../utils/SimpleStore'
 import { AvatarState } from '../xr/AvatarModel'
 import { AnimationOptions, AvatarOptions } from '../xr/AvatarOptions'

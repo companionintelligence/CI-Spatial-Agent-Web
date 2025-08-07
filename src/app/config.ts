@@ -1,8 +1,8 @@
 // Service-specific configurations driven by environment variables
 // Each service has its own dedicated config object
 
-import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial } from './audioTypes'
-import { SYSTEM_PROMPT, type LLMConfig } from './llm/llmTypes'
+import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial } from '../services/audioTypes'
+import { SYSTEM_PROMPT, type LLMConfig } from '../services/llm/llmTypes'
 
 // Audio service configuration
 export const audioConfig: AudioConfigPartial = {
@@ -46,4 +46,11 @@ export const llmConfig: Partial<LLMConfig> = {
   openai_api_url: import.meta.env.VITE_LLM_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
   openai_model: import.meta.env.VITE_LLM_OPENAI_MODEL || 'gpt-3.5-turbo',
   system_prompt: (import.meta.env.VITE_LLM_SYSTEM_PROMPT || SYSTEM_PROMPT).replace(/\\n/g, '\n')
+}
+
+export const config = {
+  audio: audioConfig,
+  tts: ttsConfig,
+  stt: sttConfig,
+  llm: llmConfig
 }

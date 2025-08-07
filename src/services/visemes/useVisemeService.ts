@@ -1,5 +1,5 @@
 import { useCallback, useRef } from 'react'
-import type { VisemeState, WhisperData } from './visemeTypes'
+
 import {
   initializeVisemeState,
   setupVisemeStateForMorphTargets,
@@ -8,6 +8,7 @@ import {
   visemesToRig,
   visemesUpdate
 } from './visemesService'
+import type { VisemeState, WhisperData } from './visemeTypes'
 
 export const useVisemeService = () => {
   const visemeStateRef = useRef<VisemeState>(initializeVisemeState())

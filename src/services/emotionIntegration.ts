@@ -1,5 +1,5 @@
+import type { ConversationMessage } from './conversation/conversationType'
 import type { EmotionType, PerformanceData } from './emote/emoteTypes'
-import type { ChatMessage } from './types'
 
 /**
  * Simple emotion detection based on keywords and patterns in text
@@ -121,7 +121,7 @@ export const detectEmotionFromText = (text: string): EmotionType => {
 /**
  * Analyze message for special actions or behaviors
  */
-export const analyzeMessageForActions = (message: ChatMessage): string | undefined => {
+export const analyzeMessageForActions = (message: ConversationMessage): string | undefined => {
   const lowerText = message.text.toLowerCase()
 
   // Detect greeting behaviors
@@ -173,9 +173,12 @@ export const analyzeMessageForActions = (message: ChatMessage): string | undefin
 }
 
 /**
- * Create performance data based on a chat message
+ * Create performance data based on a conversation message
  */
-export const createPerformanceFromMessage = (message: ChatMessage, messageIndex: number = 0): PerformanceData => {
+export const createPerformanceFromMessage = (
+  message: ConversationMessage,
+  messageIndex: number = 0
+): PerformanceData => {
   const emotion = detectEmotionFromText(message.text)
   const action = analyzeMessageForActions(message)
 
@@ -190,7 +193,7 @@ export const createPerformanceFromMessage = (message: ChatMessage, messageIndex:
 /**
  * Determine if a message should trigger barge-in behavior
  */
-export const shouldTriggerBargeIn = (message: ChatMessage): boolean => {
+export const shouldTriggerBargeIn = (message: ConversationMessage): boolean => {
   // Typically this would be triggered by user interrupting the agent
   // For now, we'll use a simple heuristic
   return message.isUser && message.text.toLowerCase().includes('stop')

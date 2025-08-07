@@ -1,6 +1,7 @@
 import type { XRStore } from '@react-three/xr'
+
 import type { useEmoteService } from '../services/emote/useEmoteService'
-import type { SceneConfig } from '../services/sceneTypes'
+import type { SceneConfig } from '../app/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { Scene3D } from '../xr/Scene3D'
 

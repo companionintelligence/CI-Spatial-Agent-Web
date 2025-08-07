@@ -1,8 +1,8 @@
+import fs from 'fs'
+import path from 'path'
 import react from '@vitejs/plugin-react-swc'
 import packageRoot from 'app-root-path'
 import dotenv from 'dotenv'
-import fs from 'fs'
-import path from 'path'
 import { defineConfig } from 'vite'
 
 dotenv.config({

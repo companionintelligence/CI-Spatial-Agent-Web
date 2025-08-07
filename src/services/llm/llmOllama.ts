@@ -6,6 +6,7 @@
  */
 
 import { Ollama } from 'ollama/browser'
+
 import type { LLMParams, LLMResult } from './llmTypes'
 
 const MIN_BREATH_LENGTH = 20
