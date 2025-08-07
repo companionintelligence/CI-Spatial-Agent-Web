@@ -63,15 +63,17 @@ describe('Viseme Integration Tests', () => {
       
       // 2. Setup morph target avatar
       const mockMorphs = [
-        { morphTargetInfluences: new Array(10).fill(0) },
-        { morphTargetInfluences: new Array(8).fill(0) }
+        { morphTargetInfluences: new Array(15).fill(0) },  // Increased size
+        { morphTargetInfluences: new Array(15).fill(0) }   // Increased size
       ]
       const mockDictionary = {
         viseme_aa: [0, 1],
         viseme_E: [2, 3],
         viseme_I: [4, 5],
-        viseme_PP: [6, 7],
-        viseme_SS: [8, 9]
+        viseme_O: [6, 7],     // Added for HELLO
+        viseme_nn: [8, 9],    // Added for HELLO  
+        viseme_PP: [10, 11],  // Adjusted indices
+        viseme_SS: [12, 13]   // Adjusted indices
       }
       
       setupVisemeStateForMorphTargets(state, mockMorphs, mockDictionary)
