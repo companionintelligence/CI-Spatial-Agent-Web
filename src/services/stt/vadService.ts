@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+
 import type { AudioConfigPartial, VADResult } from '../audioTypes'
 import { defaultAudioConfig } from '../audioTypes'
 

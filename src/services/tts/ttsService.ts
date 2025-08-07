@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+
 import type { TTSConfigPartial, WhisperData } from '../audioTypes'
 import { defaultTTSConfig } from '../audioTypes'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'

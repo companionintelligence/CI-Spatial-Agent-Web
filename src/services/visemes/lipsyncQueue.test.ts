@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+
 import { lipsyncConvert, lipsyncPreProcessText, lipsyncWordsToVisemes } from './lipsyncQueue'
 import type { WhisperData } from './visemeTypes'
 

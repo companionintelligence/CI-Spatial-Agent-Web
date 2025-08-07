@@ -2,6 +2,7 @@ import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
 import { useEffect, useState } from 'react'
+
 import { AvatarControls } from '../components/AvatarControls'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { SceneConfig } from '../services/sceneTypes'

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+
 import type { AppConfig } from '../../services/types'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'

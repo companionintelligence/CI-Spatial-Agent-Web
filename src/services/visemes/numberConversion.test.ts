@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+
 import { LipsyncEn } from './lipsyncEn'
 
 describe('LipsyncEn Number-to-Text Conversion', () => {

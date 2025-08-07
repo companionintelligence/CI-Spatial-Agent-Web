@@ -1,10 +1,10 @@
 /**
  * Unified Agent Hook for CI-XR-Web
- * 
+ *
  * This hook combines all conversational AI services (VAD, STT, LLM, TTS, Visemes, Emotes)
  * into a single, easy-to-use library API. It handles service coordination and state management
  * automatically while providing fine-grained control when needed.
- * 
+ *
  * @example Basic Usage
  * ```typescript
  * const agent = useAgent({
@@ -17,20 +17,20 @@
  *   onVADResult: (result) => setVadIndicator(result.isSpeech),
  *   onTTSSpeechStart: (text, whisperData) => startLipSync(whisperData)
  * })
- * 
+ *
  * // Use the unified state and actions
  * const { state, actions } = agent
- * 
+ *
  * // Submit a message to the AI
  * actions.submitMessage("Hello, how are you?")
- * 
+ *
  * // Toggle microphone listening
  * actions.toggleMicrophone()
- * 
+ *
  * // Set up avatar integration
  * actions.setupVisemesForVRM(vrmAvatar)
  * actions.setupEmotesForVRM(vrmAvatar)
- * 
+ *
  * // In your animation loop
  * useAnimationFrame((time) => {
  *   actions.updateVisemes(time)
@@ -39,7 +39,7 @@
  *   actions.applyEmotesToVRM(vrmAvatar)
  * })
  * ```
- * 
+ *
  * @example Advanced Configuration
  * ```typescript
  * const agent = useAgent({
@@ -68,18 +68,19 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { WhisperData, VADResult, AudioConfigPartial, TTSConfigPartial, STTConfigPartial } from './audioTypes'
+
+import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial, VADResult, WhisperData } from './audioTypes'
 import { useChatService } from './chatService'
-import type { LLMConfig, LLMResponse, LLMStatusUpdate, LLMPerformRequest } from './llm/llmTypes'
+import type { EmotionType, GazeOptions, PerformanceData } from './emote/emoteTypes'
+import { useEmoteService } from './emote/useEmoteService'
+import { emotionIntegrationService } from './emotionIntegration'
 import { useLLMService } from './llm/llmService'
+import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMStatusUpdate } from './llm/llmTypes'
 import { useSTTService } from './stt/sttService'
 import { useVADService } from './stt/vadService'
 import { useTTSService } from './tts/ttsService'
-import { useVisemeService } from './visemes/useVisemeService'
-import { useEmoteService } from './emote/useEmoteService'
-import type { PerformanceData, EmotionType, GazeOptions } from './emote/emoteTypes'
-import { emotionIntegrationService } from './emotionIntegration'
 import type { AppConfig, ChatMessage } from './types'
+import { useVisemeService } from './visemes/useVisemeService'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -110,7 +111,7 @@ interface MorphTargetObject {
 export interface AgentConfig {
   // Audio/VAD configuration
   audio?: AudioConfigPartial
-  // TTS configuration  
+  // TTS configuration
   tts?: TTSConfigPartial
   // STT configuration
   stt?: STTConfigPartial
@@ -126,23 +127,23 @@ export interface AgentCallbacks {
   onVADResult?: (result: VADResult) => void
   onSpeechStart?: () => void
   onSpeechEnd?: (audio: ArrayBuffer) => void
-  
+
   // STT callbacks
   onSTTResult?: (result: STTPerformResult) => void
   onInterimTranscript?: (text: string) => void
-  
+
   // LLM callbacks
   onLLMStatus?: (status: LLMStatusUpdate) => void
   onLLMResponse?: (response: LLMResponse) => void
-  
+
   // TTS callbacks
   onTTSSpeechStart?: (text: string, whisperData: WhisperData) => void
   onTTSSpeechEnd?: () => void
-  
+
   // Chat callbacks
   onMessageAdded?: (message: ChatMessage) => void
   onMessageUpdated?: (messages: ChatMessage[]) => void
-  
+
   // General callbacks
   onError?: (error: Error) => void
 }
@@ -154,72 +155,72 @@ export interface AgentService {
     // VAD state
     vadIsListening: boolean
     vadIsDetecting: boolean
-    
+
     // STT state
     sttIsListening: boolean
     sttAllowed: boolean
     sttDesired: boolean
     currentTranscript: string
-    
+
     // LLM state
     llmReady: boolean
     llmLoading: boolean
     llmThinking: boolean
-    llmMessages: Array<{role: string, content: string}>
-    
+    llmMessages: Array<{ role: string; content: string }>
+
     // TTS state
     ttsIsSpeaking: boolean
     ttsAudioQueue: number
-    
+
     // Chat state
     messages: ChatMessage[]
     currentMessage: string
     isRecording: boolean
     config: AppConfig
   }
-  
+
   // Actions
   actions: {
     // VAD actions
     startVADListening: () => void
     stopVADListening: () => void
     initializeVAD: () => void
-    
+
     // STT actions
     startSTTListening: () => void
     stopSTTListening: () => void
     setSTTDesired: (desired: boolean) => void
-    
+
     // LLM actions
     loadLLM: () => void
     processUserInput: (request: LLMPerformRequest) => void
     clearLLMHistory: () => void
-    
+
     // TTS actions
     speak: (text: string) => void
     stopSpeaking: () => void
     addToTTSQueue: (audioBuffer: ArrayBuffer) => void
     processTTSQueue: () => void
-    
+
     // Chat actions
     addMessage: (text: string, isUser: boolean) => void
     updateCurrentMessage: (message: string) => void
     clearCurrentMessage: () => void
     setRecording: (recording: boolean) => void
     updateConfig: (config: Partial<AppConfig>) => void
-    
+
     // Convenience actions
     submitMessage: (message: string) => void
     toggleMicrophone: () => void
     triggerBargein: () => void
-    
+
     // Viseme actions (for external avatar control)
     setupVisemesForVRM: (vrm: VRMObject) => void
     setupVisemesForMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
     updateVisemes: (currentTime: number) => void
     applyVisemesToRig: (currentTime: number, amplify?: number) => void
     resetVisemes: () => void
-    
+
     // Emote actions (for external avatar control)
     setupEmotesForVRM: (vrm: VRMObject) => void
     setupEmotesForMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
@@ -232,7 +233,7 @@ export interface AgentService {
     resetEmotes: () => void
     onEmoteBargein: () => void
   }
-  
+
   // Service instances (for advanced usage)
   services: {
     chat: ReturnType<typeof useChatService>
@@ -274,18 +275,15 @@ const defaultLLMConfig: Partial<LLMConfig> = {
 
 /**
  * Unified agent hook that combines all conversational AI services
- * 
+ *
  * This hook integrates VAD, STT, LLM, TTS, Visemes, and Emotes services
  * with automatic service coordination and state management.
- * 
+ *
  * @param config - Configuration object for all services
  * @param callbacks - Callback functions for service events
  * @returns AgentService object with state, actions, and service instances
  */
-export const useAgent = (
-  config: AgentConfig = {},
-  callbacks: AgentCallbacks = {}
-): AgentService => {
+export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {}): AgentService => {
   // Merge configurations with defaults
   const audioConfig = { ...defaultAudioConfig, ...config.audio }
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
@@ -299,7 +297,7 @@ export const useAgent = (
 
   // Initialize chat service with app config if provided
   const chat = useChatService()
-  
+
   // Apply app config overrides if provided
   useEffect(() => {
     if (config.app) {

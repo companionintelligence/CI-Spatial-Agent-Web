@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+
 import type { ChatMessage } from '../../services/types'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatBubble } from './ChatBubble'
