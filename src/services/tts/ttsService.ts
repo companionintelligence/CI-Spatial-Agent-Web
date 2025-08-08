@@ -1,8 +1,44 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import type { TTSConfigPartial, WhisperData } from '../audioTypes'
 import { defaultTTSConfig } from '../audioTypes'
+import { cleanText } from './textUtils'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'
+
+// Workerized TTS using vits-web library
+const createTTSWorker = (): Worker => {
+  const ttsWorkerString = `
+import * as tts from 'https://cdn.jsdelivr.net/npm/@diffusionstudio/vits-web@1.0.3/+esm'
+
+let processing = null
+
+self.addEventListener('message', async (e) => {
+  const id = e.data.id
+  const text = e.data.text || 'please supply some text'
+  const voiceId = e.data.voice || 'en_US-hfc_female-medium'
+  if (processing) {
+    await processing
+  }
+  console.log('TTS Worker received message:', { id, text, voiceId })
+  processing = tts.predict({text, voiceId}).then(audio => {
+    new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsArrayBuffer(audio)
+    }).then(audio => {
+      self.postMessage({ audio, id })
+      processing = null
+    }).catch(error => {
+      console.error('TTS Worker Error:', error)
+      self.postMessage({ error: error.message, id })
+      processing = null
+    })
+  })
+})
+`
+  return new Worker(URL.createObjectURL(new Blob([ttsWorkerString], { type: 'text/javascript' })), { type: 'module' })
+}
 
 interface TTSServiceOptions {
   config?: TTSConfigPartial
@@ -10,61 +46,22 @@ interface TTSServiceOptions {
   onSpeechEnd?: () => void
 }
 
+let id = 0
+
 export const useTTSService = (options: TTSServiceOptions = {}) => {
   const { config: configPartial = {}, onSpeechStart, onSpeechEnd } = options
   const config = useMemo(() => ({ ...defaultTTSConfig, ...configPartial }), [configPartial])
-  const [isSpeaking, setIsSpeaking] = useState(false)
-  const [audioQueue, setAudioQueue] = useState<ArrayBuffer[]>([])
+  const isSpeaking = useRef(false)
+  const audioQueue = useRef<{ id: number; audio: ArrayBuffer }[]>([])
+  const workerRef = useRef<Worker | null>(null)
 
-  const speakLocal = useCallback(
-    async (text: string) => {
-      if (!('speechSynthesis' in window)) {
-        throw new Error('Speech synthesis not supported')
-      }
-
-      // Clean up text
-      const cleanText = text.replace(/[*<>#%-]/g, '')
-      if (!cleanText.trim()) return
-
-      const utterance = new SpeechSynthesisUtterance(cleanText)
-
-      /** @todo for the very first utterance, there appear to be no voices registered. maybe a chrome bug? for now just use system default */
-      // const voices = speechSynthesis.getVoices()
-      // console.log('Available voices:', voices)
-      // const voice = voices.find((v) => v.lang === 'en-US') || voices[0]
-      // if (voice) utterance.voice = voice
-
-      utterance.rate = config.speed
-      utterance.pitch = config.pitch
-      utterance.volume = config.volume
-
-      // Generate whisper data for visemes
-      const whisperData = approximateWhisperDataFromText(cleanText, config.speed, 0)
-
-      // Notify speech start with whisper data
-      if (onSpeechStart) {
-        onSpeechStart(cleanText, whisperData)
-      }
-
-      utterance.onend = () => {
-        setIsSpeaking(false)
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-      }
-
-      utterance.onerror = (event) => {
-        console.error('TTS Error:', event.error)
-        setIsSpeaking(false)
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-      }
-
-      speechSynthesis.speak(utterance)
-    },
-    [config.speed, config.pitch, config.volume, onSpeechStart, onSpeechEnd]
-  )
+  // Initialize worker for local TTS
+  const getOrCreateWorker = useCallback(() => {
+    if (!workerRef.current) {
+      workerRef.current = createTTSWorker()
+    }
+    return workerRef.current
+  }, [])
 
   const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -89,6 +86,113 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         })
     })
   }, [])
+
+  const speakBrowser = useCallback(
+    async (text: string) => {
+      if (!('speechSynthesis' in window)) {
+        throw new Error('Speech synthesis not supported')
+      }
+
+      // Clean up text
+      const cleanedText = cleanText(text)
+      if (!cleanedText.trim()) return
+
+      const utterance = new SpeechSynthesisUtterance(cleanedText)
+
+      /** @todo for the very first utterance, there appear to be no voices registered. maybe a chrome bug? for now just use system default */
+      // const voices = speechSynthesis.getVoices()
+      // console.log('Available voices:', voices)
+      // const voice = voices.find((v) => v.lang === 'en-US') || voices[0]
+      // if (voice) utterance.voice = voice
+
+      utterance.rate = config.speed
+      utterance.pitch = config.pitch
+      utterance.volume = config.volume
+
+      // Generate whisper data for visemes
+      const whisperData = approximateWhisperDataFromText(cleanedText, config.speed, 0)
+
+      // Notify speech start with whisper data
+      if (onSpeechStart) {
+        onSpeechStart(cleanedText, whisperData)
+      }
+
+      utterance.onend = () => {
+        isSpeaking.current = false
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+      }
+
+      utterance.onerror = (event) => {
+        console.error('TTS Error:', event.error)
+        isSpeaking.current = false
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+      }
+
+      speechSynthesis.speak(utterance)
+    },
+    [config.speed, config.pitch, config.volume, onSpeechStart, onSpeechEnd]
+  )
+
+  const speakLocalWorker = useCallback(
+    async (text: string) => {
+      // Clean up text
+      const cleanedText = cleanText(text)
+      if (!cleanedText.trim()) return
+
+      return new Promise<void>((resolve, reject) => {
+        const worker = getOrCreateWorker()
+
+        // Generate whisper data for visemes
+        const whisperData = approximateWhisperDataFromText(cleanedText, config.speed, 0)
+
+        // Notify speech start with whisper data
+        if (onSpeechStart) {
+          onSpeechStart(cleanedText, whisperData)
+        }
+
+        worker.onmessage = (event) => {
+          try {
+            const { audio, id } = event.data
+            addToQueue(audio, id)
+            isSpeaking.current = false
+            if (onSpeechEnd) {
+              onSpeechEnd()
+            }
+            resolve()
+          } catch (error) {
+            console.error('Local TTS Error:', error)
+            isSpeaking.current = false
+            if (onSpeechEnd) {
+              onSpeechEnd()
+            }
+            reject(error)
+          }
+        }
+
+        worker.onerror = (error) => {
+          console.error('TTS Worker Error:', error)
+          isSpeaking.current = false
+          if (onSpeechEnd) {
+            onSpeechEnd()
+          }
+          reject(error)
+        }
+
+        for (const chunk of text.match(/[^.!?]+[.!?]?/g) || []) {
+          worker.postMessage({
+            id: id++,
+            text: chunk,
+            voice: config.voice
+          })
+        }
+      })
+    },
+    [getOrCreateWorker, config.speed, config.voice, onSpeechStart, onSpeechEnd]
+  )
 
   const speakRemote = useCallback(
     async (text: string) => {
@@ -158,13 +262,13 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         // Play the audio buffer
         await playAudioBuffer(audioBuffer)
 
-        setIsSpeaking(false)
+        isSpeaking.current = false
         if (onSpeechEnd) {
           onSpeechEnd()
         }
       } catch (error) {
         console.error('Remote TTS Error:', error)
-        setIsSpeaking(false)
+        isSpeaking.current = false
         if (onSpeechEnd) {
           onSpeechEnd()
         }
@@ -190,29 +294,39 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       if (!text.trim()) return null
 
       try {
-        setIsSpeaking(true)
-        if (config.remote) {
-          speakRemote(text)
-        } else {
-          speakLocal(text)
+        isSpeaking.current = true
+        console.log(config)
+        if (config.mode === 'remote') {
+          await speakRemote(text)
+        } else if (config.mode === 'browser') {
+          await speakBrowser(text)
+        } else if (config.mode === 'local') {
+          await speakLocalWorker(text)
         }
       } catch (error) {
         console.error('TTS Error:', error)
-        setIsSpeaking(false)
+        isSpeaking.current = false
         // Call speech end callback if there's an error during speech initiation
         if (onSpeechEnd) {
           onSpeechEnd()
         }
       }
     },
-    [config.remote, speakLocal, speakRemote, onSpeechEnd]
+    [config, speakRemote, speakBrowser, speakLocalWorker, onSpeechEnd]
   )
 
   const stopSpeaking = useCallback(() => {
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel()
     }
-    setIsSpeaking(false)
+
+    // Terminate worker if it exists
+    if (workerRef.current) {
+      workerRef.current.terminate()
+      workerRef.current = null
+    }
+
+    isSpeaking.current = false
 
     // Call speech end callback when speech is stopped
     if (onSpeechEnd) {
@@ -220,41 +334,57 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     }
   }, [onSpeechEnd])
 
-  const addToQueue = useCallback((audioBuffer: ArrayBuffer) => {
-    setAudioQueue((prev) => [...prev, audioBuffer])
-  }, [])
-
-  const processQueue = useCallback(async () => {
-    if (audioQueue.length === 0 || isSpeaking) return
-
-    setIsSpeaking(true)
-
-    try {
-      while (audioQueue.length > 0) {
-        const audioBuffer = audioQueue[0]
-        await playAudioBuffer(audioBuffer)
-        setAudioQueue((prev) => prev.slice(1))
-      }
-    } catch (error) {
-      console.error('Queue processing error:', error)
-    } finally {
-      setIsSpeaking(false)
-      // Call speech end callback when queue processing is complete
-      if (onSpeechEnd) {
-        onSpeechEnd()
+  // Cleanup worker on unmount
+  useEffect(() => {
+    return () => {
+      if (workerRef.current) {
+        workerRef.current.terminate()
       }
     }
-  }, [audioQueue, isSpeaking, playAudioBuffer, onSpeechEnd])
+  }, [])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const processQueue = useCallback(() => {
+    if (audioQueue.current.length === 0 || isSpeaking.current) return
+
+    isSpeaking.current = true
+
+    const processQueue = async () => {
+      console.log('Processing TTS queue:', audioQueue.current.length, 'items')
+      try {
+        while (audioQueue.current.length > 0) {
+          const { audio, id } = audioQueue.current[0]
+          console.log('Processing TTS queue item:', audioQueue.current[0].id)
+          await playAudioBuffer(audio)
+          audioQueue.current = audioQueue.current.filter((item) => item.id !== id)
+        }
+      } catch (error) {
+        console.error('Queue processing error:', error)
+      } finally {
+        isSpeaking.current = false
+        // Call speech end callback when queue processing is complete
+        if (onSpeechEnd) {
+          onSpeechEnd()
+        }
+      }
+    }
+    processQueue()
+  }, [playAudioBuffer, onSpeechEnd])
+
+  const addToQueue = (audio: ArrayBuffer, id: number) => {
+    audioQueue.current = [...audioQueue.current, { id, audio }].sort((a, b) => a.id - b.id)
+    console.log('Added', id, 'to TTS queue:', audioQueue.current.length, 'items')
+    processQueue()
+  }
 
   return {
     isSpeaking,
-    audioQueue: audioQueue.length,
+    audioQueue: audioQueue.current.length,
     actions: {
       speak,
       stopSpeaking,
       playAudioBuffer,
-      addToQueue,
-      processQueue
+      addToQueue
     }
   }
 }
