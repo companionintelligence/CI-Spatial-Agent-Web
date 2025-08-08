@@ -9,18 +9,12 @@ import { approximateWhisperDataFromText } from './whisperDataGenerator'
 const createTTSWorker = (): Worker => {
   const ttsWorkerString = `
 import * as tts from 'https://cdn.jsdelivr.net/npm/@diffusionstudio/vits-web@1.0.3/+esm'
-
-let processing = null
-
 self.addEventListener('message', async (e) => {
   const id = e.data.id
   const text = e.data.text || 'please supply some text'
   const voiceId = e.data.voice || 'en_US-hfc_female-medium'
-  if (processing) {
-    await processing
-  }
   console.log('TTS Worker received message:', { id, text, voiceId })
-  processing = tts.predict({text, voiceId}).then(audio => {
+  tts.predict({text, voiceId}).then(audio => {
     new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result)
@@ -28,11 +22,9 @@ self.addEventListener('message', async (e) => {
       reader.readAsArrayBuffer(audio)
     }).then(audio => {
       self.postMessage({ audio, id })
-      processing = null
     }).catch(error => {
       console.error('TTS Worker Error:', error)
       self.postMessage({ error: error.message, id })
-      processing = null
     })
   })
 })
@@ -46,13 +38,23 @@ interface TTSServiceOptions {
   onSpeechEnd?: () => void
 }
 
-let id = 0
+interface QueuedMessage {
+  id: number
+  text: string
+  status: 'pending' | 'generating' | 'ready' | 'playing' | 'completed' | 'error'
+  audio?: ArrayBuffer
+  whisperData?: WhisperData
+  error?: string
+}
+
+let globalId = 0
 
 export const useTTSService = (options: TTSServiceOptions = {}) => {
   const { config: configPartial = {}, onSpeechStart, onSpeechEnd } = options
   const config = useMemo(() => ({ ...defaultTTSConfig, ...configPartial }), [configPartial])
-  const isSpeaking = useRef(false)
-  const audioQueue = useRef<{ id: number; audio: ArrayBuffer }[]>([])
+  const isProcessing = useRef(false)
+  const messageQueue = useRef<QueuedMessage[]>([])
+  const nextExpectedId = useRef(0)
   const workerRef = useRef<Worker | null>(null)
 
   // Initialize worker for local TTS
@@ -87,123 +89,61 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     })
   }, [])
 
-  const speakBrowser = useCallback(
-    async (text: string) => {
-      if (!('speechSynthesis' in window)) {
-        throw new Error('Speech synthesis not supported')
-      }
+  // Generate audio using browser speech synthesis
+  const generateBrowserAudio = useCallback(async (_message: QueuedMessage) => {
+    if (!('speechSynthesis' in window)) {
+      throw new Error('Speech synthesis not supported')
+    }
 
-      // Clean up text
-      const cleanedText = cleanText(text)
-      if (!cleanedText.trim()) return
+    // For browser mode, we don't pre-generate audio, we play it directly during playback
+    // Just mark as ready
+    return Promise.resolve()
+  }, [])
 
-      const utterance = new SpeechSynthesisUtterance(cleanedText)
-
-      /** @todo for the very first utterance, there appear to be no voices registered. maybe a chrome bug? for now just use system default */
-      // const voices = speechSynthesis.getVoices()
-      // console.log('Available voices:', voices)
-      // const voice = voices.find((v) => v.lang === 'en-US') || voices[0]
-      // if (voice) utterance.voice = voice
-
-      utterance.rate = config.speed
-      utterance.pitch = config.pitch
-      utterance.volume = config.volume
-
-      // Generate whisper data for visemes
-      const whisperData = approximateWhisperDataFromText(cleanedText, config.speed, 0)
-
-      // Notify speech start with whisper data
-      if (onSpeechStart) {
-        onSpeechStart(cleanedText, whisperData)
-      }
-
-      utterance.onend = () => {
-        isSpeaking.current = false
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-      }
-
-      utterance.onerror = (event) => {
-        console.error('TTS Error:', event.error)
-        isSpeaking.current = false
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-      }
-
-      speechSynthesis.speak(utterance)
-    },
-    [config.speed, config.pitch, config.volume, onSpeechStart, onSpeechEnd]
-  )
-
-  const speakLocalWorker = useCallback(
-    async (text: string) => {
-      // Clean up text
-      const cleanedText = cleanText(text)
-      if (!cleanedText.trim()) return
-
+  // Generate audio using local worker
+  const generateLocalAudio = useCallback(
+    async (message: QueuedMessage) => {
       return new Promise<void>((resolve, reject) => {
         const worker = getOrCreateWorker()
 
-        // Generate whisper data for visemes
-        const whisperData = approximateWhisperDataFromText(cleanedText, config.speed, 0)
-
-        // Notify speech start with whisper data
-        if (onSpeechStart) {
-          onSpeechStart(cleanedText, whisperData)
-        }
-
-        worker.onmessage = (event) => {
-          try {
-            const { audio, id } = event.data
-            addToQueue(audio, id)
-            isSpeaking.current = false
-            if (onSpeechEnd) {
-              onSpeechEnd()
-            }
+        const handleWorkerMessage = (event: MessageEvent) => {
+          const { audio, id, error } = event.data
+          if (error) {
+            reject(new Error(error))
+            return
+          }
+          if (id === message.id) {
+            message.audio = audio
+            worker.removeEventListener('message', handleWorkerMessage)
+            worker.removeEventListener('error', handleWorkerError)
             resolve()
-          } catch (error) {
-            console.error('Local TTS Error:', error)
-            isSpeaking.current = false
-            if (onSpeechEnd) {
-              onSpeechEnd()
-            }
-            reject(error)
           }
         }
 
-        worker.onerror = (error) => {
-          console.error('TTS Worker Error:', error)
-          isSpeaking.current = false
-          if (onSpeechEnd) {
-            onSpeechEnd()
-          }
-          reject(error)
+        const handleWorkerError = (error: ErrorEvent) => {
+          worker.removeEventListener('message', handleWorkerMessage)
+          worker.removeEventListener('error', handleWorkerError)
+          reject(new Error(`Worker Error: ${error.message}`))
         }
 
-        for (const chunk of text.match(/[^.!?]+[.!?]?/g) || []) {
-          worker.postMessage({
-            id: id++,
-            text: chunk,
-            voice: config.voice
-          })
-        }
+        worker.addEventListener('message', handleWorkerMessage)
+        worker.addEventListener('error', handleWorkerError)
+
+        worker.postMessage({
+          id: message.id,
+          text: message.text,
+          voice: config.voice
+        })
       })
     },
-    [getOrCreateWorker, config.speed, config.voice, onSpeechStart, onSpeechEnd]
+    [getOrCreateWorker, config.voice]
   )
 
-  const speakRemote = useCallback(
-    async (text: string) => {
+  // Generate audio using remote API
+  const generateRemoteAudio = useCallback(
+    async (message: QueuedMessage) => {
       if (!config.apiKey) {
         throw new Error('API key required for remote TTS')
-      }
-
-      // Clean up text
-      const cleanText = text.replace(/[*<>#%-]/g, '')
-      if (!cleanText || !cleanText.length) {
-        return
       }
 
       const url = config.url || 'https://api.openai.com/v1/audio/speech'
@@ -221,8 +161,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       }
 
       const requestBody: Record<string, unknown> = {
-        text: cleanText,
-        input: cleanText
+        text: message.text,
+        input: message.text
       }
 
       // Set model and voice based on service
@@ -238,42 +178,17 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         requestBody.voice = config.voice || 'shimmer'
       }
 
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(requestBody)
-        })
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody)
+      })
 
-        if (!response.ok) {
-          throw new Error(`Remote TTS API error: ${response.status} ${response.statusText}`)
-        }
-
-        const audioBuffer = await response.arrayBuffer()
-
-        // Generate whisper data for visemes (approximate timing)
-        const whisperData = approximateWhisperDataFromText(cleanText, config.speed, 0)
-
-        // Notify speech start with whisper data
-        if (onSpeechStart) {
-          onSpeechStart(cleanText, whisperData)
-        }
-
-        // Play the audio buffer
-        await playAudioBuffer(audioBuffer)
-
-        isSpeaking.current = false
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-      } catch (error) {
-        console.error('Remote TTS Error:', error)
-        isSpeaking.current = false
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-        throw error
+      if (!response.ok) {
+        throw new Error(`Remote TTS API error: ${response.status} ${response.statusText}`)
       }
+
+      message.audio = await response.arrayBuffer()
     },
     [
       config.apiKey,
@@ -281,38 +196,166 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       config.model,
       config.voiceSettings?.stability,
       config.voiceSettings?.similarity_boost,
-      config.voice,
-      config.speed,
-      onSpeechStart,
-      playAudioBuffer,
-      onSpeechEnd
+      config.voice
     ]
   )
 
+  // Generate audio for a specific message
+  const generateAudioForMessage = useCallback(
+    async (message: QueuedMessage) => {
+      message.status = 'generating'
+      console.log(`Generating audio for message ${message.id}`)
+
+      try {
+        if (config.mode === 'remote') {
+          await generateRemoteAudio(message)
+        } else if (config.mode === 'browser') {
+          await generateBrowserAudio(message)
+        } else if (config.mode === 'local') {
+          await generateLocalAudio(message)
+        }
+        message.status = 'ready'
+      } catch (error) {
+        console.error(`Error generating audio for message ${message.id}:`, error)
+        message.status = 'error'
+        message.error = error instanceof Error ? error.message : 'Unknown error'
+      }
+    },
+    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio]
+  )
+
+  // Process the queue sequentially
+  const processQueue = useCallback(async () => {
+    if (isProcessing.current) return
+    isProcessing.current = true
+
+    try {
+      while (true) {
+        const nextMessage = messageQueue.current.find((msg) => msg.id === nextExpectedId.current)
+
+        if (!nextMessage) {
+          // No more messages to process
+          break
+        }
+
+        // If message is pending, generate audio
+        if (nextMessage.status === 'pending') {
+          await generateAudioForMessage(nextMessage)
+        }
+
+        // If message is not ready after generation, skip for now
+        if (nextMessage.status !== 'ready') {
+          if (nextMessage.status === 'error') {
+            console.error(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
+            messageQueue.current = messageQueue.current.filter((msg) => msg.id !== nextMessage.id)
+            nextExpectedId.current = nextMessage.id + 1
+            continue
+          } else if (nextMessage.status === 'generating') {
+            // For local mode, wait a bit for generation to complete
+            if (config.mode === 'local') {
+              await new Promise((resolve) => setTimeout(resolve, 100))
+              continue
+            }
+          }
+          // For other cases, exit and let it be handled later
+          break
+        }
+
+        // Play the message
+        nextMessage.status = 'playing'
+        console.log(`Playing message ${nextMessage.id}`)
+
+        // Generate whisper data and notify speech start
+        const whisperData = approximateWhisperDataFromText(nextMessage.text, config.speed, 0)
+        if (onSpeechStart) {
+          onSpeechStart(nextMessage.text, whisperData)
+        }
+
+        try {
+          // Handle different TTS modes for playback
+          if (config.mode === 'browser') {
+            await new Promise<void>((resolve, reject) => {
+              const utterance = new SpeechSynthesisUtterance(nextMessage.text)
+              utterance.rate = config.speed
+              utterance.pitch = config.pitch
+              utterance.volume = config.volume
+
+              utterance.onend = () => resolve()
+              utterance.onerror = (event) => reject(new Error(`Browser TTS Error: ${event.error}`))
+
+              speechSynthesis.speak(utterance)
+            })
+          } else if (nextMessage.audio && nextMessage.audio.byteLength > 0) {
+            await playAudioBuffer(nextMessage.audio)
+          }
+        } catch (playbackError) {
+          console.error(`Error playing message ${nextMessage.id}:`, playbackError)
+        }
+
+        // Mark as completed and remove from queue
+        nextMessage.status = 'completed'
+        messageQueue.current = messageQueue.current.filter((msg) => msg.id !== nextMessage.id)
+        nextExpectedId.current = nextMessage.id + 1
+      }
+
+      // Call onSpeechEnd only when queue is empty
+      if (onSpeechEnd && messageQueue.current.length === 0) {
+        onSpeechEnd()
+      }
+    } catch (error) {
+      console.error('Queue processing error:', error)
+      if (onSpeechEnd) {
+        onSpeechEnd()
+      }
+    } finally {
+      isProcessing.current = false
+    }
+  }, [
+    generateAudioForMessage,
+    config.speed,
+    config.pitch,
+    config.volume,
+    config.mode,
+    onSpeechStart,
+    playAudioBuffer,
+    onSpeechEnd
+  ])
+
+  // Add message to queue and assign ID
   const speak = useCallback(
     async (text: string) => {
       if (!text.trim()) return null
 
-      try {
-        isSpeaking.current = true
-        console.log(config)
-        if (config.mode === 'remote') {
-          await speakRemote(text)
-        } else if (config.mode === 'browser') {
-          await speakBrowser(text)
-        } else if (config.mode === 'local') {
-          await speakLocalWorker(text)
-        }
-      } catch (error) {
-        console.error('TTS Error:', error)
-        isSpeaking.current = false
-        // Call speech end callback if there's an error during speech initiation
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
+      const messageId = globalId++
+      const cleanedText = cleanText(text)
+
+      if (!cleanedText.trim()) return messageId
+
+      const queuedMessage: QueuedMessage = {
+        id: messageId,
+        text: cleanedText,
+        status: 'pending'
       }
+
+      messageQueue.current.push(queuedMessage)
+      console.log(`Queued message ${messageId}:`, cleanedText.substring(0, 50))
+
+      // For local mode, start generating all pending messages immediately
+      if (config.mode === 'local') {
+        const allPendingMessages = messageQueue.current.filter((msg) => msg.status === 'pending')
+        allPendingMessages.forEach((message) => {
+          generateAudioForMessage(message) // Don't await - let them generate in parallel
+        })
+      }
+
+      // Start processing if not already running
+      if (!isProcessing.current) {
+        processQueue()
+      }
+
+      return messageId
     },
-    [config, speakRemote, speakBrowser, speakLocalWorker, onSpeechEnd]
+    [processQueue, config.mode, generateAudioForMessage]
   )
 
   const stopSpeaking = useCallback(() => {
@@ -326,7 +369,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       workerRef.current = null
     }
 
-    isSpeaking.current = false
+    // Clear the queue
+    messageQueue.current = []
+    nextExpectedId.current = globalId
+    isProcessing.current = false
 
     // Call speech end callback when speech is stopped
     if (onSpeechEnd) {
@@ -343,48 +389,27 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     }
   }, [])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const processQueue = useCallback(() => {
-    if (audioQueue.current.length === 0 || isSpeaking.current) return
-
-    isSpeaking.current = true
-
-    const processQueue = async () => {
-      console.log('Processing TTS queue:', audioQueue.current.length, 'items')
-      try {
-        while (audioQueue.current.length > 0) {
-          const { audio, id } = audioQueue.current[0]
-          console.log('Processing TTS queue item:', audioQueue.current[0].id)
-          await playAudioBuffer(audio)
-          audioQueue.current = audioQueue.current.filter((item) => item.id !== id)
-        }
-      } catch (error) {
-        console.error('Queue processing error:', error)
-      } finally {
-        isSpeaking.current = false
-        // Call speech end callback when queue processing is complete
-        if (onSpeechEnd) {
-          onSpeechEnd()
-        }
-      }
+  const getQueueStatus = useCallback(() => {
+    return {
+      queueLength: messageQueue.current.length,
+      isProcessing: isProcessing.current,
+      nextExpectedId: nextExpectedId.current,
+      messages: messageQueue.current.map((msg) => ({
+        id: msg.id,
+        status: msg.status,
+        text: msg.text.substring(0, 50) + (msg.text.length > 50 ? '...' : '')
+      }))
     }
-    processQueue()
-  }, [playAudioBuffer, onSpeechEnd])
-
-  const addToQueue = (audio: ArrayBuffer, id: number) => {
-    audioQueue.current = [...audioQueue.current, { id, audio }].sort((a, b) => a.id - b.id)
-    console.log('Added', id, 'to TTS queue:', audioQueue.current.length, 'items')
-    processQueue()
-  }
+  }, [])
 
   return {
-    isSpeaking,
-    audioQueue: audioQueue.current.length,
+    isSpeaking: isProcessing,
+    audioQueue: messageQueue.current.length,
     actions: {
       speak,
       stopSpeaking,
       playAudioBuffer,
-      addToQueue
+      getQueueStatus
     }
   }
 }
