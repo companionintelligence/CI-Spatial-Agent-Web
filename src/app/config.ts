@@ -18,7 +18,7 @@ export const ttsConfig: TTSConfigPartial = {
   speed: parseFloat(import.meta.env.VITE_TTS_SPEED) || 1.0,
   pitch: parseFloat(import.meta.env.VITE_TTS_PITCH) || 1.0,
   volume: parseFloat(import.meta.env.VITE_TTS_VOLUME) || 1.0,
-  remote: import.meta.env.VITE_TTS_REMOTE === 'true',
+  mode: import.meta.env.VITE_TTS_MODE || 'browser', // 'browser', 'local' or 'remote'
   apiKey: import.meta.env.VITE_TTS_API_KEY,
   url: import.meta.env.VITE_TTS_URL || 'https://api.openai.com/v1/audio/speech',
   model: import.meta.env.VITE_TTS_MODEL || 'tts-1',

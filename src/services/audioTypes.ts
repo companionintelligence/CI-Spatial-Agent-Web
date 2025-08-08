@@ -25,7 +25,7 @@ export interface TTSConfig {
   speed: number
   pitch: number
   volume: number
-  remote: boolean
+  mode: 'browser' | 'local' | 'remote' // browser = speechSynthesis API, local = vits-web worker, remote = API call
   apiKey?: string
   url?: string
   model?: string
@@ -71,7 +71,7 @@ export const defaultTTSConfig: TTSConfig = {
   speed: 1.0,
   pitch: 1.0,
   volume: 1.0,
-  remote: false,
+  mode: 'browser',
   url: 'https://api.openai.com/v1/audio/speech',
   model: 'tts-1',
   voiceSettings: {

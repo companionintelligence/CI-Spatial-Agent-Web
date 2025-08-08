@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@hexafield/simple-store": "^1.0.1",
+    "@huggingface/transformers": "^3.7.1",
     "@mlc-ai/web-llm": "^0.2.79",
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",

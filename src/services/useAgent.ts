@@ -195,10 +195,10 @@ export interface AgentService {
     clearLLMHistory: () => void
 
     // TTS actions
-    speak: (text: string) => void
+    speak: (text: string) => Promise<number | null>
     stopSpeaking: () => void
-    addToTTSQueue: (audioBuffer: ArrayBuffer) => void
-    processTTSQueue: () => void
+    playAudioBuffer: (audioBuffer: ArrayBuffer) => Promise<void>
+    getTTSQueueStatus: () => { queueLength: number; isProcessing: boolean; nextExpectedId: number; messages: Array<{ id: number; status: string; text: string }> }
 
     // Chat actions
     addMessage: (text: string, isUser: boolean) => void
@@ -255,7 +255,7 @@ const defaultTTSConfig: TTSConfigPartial = {
   speed: 1.0,
   pitch: 1.0,
   volume: 1.0,
-  remote: false
+  mode: 'browser'
 }
 
 const defaultSTTConfig: STTConfigPartial = {
@@ -493,7 +493,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       llmMessages: llmService.state.messages,
 
       // TTS state
-      ttsIsSpeaking: tts.isSpeaking,
+      ttsIsSpeaking: tts.isSpeaking.current,
       ttsAudioQueue: tts.audioQueue,
 
       // Conversation state
@@ -520,8 +520,8 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       // TTS actions
       speak: tts.actions.speak,
       stopSpeaking: tts.actions.stopSpeaking,
-      addToTTSQueue: tts.actions.addToQueue,
-      processTTSQueue: tts.actions.processQueue,
+      playAudioBuffer: tts.actions.playAudioBuffer,
+      getTTSQueueStatus: tts.actions.getQueueStatus,
 
       // Chat actions
       addMessage: conversation.actions.addMessage,
