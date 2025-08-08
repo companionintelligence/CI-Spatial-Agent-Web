@@ -150,32 +150,16 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        Accept: 'audio/mpeg'
+        Authorization: `Bearer ${config.apiKey}`
       }
 
-      // Set appropriate authorization header based on URL
-      if (url.includes('elevenlabs')) {
-        headers['xi-api-key'] = config.apiKey
-      } else {
-        headers['Authorization'] = `Bearer ${config.apiKey}`
-      }
-
-      const requestBody: Record<string, unknown> = {
-        text: message.text,
-        input: message.text
-      }
-
-      // Set model and voice based on service
-      if (url.includes('elevenlabs')) {
-        requestBody.model_id = config.model || 'eleven_monolingual_v1'
-        requestBody.voice_settings = {
-          stability: config.voiceSettings?.stability || 0.5,
-          similarity_boost: config.voiceSettings?.similarity_boost || 0.8
-        }
-      } else {
-        // OpenAI format
-        requestBody.model = config.model || 'tts-1'
-        requestBody.voice = config.voice || 'shimmer'
+      // OpenAI TTS API payload format
+      const requestBody = {
+        input: message.text,
+        model: config.model || 'tts-1',
+        voice: config.voice || 'shimmer',
+        response_format: 'mp3',
+        speed: config.speed || 1.0
       }
 
       const response = await fetch(url, {
@@ -190,14 +174,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       message.audio = await response.arrayBuffer()
     },
-    [
-      config.apiKey,
-      config.url,
-      config.model,
-      config.voiceSettings?.stability,
-      config.voiceSettings?.similarity_boost,
-      config.voice
-    ]
+    [config.apiKey, config.url, config.model, config.voice, config.speed]
   )
 
   // Generate audio for a specific message
