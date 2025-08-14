@@ -7,9 +7,12 @@ import * as THREE from 'three'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 
+const AVATAR_MODEL = '/assets/avatars/25-1-3_CI_model_female_Shanee.glb'
+const ANIMATION = '/assets/animations/idle-stable.glb'
+
 export const AvatarState = createSimpleStore({
-  selectedAnimation: '/assets/animations/idle.glb',
-  selectedModel: '/assets/avatars/25-1-3_CI_model_female_Shanee.glb',
+  selectedAnimation: ANIMATION,
+  selectedModel: AVATAR_MODEL,
   visemesEnabled: true,
   emotesEnabled: true
 })
@@ -169,5 +172,5 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
   return <primitive ref={avatarRef} object={avatarScene} />
 }
 
-useGLTF.preload('/assets/avatars/25-1-3_CI_model_female_Shanee.glb')
-useGLTF.preload('/assets/animations/idle.glb')
+useGLTF.preload(AVATAR_MODEL)
+useGLTF.preload(ANIMATION)
