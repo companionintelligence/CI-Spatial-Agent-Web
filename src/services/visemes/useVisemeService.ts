@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import {
   initializeVisemeState,
@@ -9,19 +9,25 @@ import {
   visemesUpdate
 } from './visemesService'
 import type { VisemeState, WhisperData } from './visemeTypes'
+import { defaultVisemeConfig, type VisemeConfig } from './visemeConfig'
+import { visemePerformanceMonitor } from './visemePerformance'
 
-export const useVisemeService = () => {
+export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
   const visemeStateRef = useRef<VisemeState>(initializeVisemeState())
+  const [config, setConfig] = useState<VisemeConfig>({
+    ...defaultVisemeConfig,
+    ...initialConfig
+  })
 
   const generateSequence = useCallback((whisperData: WhisperData | null, startTime: number) => {
-    const sequence = visemesSequence(visemeStateRef.current, whisperData, startTime)
+    const sequence = visemesSequence(visemeStateRef.current, whisperData, startTime, config)
     visemeStateRef.current.sequence = sequence
     return sequence
-  }, [])
+  }, [config])
 
   const updateVisemes = useCallback((currentTime: number) => {
-    visemesUpdate(visemeStateRef.current, currentTime)
-  }, [])
+    visemesUpdate(visemeStateRef.current, currentTime, config)
+  }, [config])
 
   const applyToRig = useCallback((currentTime: number, amplify: number = 1.0) => {
     visemesToRig(visemeStateRef.current, currentTime, amplify)
@@ -50,6 +56,25 @@ export const useVisemeService = () => {
     visemeStateRef.current = initializeVisemeState()
   }, [])
 
+  const updateConfig = useCallback((newConfig: Partial<VisemeConfig>) => {
+    setConfig(prev => ({ ...prev, ...newConfig }))
+  }, [])
+
+  const getConfig = useCallback(() => {
+    return config
+  }, [config])
+
+  const getPerformanceMetrics = useCallback(() => {
+    return {
+      average: visemePerformanceMonitor.getAverageMetrics(),
+      latest: visemePerformanceMonitor.getLatestMetrics()
+    }
+  }, [])
+
+  const resetPerformance = useCallback(() => {
+    visemePerformanceMonitor.reset()
+  }, [])
+
   return {
     actions: {
       generateSequence,
@@ -57,11 +82,15 @@ export const useVisemeService = () => {
       applyToRig,
       setupForVRM,
       setupForMorphTargets,
-      reset
+      reset,
+      updateConfig,
+      resetPerformance
     },
     getters: {
       getCurrentTargets,
-      getSequence
+      getSequence,
+      getConfig,
+      getPerformanceMetrics
     }
   }
 }
