@@ -4,15 +4,17 @@ import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { SceneConfig } from '../app/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { Scene3D } from '../xr/Scene3D'
+import type { useAnimationService } from '../services/animation/useAnimationService'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
+  animationService?: ReturnType<typeof useAnimationService>
   setXRStore?: (store: XRStore) => void
 }
 
-export const AvatarViewport = ({ sceneConfig, visemeService, emoteService, setXRStore }: AvatarViewportProps) => {
+export const AvatarViewport = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: AvatarViewportProps) => {
   return (
     <div
       style={{
@@ -40,6 +42,7 @@ export const AvatarViewport = ({ sceneConfig, visemeService, emoteService, setXR
           sceneConfig={sceneConfig}
           visemeService={visemeService}
           emoteService={emoteService}
+          animationService={animationService}
           setXRStore={setXRStore}
         />
       </div>

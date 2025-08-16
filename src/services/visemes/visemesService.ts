@@ -152,12 +152,12 @@ export function visemesUpdate(volume: VisemeState, time: number, config: VisemeC
   const updateTime = performance.now() - startTime
   
   // Performance monitoring
-  visemePerformanceMonitor.endFrame(
+  /*visemePerformanceMonitor.endFrame(
     visemesProcessed,
     volume.sequence.length,
     updateTime,
     0 // rigApplyTime will be set in visemesToRig
-  )
+  )*/
 }
 
 /**

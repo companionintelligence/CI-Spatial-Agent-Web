@@ -91,6 +91,7 @@ export const App = () => {
           sceneConfig={sceneConfig}
           visemeService={agent.services.visemes}
           emoteService={agent.services.emotes}
+          animationService={agent.services.animations}
           setXRStore={setXRStore}
         />
 

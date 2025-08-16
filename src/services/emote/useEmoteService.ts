@@ -88,31 +88,24 @@ export const useEmoteService = () => {
   )
 
   return {
-    // Core emotion controls
-    setEmotion,
-    performAction,
-    triggerGaze,
-    reset,
-    onBargeIn,
-
-    // Update loop
-    update,
-
-    // Setup and integration
-    setupForVRM,
-    setupForMorphTargets,
-    setAvatarReferences,
-
-    // Application
-    applyToVRM,
-    applyToMorphTargets,
-
-    // State access
-    getCurrentTargets,
-    getCurrentEmotion,
-    isPerforming,
-
-    // Direct state access (for advanced use cases)
-    getState: () => emoteStateRef.current
+    actions: {
+      setEmotion,
+      performAction,
+      triggerGaze,
+      reset,
+      onBargeIn,
+      update,
+      setupForVRM,
+      setupForMorphTargets,
+      setAvatarReferences,
+      applyToVRM,
+      applyToMorphTargets
+    },
+    getters: {
+      getCurrentTargets,
+      getCurrentEmotion,
+      isPerforming,
+      getState: () => emoteStateRef.current
+    }
   }
 }

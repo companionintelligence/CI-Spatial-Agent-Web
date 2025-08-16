@@ -66,7 +66,7 @@
  * ```
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial, VADResult, WhisperData } from './audioTypes'
 import { useConversationService } from './conversation/conversationService'
@@ -80,6 +80,7 @@ import { useSTTService } from './stt/sttService'
 import { useVADService } from './stt/vadService'
 import { useTTSService } from './tts/ttsService'
 import { useVisemeService } from './visemes/useVisemeService'
+import { useAnimationService } from './animation/useAnimationService'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -239,6 +240,7 @@ export interface AgentService {
     tts: ReturnType<typeof useTTSService>
     visemes: ReturnType<typeof useVisemeService>
     emotes: ReturnType<typeof useEmoteService>
+    animations: ReturnType<typeof useAnimationService>
   }
 }
 
@@ -307,7 +309,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   // Initialize viseme and emote services
   const visemes = useVisemeService()
   const emotes = useEmoteService()
-
+  const animations = useAnimationService()
   // Initialize LLM service
   const llmService = useLLMService({
     config: llmConfig,
@@ -332,7 +334,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
         )
 
         // Trigger emote performance based on the response
-        emotes.performAction(performanceData)
+        emotes.actions.performAction(performanceData)
       }
 
       conversation.actions.streamMessage(breath, response.final)
@@ -349,7 +351,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       callbacks.onTTSSpeechStart?.(text, whisperData)
     },
     onSpeechEnd: () => {
-      emotes.reset()
+      emotes.actions.reset()
       callbacks.onTTSSpeechEnd?.()
     }
   })
@@ -385,7 +387,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           }
 
           // Trigger barge-in behavior in emote system
-          emotes.onBargeIn()
+          emotes.actions.onBargeIn()
 
           console.log('STT: Stop command detected - barge-in activated')
           return
@@ -470,7 +472,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       tts.actions.stopSpeaking()
     }
 
-    emotes.onBargeIn()
+    emotes.actions.onBargeIn()
   }, [tts.isSpeaking, tts.actions, emotes])
 
   // Return the unified service interface
@@ -541,16 +543,16 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       resetVisemes: visemes.actions.reset,
 
       // Emote actions
-      setupEmotesForVRM: emotes.setupForVRM,
-      setupEmotesForMorphTargets: emotes.setupForMorphTargets,
-      setEmotion: emotes.setEmotion,
-      performAction: emotes.performAction,
-      triggerGaze: emotes.triggerGaze,
-      updateEmotes: emotes.update,
-      applyEmotesToVRM: emotes.applyToVRM,
-      applyEmotesToMorphTargets: emotes.applyToMorphTargets,
-      resetEmotes: emotes.reset,
-      onEmoteBargein: emotes.onBargeIn
+      setupEmotesForVRM: emotes.actions.setupForVRM,
+      setupEmotesForMorphTargets: emotes.actions.setupForMorphTargets,
+      setEmotion: emotes.actions.setEmotion,
+      performAction: emotes.actions.performAction,
+      triggerGaze: emotes.actions.triggerGaze,
+      updateEmotes: emotes.actions.update,
+      applyEmotesToVRM: emotes.actions.applyToVRM,
+      applyEmotesToMorphTargets: emotes.actions.applyToMorphTargets,
+      resetEmotes: emotes.actions.reset,
+      onEmoteBargein: emotes.actions.onBargeIn
     },
 
     services: {
@@ -560,7 +562,8 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       llm: llmService,
       tts,
       visemes,
-      emotes
+      emotes,
+      animations
     }
   }
 }

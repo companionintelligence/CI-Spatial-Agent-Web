@@ -8,15 +8,17 @@ import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { SceneConfig } from '../app/sceneTypes'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { AvatarModel } from './AvatarModel'
+import type { useAnimationService } from '../services/animation/useAnimationService'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
+  animationService?: ReturnType<typeof useAnimationService>
   setXRStore?: (store: XRStore) => void
 }
 
-const SceneContent = ({ sceneConfig, visemeService, emoteService, store }: Scene3DProps & { store: XRStore }) => {
+const SceneContent = ({ sceneConfig, visemeService, emoteService, animationService , store }: Scene3DProps & { store: XRStore }) => {
   return (
     <XR store={store}>
       {/* Camera setup */}
@@ -41,7 +43,7 @@ const SceneContent = ({ sceneConfig, visemeService, emoteService, store }: Scene
       <Environment preset="studio" />
 
       {/* Avatar with external animations */}
-      <AvatarModel visemeService={visemeService} emoteService={emoteService} />
+      <AvatarModel visemeService={visemeService} emoteService={emoteService} animationService={animationService} />
 
       {/* Ground plane */}
       {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
@@ -52,7 +54,7 @@ const SceneContent = ({ sceneConfig, visemeService, emoteService, store }: Scene
   )
 }
 
-export const Scene3D = ({ sceneConfig, visemeService, emoteService, setXRStore }: Scene3DProps) => {
+export const Scene3D = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: Scene3DProps) => {
   const store = createXRStore()
   const [isControlsVisible, setIsControlsVisible] = useState(true)
 
@@ -65,16 +67,17 @@ export const Scene3D = ({ sceneConfig, visemeService, emoteService, setXRStore }
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Avatar Controls Component */}{' '}
-      <AvatarControls
+      {/*<AvatarControls
         isVisible={isControlsVisible}
         onToggleVisibility={() => setIsControlsVisible(!isControlsVisible)}
-      />
+      />/}
       {/* Canvas */}
       <Canvas camera={{ position: [0, 1.6, 3], fov: 50 }} style={{ background: 'transparent' }} shadows>
         <SceneContent
           sceneConfig={sceneConfig}
           visemeService={visemeService}
           emoteService={emoteService}
+          animationService={animationService}
           store={store}
         />
       </Canvas>
