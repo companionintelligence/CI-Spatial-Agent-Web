@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 
 import {
@@ -75,7 +75,7 @@ export const useAnimationService = () => {
     return animationStateRef.current.isTransitioning
   }, [])
 
-  return {
+  return useMemo(() => ({
     actions: {
       setPersonality,
       performAction,
@@ -84,8 +84,8 @@ export const useAnimationService = () => {
       setup,
       update
     },
-     // Info methods
-    getters:{
+    // Info methods
+    getters: {
       getCurrentInfo,
       getCurrentPersonality,
       getAvailableClips,
@@ -93,8 +93,21 @@ export const useAnimationService = () => {
       isEnabled,
       isTransitioning,
       getState: () => animationStateRef.current
-      }
-  }
+    }
+  }), [
+    setPersonality,
+    performAction,
+    enableCycling,
+    reset,
+    setup,
+    update,
+    getCurrentInfo,
+    getCurrentPersonality,
+    getAvailableClips,
+    getAvailablePersonalities,
+    isEnabled,
+    isTransitioning
+  ])
 }
 
 // Preload animation assets

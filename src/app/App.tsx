@@ -1,5 +1,5 @@
 import type { XRStore } from '@react-three/xr'
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useRef, useState, useMemo } from 'react'
 
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'

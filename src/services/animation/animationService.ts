@@ -25,7 +25,7 @@ export function initializeAnimationState(): AnimationState {
     cyclingState: {
       nextCycleTime: 0,
       isActive: true,
-      currentPersonality: 'playful',
+      currentPersonality: 'professional',
       lastCategory: 'idle'
 
     },

@@ -475,6 +475,80 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     emotes.actions.onBargeIn()
   }, [tts.isSpeaking, tts.actions, emotes])
 
+  // Memoize the services object to prevent unnecessary re-renders
+  const services = useMemo(() => ({
+    conversation,
+    vad,
+    stt,
+    llm: llmService,
+    tts,
+    visemes,
+    emotes,
+    animations
+  }), [conversation, vad, stt, llmService, tts, visemes, emotes, animations])
+
+  // Memoize the actions object to prevent unnecessary re-renders
+  const actions = useMemo(() => ({
+    // VAD actions
+    startVADListening: vad.actions.startListening,
+    stopVADListening: vad.actions.stopListening,
+    initializeVAD: vad.actions.initializeVAD,
+
+    // STT actions
+    startSTTListening: stt.actions.startListening,
+    stopSTTListening: stt.actions.stopListening,
+    setSTTDesired: stt.actions.setDesired,
+
+    // LLM actions
+    loadLLM: llmService.actions.load,
+    processUserInput: llmService.actions.processUserInput,
+    clearLLMHistory: llmService.actions.clearHistory,
+
+    // TTS actions
+    speak: tts.actions.speak,
+    stopSpeaking: tts.actions.stopSpeaking,
+    playAudioBuffer: tts.actions.playAudioBuffer,
+    getTTSQueueStatus: tts.actions.getQueueStatus,
+
+    // Chat actions
+    addMessage: conversation.actions.addMessage,
+    updateCurrentMessage: conversation.actions.updateCurrentMessage,
+    clearCurrentMessage: conversation.actions.clearCurrentMessage,
+
+    // Convenience actions
+    submitMessage,
+    toggleMicrophone,
+    triggerBargein,
+
+    // Viseme actions
+    setupVisemesForVRM: visemes.actions.setupForVRM,
+    setupVisemesForMorphTargets: visemes.actions.setupForMorphTargets,
+    updateVisemes: visemes.actions.updateVisemes,
+    applyVisemesToRig: visemes.actions.applyToRig,
+    resetVisemes: visemes.actions.reset,
+
+    // Emote actions
+    setupEmotesForVRM: emotes.actions.setupForVRM,
+    setupEmotesForMorphTargets: emotes.actions.setupForMorphTargets,
+    setEmotion: emotes.actions.setEmotion,
+    performAction: emotes.actions.performAction,
+    triggerGaze: emotes.actions.triggerGaze,
+    updateEmotes: emotes.actions.update,
+    applyEmotesToVRM: emotes.actions.applyToVRM,
+    applyEmotesToMorphTargets: emotes.actions.applyToMorphTargets,
+    resetEmotes: emotes.actions.reset,
+    onEmoteBargein: emotes.actions.onBargeIn
+  }), [
+    vad.actions.startListening, vad.actions.stopListening, vad.actions.initializeVAD,
+    stt.actions.startListening, stt.actions.stopListening, stt.actions.setDesired,
+    llmService.actions.load, llmService.actions.processUserInput, llmService.actions.clearHistory,
+    tts.actions.speak, tts.actions.stopSpeaking, tts.actions.playAudioBuffer, tts.actions.getQueueStatus,
+    conversation.actions.addMessage, conversation.actions.updateCurrentMessage, conversation.actions.clearCurrentMessage,
+    submitMessage, toggleMicrophone, triggerBargein,
+    visemes.actions.setupForVRM, visemes.actions.setupForMorphTargets, visemes.actions.updateVisemes, visemes.actions.applyToRig, visemes.actions.reset,
+    emotes.actions.setupForVRM, emotes.actions.setupForMorphTargets, emotes.actions.setEmotion, emotes.actions.performAction, emotes.actions.triggerGaze, emotes.actions.update, emotes.actions.applyToVRM, emotes.actions.applyToMorphTargets, emotes.actions.reset, emotes.actions.onBargeIn
+  ])
+
   // Return the unified service interface
   return {
     state: {
@@ -503,67 +577,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       currentMessage: conversation.state.currentMessage
     },
 
-    actions: {
-      // VAD actions
-      startVADListening: vad.actions.startListening,
-      stopVADListening: vad.actions.stopListening,
-      initializeVAD: vad.actions.initializeVAD,
-
-      // STT actions
-      startSTTListening: stt.actions.startListening,
-      stopSTTListening: stt.actions.stopListening,
-      setSTTDesired: stt.actions.setDesired,
-
-      // LLM actions
-      loadLLM: llmService.actions.load,
-      processUserInput: llmService.actions.processUserInput,
-      clearLLMHistory: llmService.actions.clearHistory,
-
-      // TTS actions
-      speak: tts.actions.speak,
-      stopSpeaking: tts.actions.stopSpeaking,
-      playAudioBuffer: tts.actions.playAudioBuffer,
-      getTTSQueueStatus: tts.actions.getQueueStatus,
-
-      // Chat actions
-      addMessage: conversation.actions.addMessage,
-      updateCurrentMessage: conversation.actions.updateCurrentMessage,
-      clearCurrentMessage: conversation.actions.clearCurrentMessage,
-
-      // Convenience actions
-      submitMessage,
-      toggleMicrophone,
-      triggerBargein,
-
-      // Viseme actions
-      setupVisemesForVRM: visemes.actions.setupForVRM,
-      setupVisemesForMorphTargets: visemes.actions.setupForMorphTargets,
-      updateVisemes: visemes.actions.updateVisemes,
-      applyVisemesToRig: visemes.actions.applyToRig,
-      resetVisemes: visemes.actions.reset,
-
-      // Emote actions
-      setupEmotesForVRM: emotes.actions.setupForVRM,
-      setupEmotesForMorphTargets: emotes.actions.setupForMorphTargets,
-      setEmotion: emotes.actions.setEmotion,
-      performAction: emotes.actions.performAction,
-      triggerGaze: emotes.actions.triggerGaze,
-      updateEmotes: emotes.actions.update,
-      applyEmotesToVRM: emotes.actions.applyToVRM,
-      applyEmotesToMorphTargets: emotes.actions.applyToMorphTargets,
-      resetEmotes: emotes.actions.reset,
-      onEmoteBargein: emotes.actions.onBargeIn
-    },
-
-    services: {
-      conversation,
-      vad,
-      stt,
-      llm: llmService,
-      tts,
-      visemes,
-      emotes,
-      animations
-    }
+    actions,
+    services
   }
 }

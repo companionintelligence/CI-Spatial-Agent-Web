@@ -1,7 +1,7 @@
 import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, memo } from 'react'
 import * as THREE from 'three'
 
 import type { useEmoteService } from '../services/emote/useEmoteService'
@@ -9,7 +9,7 @@ import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { useAnimationService } from '../services/animation/useAnimationService'
 import { ANIMATION_CLIPS } from '../services/animation/animationClips'
 
-const AVATAR_MODEL = '/assets/avatars/25-1-3_CI_model_female_Shanee.glb'
+const AVATAR_MODEL = '/assets/avatars/heather.glb'
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
@@ -63,7 +63,7 @@ function useExternalAnimations(avatarRef: React.RefObject<THREE.Object3D | undef
   return { actions, mixer, animations: allAnimations }
 }
 
-export const AvatarModel = ({ visemeService, emoteService , animationService }: AvatarModelProps) => {
+const AvatarModelComponent = ({ visemeService, emoteService , animationService }: AvatarModelProps) => {
   const [state] = useSimpleStore(AvatarState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
@@ -73,7 +73,7 @@ export const AvatarModel = ({ visemeService, emoteService , animationService }: 
   const avatarRef = useRef<THREE.Object3D>(null)
   
   // Load external animations from animationClips.ts
-  const { actions, mixer, animations } = useExternalAnimations(avatarRef as any)
+  const { actions, mixer } = useExternalAnimations(avatarRef as any)
 
   // Setup animation service with R3F
   useEffect(() => {
@@ -178,12 +178,12 @@ export const AvatarModel = ({ visemeService, emoteService , animationService }: 
 
   // Animation service will handle its own initialization
 
-  useFrame((_, delta) => {
+  useFrame(() => {
     const currentTime = Date.now()
 
     // Update animation service using R3F integration
     if (animationService) {
-      animationService.actions.update(delta)
+      //animationService.actions.update(delta)
     }
 
     // Update visemes for lip sync
@@ -215,6 +215,9 @@ export const AvatarModel = ({ visemeService, emoteService , animationService }: 
 
   return <primitive ref={avatarRef} object={avatarScene} />
 }
+
+// Memoize the component to prevent re-renders when services don't change
+export const AvatarModel = memo(AvatarModelComponent)
 
 useGLTF.preload(AVATAR_MODEL)
 

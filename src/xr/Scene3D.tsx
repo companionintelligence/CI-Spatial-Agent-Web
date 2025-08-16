@@ -1,7 +1,7 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
 
 import { AvatarControls } from '../components/AvatarControls'
 import type { useEmoteService } from '../services/emote/useEmoteService'
@@ -54,7 +54,7 @@ const SceneContent = ({ sceneConfig, visemeService, emoteService, animationServi
   )
 }
 
-export const Scene3D = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: Scene3DProps) => {
+const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: Scene3DProps) => {
   const store = createXRStore()
   const [isControlsVisible, setIsControlsVisible] = useState(true)
 
@@ -84,3 +84,6 @@ export const Scene3D = ({ sceneConfig, visemeService, emoteService, animationSer
     </div>
   )
 }
+
+// Memoize the component to prevent re-renders when services don't change
+export const Scene3D = memo(Scene3DComponent)
