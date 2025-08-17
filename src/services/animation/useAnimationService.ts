@@ -11,7 +11,9 @@ import {
   setAnimationEnabled,
   setupAnimationState,
   startPerformance,
-  updateAnimation
+  updateAnimation,
+  enqueueAnimation,
+  clearAnimationQueue
 } from './animationService'
 import type { AnimationState, AnimationClip, AnimationPerformanceData } from './animationTypes'
 import { getAvailablePersonalities } from './personalityConfigs'
@@ -79,6 +81,8 @@ export const useAnimationService = () => {
     actions: {
       setPersonality,
       performAction,
+      enqueue: (performanceData: AnimationPerformanceData) => enqueueAnimation(animationStateRef.current, performanceData),
+      clearQueue: () => clearAnimationQueue(animationStateRef.current),
       enableCycling,
       reset,
       setup,

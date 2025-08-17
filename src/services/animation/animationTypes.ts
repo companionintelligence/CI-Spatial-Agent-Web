@@ -61,6 +61,9 @@ export interface AnimationState {
   // Cache for personality-specific clips
   cachedClips: AnimationClip[]
 
+  // Pending animations queue
+  queue?: { clip: AnimationClip; blendTime: number }[]
+
   // Core Three.js integration
   mixer?: THREE.AnimationMixer
   actions?: Record<string, THREE.AnimationAction>

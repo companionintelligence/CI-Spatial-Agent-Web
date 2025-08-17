@@ -14,7 +14,7 @@ import {
 export const createReactionFromMessage = (
   message: ConversationMessage,
   messageIndex: number = 0
-): { performance: PerformanceData; animation: AnimationPerformanceData } => {
+): { performance: PerformanceData; animation: AnimationPerformanceData | undefined} => {
   const emotion = detectEmotionFromText(message.text)
   const action = analyzeMessageForActions(message)
   const intensity = getEmotionIntensity(message.text)
@@ -38,11 +38,11 @@ const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(ma
 export const selectAnimationForPerformance = (
   p: PerformanceData,
   intensity: number = 0.6
-): AnimationPerformanceData => {
+): AnimationPerformanceData | undefined => {
   // Base mapping to existing ANIMATION_CLIPS names
-  let base: AnimationPerformanceData
+  let base: AnimationPerformanceData | undefined = undefined
 
-  if (p.action === 'greeting') base = { name: 'Happy Hand Gesture', loopCount: 1, blendTime: 500, speed: 0.9 }
+  if (p.action === 'greeting') base = { name: 'Waving', loopCount: 1, blendTime: 500, speed: 0.9 }
   else if (p.action === 'farewell') base = { name: 'Bow', loopCount: 1, blendTime: 600, speed: 1.0 }
   else if (p.action === 'agreement') base = { name: 'Agreeing', loopCount: 1, blendTime: 500, speed: 0.85 }
   else if (p.action === 'disagreement') base = { name: 'Cocky Head Turn', loopCount: 1, blendTime: 500, speed: 0.9 }
@@ -67,11 +67,11 @@ export const selectAnimationForPerformance = (
         base = { name: 'Hands Forward Gesture', loopCount: 1, blendTime: 500, speed: 0.9 }
         break
       default:
-        base = { name: 'Head Gesture', loopCount: 1, blendTime: 400, speed: 0.8 }
         break
     }
   }
 
+  if(base === undefined) return 
   // Intensity-based modulation
   const speedScale = clamp(0.75 + intensity * 0.5, 0.75, 1.25) // 0.75..1.25
   const blendScale = clamp(1.0 - intensity * 0.3, 0.7, 1.0) // higher intensity → faster blend
@@ -80,7 +80,8 @@ export const selectAnimationForPerformance = (
     name: base.name,
     loopCount: base.loopCount,
     speed: clamp((base.speed ?? 1.0) * speedScale, 0.5, 1.6),
-    blendTime: Math.round((base.blendTime ?? 400) * blendScale)
+    blendTime: Math.round((base.blendTime ?? 400) * blendScale),
+    immediate: true
   }
 }
 

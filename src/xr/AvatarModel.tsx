@@ -178,12 +178,12 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
 
   // Animation service will handle its own initialization
 
-  useFrame(() => {
+  useFrame((_ , delta) => {
     const currentTime = Date.now()
 
     // Update animation service using R3F integration
     if (animationService) {
-      //animationService.actions.update(delta)
+      animationService.actions.update(delta)
     }
 
     // Update visemes for lip sync
@@ -224,4 +224,6 @@ useGLTF.preload(AVATAR_MODEL)
 // Preload all animation files using a loop over ANIMATION_CLIPS
 
 // Loop through all animation clips and preload them
+
+
 

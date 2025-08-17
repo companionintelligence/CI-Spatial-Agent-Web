@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 
 import {
   applyEmoteStateToMorphTargets,
@@ -87,25 +87,31 @@ export const useEmoteService = () => {
     []
   )
 
-  return {
-    actions: {
-      setEmotion,
-      performAction,
-      triggerGaze,
-      reset,
-      onBargeIn,
-      update,
-      setupForVRM,
-      setupForMorphTargets,
-      setAvatarReferences,
-      applyToVRM,
-      applyToMorphTargets
-    },
-    getters: {
-      getCurrentTargets,
-      getCurrentEmotion,
-      isPerforming,
-      getState: () => emoteStateRef.current
-    }
-  }
+  const actions = useMemo(() => ({
+    setEmotion,
+    performAction,
+    triggerGaze,
+    reset,
+    onBargeIn,
+    update,
+    setupForVRM,
+    setupForMorphTargets,
+    setAvatarReferences,
+    applyToVRM,
+    applyToMorphTargets
+  }), [setEmotion, performAction, triggerGaze, reset, onBargeIn, update, setupForVRM, setupForMorphTargets, setAvatarReferences, applyToVRM, applyToMorphTargets])
+  
+  const getters = useMemo(() => ({
+    getCurrentTargets,
+    getCurrentEmotion,
+    isPerforming,
+    getState: () => emoteStateRef.current
+  }), [getCurrentTargets, getCurrentEmotion, isPerforming])
+
+
+  return useMemo(() => ({
+    actions,
+    getters
+  }), [actions, getters])
+
 }

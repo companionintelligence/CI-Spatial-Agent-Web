@@ -12,6 +12,9 @@ import type { AppConfig } from './types'
 import { initialAppConfig } from './types'
 import { useAgent } from '../services/useAgent'
 
+
+
+
 export const App = () => {
   useResponsiveLayout() // Layout service for responsive behavior
 
@@ -30,12 +33,12 @@ export const App = () => {
   }, [])
 
   // Combine service config with app config
-  const agentConfig = {
+  const agentConfig = useMemo(() => ({
     ...config,
     autoSubmitEnabled: appConfig.autoSubmitEnabled,
     bargeInEnabled: appConfig.bargeInEnabled
-  }
-
+  }), [appConfig.autoSubmitEnabled, appConfig.bargeInEnabled])
+  
   const agent = useAgent(agentConfig)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import {
   initializeVisemeState,
@@ -75,22 +75,43 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
     visemePerformanceMonitor.reset()
   }, [])
 
-  return {
-    actions: {
-      generateSequence,
-      updateVisemes,
-      applyToRig,
-      setupForVRM,
-      setupForMorphTargets,
-      reset,
-      updateConfig,
-      resetPerformance
-    },
-    getters: {
-      getCurrentTargets,
-      getSequence,
-      getConfig,
-      getPerformanceMetrics
-    }
-  }
+  // Viseme service actions and getters (for this service, not emote)
+  const actions = useMemo(() => ({
+    generateSequence,
+    updateVisemes,
+    applyToRig,
+    setupForVRM,
+    setupForMorphTargets,
+    reset,
+    updateConfig,
+    resetPerformance
+  }), [
+    generateSequence,
+    updateVisemes,
+    applyToRig,
+    setupForVRM,
+    setupForMorphTargets,
+    reset,
+    updateConfig,
+    resetPerformance
+  ])
+
+  const getters = useMemo(() => ({
+    getCurrentTargets,
+    getSequence,
+    getConfig,
+    getPerformanceMetrics
+  }), [
+    getCurrentTargets,
+    getSequence,
+    getConfig,
+    getPerformanceMetrics
+  ])
+  
+
+  return useMemo(() => ({
+    actions,
+    getters
+  }), [actions, getters])
+
 }

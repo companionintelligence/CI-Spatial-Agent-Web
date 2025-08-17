@@ -16,6 +16,7 @@ interface AvatarViewportProps {
 }
 
 const AvatarViewportComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: AvatarViewportProps) => {
+  console.log("viewport rerender")
   return (
     <div
       style={{

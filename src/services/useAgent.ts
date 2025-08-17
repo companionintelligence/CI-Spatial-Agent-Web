@@ -81,6 +81,7 @@ import { useVADService } from './stt/vadService'
 import { useTTSService } from './tts/ttsService'
 import { useVisemeService } from './visemes/useVisemeService'
 import { useAnimationService } from './animation/useAnimationService'
+import { createReactionFromMessage } from './reactionIntegration'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -328,13 +329,17 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           isUser: false,
           timestamp: Date.now()
         }
-        const performanceData = emotionIntegrationService.createPerformanceFromMessage(
-          message,
-          conversation.state.messages.length
-        )
 
+        console.log("DEBUG : message", message)
+
+        const {performance, animation} = createReactionFromMessage(       
+          message,
+          conversation.state.messages.length)
+  
+        console.log("DEBUG : performance", performance , animation)
         // Trigger emote performance based on the response
-        emotes.actions.performAction(performanceData)
+        emotes.actions.performAction(performance)
+        if(animation) animations.actions.performAction(animation)
       }
 
       conversation.actions.streamMessage(breath, response.final)
@@ -549,34 +554,26 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     emotes.actions.setupForVRM, emotes.actions.setupForMorphTargets, emotes.actions.setEmotion, emotes.actions.performAction, emotes.actions.triggerGaze, emotes.actions.update, emotes.actions.applyToVRM, emotes.actions.applyToMorphTargets, emotes.actions.reset, emotes.actions.onBargeIn
   ])
 
+  const state = useMemo(() => ({
+    vadIsListening: vad.isListening,
+    vadIsDetecting: vadDetecting,
+    sttIsListening: stt.isListening,
+    sttAllowed: stt.allowed,
+    sttDesired: stt.desired,
+    currentTranscript: currentInterimTranscript,
+    llmReady: llmService.state.ready,
+    llmLoading: llmService.state.loading,
+    llmThinking: llmService.state.thinking,
+    llmMessages: llmService.state.messages,
+    ttsIsSpeaking: tts.isSpeaking.current,
+    ttsAudioQueue: tts.audioQueue,
+    messages: conversation.state.messages,    
+    currentMessage: conversation.state.currentMessage
+  }),[vad.isListening, vadDetecting, stt.isListening, stt.allowed, stt.desired, currentInterimTranscript, llmService.state.ready, llmService.state.loading, llmService.state.thinking, llmService.state.messages, tts.isSpeaking.current, tts.audioQueue, conversation.state.messages, conversation.state.currentMessage])
+
   // Return the unified service interface
   return {
-    state: {
-      // VAD state
-      vadIsListening: vad.isListening,
-      vadIsDetecting: vadDetecting,
-
-      // STT state
-      sttIsListening: stt.isListening,
-      sttAllowed: stt.allowed,
-      sttDesired: stt.desired,
-      currentTranscript: currentInterimTranscript,
-
-      // LLM state
-      llmReady: llmService.state.ready,
-      llmLoading: llmService.state.loading,
-      llmThinking: llmService.state.thinking,
-      llmMessages: llmService.state.messages,
-
-      // TTS state
-      ttsIsSpeaking: tts.isSpeaking.current,
-      ttsAudioQueue: tts.audioQueue,
-
-      // Conversation state
-      messages: conversation.state.messages,
-      currentMessage: conversation.state.currentMessage
-    },
-
+    state,
     actions,
     services
   }

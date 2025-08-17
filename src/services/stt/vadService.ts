@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AudioConfigPartial, VADResult } from '../audioTypes'
 import { defaultAudioConfig } from '../audioTypes'
@@ -139,13 +139,15 @@ export const useVADService = ({
     }
   }, [])
 
-  return {
+  const actions = useMemo(() => ({
+    startListening,
+    stopListening,
+    initializeVAD
+  }), [startListening, stopListening, initializeVAD])
+
+  return useMemo(() => ({
     isListening,
     isDetecting,
-    actions: {
-      startListening,
-      stopListening,
-      initializeVAD
-    }
-  }
+    actions 
+  }), [isListening, isDetecting, actions])
 }

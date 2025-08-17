@@ -31,6 +31,7 @@ export function initializeAnimationState(): AnimationState {
     },
 
     cachedClips: [],
+    queue: [],
 
     mixer: undefined,
     actions: undefined,
@@ -99,17 +100,54 @@ export function startPerformance(
 ) {
   if (!state.actions) return
 
-  const action = state.actions[performanceData.name]
-  if (action) {
+  // Find the corresponding configured clip
+  const configuredClip = ANIMATION_CLIPS.find(c => c.name === performanceData.name)
+  console.log("DEBUG : startPerformance" , configuredClip)
+  if (!configuredClip) {
+    // Fallback: if clip is unknown, attempt to play the raw action directly
+    const action = state.actions[performanceData.name]
+    if (!action) return
+
     action.reset()
-    action.setLoop(performanceData.loopCount === Infinity ? THREE.LoopRepeat : THREE.LoopOnce, performanceData.loopCount ?? 500)
+    action.setLoop(
+      performanceData.loopCount === Infinity ? THREE.LoopRepeat : THREE.LoopOnce,
+      performanceData.loopCount ?? 1
+    )
     action.clampWhenFinished = true
-    
-    // Apply speed if provided, otherwise use default (1.0)
     action.timeScale = performanceData.speed ?? 1.0
-    
-    action.fadeIn(performanceData.blendTime ?? 500 / 1000)
-    action.play()
+
+    const blendMs = performanceData.blendTime ?? 500
+    const blendSeconds = Math.max(0, blendMs) / 1000
+    if (blendSeconds > 0) {
+      action.setEffectiveWeight(0.0)
+      action.fadeIn(blendSeconds)
+      action.play()
+    } else {
+      action.setEffectiveWeight(1.0)
+      action.play()
+    }
+    return
+  }
+
+  // Create a runtime clip instance that respects performance overrides
+  const runtimeClip = {
+    ...configuredClip,
+    loopCount: performanceData.loopCount ?? configuredClip.loopCount ?? 1,
+    speed: performanceData.speed ?? configuredClip.speed ?? 1
+  }
+
+  
+  // Determine blend time (ms). Prefer explicit performance override, then clip default, then personality default
+  const personalityBlend = getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
+  const blendMs = performanceData.blendTime ?? configuredClip.blendTime ?? personalityBlend ?? 500
+
+  // If immediate is requested and we are not transitioning, play now; otherwise queue it
+  if (performanceData.immediate && !state.isTransitioning) {
+    playClip(state, runtimeClip, blendMs)
+    state.lastChangeTime = performance.now()
+  } else {
+    if (!state.queue) state.queue = []
+    state.queue.push({ clip: runtimeClip, blendTime: blendMs })
   }
 }
 
@@ -198,12 +236,17 @@ export function updateAnimation(state: AnimationState, delta: number) {
     if(elapsed < state.cycleInterval * .001) {console.groupEnd() ;return;}
   }   
 
-  const nextClip = pickNextClip(state)
+  // If there are queued items, consume the next queued clip; otherwise pick via cycling
+  let nextItem: { clip: AnimationClip; blendTime: number } | null = null
+  if (state.queue && state.queue.length > 0) {
+    nextItem = state.queue.shift() || null
+  }
+  const nextClip = nextItem?.clip ?? pickNextClip(state)
+  const nextBlend = (nextItem?.blendTime ?? nextClip.blendTime) || getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
   playClip(
     state,
     nextClip,
-    nextClip.blendTime ||
-      getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
+    nextBlend
   )
   state.lastChangeTime = now
   return
@@ -270,16 +313,26 @@ function pickNextClip(state: AnimationState): AnimationClip {
 }
 
 function playClip(state: AnimationState, clip: AnimationClip, blendTime: number , _warp: boolean = true) {
-  console.log("DEBUG,play clip" , clip.name)
+  console.log("DEBUG" , clip.name)
   if (!state.actions || !state.mixer) return
   const action = state.actions[clip.name]
   if (!action) return
 
   action.reset()
-  action.setLoop(
-    clip.loopCount > 1 ? THREE.LoopRepeat : THREE.LoopOnce,
-    clip.loopCount
-  )
+  // Normalize loop configuration: ensure at least one iteration for LoopOnce, support finite repeats and Infinity
+  let loopMode: THREE.AnimationActionLoopStyles
+  let repetitions: number
+  if (clip.loopCount === Infinity) {
+    loopMode = THREE.LoopRepeat
+    repetitions = Infinity
+  } else if ((clip.loopCount ?? 1) > 1) {
+    loopMode = THREE.LoopRepeat
+    repetitions = Math.max(2, Math.floor(clip.loopCount))
+  } else {
+    loopMode = THREE.LoopOnce
+    repetitions = 1
+  }
+  action.setLoop(loopMode, repetitions)
   action.clampWhenFinished = true
   
   // Apply animation speed from clip configuration
@@ -325,6 +378,26 @@ export function getCurrentAnimationInfo(state: AnimationState) {
   return {
     currentClip: state.currentClip,
     nextClip: state.nextClip,
-    isTransitioning: state.isTransitioning
+    isTransitioning: state.isTransitioning,
+    queueLength: state.queue?.length ?? 0
   }
+}
+
+// --------------------- Queue API ---------------------
+export function enqueueAnimation(state: AnimationState, performanceData: AnimationPerformanceData) {
+  const configuredClip = ANIMATION_CLIPS.find(c => c.name === performanceData.name)
+  if (!configuredClip) return
+  const runtimeClip = {
+    ...configuredClip,
+    loopCount: performanceData.loopCount ?? configuredClip.loopCount ?? 1,
+    speed: performanceData.speed ?? configuredClip.speed ?? 1
+  }
+  const personalityBlend = getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
+  const blendMs = performanceData.blendTime ?? configuredClip.blendTime ?? personalityBlend ?? 500
+  if (!state.queue) state.queue = []
+  state.queue.push({ clip: runtimeClip, blendTime: blendMs })
+}
+
+export function clearAnimationQueue(state: AnimationState) {
+  if (state.queue) state.queue.length = 0
 }
