@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 
 import {
   applyEmoteStateToMorphTargets,
@@ -87,32 +87,31 @@ export const useEmoteService = () => {
     []
   )
 
-  return {
-    // Core emotion controls
+  const actions = useMemo(() => ({
     setEmotion,
     performAction,
     triggerGaze,
     reset,
     onBargeIn,
-
-    // Update loop
     update,
-
-    // Setup and integration
     setupForVRM,
     setupForMorphTargets,
     setAvatarReferences,
-
-    // Application
     applyToVRM,
-    applyToMorphTargets,
-
-    // State access
+    applyToMorphTargets
+  }), [setEmotion, performAction, triggerGaze, reset, onBargeIn, update, setupForVRM, setupForMorphTargets, setAvatarReferences, applyToVRM, applyToMorphTargets])
+  
+  const getters = useMemo(() => ({
     getCurrentTargets,
     getCurrentEmotion,
     isPerforming,
-
-    // Direct state access (for advanced use cases)
     getState: () => emoteStateRef.current
-  }
+  }), [getCurrentTargets, getCurrentEmotion, isPerforming])
+
+
+  return useMemo(() => ({
+    actions,
+    getters
+  }), [actions, getters])
+
 }

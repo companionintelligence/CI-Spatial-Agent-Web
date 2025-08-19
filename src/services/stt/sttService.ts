@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import type { STTConfigPartial } from '../audioTypes'
 import { defaultSTTConfig } from '../audioTypes'
@@ -225,16 +225,17 @@ export const useSTTService = ({
     }
   }, [])
 
-  return {
+  const actions = useMemo(() => ({
+    setAllowed: setAllowedState,
+    setDesired: setDesiredState,
+    startListening: () => setDesiredState(true),
+    stopListening: () => setDesiredState(false)
+  }), [setAllowedState, setDesiredState])
+
+  return useMemo(() => ({
     isListening,
     allowed,
     desired,
-    actions: {
-      setAllowed: setAllowedState,
-      setDesired: setDesiredState,
-
-      startListening: () => setDesiredState(true),
-      stopListening: () => setDesiredState(false)
-    }
-  }
+    actions
+  }), [isListening, allowed, desired, actions])
 }

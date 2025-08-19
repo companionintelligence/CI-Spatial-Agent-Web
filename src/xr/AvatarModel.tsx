@@ -1,15 +1,18 @@
 import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo, memo } from 'react'
 import * as THREE from 'three'
 
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
+import { useAnimationService } from '../services/animation/useAnimationService'
+import { ANIMATION_CLIPS } from '../services/animation/animationClips'
+
+const AVATAR_MODEL = '/assets/avatars/heather.glb'
 
 export const AvatarState = createSimpleStore({
-  selectedAnimation: '/assets/animations/idle.glb',
-  selectedModel: '/assets/avatars/25-1-3_CI_model_female_Shanee.glb',
+  selectedModel: AVATAR_MODEL,
   visemesEnabled: true,
   emotesEnabled: true
 })
@@ -17,19 +20,78 @@ export const AvatarState = createSimpleStore({
 interface AvatarModelProps {
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
+  animationService?: ReturnType<typeof useAnimationService>
 }
 
-export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) => {
+// Custom hook to load external animation files
+function useExternalAnimations(avatarRef: React.RefObject<THREE.Object3D | undefined | null> | THREE.Object3D) {
+  // Load each animation file individually
+  const animationGLTFs = ANIMATION_CLIPS.map(clip => {
+    try {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
+      return useGLTF(clip.path)
+    } catch (error) {
+      console.warn(`Failed to load animation: ${clip.name} from ${clip.path}`, error)
+      return null
+    }
+  }).filter(Boolean)
+
+  // Collect all animations from the loaded GLTFs
+  const allAnimations = useMemo(() => {
+    const animations: THREE.AnimationClip[] = []
+    
+    animationGLTFs.forEach((gltf, index) => {
+      if (gltf && gltf.animations) {
+        gltf.animations.forEach(animation => {
+          // Rename animation to match our clip names
+          const clip = ANIMATION_CLIPS[index]
+          if (clip) {
+            animation.name = clip.name
+            clip.duration = animation.duration
+          }
+          animations.push(animation)
+        })
+      }
+    })
+    
+    return animations
+  }, [animationGLTFs])
+
+  // Use the animations with the avatar
+  const { actions, mixer } = useAnimations(allAnimations, avatarRef)
+
+  return { actions, mixer, animations: allAnimations }
+}
+
+const AvatarModelComponent = ({ visemeService, emoteService , animationService }: AvatarModelProps) => {
   const [state] = useSimpleStore(AvatarState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
 
-  const { selectedAnimation, selectedModel, visemesEnabled, emotesEnabled } = state
-  const { scene: avatarScene } = useGLTF(selectedModel)
-  const { animations } = useGLTF(selectedAnimation)
-
+  const { selectedModel, visemesEnabled, emotesEnabled } = state
+  const { scene: avatarScene } = useGLTF(selectedModel)  
   const avatarRef = useRef<THREE.Object3D>(null)
-  const { actions, mixer } = useAnimations(animations, avatarRef)
+  
+  // Load external animations from animationClips.ts
+  const { actions, mixer } = useExternalAnimations(avatarRef as any)
+
+  // Setup animation service with R3F
+  useEffect(() => {
+    if (!avatarScene || !animationService || !actions || !mixer) return
+
+    // Setup the animation service with R3F actions and mixer
+    // Filter out null actions
+    const validActions: Record<string, THREE.AnimationAction> = {}
+    Object.entries(actions).forEach(([name, action]) => {
+      if (action) {
+        validActions[name] = action
+      }
+    })
+    
+    animationService.actions.setup(validActions, mixer, avatarRef.current || undefined)
+    
+    console.log(`Animation service setup with ${Object.keys(actions).length} animations`)
+  }, [ animationService, actions, mixer])
 
   useEffect(() => {
     if (!avatarScene || !visemesEnabled || !visemeService) return
@@ -103,41 +165,26 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
 
     // Setup emote service with morph targets and bones
     if (morphTargets.length > 0 && Object.keys(emoteDictionary).length > 0) {
-      emoteService.setupForMorphTargets(morphTargets, emoteDictionary)
+      emoteService.actions.setupForMorphTargets(morphTargets, emoteDictionary)
     }
 
     // Provide avatar references for gaze and head control
-    emoteService.setAvatarReferences({
+    emoteService.actions.setAvatarReferences({
       bones,
       node: avatarRef.current,
       scene: { camera: null } // Camera will be set by the scene
     })
   }, [avatarScene, emotesEnabled, emoteService])
 
-  useEffect(() => {
-    if (!actions || !Object.keys(actions).length) return
+  // Animation service will handle its own initialization
 
-    const actionNames = Object.keys(actions)
-    const actionName = actionNames[0]
-    const action = actions[actionName]
-
-    if (!action) return
-
-    action.reset()
-    action.setLoop(THREE.LoopRepeat, Infinity)
-    action.clampWhenFinished = false
-    action.play()
-    return () => {
-      action.stop()
-    }
-  }, [actions, avatarScene])
-
-  useFrame((_, delta) => {
-    if (mixer) {
-      mixer.update(delta)
-    }
-
+  useFrame((_ , delta) => {
     const currentTime = Date.now()
+
+    // Update animation service using R3F integration
+    if (animationService) {
+      animationService.actions.update(delta)
+    }
 
     // Update visemes for lip sync
     if (visemesEnabled && visemeService) {
@@ -147,11 +194,11 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
 
     // Update emotes for facial expressions and behaviors
     if (emotesEnabled && emoteService) {
-      emoteService.update(currentTime)
+      emoteService.actions.update(currentTime)
 
       // Apply to morph targets if available
       if (morphTargetsRef.current.length > 0) {
-        const dictionary = emoteService.getState().dictionary
+        const dictionary = emoteService.getters.getState().dictionary
         if (dictionary) {
           // Filter to only meshes with morph targets
           const validMorphs = morphTargetsRef.current.filter((mesh) => mesh.morphTargetInfluences !== undefined) as {
@@ -159,7 +206,7 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
           }[]
 
           if (validMorphs.length > 0) {
-            emoteService.applyToMorphTargets(validMorphs, dictionary)
+            emoteService.actions.applyToMorphTargets(validMorphs, dictionary)
           }
         }
       }
@@ -169,5 +216,14 @@ export const AvatarModel = ({ visemeService, emoteService }: AvatarModelProps) =
   return <primitive ref={avatarRef} object={avatarScene} />
 }
 
-useGLTF.preload('/assets/avatars/25-1-3_CI_model_female_Shanee.glb')
-useGLTF.preload('/assets/animations/idle.glb')
+// Memoize the component to prevent re-renders when services don't change
+export const AvatarModel = memo(AvatarModelComponent)
+
+useGLTF.preload(AVATAR_MODEL)
+
+// Preload all animation files using a loop over ANIMATION_CLIPS
+
+// Loop through all animation clips and preload them
+
+
+

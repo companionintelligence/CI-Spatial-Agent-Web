@@ -1,5 +1,5 @@
 import { useSimpleStore } from '@hexafield/simple-store/react'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import type { ConversationMessage, ConversationState } from './conversationType'
 import { initialConversationState } from './conversationType'
@@ -16,49 +16,67 @@ export const useConversationService = () => {
         timestamp: Date.now()
       }
 
-      setState((prev) => {
-        prev.messages.push(newMessage)
-        return prev
-      })
+      setState((prev) => ({
+        ...prev,
+        messages: [...prev.messages, newMessage]
+      }))
     },
     [setState]
   )
 
   const streamMessage = useCallback(
     (fragment: string, finished: boolean) => {
-      const lastLLMStreamingMessage = state.messages.find((msg) => msg.isUser === false && msg.text.endsWith('...'))
-      if (lastLLMStreamingMessage) {
-        setState((prev) => {
-          lastLLMStreamingMessage.text = lastLLMStreamingMessage.text.slice(0, -3) + fragment + (finished ? '' : '...')
-          return prev
-        })
-      } else {
-        addMessage(fragment + (finished ? '' : '...'), false)
-      }
+      setState((prev) => {
+        const lastLLMStreamingMessage = prev.messages.find((msg) => msg.isUser === false && msg.text.endsWith('...'))
+        
+        if (lastLLMStreamingMessage) {
+          const updatedMessages = prev.messages.map(msg => 
+            msg.id === lastLLMStreamingMessage.id 
+              ? { ...msg, text: msg.text.slice(0, -3) + fragment + (finished ? '' : '...') }
+              : msg
+          )
+          return { ...prev, messages: updatedMessages }
+        } else {
+          // Add new message
+          const newMessage: ConversationMessage = {
+            id: Date.now().toString(),
+            text: fragment + (finished ? '' : '...'),
+            isUser: false,
+            timestamp: Date.now()
+          }
+          return { ...prev, messages: [...prev.messages, newMessage] }
+        }
+      })
     },
     [addMessage, setState, state.messages]
   )
 
   const updateCurrentMessage = useCallback(
     (message: string) => {
-      state.currentMessage = message
-      setState(state)
+      setState((prev) => ({
+        ...prev,
+        currentMessage: message
+      }))
     },
-    [state, setState]
+    [setState]
   )
 
   const clearCurrentMessage = useCallback(() => {
-    state.currentMessage = ''
-    setState(state)
-  }, [state, setState])
+    setState((prev) => ({
+      ...prev,
+      currentMessage: ''
+    }))
+  }, [setState])
 
-  return {
+  const actions = useMemo(() => ({
+    addMessage,
+    streamMessage,
+    updateCurrentMessage,
+    clearCurrentMessage
+  }), [addMessage, streamMessage, updateCurrentMessage, clearCurrentMessage])
+  
+  return useMemo(() => ({
     state,
-    actions: {
-      addMessage,
-      streamMessage,
-      updateCurrentMessage,
-      clearCurrentMessage
-    }
-  }
+    actions
+  }), [state, actions])
 }
