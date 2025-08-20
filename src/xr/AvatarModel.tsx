@@ -1,6 +1,7 @@
 import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
+import { useThree } from '@react-three/fiber';
 import { useEffect, useRef, useMemo, memo } from 'react'
 import * as THREE from 'three'
 
@@ -8,13 +9,17 @@ import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { useAnimationService } from '../services/animation/useAnimationService'
 import { ANIMATION_CLIPS } from '../services/animation/animationClips'
-
-const AVATAR_MODEL = '/assets/avatars/heather.glb'
+import { useLoader } from '@react-three/fiber'
+import { GLTFLoader } from 'three/examples/jsm/Addons.js'
+import { VRMLoaderPlugin, VRM } from '@pixiv/three-vrm'
+import type { GLTFParser } from 'three/examples/jsm/Addons.js'
+const AVATAR_MODEL = '/assets/avatars/vrm/personal-avatar.vrm'
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
   visemesEnabled: true,
-  emotesEnabled: true
+  emotesEnabled: true,
+  animationsEnabled : false
 })
 
 interface AvatarModelProps {
@@ -68,16 +73,28 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
 
-  const { selectedModel, visemesEnabled, emotesEnabled } = state
-  const { scene: avatarScene } = useGLTF(selectedModel)  
+  const { selectedModel, visemesEnabled, emotesEnabled ,animationsEnabled } = state
+  const gltf = useLoader(GLTFLoader, AVATAR_MODEL, (loader) => {
+    loader.register((parser: GLTFParser) => new VRMLoaderPlugin(parser))
+  })  
+  const isVRM = selectedModel.toLowerCase().endsWith(".vrm")
+
+  const vrm = isVRM ? (gltf.userData.vrm as VRM) : null
+  const avatarScene = isVRM ? vrm?.scene : gltf.scene
   const avatarRef = useRef<THREE.Object3D>(null)
-  
+  const {scene:viewerScene, camera:viewerCamera } =  useThree()
   // Load external animations from animationClips.ts
   const { actions, mixer } = useExternalAnimations(avatarRef as any)
-
   // Setup animation service with R3F
   useEffect(() => {
-    if (!avatarScene || !animationService || !actions || !mixer) return
+    console.log("DEBUG" , vrm)
+    if (vrm) {
+      console.log("DEBUG" , vrm.expressionManager)
+      //visemeService.actions.setupForVRM(vrm);
+      console.log("Viseme service wired to VRM expressionManager");
+    }
+
+    if (!avatarScene || !animationService || !actions || !mixer || !animationsEnabled) return
 
     // Setup the animation service with R3F actions and mixer
     // Filter out null actions
@@ -91,44 +108,65 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
     animationService.actions.setup(validActions, mixer, avatarRef.current || undefined)
     
     console.log(`Animation service setup with ${Object.keys(actions).length} animations`)
-  }, [ animationService, actions, mixer])
+  }, [ animationsEnabled , animationService, actions, mixer])
 
   useEffect(() => {
     if (!avatarScene || !visemesEnabled || !visemeService) return
 
-    const morphTargets: { morphTargetInfluences: number[] }[] = []
-    const dictionary: Record<string, number[]> = {}
+    if (isVRM && vrm) {
+      // VRM expression manager route
+      visemeService.actions.setupForVRM(vrm)
+      console.log("Viseme service wired to VRM expressionManager")
+    } else {
+      // GLB morph target route
+      const morphTargets: { morphTargetInfluences: number[] }[] = []
+      const dictionary: Record<string, number[]> = {}
 
-    avatarScene.traverse((child) => {
-      if (child instanceof THREE.Mesh && child.morphTargetDictionary && child.morphTargetInfluences) {
-        const meshWithMorphTargets = child as THREE.Mesh & { morphTargetInfluences: number[] }
-        morphTargets.push(meshWithMorphTargets)
-
-        Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
-          if (name.startsWith('viseme_')) {
-            if (!dictionary[name]) {
-              dictionary[name] = []
+      avatarScene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.morphTargetDictionary && child.morphTargetInfluences) {
+          morphTargets.push(child as THREE.Mesh & { morphTargetInfluences: number[] })
+          Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
+            if (name.startsWith("viseme_")) {
+              if (!dictionary[name]) dictionary[name] = []
+              dictionary[name].push(index)
             }
-            dictionary[name].push(index)
-          }
-        })
+          })
+        }
+      })
+
+      morphTargetsRef.current = morphTargets as THREE.Mesh[]
+      if (morphTargets.length > 0 && Object.keys(dictionary).length > 0) {
+        visemeService.actions.setupForMorphTargets(morphTargets, dictionary)
       }
-    })
-
-    morphTargetsRef.current = morphTargets as THREE.Mesh[]
-
-    if (morphTargets.length > 0 && Object.keys(dictionary).length > 0) {
-      visemeService.actions.setupForMorphTargets(morphTargets, dictionary)
     }
-  }, [avatarScene, visemesEnabled, visemeService])
-
+  }, [avatarScene, visemesEnabled, visemeService, isVRM, vrm])
+  
   // Setup emote service integration
   useEffect(() => {
     if (!avatarScene || !emotesEnabled || !emoteService) return
 
-    const morphTargets: { morphTargetInfluences: number[] }[] = []
-    const emoteDictionary: Record<string, number[]> = {}
-    const bones: Record<string, THREE.Bone> = {}
+    console.log("DEBUG, viewer " , viewerCamera, viewerScene)
+
+    let bones: Record<string, THREE.Bone> = {}
+
+    if (isVRM && vrm) {
+      // VRM expression manager route
+      emoteService.actions.setupForVRM(vrm)
+      console.log("emote service wired to VRM expressionManager")
+
+      // Get bones from VRM humanoid if available
+      if (vrm.humanoid) {
+        // Map VRM humanoid bones to THREE.Bone references
+        Object.entries(vrm.humanoid?.humanBones ?? {}).forEach(([name, boneNode]) => {
+          if (boneNode?.node) {
+            bones[name] = boneNode.node as THREE.Bone
+          }
+        })
+      }
+    } else { 
+      const morphTargets: { morphTargetInfluences: number[] }[] = []
+      const emoteDictionary: Record<string, number[]> = {}
+      bones = {}
 
     // Collect morphable meshes for facial expressions
     avatarScene.traverse((child) => {
@@ -168,22 +206,24 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
       emoteService.actions.setupForMorphTargets(morphTargets, emoteDictionary)
     }
 
-    // Provide avatar references for gaze and head control
+      // Provide avatar references for gaze and head control
+    }
     emoteService.actions.setAvatarReferences({
       bones,
-      node: avatarRef.current,
-      scene: { camera: null } // Camera will be set by the scene
+      node: avatarRef.current ?? undefined,
+      camera: viewerCamera  // Camera will be set by the scene
     })
   }, [avatarScene, emotesEnabled, emoteService])
-
+  
   // Animation service will handle its own initialization
 
   useFrame((_ , delta) => {
     const currentTime = Date.now()
 
+    if(isVRM && vrm) vrm.expressionManager?.update()
     // Update animation service using R3F integration
-    if (animationService) {
-      animationService.actions.update(delta)
+    if (animationsEnabled && animationService) {
+      //animationService.actions.update(delta)
     }
 
     // Update visemes for lip sync
@@ -196,6 +236,10 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
     if (emotesEnabled && emoteService) {
       emoteService.actions.update(currentTime)
 
+
+      if(isVRM && vrm) {
+        emoteService.actions.applyToVRM(vrm)
+      } else {
       // Apply to morph targets if available
       if (morphTargetsRef.current.length > 0) {
         const dictionary = emoteService.getters.getState().dictionary
@@ -209,11 +253,12 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
             emoteService.actions.applyToMorphTargets(validMorphs, dictionary)
           }
         }
+        }
       }
     }
   })
 
-  return <primitive ref={avatarRef} object={avatarScene} />
+  return <primitive ref={avatarRef} object={avatarScene as any} />
 }
 
 // Memoize the component to prevent re-renders when services don't change

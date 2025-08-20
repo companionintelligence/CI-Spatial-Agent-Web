@@ -227,7 +227,7 @@ const visemes = useVisemeService()
 visemes.actions.generateSequence(whisperData: WhisperData, startTime: number)
 visemes.actions.updateVisemes(currentTime: number)
 visemes.actions.applyToRig(currentTime: number, amplify?: number)
-visemes.actions.setupForVRM(vrm: VRMObject)
+visemes.actions.setupForVRM(vrm: VRM)
 visemes.actions.setupForMorphTargets(morphs: MorphTarget[], dictionary: VisemeDictionary)
 visemes.actions.reset()
 
@@ -280,11 +280,11 @@ emotes.onBargeIn()
 emotes.update(currentTime?: number)
 
 // Setup
-emotes.setupForVRM(vrm: VRMObject)
+emotes.setupForVRM(vrm: VRM)
 emotes.setupForMorphTargets(morphs: MorphTarget[], dictionary: EmoteDictionary)
 
 // Application
-emotes.applyToVRM(vrm: VRMObject)
+emotes.applyToVRM(vrm: VRM)
 emotes.applyToMorphTargets(morphs: MorphTarget[], dictionary: EmoteDictionary)
 
 // State Access

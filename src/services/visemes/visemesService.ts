@@ -1,8 +1,48 @@
 import { lipsyncConvert } from './lipsyncQueue'
-import type { VisemeSequenceItem, VisemeState, VisemeTarget, WhisperData } from './visemeTypes'
-import { createEmptyVisemeTarget } from './visemeTypes'
+import type { VisemeSequenceItem, VisemeState, VisemeTarget, VRMVisemeTarget, WhisperData } from './visemeTypes'
+import { createEmptyVisemeTarget, createEmptyVRMVisemeTarget } from './visemeTypes'
 import { defaultVisemeConfig, type VisemeConfig, applyCurve } from './visemeConfig'
 import { visemePerformanceMonitor } from './visemePerformance'
+import type { VRM } from '@pixiv/three-vrm'
+
+
+
+const OCULUS_TO_VRM_MAPPING: Record<keyof VisemeTarget, keyof VRMVisemeTarget> = {
+  // Vowels - direct mapping where possible
+  aa: 'aa',     // open back vowel → aa
+  E: 'ee',      // mid front vowel → ee  
+  I: 'ee',      // close front vowel → ee
+  O: 'oh',      // mid back vowel → oh
+  U: 'ou',      // close back vowel → ou
+  
+  // Consonants - map to closest vowel shape
+  PP: 'ou',     // bilabial (closed lips) → ou (rounded)
+  FF: 'ee',     // labiodental → ee (spread lips)
+  TH: 'aa',     // dental → aa (open)
+  DD: 'aa',     // alveolar → aa (open)
+  kk: 'ih',     // velar → ih (mid position)
+  CH: 'ee',     // palato-alveolar → ee
+  SS: 'ee',     // alveolar fricative → ee (spread)
+  nn: 'ih',     // nasal → ih (neutral)
+  RR: 'aa',     // trill → aa (open)
+}
+
+
+export function convertToVRMTarget(oculusTarget: VisemeTarget): VRMVisemeTarget {
+  const vrmTarget: VRMVisemeTarget = createEmptyVRMVisemeTarget()
+  
+  Object.entries(oculusTarget).forEach(([key, value]) => {
+    const oculusKey = key as keyof VisemeTarget
+    const vrmKey = OCULUS_TO_VRM_MAPPING[oculusKey]
+    
+    if (vrmKey && value > 0) {
+      // Use max value when multiple Oculus visemes map to same VRM viseme
+      vrmTarget[vrmKey] = Math.max(vrmTarget[vrmKey], value)
+    }
+  })
+  
+  return vrmTarget
+}
 
 /**
  * Generate viseme sequence from whisper data and volume
@@ -68,46 +108,42 @@ export function visemesSequence(
 export function visemesUpdate(volume: VisemeState, time: number, config: VisemeConfig = defaultVisemeConfig): void {
   const startTime = performance.now()
   
-  // Input validation
   if (!volume || !volume.sequence) {
     console.warn('visemesUpdate: Invalid volume state')
     return
   }
 
-  // Initialize visemes if not present
+  // Initialize targets based on system type
   if (!volume.targets) {
-    volume.targets = createEmptyVisemeTarget()
+    volume.targets = volume.isVRMMode ? createEmptyVRMVisemeTarget() : createEmptyVisemeTarget()
   }
 
   if (!volume.dirty) {
     volume.dirty = {}
   }
 
-  const visemes = volume.targets
-
-  // Dampen existing visemes using configurable factor
-  Object.entries(visemes).forEach(([key, value]) => {
-    const visemeKey = key as keyof VisemeTarget
-    visemes[visemeKey] = value > 0.01 ? value * config.intensity.dampeningFactor : 0
+  // Apply dampening
+  Object.entries(volume.targets).forEach(([key, value]) => {
+    ;(volume.targets as any)[key] = value > 0.01 ? value * config.intensity.dampeningFactor : 0
   })
 
-  // Performance optimization: Only process visemes that could be active
+  // Process active visemes
   const activeVisemes = volume.sequence.filter(item => 
     item.ts[0] <= time && item.ts[1] >= time
   )
 
   let visemesProcessed = 0
 
-  // Apply sequence items that are active at current time
   for (const item of activeVisemes) {
+    console.log("DEBUG item, inactive viseme" , item)
     const begins = item.ts[0]
     const ends = item.ts[1]
 
-    // Apply minimum duration filter if configured
     if (config.timing.minDuration > 0) {
       const visemeDuration = ends - begins
       if (visemeDuration < config.timing.minDuration) continue
     }
+
 
     Object.entries(item.vs).forEach(([key, valueArray]) => {
       if (!valueArray || !Array.isArray(valueArray) || valueArray.length < 2) {
@@ -115,51 +151,38 @@ export function visemesUpdate(volume: VisemeState, time: number, config: VisemeC
         return
       }
 
-      let value = valueArray[1] // Get the peak value
+      let value = valueArray[1]
       if (typeof value !== 'number' || isNaN(value)) {
         console.warn('visemesUpdate: Invalid value for viseme', key, value)
         return
       }
 
-      // Apply configurable intensity multiplier
       value *= config.intensity.baseMultiplier
 
-      // Apply configurable attack curve
+      // Apply curves
       if (time - begins < config.timing.attackTime) {
         const attackProgress = (time - begins) / config.timing.attackTime
         value *= applyCurve(attackProgress, config.curves.attackCurve)
       }
 
-      // Apply configurable release curve
       if (ends - time < config.timing.releaseTime) {
         const releaseProgress = (config.timing.releaseTime - (ends - time)) / config.timing.releaseTime
         value *= applyCurve(releaseProgress, config.curves.releaseCurve)
       }
 
-      // Ensure minimum visibility threshold
       if (value < config.intensity.minThreshold) value = config.intensity.minThreshold
 
-      const visemeKey = key as keyof VisemeTarget
-      if (visemeKey in visemes) {
-        visemes[visemeKey] = value
-        visemesProcessed++
-      } else {
-        console.warn('visemesUpdate: Unknown viseme key', visemeKey)
+      // Apply to appropriate target system
+      const mappedKey = OCULUS_TO_VRM_MAPPING[key as keyof typeof OCULUS_TO_VRM_MAPPING];
+      if (mappedKey && mappedKey in volume.targets) {
+        (volume.targets as any)[mappedKey] = value;
+        visemesProcessed++;
       }
     })
   }
 
   const updateTime = performance.now() - startTime
-  
-  // Performance monitoring
-  /*visemePerformanceMonitor.endFrame(
-    visemesProcessed,
-    volume.sequence.length,
-    updateTime,
-    0 // rigApplyTime will be set in visemesToRig
-  )*/
 }
-
 /**
  * Apply viseme targets to the actual avatar rig
  */
@@ -167,36 +190,57 @@ export function visemesToRig(volume: VisemeState, _time: number, amplify: number
   const startTime = performance.now()
   
   if (!volume.targets) return
-
-  // Test to reduce work
   if (!volume.dirty) volume.dirty = {}
 
   let targetsUpdated = 0
 
-  Object.entries(volume.targets).forEach(([key, value]) => {
-    const visemeKey = key as keyof VisemeTarget
+  // Handle VRM avatars
+  if (volume.vrm) {
+    let targetToApply: VRMVisemeTarget
+    
+    if (volume.isVRMMode) {
+      // Direct VRM mode - targets are already VRM format
+      targetToApply = volume.targets as VRMVisemeTarget
+    } else {
+      // GLB mode - convert 14 visemes to 5 VRM visemes
+      targetToApply = convertToVRMTarget(volume.targets as VisemeTarget)
 
-    // Apply global fader
-    if (amplify !== 1.0) {
-      value = volume.targets[visemeKey] = value * amplify
     }
 
-    // Only touch dirty targets for optimization
-    if (value === volume.dirty[visemeKey]) return
-    volume.dirty[visemeKey] = value
-    targetsUpdated++
 
-    // Handle VRM avatars
-    if (volume.vrm) {
+    Object.entries(targetToApply).forEach(([key, value]) => {
+      if (amplify !== 1.0) {
+        value = value * amplify
+      }
+
+      if (value === (volume.dirty as any)[key]) return
+      ;(volume.dirty as any)[key] = value
+      targetsUpdated++
+
       try {
-        volume.vrm.expressionManager.setValue(key, value)
+        volume.vrm!.expressionManager!.setValue(key, value)
       } catch (error) {
         console.error('visemesToRig: Error setting VRM expression', key, value, error)
       }
-      return
+    })
+    
+    const rigApplyTime = performance.now() - startTime
+    if (rigApplyTime > 5) {
+      console.warn(`visemesToRig: VRM update took ${rigApplyTime.toFixed(2)}ms, updated ${targetsUpdated} targets`)
+    }
+    return
+  }
+
+  // Handle GLB morph target avatars (original system)
+  Object.entries(volume.targets).forEach(([key, value]) => {
+    if (amplify !== 1.0) {
+      value = (volume.targets as any)[key] = value * amplify
     }
 
-    // Handle morph target based avatars
+    if (value === (volume.dirty as any)[key]) return
+    ;(volume.dirty as any)[key] = value
+    targetsUpdated++
+
     const group = volume.dictionary?.[key]
     if (!group || !volume.morphs) return
 
@@ -210,34 +254,54 @@ export function visemesToRig(volume: VisemeState, _time: number, amplify: number
   })
 
   const rigApplyTime = performance.now() - startTime
-  
-  // Log performance warnings for rig application
-  if (rigApplyTime > 5) { // 5ms threshold for rig updates
-    console.warn(`visemesToRig: Rig update took ${rigApplyTime.toFixed(2)}ms, updated ${targetsUpdated} targets`)
+  if (rigApplyTime > 5) {
+    console.warn(`visemesToRig: GLB update took ${rigApplyTime.toFixed(2)}ms, updated ${targetsUpdated} targets`)
   }
 }
 
 /**
  * Initialize viseme state for an avatar
  */
-export function initializeVisemeState(): VisemeState {
+export function initializeVisemeState(forVRM: boolean = false): VisemeState {
   return {
-    targets: createEmptyVisemeTarget(),
+    targets: forVRM ? createEmptyVRMVisemeTarget() : createEmptyVisemeTarget(),
     dirty: {},
-    sequence: []
+    sequence: [],
+    isVRMMode: forVRM
   }
 }
 
 /**
  * Set up viseme state for VRM avatar
  */
-export function setupVisemeStateForVRM(
-  state: VisemeState,
-  vrm: { expressionManager: { setValue: (key: string, value: number) => void } }
-): void {
+export function setupVisemeStateForVRM(state: VisemeState, vrm: VRM): void {
   state.vrm = vrm
+  
+  // Auto-detect if this VRM supports only 5 mouth expressions
+  try {
+    const expressions = Object.keys(vrm.expressionManager?.expressionMap || {})
+    const vrmMouthExpressions = ['aa', 'ee', 'ih', 'oh', 'ou']
+    const hasVRMMouthExpressions = vrmMouthExpressions.every(exp => expressions.includes(exp))
+    const hasOculusVisemes = ['PP', 'FF', 'TH'].some(exp => expressions.includes(exp))
+    
+    if (hasVRMMouthExpressions && !hasOculusVisemes) {
+      // This VRM only supports 5 mouth expressions - switch to VRM mode
+      state.isVRMMode = true
+      state.targets = createEmptyVRMVisemeTarget()
+      state.dirty = {}
+      console.log('VRM detected: Using 5-expression mode (aa, ee, ih, oh, ou)')
+    } else {
+      // This VRM supports full visemes - keep GLB mode
+      state.isVRMMode = false
+      console.log('VRM detected: Using 14-viseme mode (full Oculus set)')
+    }
+    
+    console.log('VRM Available expressions:', expressions)
+  } catch (error) {
+    console.warn('Could not detect VRM expression capabilities, defaulting to GLB mode')
+    state.isVRMMode = false
+  }
 }
-
 /**
  * Set up viseme state for morph target based avatar
  */
@@ -248,4 +312,5 @@ export function setupVisemeStateForMorphTargets(
 ): void {
   state.morphs = morphs
   state.dictionary = dictionary
+  state.isVRMMode = false  // GLB mode
 }

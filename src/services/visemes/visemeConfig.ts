@@ -48,7 +48,7 @@ export const defaultVisemeConfig: VisemeConfig = {
   
   intensity: {
     baseMultiplier: 1.2,       // 20% intensity boost
-    minThreshold: 0.15,        // Minimum 15% intensity
+    minThreshold: 0,        // Minimum 15% intensity
     dampeningFactor: 0.95,     // 95% persistence (5% decay per frame)
   },
   

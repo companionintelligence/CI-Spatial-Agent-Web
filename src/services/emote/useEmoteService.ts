@@ -14,6 +14,8 @@ import {
   updateEmoteState
 } from './emoteService'
 import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData } from './emoteTypes'
+import type { VRM } from '@pixiv/three-vrm'
+import type { Camera, Object3D } from 'three'
 
 export const useEmoteService = () => {
   const emoteStateRef = useRef<EmoteState>(initializeEmoteState())
@@ -43,7 +45,7 @@ export const useEmoteService = () => {
     handleBargeIn(emoteStateRef.current)
   }, [])
 
-  const setupForVRM = useCallback((vrm: { expressionManager: { setValue: (key: string, value: number) => void } }) => {
+  const setupForVRM = useCallback((vrm:VRM) => {
     setupEmoteStateForVRM(emoteStateRef.current, vrm)
   }, [])
 
@@ -54,7 +56,7 @@ export const useEmoteService = () => {
     []
   )
 
-  const applyToVRM = useCallback((vrm: { expressionManager: { setValue: (key: string, value: number) => void } }) => {
+  const applyToVRM = useCallback((vrm: VRM ) => {
     applyEmoteStateToVRM(emoteStateRef.current, vrm)
   }, [])
 
@@ -78,11 +80,12 @@ export const useEmoteService = () => {
   }, [])
 
   const setAvatarReferences = useCallback(
-    (references: { bones?: Record<string, unknown>; node?: unknown; scene?: { camera: unknown } }) => {
+    (references: { bones?: Record<string, unknown>; node?: Object3D;  camera: Camera } ) => {
+      console.log("SETUP avatar references")
       const state = emoteStateRef.current
       if (references.bones) state.bones = references.bones as EmoteState['bones']
       if (references.node) state.node = references.node as EmoteState['node']
-      if (references.scene) state.scene = references.scene as EmoteState['scene']
+      if (references.camera) state.camera = references.camera as EmoteState['camera']
     },
     []
   )

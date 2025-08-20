@@ -1,3 +1,7 @@
+import type { VRM } from "@pixiv/three-vrm"
+import type { Camera } from "@react-three/fiber"
+import type { Bone, Object3D } from "three/src/Three.WebGPU.Nodes.js"
+
 export type EmotionType = 'neutral' | 'happy' | 'angry' | 'sad' | 'fear' | 'disgust' | 'love' | 'sleep'
 
 export interface FacialTarget {
@@ -99,16 +103,12 @@ export interface EmoteState {
   }
 
   // Integration interfaces
-  vrm?: { expressionManager: { setValue: (key: string, value: number) => void } }
+  vrm?: VRM
   morphs?: { morphTargetInfluences: number[] }[]
   dictionary?: Record<string, number[]>
-  bones?: Record<string, { quaternion: { copy: (q: unknown) => void }; matrixWorld: unknown; up: unknown }>
-  node?: {
-    quaternion: { copy: (q: unknown) => void }
-    getWorldQuaternion: (q: unknown) => unknown
-    parent?: { children: unknown[] }
-  }
-  scene?: { camera: { position: unknown; matrixWorld: unknown } }
+  bones?: Record<string, Bone>
+  node?: Object3D // avatar 
+  camera?: Camera // viewer camera
 }
 
 export interface MoodConfiguration {

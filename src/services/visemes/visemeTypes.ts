@@ -1,36 +1,80 @@
+import type { VRM } from "@pixiv/three-vrm"
+
 export interface VisemeTarget {
-  viseme_PP: number
-  viseme_FF: number
-  viseme_TH: number
-  viseme_DD: number
-  viseme_kk: number
-  viseme_CH: number
-  viseme_SS: number
-  viseme_nn: number
-  viseme_RR: number
-  viseme_aa: number
-  viseme_E: number
-  viseme_I: number
-  viseme_O: number
-  viseme_U: number
+  PP: number      // Remove "viseme_" prefix but keep all 14
+  FF: number
+  TH: number
+  DD: number
+  kk: number
+  CH: number
+  SS: number
+  nn: number
+  RR: number
+  aa: number
+  E: number
+  I: number
+  O: number
+  U: number
 }
+
+// ADD: 5-viseme interface for VRM models
+export interface VRMVisemeTarget {
+  aa: number
+  ee: number
+  ih: number
+  oh: number
+  ou: number
+}
+
+// ADD: Union type for flexibility
+export type AnyVisemeTarget = VisemeTarget | VRMVisemeTarget
+
+// KEEP: Original create function for GLB
+export const createEmptyVisemeTarget = (): VisemeTarget => ({
+  PP: 0,
+  FF: 0,
+  TH: 0,
+  DD: 0,
+  kk: 0,
+  CH: 0,
+  SS: 0,
+  nn: 0,
+  RR: 0,
+  aa: 0,
+  E: 0,
+  I: 0,
+  O: 0,
+  U: 0
+})
+
+// ADD: VRM create function
+export const createEmptyVRMVisemeTarget = (): VRMVisemeTarget => ({
+  aa: 0,
+  ee: 0,
+  ih: 0,
+  oh: 0,
+  ou: 0
+})
+
+
 
 export interface VisemeSequenceItem {
   template: { name: string }
-  ts: [number, number, number] // [begin, peak, end] timestamps
-  vs: Partial<Record<keyof VisemeTarget, [null, number, number]>>
+  ts: [number, number, number]
+  vs: Record<string, [null, number, number]>
   viseme?: string
   time?: number
   duration?: number
 }
 
 export interface VisemeState {
-  targets: VisemeTarget
-  dirty: Partial<VisemeTarget>
+  targets: VisemeTarget | VRMVisemeTarget
+  dirty: Partial<VisemeTarget> | Partial<VRMVisemeTarget>
   sequence: VisemeSequenceItem[]
-  vrm?: { expressionManager: { setValue: (key: string, value: number) => void } }
+  vrm?: VRM
   morphs?: { morphTargetInfluences: number[] }[]
-  dictionary?: Record<string, number[]> // Mapping for non-VRM avatars
+  dictionary?: Record<string, number[]>
+  isVRMMode?: boolean  // ADD: Flag to determine which system to use
 }
 
 export interface WhisperData {
@@ -42,20 +86,3 @@ export interface WhisperData {
 export interface LipsyncResult {
   anim?: VisemeSequenceItem[]
 }
-
-export const createEmptyVisemeTarget = (): VisemeTarget => ({
-  viseme_PP: 0,
-  viseme_FF: 0,
-  viseme_TH: 0,
-  viseme_DD: 0,
-  viseme_kk: 0,
-  viseme_CH: 0,
-  viseme_SS: 0,
-  viseme_nn: 0,
-  viseme_RR: 0,
-  viseme_aa: 0,
-  viseme_E: 0,
-  viseme_I: 0,
-  viseme_O: 0,
-  viseme_U: 0
-})

@@ -82,6 +82,7 @@ import { useTTSService } from './tts/ttsService'
 import { useVisemeService } from './visemes/useVisemeService'
 import { useAnimationService } from './animation/useAnimationService'
 import { createReactionFromMessage } from './reactionIntegration'
+import type { VRM } from '@pixiv/three-vrm'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -95,13 +96,6 @@ interface STTPerformResult {
   bcounter: number
   final: boolean
   bargein: boolean
-}
-
-// VRM and morph target interfaces for avatar integration
-interface VRMObject {
-  expressionManager: {
-    setValue: (expression: string, value: number) => void
-  }
 }
 
 interface MorphTargetObject {
@@ -213,20 +207,20 @@ export interface AgentService {
     triggerBargein: () => void
 
     // Viseme actions (for external avatar control)
-    setupVisemesForVRM: (vrm: VRMObject) => void
+    setupVisemesForVRM: (vrm: VRM) => void
     setupVisemesForMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
     updateVisemes: (currentTime: number) => void
     applyVisemesToRig: (currentTime: number, amplify?: number) => void
     resetVisemes: () => void
 
     // Emote actions (for external avatar control)
-    setupEmotesForVRM: (vrm: VRMObject) => void
+    setupEmotesForVRM: (vrm: VRM) => void
     setupEmotesForMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
     setEmotion: (emotion: EmotionType) => void
     performAction: (performanceData: PerformanceData) => void
     triggerGaze: (options?: GazeOptions) => void
     updateEmotes: (currentTime?: number) => void
-    applyEmotesToVRM: (vrm: VRMObject) => void
+    applyEmotesToVRM: (vrm: VRM) => void
     applyEmotesToMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
     resetEmotes: () => void
     onEmoteBargein: () => void
@@ -330,13 +324,10 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           timestamp: Date.now()
         }
 
-        console.log("DEBUG : message", message)
-
         const {performance, animation} = createReactionFromMessage(       
           message,
           conversation.state.messages.length)
   
-        console.log("DEBUG : performance", performance , animation)
         // Trigger emote performance based on the response
         emotes.actions.performAction(performance)
         if(animation) animations.actions.performAction(animation)

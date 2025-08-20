@@ -1,8 +1,60 @@
+import type { VRM } from '@pixiv/three-vrm'
 import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData } from './emoteTypes'
 import { moodConfigurations } from './moodConfigurations'
+import { Object3D, Vector3, type PerspectiveCamera } from 'three'
+import type { Camera } from '@react-three/fiber'
 
 const clamp = (num: number, min: number, max: number): number =>
   Math.max(Math.min(num, Math.max(min, max)), Math.min(min, max))
+
+
+const VRM_EXPRESSIONS = {
+  // Basic emotions
+  happy: 'happy',
+  angry: 'angry', 
+  sad: 'sad',
+  relaxed: 'relaxed',
+  surprised: 'surprised',
+  
+  // Eye expressions
+  blink: 'blink',
+  blinkLeft: 'blinkLeft',
+  blinkRight: 'blinkRight',
+  lookUp: 'lookUp',
+  lookDown: 'lookDown',
+  lookLeft: 'lookLeft',
+  lookRight: 'lookRight',
+  
+  // Additional expressions
+  neutral: 'neutral'
+} as const
+
+const applyExpression = (state: EmoteState, expressionName: string, value: number): void => {
+  const clampedValue = clamp(value, 0, 1)
+  
+  // Apply to VRM if available
+  if (state.vrm?.expressionManager) {
+    try {
+      state.vrm.expressionManager.setValue(expressionName, clampedValue)
+    } catch (error) {
+      // Silently handle unsupported expressions
+    }
+  }
+  
+  // Apply to morph targets if available
+  if (state.morphs && state.dictionary && state.dictionary[expressionName]) {
+    state.dictionary[expressionName].forEach((index) => {
+      state.morphs!.forEach((morph) => {
+        if (morph.morphTargetInfluences && morph.morphTargetInfluences[index] !== undefined) {
+          morph.morphTargetInfluences[index] = clampedValue
+        }
+      })
+    })
+  }
+  
+  // Store in state targets for consistency
+  state.targets[expressionName as keyof FacialTarget] = clampedValue
+}
 
 /**
  * Initialize a new emote state
@@ -41,6 +93,14 @@ export const resetEmoteState = (state: EmoteState): void => {
   state.currentEmotion = 'neutral'
   state.isPerforming = false
   state.relaxationTime = 0
+  
+  // Reset all expressions to neutral (both VRM and morph targets)
+  Object.values(VRM_EXPRESSIONS).forEach(expression => {
+    applyExpression(state, expression, 0)
+  })
+  // Set neutral expression
+  applyExpression(state, VRM_EXPRESSIONS.neutral, 1)
+  
   applyEmotion(state, 'neutral')
   console.log('Emote state reset to neutral')
 }
@@ -54,12 +114,29 @@ export const applyEmotion = (state: EmoteState, emotion: EmotionType): void => {
   const moodConfig = moodConfigurations[emotion.toLowerCase()]
   if (!moodConfig?.baseline) return
 
-  // Apply baseline expression values
+  // Apply baseline expression values to targets (for morph target compatibility)
   Object.entries(moodConfig.baseline).forEach(([key, value]) => {
     if (typeof value === 'number') {
       state.targets[key as keyof FacialTarget] = value
     }
+  });
+
+  // Apply VRM emotion expressions to both VRM and morph targets
+  // Clear previous emotions
+  ['happy', 'angry', 'sad', 'surprised', 'relaxed', 'neutral'].forEach(expression => {
+    applyExpression(state, expression, 0)
   })
+  
+  // Map emotion to VRM expression
+  const vrmEmotion = emotion === 'fear' ? 'surprised' : 
+                    emotion === 'love' ? 'happy' :
+                    emotion === 'disgust' ? 'angry' :
+                    emotion === 'sleep' ? 'relaxed' :
+                    emotion in VRM_EXPRESSIONS ? emotion as keyof typeof VRM_EXPRESSIONS : 'neutral'
+  
+  if (vrmEmotion in VRM_EXPRESSIONS) {
+    applyExpression(state, VRM_EXPRESSIONS[vrmEmotion], 0.8)
+  }
 
   state.currentEmotion = emotion
 }
@@ -87,13 +164,15 @@ export const updateBlinking = (state: EmoteState, currentTime: number): void => 
     if (blinkDuration < blinkCycleDuration) {
       // Blink animation using sine wave
       const blinkValue = clamp(Math.sin((blinkDuration / blinkCycleDuration) * Math.PI), 0, 1)
-      state.targets.eyeBlinkLeft = blinkValue
-      state.targets.eyeBlinkRight = blinkValue
+      
+      // Apply to both VRM and morph targets
+      applyExpression(state, VRM_EXPRESSIONS.blink, blinkValue)
     } else {
       // End blink
       blinkState.isBlinking = false
-      state.targets.eyeBlinkLeft = 0
-      state.targets.eyeBlinkRight = 0
+      
+      // Reset blink for both systems
+      applyExpression(state, VRM_EXPRESSIONS.blink, 0)
     }
   }
 }
@@ -106,46 +185,58 @@ export const updateFacialTicks = (state: EmoteState, currentTime: number): void 
 
   const { tickState } = state
 
+  // Non-mouth tick expressions for subtle movement
+  const vrmTickExpressions = [
+    VRM_EXPRESSIONS.lookLeft,   // Subtle eye movement
+    VRM_EXPRESSIONS.lookRight,  // Subtle eye movement
+  ]
+
   const tickTargets: (keyof FacialTarget)[] = [
-    'mouthDimpleLeft',
-    'mouthDimpleRight',
-    'mouthLeft',
-    'mouthPress',
-    'mouthStretchLeft',
-    'mouthStretchRight',
     'browDownLeft',
     'browDownRight',
-    'browOuterUpLeft',
-    'browOuterUpRight',
     'browInnerUp',
+    'browOuterUpLeft', 
+    'browOuterUpRight',
     'cheekSquintLeft',
     'cheekSquintRight'
   ]
 
-  // Generate tick value based on time
-  const tickValue = clamp(Math.sin(currentTime / 700) * 10 - 10 + 1, 0, 1)
+  // Generate tick value based on time (more subtle for natural look)
+  const tickIntensity = 0.08 // Reduced intensity for subtlety
+  const tickValue = clamp(Math.sin(currentTime / 1200) * tickIntensity, 0, tickIntensity)
 
-  if (!tickValue) {
+  if (tickValue <= 0.01) {
     tickState.currentTick = null
     return
   }
 
   // Pick a new tick target if needed
-  if (!tickState.currentTick) {
+  if (!tickState.currentTick || Math.random() < 0.3) {
     tickState.currentTick = tickTargets[Math.floor(Math.random() * tickTargets.length)]
   }
 
-  // Apply tick animation
+  // Apply tick animation to state targets (for morph target compatibility)
   if (tickState.currentTick && state.targets[tickState.currentTick] !== undefined) {
-    state.targets[tickState.currentTick] = tickValue / 2.0
+    state.targets[tickState.currentTick] = tickValue
+  }
+
+  // Apply subtle VRM tick expressions (eye movements only)
+  if (Math.random() < 0.05) { // Even less frequent for subtlety
+    const randomVrmTick = vrmTickExpressions[Math.floor(Math.random() * vrmTickExpressions.length)]
+    applyExpression(state, randomVrmTick, tickValue * 0.2) // Very subtle for VRM
+    
+    // Clear the expression shortly after
+    setTimeout(() => {
+      applyExpression(state, randomVrmTick, 0)
+    }, 200)
   }
 }
-
 /**
  * Initiate gaze behavior
  */
 export const initiateGaze = (state: EmoteState, options: GazeOptions = {}): void => {
   if (!state.bones?.Head) return
+  console.log("DEBUG initiate gaze", state.camera)
 
   const { delay = -1, duration = -1, randomness = 0 } = options
 
@@ -161,28 +252,35 @@ export const initiateGaze = (state: EmoteState, options: GazeOptions = {}): void
   state.gazeState.isGazing = true
 
   // Store current head quaternion (simplified for now)
-  state.gazeState.headCurrentQuaternion = [0, 0, 0, 1]
-}
+  if (state.vrm && state.vrm.scene) {
+    const headBone = state.vrm.humanoid?.getNormalizedBoneNode('head')
+    if (headBone) {
+      state.gazeState.headDefaultQuaternion = [
+        headBone.quaternion.x,
+        headBone.quaternion.y, 
+        headBone.quaternion.z,
+        headBone.quaternion.w
+      ]
+    }
+  }}
+
 
 /**
  * Update gaze behavior
  */
 export const updateGaze = (state: EmoteState, currentTime: number): void => {
   // Get camera from scene or node hierarchy
-  let camera = null
-  if (state.scene?.camera) {
-    camera = state.scene.camera
-  } else if (state.node?.parent?.children?.[0]) {
-    camera = state.node.parent.children[0]
-  }
+  let camera : Camera | undefined = undefined
+ 
+  camera = state?.camera
 
-  if (!camera || !state.node || !state.bones?.Head) return
+  console.log("DEBUG update gaze", camera)
+  if (!camera) return
 
   const { gazeState } = state
 
   // Check if player is visible (simplified version)
-  // In a real implementation, you'd use proper Three.js vector operations
-  const isVisible = true // Simplified - would calculate actual visibility
+  const isVisible = true // In real implementation, you'd calculate actual visibility
 
   // State transition to becoming visible
   if (isVisible && !gazeState.isPlayerVisible) {
@@ -193,16 +291,52 @@ export const updateGaze = (state: EmoteState, currentTime: number): void => {
   // Check if we're in active focus period
   const isActiveFocus = gazeState.gazeStartTime < currentTime && gazeState.gazeEndTime > currentTime
 
-  if (isVisible && isActiveFocus) {
-    // Focus on player quickly
-    // In real implementation, would calculate proper lookAt matrix and quaternions
-    // Apply gaze rotation to head bone
+  if (isVisible && isActiveFocus && camera && 'position' in camera) {
+    const cameraPosition = camera.position as Vector3
+    
+    // Apply VRM LookAt system if available
+    if (state.vrm?.lookAt) {
+      state.vrm.lookAt.lookAt(cameraPosition)
+    }
+    
+    // Apply gaze expressions to both VRM and morph targets
+    const gazeIntensity = 0.3
+    if (Math.abs(cameraPosition.x) > Math.abs(cameraPosition.y)) {
+      // Horizontal gaze
+      if (cameraPosition.x > 0) {
+        applyExpression(state, VRM_EXPRESSIONS.lookRight, gazeIntensity)
+        applyExpression(state, VRM_EXPRESSIONS.lookLeft, 0)
+      } else {
+        applyExpression(state, VRM_EXPRESSIONS.lookLeft, gazeIntensity)
+        applyExpression(state, VRM_EXPRESSIONS.lookRight, 0)
+      }
+    } else {
+      // Vertical gaze
+      if (cameraPosition.y > 0) {
+        applyExpression(state, VRM_EXPRESSIONS.lookUp, gazeIntensity)
+        applyExpression(state, VRM_EXPRESSIONS.lookDown, 0)
+      } else {
+        applyExpression(state, VRM_EXPRESSIONS.lookDown, gazeIntensity)
+        applyExpression(state, VRM_EXPRESSIONS.lookUp, 0)
+      }
+    }
   } else if (isVisible && state.relaxationTime > currentTime) {
     // Maintain some focus while performing
-    // Apply partial focus
+    if (state.vrm?.lookAt && camera && 'position' in camera) {
+      const cameraPosition = camera.position as Vector3
+      state.vrm.lookAt.lookAt(cameraPosition.clone().multiplyScalar(0.5)) // Partial focus
+    }
   } else {
-    // Relax to origin slowly
-    // Reset head rotation gradually
+    // Relax gaze to neutral
+    if (state.vrm?.lookAt) {
+      state.vrm.lookAt.target?.lookAt(new Vector3(0, 0, 1)) // Look forward
+    }
+    
+    // Reset look expressions for both systems
+    applyExpression(state, VRM_EXPRESSIONS.lookUp, 0)
+    applyExpression(state, VRM_EXPRESSIONS.lookDown, 0)
+    applyExpression(state, VRM_EXPRESSIONS.lookLeft, 0)
+    applyExpression(state, VRM_EXPRESSIONS.lookRight, 0)
   }
 }
 
@@ -222,10 +356,8 @@ export const startPerformance = (state: EmoteState, performanceData: Performance
     // TODO: Implement body action animations
   }
 
-  // Coordinate with viseme system if whisper data is provided
-  if (performanceData.whisper) {
-    // TODO: Coordinate with viseme service for lip sync
-  }
+  // Note: Mouth/viseme handling is done by separate viseme service
+  // We don't handle whisper data here
 
   // Set up gaze behavior based on utterance counter
   const segment = performanceData.bcounter ?? 0
@@ -236,7 +368,6 @@ export const startPerformance = (state: EmoteState, performanceData: Performance
   state.performanceStartTime = startTime
 
   // Set relaxation time (when performance should end)
-  // This would be coordinated with speech/viseme duration
   state.relaxationTime = startTime + 5000 // Default 5 seconds
 }
 
@@ -252,10 +383,23 @@ export const handleBargeIn = (state: EmoteState): void => {
  * Main update function called each frame
  */
 export const updateEmoteState = (state: EmoteState, currentTime: number): void => {
-  // Update blinking
+  // Update VRM systems first
+  if (state.vrm) {
+    // Update VRM LookAt system
+    if (state.vrm.lookAt) {
+      state.vrm.lookAt.update(currentTime / 1000) // VRM expects time in seconds
+    }
+    
+    // Update VRM expression manager
+    if (state.vrm.expressionManager) {
+      state.vrm.expressionManager.update()
+    }
+  }
+
+  // Update blinking (with VRM integration)
   updateBlinking(state, currentTime)
 
-  // Update gaze
+  // Update gaze (with VRM integration)
   updateGaze(state, currentTime)
 
   // If actively performing, don't apply ticks
@@ -263,7 +407,7 @@ export const updateEmoteState = (state: EmoteState, currentTime: number): void =
     // During performance, maintain current expressions
     return
   } else {
-    // Apply subtle facial ticks during idle
+    // Apply subtle facial ticks during idle (with VRM integration)
     updateFacialTicks(state, currentTime)
     state.isPerforming = false
   }
@@ -274,14 +418,14 @@ export const updateEmoteState = (state: EmoteState, currentTime: number): void =
  */
 export const applyEmoteStateToVRM = (
   state: EmoteState,
-  vrm: { expressionManager: { setValue: (key: string, value: number) => void } }
+  vrm: VRM
 ): void => {
   if (!vrm?.expressionManager || !state.targets) return
 
   Object.entries(state.targets).forEach(([key, value]) => {
     if (typeof value === 'number') {
       try {
-        vrm.expressionManager.setValue(key, value)
+        vrm.expressionManager!.setValue(key, value)
       } catch {
         // Silently handle unsupported expression keys
       }
@@ -317,11 +461,17 @@ export const applyEmoteStateToMorphTargets = (
  */
 export const setupEmoteStateForVRM = (
   state: EmoteState,
-  vrm: { expressionManager: { setValue: (key: string, value: number) => void } }
+  vrm: VRM
 ): void => {
   state.vrm = vrm
+  
+  // Initialize VRM systems
+  if (vrm.lookAt) {
+    vrm.lookAt.lookAt(new Vector3(0, 0, 1)) // Look forward by default
+  }
+  
+  console.log('VRM integration setup complete')
 }
-
 /**
  * Setup emote state for morph target integration
  */

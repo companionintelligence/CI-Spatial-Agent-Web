@@ -11,9 +11,10 @@ import {
 import type { VisemeState, WhisperData } from './visemeTypes'
 import { defaultVisemeConfig, type VisemeConfig } from './visemeConfig'
 import { visemePerformanceMonitor } from './visemePerformance'
+import type { VRM } from '@pixiv/three-vrm'
 
 export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
-  const visemeStateRef = useRef<VisemeState>(initializeVisemeState())
+  const visemeStateRef = useRef<VisemeState>(initializeVisemeState(false)) // Default to GLB mode
   const [config, setConfig] = useState<VisemeConfig>({
     ...defaultVisemeConfig,
     ...initialConfig
@@ -33,7 +34,7 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
     visemesToRig(visemeStateRef.current, currentTime, amplify)
   }, [])
 
-  const setupForVRM = useCallback((vrm: { expressionManager: { setValue: (key: string, value: number) => void } }) => {
+  const setupForVRM = useCallback((vrm: VRM) => {
     setupVisemeStateForVRM(visemeStateRef.current, vrm)
   }, [])
 

@@ -6,7 +6,7 @@ const lipsync = { en: new LipsyncEn() }
 
 export function lipsyncPreProcessText(text: string, lang: string = 'en'): string {
   const processor = lipsync[lang as keyof typeof lipsync] || lipsync.en
-  return processor.preProcessText(text)
+  return processor.preProcessText(text, true)
 }
 
 export function lipsyncWordsToVisemes(words: string, lang: string = 'en') {
@@ -63,13 +63,14 @@ export function lipsyncConvert(
                                    viseme === 'FF' ? config.lipsync.specialVisemes.FF : 
                                    level
 
-            lipsyncAnim.push({
+              console.log("DEBUG" , viseme)
+              lipsyncAnim.push({
               template: { name: 'viseme' },
               ts: [t - Math.min(60, (2 * d) / 3), t + Math.min(25, d / 2), t + d + Math.min(60, d / 2)],
               vs: {
-                [`viseme_${viseme}`]: [null, specialIntensity, 0]
+                // CHANGE: Remove "viseme_" prefix - use viseme name directly
+                [viseme]: [null, specialIntensity, 0]  // was: [`viseme_${viseme}`]: [null, specialIntensity, 0]
               },
-              // for debugging
               viseme,
               time,
               duration
