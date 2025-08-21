@@ -1,5 +1,5 @@
 import type { VRM } from "@pixiv/three-vrm"
-import type { Camera } from "@react-three/fiber"
+import type { Camera, Vector3 } from "@react-three/fiber"
 import type { Bone, Object3D } from "three/src/Three.WebGPU.Nodes.js"
 
 export type EmotionType = 'neutral' | 'happy' | 'angry' | 'sad' | 'fear' | 'disgust' | 'love' | 'sleep'
@@ -94,6 +94,8 @@ export interface EmoteState {
     headCurrentQuaternion: [number, number, number, number] | null
     headTargetQuaternion: [number, number, number, number] | null
     isPlayerVisible: boolean
+    interpolatedTarget : Vector3
+    interpolationFactor : number
   }
 
   // Facial ticks state

@@ -105,7 +105,7 @@ export function visemesSequence(
 /**
  * Update viseme targets based on current time and sequence
  */
-export function visemesUpdate(volume: VisemeState, time: number, config: VisemeConfig = defaultVisemeConfig): void {
+export function visemesUpdate(volume: VisemeState, _delta: number, config: VisemeConfig = defaultVisemeConfig): void {
   const startTime = performance.now()
   
   if (!volume || !volume.sequence) {
@@ -129,7 +129,7 @@ export function visemesUpdate(volume: VisemeState, time: number, config: VisemeC
 
   // Process active visemes
   const activeVisemes = volume.sequence.filter(item => 
-    item.ts[0] <= time && item.ts[1] >= time
+    item.ts[0] <= startTime && item.ts[1] >= startTime
   )
 
   let visemesProcessed = 0
@@ -160,13 +160,13 @@ export function visemesUpdate(volume: VisemeState, time: number, config: VisemeC
       value *= config.intensity.baseMultiplier
 
       // Apply curves
-      if (time - begins < config.timing.attackTime) {
-        const attackProgress = (time - begins) / config.timing.attackTime
+      if (startTime - begins < config.timing.attackTime) {
+        const attackProgress = (startTime - begins) / config.timing.attackTime
         value *= applyCurve(attackProgress, config.curves.attackCurve)
       }
 
-      if (ends - time < config.timing.releaseTime) {
-        const releaseProgress = (config.timing.releaseTime - (ends - time)) / config.timing.releaseTime
+      if (ends - startTime < config.timing.releaseTime) {
+        const releaseProgress = (config.timing.releaseTime - (ends - startTime)) / config.timing.releaseTime
         value *= applyCurve(releaseProgress, config.curves.releaseCurve)
       }
 
@@ -186,7 +186,7 @@ export function visemesUpdate(volume: VisemeState, time: number, config: VisemeC
 /**
  * Apply viseme targets to the actual avatar rig
  */
-export function visemesToRig(volume: VisemeState, _time: number, amplify: number = 1.0): void {
+export function visemesToRig(volume: VisemeState, _delta: number, amplify: number = 1.0): void {
   const startTime = performance.now()
   
   if (!volume.targets) return

@@ -24,17 +24,16 @@ export const useEmoteService = () => {
     applyEmotion(emoteStateRef.current, emotion)
   }, [])
 
-  const performAction = useCallback((performanceData: PerformanceData) => {
-    const startTime = performance.now()
-    startPerformance(emoteStateRef.current, performanceData, startTime)
+  const performAction = useCallback((performanceData: PerformanceData,_delta : number = .33) => {
+    startPerformance(emoteStateRef.current, performanceData, _delta)
   }, [])
 
   const triggerGaze = useCallback((options?: GazeOptions) => {
     initiateGaze(emoteStateRef.current, options)
   }, [])
 
-  const update = useCallback((currentTime: number = performance.now()) => {
-    updateEmoteState(emoteStateRef.current, currentTime)
+  const update = useCallback((_delta: number) => {
+    updateEmoteState(emoteStateRef.current, _delta)
   }, [])
 
   const reset = useCallback(() => {

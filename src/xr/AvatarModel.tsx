@@ -87,9 +87,8 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
   const { actions, mixer } = useExternalAnimations(avatarRef as any)
   // Setup animation service with R3F
   useEffect(() => {
-    console.log("DEBUG" , vrm)
+    console.log("DEBUG vrm" , vrm)
     if (vrm) {
-      console.log("DEBUG" , vrm.expressionManager)
       //visemeService.actions.setupForVRM(vrm);
       console.log("Viseme service wired to VRM expressionManager");
     }
@@ -218,23 +217,22 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
   // Animation service will handle its own initialization
 
   useFrame((_ , delta) => {
-    const currentTime = Date.now()
-
+    
     if(isVRM && vrm) vrm.expressionManager?.update()
     // Update animation service using R3F integration
     if (animationsEnabled && animationService) {
-      //animationService.actions.update(delta)
+      animationService.actions.update(delta)
     }
 
     // Update visemes for lip sync
     if (visemesEnabled && visemeService) {
-      visemeService.actions.updateVisemes(currentTime)
-      visemeService.actions.applyToRig(currentTime)
+      visemeService.actions.updateVisemes(delta)
+      visemeService.actions.applyToRig(delta)
     }
 
     // Update emotes for facial expressions and behaviors
     if (emotesEnabled && emoteService) {
-      emoteService.actions.update(currentTime)
+      emoteService.actions.update(delta)
 
 
       if(isVRM && vrm) {

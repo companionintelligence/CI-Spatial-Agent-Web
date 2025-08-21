@@ -26,12 +26,12 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
     return sequence
   }, [config])
 
-  const updateVisemes = useCallback((currentTime: number) => {
-    visemesUpdate(visemeStateRef.current, currentTime, config)
+  const updateVisemes = useCallback((delta: number) => {
+    visemesUpdate(visemeStateRef.current, delta, config)
   }, [config])
 
-  const applyToRig = useCallback((currentTime: number, amplify: number = 1.0) => {
-    visemesToRig(visemeStateRef.current, currentTime, amplify)
+  const applyToRig = useCallback((delta: number, amplify: number = 1.0) => {
+    visemesToRig(visemeStateRef.current, delta, amplify)
   }, [])
 
   const setupForVRM = useCallback((vrm: VRM) => {

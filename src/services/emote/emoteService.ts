@@ -1,7 +1,7 @@
 import type { VRM } from '@pixiv/three-vrm'
 import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData } from './emoteTypes'
 import { moodConfigurations } from './moodConfigurations'
-import { Object3D, Vector3, type PerspectiveCamera } from 'three'
+import { Euler, Quaternion, Vector3 } from 'three'
 import type { Camera } from '@react-three/fiber'
 
 const clamp = (num: number, min: number, max: number): number =>
@@ -77,7 +77,9 @@ export const initializeEmoteState = (): EmoteState => ({
     headDefaultQuaternion: null,
     headCurrentQuaternion: null,
     headTargetQuaternion: null,
-    isPlayerVisible: false
+    isPlayerVisible: false,
+    interpolatedTarget: new Vector3(),
+    interpolationFactor : 4
   },
   tickState: {
     currentTick: null,
@@ -144,9 +146,9 @@ export const applyEmotion = (state: EmoteState, emotion: EmotionType): void => {
 /**
  * Handle blinking behavior
  */
-export const updateBlinking = (state: EmoteState, currentTime: number): void => {
+export const updateBlinking = (state: EmoteState, _delta: number): void => {
   if (!state.targets) return
-
+  const currentTime = performance.now()
   const { blinkState } = state
 
   // Time to start a new blink
@@ -180,9 +182,9 @@ export const updateBlinking = (state: EmoteState, currentTime: number): void => 
 /**
  * Handle subtle facial ticks for natural animation
  */
-export const updateFacialTicks = (state: EmoteState, currentTime: number): void => {
+export const updateFacialTicks = (state: EmoteState, _delta: number): void => {
   if (!state.targets) return
-
+  const currentTime = performance.now()
   const { tickState } = state
 
   // Non-mouth tick expressions for subtle movement
@@ -235,7 +237,7 @@ export const updateFacialTicks = (state: EmoteState, currentTime: number): void 
  * Initiate gaze behavior
  */
 export const initiateGaze = (state: EmoteState, options: GazeOptions = {}): void => {
-  if (!state.bones?.Head) return
+  if (!state.bones?.head) return
   console.log("DEBUG initiate gaze", state.camera)
 
   const { delay = -1, duration = -1, randomness = 0 } = options
@@ -265,87 +267,209 @@ export const initiateGaze = (state: EmoteState, options: GazeOptions = {}): void
   }}
 
 
-/**
- * Update gaze behavior
- */
-export const updateGaze = (state: EmoteState, currentTime: number): void => {
-  // Get camera from scene or node hierarchy
-  let camera : Camera | undefined = undefined
- 
-  camera = state?.camera
+const playerIsVisible = (state: EmoteState, camera: Camera): boolean => {
+  if(!state.node || !camera || !state.bones?.leftEye || !state.bones?.rightEye) return false
+  const leftEyeWorldPos = state.bones.leftEye.position
+  const rightEyeWorldPos = state.bones.rightEye.position
+  const cameraPos = camera.position
 
-  console.log("DEBUG update gaze", camera)
-  if (!camera) return
+  // Calculate the midpoint between the eyes (approximate head center)
+  const eyeMidpoint = new Vector3()
+    .addVectors(leftEyeWorldPos, rightEyeWorldPos)
+    .multiplyScalar(0.5)
 
-  const { gazeState } = state
+  // Vector from eye midpoint to camera
+  const toCameraVec = new Vector3().subVectors(cameraPos, eyeMidpoint)
+  const toCamera = toCameraVec.clone().normalize()
 
-  // Check if player is visible (simplified version)
-  const isVisible = true // In real implementation, you'd calculate actual visibility
+// Calculate the forward direction from the eyes (average of both eyes' forward)
+  const leftEyeForward = new Vector3(0, 0, -1)
+    .applyQuaternion(state.bones.leftEye.quaternion)
+    .normalize()
+  const rightEyeForward = new Vector3(0, 0, -1)
+    .applyQuaternion(state.bones.rightEye.quaternion)
+    .normalize()
+  const avgEyeForward = new Vector3()
+    .addVectors(leftEyeForward, rightEyeForward)
+    .normalize()
+    // Angle between average eye forward and toCamera
+  const angle = avgEyeForward.angleTo(toCamera)
 
-  // State transition to becoming visible
-  if (isVisible && !gazeState.isPlayerVisible) {
-    initiateGaze(state)
-  }
-  gazeState.isPlayerVisible = isVisible
+  // Human vision field: ~120 degrees binocular, ~200 degrees monocular (peripheral)
+  // We'll use 60 deg (binocular, 1.05 rad) for "focused" vision, and 100 deg (1.75 rad) for peripheral
+  const focusedConeAngle = Math.PI / 3 // 60 deg
+  const peripheralConeAngle = 1.75 // ~100 deg
 
-  // Check if we're in active focus period
-  const isActiveFocus = gazeState.gazeStartTime < currentTime && gazeState.gazeEndTime > currentTime
+  // Add a visual distance threshold
+  const visualDistance = 2 // meters, adjust as needed
+  const cameraDistance = toCameraVec.length()
 
-  if (isVisible && isActiveFocus && camera && 'position' in camera) {
-    const cameraPosition = camera.position as Vector3
-    
-    // Apply VRM LookAt system if available
-    if (state.vrm?.lookAt) {
-      state.vrm.lookAt.lookAt(cameraPosition)
-    }
-    
-    // Apply gaze expressions to both VRM and morph targets
-    const gazeIntensity = 0.3
-    if (Math.abs(cameraPosition.x) > Math.abs(cameraPosition.y)) {
-      // Horizontal gaze
-      if (cameraPosition.x > 0) {
-        applyExpression(state, VRM_EXPRESSIONS.lookRight, gazeIntensity)
-        applyExpression(state, VRM_EXPRESSIONS.lookLeft, 0)
-      } else {
-        applyExpression(state, VRM_EXPRESSIONS.lookLeft, gazeIntensity)
-        applyExpression(state, VRM_EXPRESSIONS.lookRight, 0)
-      }
+  // Check if camera is within the focused or peripheral vision field and within visual distance
+  if (cameraDistance <= visualDistance) {
+    if (angle < focusedConeAngle) {
+      return true // Focused vision
+    } else if (angle < peripheralConeAngle) {
+      return true // Peripheral vision (less strong, but still "seen")
     } else {
-      // Vertical gaze
-      if (cameraPosition.y > 0) {
-        applyExpression(state, VRM_EXPRESSIONS.lookUp, gazeIntensity)
-        applyExpression(state, VRM_EXPRESSIONS.lookDown, 0)
-      } else {
-        applyExpression(state, VRM_EXPRESSIONS.lookDown, gazeIntensity)
-        applyExpression(state, VRM_EXPRESSIONS.lookUp, 0)
-      }
+      return false
     }
-  } else if (isVisible && state.relaxationTime > currentTime) {
-    // Maintain some focus while performing
-    if (state.vrm?.lookAt && camera && 'position' in camera) {
-      const cameraPosition = camera.position as Vector3
-      state.vrm.lookAt.lookAt(cameraPosition.clone().multiplyScalar(0.5)) // Partial focus
-    }
-  } else {
-    // Relax gaze to neutral
-    if (state.vrm?.lookAt) {
-      state.vrm.lookAt.target?.lookAt(new Vector3(0, 0, 1)) // Look forward
-    }
-    
-    // Reset look expressions for both systems
-    applyExpression(state, VRM_EXPRESSIONS.lookUp, 0)
-    applyExpression(state, VRM_EXPRESSIONS.lookDown, 0)
-    applyExpression(state, VRM_EXPRESSIONS.lookLeft, 0)
-    applyExpression(state, VRM_EXPRESSIONS.lookRight, 0)
   }
+  return false
+} 
+
+
+function smoothVector(
+  current: Vector3,
+  target: Vector3,
+  delta: number,
+  factor: number
+): Vector3 {
+  return current.lerp(target, 1 - Math.exp(-delta * factor));
+}
+
+function canSeeWithEyes(state: EmoteState, target: Vector3, maxAngle: number = Math.PI / 3): boolean {
+  if (!state.bones?.leftEye || !state.bones?.rightEye) return false;
+
+  const leftEyePos = state.bones.leftEye.getWorldPosition(new Vector3());
+  const rightEyePos = state.bones.rightEye.getWorldPosition(new Vector3());
+  const eyeMid = new Vector3().addVectors(leftEyePos, rightEyePos).multiplyScalar(0.5);
+
+  const toTarget = target.clone().sub(eyeMid).normalize();
+
+  const leftForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.leftEye.quaternion).normalize();
+  const rightForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.rightEye.quaternion).normalize();
+  const avgForward = new Vector3().addVectors(leftForward, rightForward).normalize();
+
+  const angle = avgForward.angleTo(toTarget);
+  return angle < maxAngle; // default ~60°
+}
+
+// Apply eye-only gaze
+function updateEyeGaze(state: EmoteState, target: Vector3, blend: number = 1.0) {
+  if (!state.vrm?.lookAt) return;
+  // Blend between forward and target for subtlety
+  const eyeTarget = target.clone().lerp(new Vector3(0, 1.5, -1), 1 - blend);
+  state.vrm.lookAt.lookAt(eyeTarget);
+}
+
+// Apply neck rotation toward target (blend with eyes instead of resetting eyes forward)
+function updateNeckGaze(state: EmoteState, target: Vector3, delta: number) {
+  if (!state.bones?.neck) return;
+
+  if (!state.gazeState.headDefaultQuaternion) {
+    state.gazeState.headDefaultQuaternion =
+      state.bones.neck.quaternion.toArray() as [number, number, number, number];
+  }
+
+  const baseBone = state.bones.spine2 || state.bones.spine || null;
+  if (!baseBone) return;
+
+  const baseWorld = baseBone.getWorldPosition(new Vector3());
+  const neckWorld = state.bones.neck.getWorldPosition(new Vector3());
+
+  const twistAxis = new Vector3().subVectors(neckWorld, baseWorld).normalize();
+  const toTarget = new Vector3().subVectors(target, neckWorld).normalize();
+  const projectedTarget = toTarget.clone()
+    .sub(twistAxis.clone().multiplyScalar(toTarget.dot(twistAxis)))
+    .normalize();
+
+  const neckForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.neck.quaternion).normalize();
+  const projectedForward = neckForward.clone()
+    .sub(twistAxis.clone().multiplyScalar(neckForward.dot(twistAxis)))
+    .normalize();
+
+  let angle = projectedForward.angleTo(projectedTarget);
+  const cross = new Vector3().crossVectors(projectedForward, projectedTarget);
+  const sign = Math.sign(cross.dot(twistAxis));
+  angle *= sign;
+
+  const twistQuat = new Quaternion().setFromAxisAngle(twistAxis, angle);
+  const targetQuat = state.bones.neck.quaternion.clone().premultiply(twistQuat);
+
+  // --------------------------
+  // 🔹 Apply neck constraints
+  // --------------------------
+  const defaultQuat = new Quaternion().fromArray(state.gazeState.headDefaultQuaternion!);
+  const relativeQuat = defaultQuat.clone().invert().multiply(targetQuat);
+
+  // Extract Euler angles from relative rotation
+  const euler = new Euler().setFromQuaternion(relativeQuat, "YXZ");
+
+  // Clamp angles (in radians)
+  const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
+  euler.y = clamp(euler.y, -Math.PI / 3, Math.PI / 3); // yaw: ±60°
+  euler.x = clamp(euler.x, -Math.PI / 6, Math.PI / 6); // pitch: ±30°
+  euler.z = clamp(euler.z, -Math.PI / 9, Math.PI / 9); // roll: ±20°
+
+  // Rebuild constrained quaternion
+  const constrainedQuat = defaultQuat.clone().multiply(new Quaternion().setFromEuler(euler));
+
+  // Smoothly interpolate neck toward constrained orientation
+  state.bones.neck.quaternion.slerp(
+    constrainedQuat,
+    1 - Math.exp(-delta * state.gazeState.interpolationFactor)
+  );
+
+  // Eyes still follow partially
+  updateEyeGaze(state, target, 0.5);
 }
 
 /**
+ * Update gaze behavior
+ */
+export const updateGaze = (state: EmoteState, delta: number): void => {
+  const currentTime = performance.now();
+  const camera: Camera | undefined = state?.camera;
+  if (!camera || !state.vrm?.lookAt) return;
+
+  const { gazeState } = state;
+
+  // 1. Check visibility
+  const isVisible = playerIsVisible(state, camera);
+  if (isVisible && !gazeState.isPlayerVisible) initiateGaze(state);
+  gazeState.isPlayerVisible = isVisible;
+
+  // 2. Determine focus state
+  const isActiveFocus =
+    gazeState.gazeStartTime < currentTime &&
+    gazeState.gazeEndTime > currentTime;
+
+  // 3. Pick gaze target
+  let target: Vector3;
+  if (isVisible) {
+    if (isActiveFocus) {
+      target = camera.position.clone();
+    } else if (state.relaxationTime > currentTime) {
+      target = camera.position.clone().multiplyScalar(0.5);
+    } else {
+      target = new Vector3(0, 1.5, -1);
+    }
+  } else {
+    target = new Vector3(0, 1.5, -1);
+  }
+
+  // 4. Smooth target
+  gazeState.interpolatedTarget = smoothVector(
+    gazeState.interpolatedTarget as Vector3,
+    target,
+    delta,
+    gazeState.interpolationFactor
+  );
+
+  // 5. Eye vs neck control
+  const withinEyeCone = canSeeWithEyes(state, target, Math.PI / 4); // tighter ~45°
+  if (isVisible && withinEyeCone) {
+    updateEyeGaze(state, gazeState.interpolatedTarget as Vector3, 1.0);
+  } else {
+    updateNeckGaze(state, gazeState.interpolatedTarget as Vector3, delta);
+  }
+};
+/**
  * Start a performance based on performance data
  */
-export const startPerformance = (state: EmoteState, performanceData: PerformanceData, startTime: number): void => {
+export const startPerformance = (state: EmoteState, performanceData: PerformanceData, _delta: number): void => {
   if (!performanceData) return
-
+  const startTime = performance.now()
   // Apply emotion if specified
   if (performanceData.emotion) {
     applyEmotion(state, performanceData.emotion)
@@ -382,12 +506,13 @@ export const handleBargeIn = (state: EmoteState): void => {
 /**
  * Main update function called each frame
  */
-export const updateEmoteState = (state: EmoteState, currentTime: number): void => {
+export const updateEmoteState = (state: EmoteState, _delta: number): void => {
+  const currentTime = performance.now()
   // Update VRM systems first
   if (state.vrm) {
     // Update VRM LookAt system
     if (state.vrm.lookAt) {
-      state.vrm.lookAt.update(currentTime / 1000) // VRM expects time in seconds
+      state.vrm.lookAt.update(_delta) // VRM expects time in seconds
     }
     
     // Update VRM expression manager
@@ -397,10 +522,10 @@ export const updateEmoteState = (state: EmoteState, currentTime: number): void =
   }
 
   // Update blinking (with VRM integration)
-  updateBlinking(state, currentTime)
+  updateBlinking(state, _delta)
 
   // Update gaze (with VRM integration)
-  updateGaze(state, currentTime)
+  updateGaze(state, _delta)
 
   // If actively performing, don't apply ticks
   if (state.isPerforming && state.relaxationTime > currentTime) {
@@ -408,7 +533,7 @@ export const updateEmoteState = (state: EmoteState, currentTime: number): void =
     return
   } else {
     // Apply subtle facial ticks during idle (with VRM integration)
-    updateFacialTicks(state, currentTime)
+    updateFacialTicks(state, _delta)
     state.isPerforming = false
   }
 }
@@ -467,7 +592,7 @@ export const setupEmoteStateForVRM = (
   
   // Initialize VRM systems
   if (vrm.lookAt) {
-    vrm.lookAt.lookAt(new Vector3(0, 0, 1)) // Look forward by default
+    vrm.lookAt.target?.position.copy(new Vector3(0, 0, 1)) // Look forward by default
   }
   
   console.log('VRM integration setup complete')
