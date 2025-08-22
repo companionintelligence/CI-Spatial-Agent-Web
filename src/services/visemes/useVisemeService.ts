@@ -20,8 +20,8 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
     ...initialConfig
   })
 
-  const generateSequence = useCallback((whisperData: WhisperData | null, startTime: number) => {
-    const sequence = visemesSequence(visemeStateRef.current, whisperData, startTime, config)
+  const generateSequence = useCallback((whisperData: WhisperData | null) => {
+    const sequence = visemesSequence(visemeStateRef.current, whisperData, config)
     visemeStateRef.current.sequence = sequence
     return sequence
   }, [config])

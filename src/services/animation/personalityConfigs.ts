@@ -15,7 +15,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.2
     }
   },
-
   energetic: {
     defaultCycleInterval: 5000,
     blendTime: 600,
@@ -30,7 +29,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.1
     }
   },
-
   calm: {
     defaultCycleInterval: 12000,
     blendTime: 1200,
@@ -45,7 +43,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.0
     }
   },
-
   professional: {
     defaultCycleInterval: 10000,
     blendTime: 1000,
@@ -60,7 +57,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.2
     }
   },
-
   playful: {
     defaultCycleInterval: 6000,
     blendTime: 700,
@@ -75,7 +71,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: .1
     }
   },
-
   thoughtful: {
     defaultCycleInterval: 15000,
     blendTime: 1500,
@@ -89,7 +84,8 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       action: 0.0,
       communication: 0.0
     }
-  }
+  },
+
 }
 
 

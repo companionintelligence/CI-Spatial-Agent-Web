@@ -79,8 +79,9 @@ export function initializeDefaultAnimation(state: AnimationState, personality: s
   if (!state.cachedClips.length) {
     state.cachedClips = getPersonalityAnimationClips(personality)
   }
-  //const firstClip = pickNextClip(state)
-  const firstClip = ANIMATION_CLIPS[1]
+  const firstClip = pickNextClip(state)
+  console.log("DEBUG", firstClip)
+  //const firstClip = ANIMATION_CLIPS[0]
   if (firstClip) {
     playClip(state, firstClip, 0) // no blend for first clip
     state.lastChangeTime = performance.now()
@@ -313,9 +314,9 @@ function pickNextClip(state: AnimationState): AnimationClip {
 }
 
 function playClip(state: AnimationState, clip: AnimationClip, blendTime: number , _warp: boolean = true) {
-  console.log("DEBUG" , clip.name)
   if (!state.actions || !state.mixer) return
   const action = state.actions[clip.name]
+  
   if (!action) return
 
   action.reset()
@@ -337,7 +338,6 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
   
   // Apply animation speed from clip configuration
   action.timeScale = clip.speed
-
   // If no current clip, start immediately with full weight
   if (!state.currentClip) {
     action.setEffectiveWeight(1.0)
@@ -348,13 +348,19 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
 
   // Set up weight-based transition
   const currentAction = state.actions[state.currentClip.name]
+
+  if (state.currentClip && state.currentClip.name === clip.name) {
+    currentAction.play() 
+    return
+  }
+  
   if (currentAction && blendTime > 0) {
     // Start transition state
     state.isTransitioning = true
     state.nextClip = clip
     state.transitionProgress = 0
     state.transitionDuration = blendTime
-
+    console.log("transition")
     // Start new action with zero weight and correct speed
     action.setEffectiveWeight(0.0)
     action.play()
@@ -367,6 +373,8 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
       currentAction.setEffectiveWeight(0.0)
       currentAction.stop()
     }
+    console.log("switch")
+
     action.setEffectiveWeight(1.0)
     action.play()
     state.currentClip = clip

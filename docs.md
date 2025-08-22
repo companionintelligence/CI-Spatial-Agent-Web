@@ -203,7 +203,7 @@ tts.actions.processQueue()
 const ttsService = useTTSService({
   config: { speed: 1.2, pitch: 1.0, remote: false },
   onSpeechStart: (text, whisperData) => {
-    visemeService.actions.generateSequence(whisperData, Date.now())
+    visemeService.actions.generateSequence(whisperData, performance.now())
   }
 })
 ```

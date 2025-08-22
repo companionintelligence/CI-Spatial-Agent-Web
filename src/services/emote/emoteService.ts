@@ -1,11 +1,13 @@
 import type { VRM } from '@pixiv/three-vrm'
-import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData } from './emoteTypes'
+import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData, PlayerVisionType } from './emoteTypes'
 import { moodConfigurations } from './moodConfigurations'
 import { Euler, Quaternion, Vector3 } from 'three'
 import type { Camera } from '@react-three/fiber'
+import { DEG2RAD } from 'three/src/math/MathUtils.js'
 
 const clamp = (num: number, min: number, max: number): number =>
   Math.max(Math.min(num, Math.max(min, max)), Math.min(min, max))
+
 
 
 const VRM_EXPRESSIONS = {
@@ -74,13 +76,24 @@ export const initializeEmoteState = (): EmoteState => ({
     isGazing: false,
     gazeStartTime: 0,
     gazeEndTime: 0,
-    headDefaultQuaternion: null,
-    headCurrentQuaternion: null,
-    headTargetQuaternion: null,
+    neckDefaultQuaternion: null,
+    neckCurrentQuaternion: null,
     isPlayerVisible: false,
-    interpolatedTarget: new Vector3(),
-    interpolationFactor : 4
+    eyeOptions: {
+      interpolatedTarget : new Vector3(),
+      interpolationFactor : 4,
+      maxDistance: 2  ,
+      focusedHorizontalAngle : 30, 
+      focusedVerticalAngle  : 25,  
+      peripheralHorizontalAngle  : 100, 
+      peripheralVerticalAngle  : 60, 
+    },
+    neckOptions:{
+      maxPitch : 60,
+      maxYaw : 60,
+    }
   },
+
   tickState: {
     currentTick: null,
     tickStartTime: 0
@@ -233,12 +246,97 @@ export const updateFacialTicks = (state: EmoteState, _delta: number): void => {
     }, 200)
   }
 }
+
+function smoothVector(
+  current: Vector3,
+  target: Vector3,
+  delta: number,
+  factor: number
+): Vector3 {
+  return current.lerp(target, 1 - Math.exp(-delta * factor));
+}
+
+// Apply eye-only gaze
+function updateEyeGaze(state: EmoteState, target: Vector3) {
+  if (!state.vrm?.lookAt) return;
+  // Blend between forward and target for subtlety
+  state.vrm.lookAt.lookAt(target);
+}
+
+// Apply neck rotation toward target (yaw and pitch: y and x axes; eyes follow)
+function updateNeckGaze(state: EmoteState, target: Vector3, delta: number) {
+  if (!state.bones?.neck) return;
+
+  if (!state.gazeState.neckDefaultQuaternion) {
+    state.gazeState.neckDefaultQuaternion =
+      state.bones.neck.quaternion.toArray() as [number, number, number, number];
+  }
+
+  const baseBone = state.bones.spine2 || state.bones.spine || null;
+  if (!baseBone) return;
+
+  const neckWorld = state.bones.neck.getWorldPosition(new Vector3());
+
+  // Compute direction to target in world space
+  const toTarget = new Vector3().subVectors(target, neckWorld).normalize();
+
+  // Get neck's forward direction in world space
+  const neckForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.neck.quaternion).normalize();
+
+  // Calculate yaw (rotation around y axis)
+  const toTargetXZ = new Vector3(toTarget.x, 0, toTarget.z).normalize();
+  const neckForwardXZ = new Vector3(neckForward.x, 0, neckForward.z).normalize();
+  let yawAngle = neckForwardXZ.angleTo(toTargetXZ);
+  const crossYaw = new Vector3().crossVectors(neckForwardXZ, toTargetXZ);
+  const signYaw = Math.sign(crossYaw.y); // y axis is up
+  yawAngle *= signYaw;
+
+  // Clamp yaw angle (±60°)
+  const maxYaw = 60 * DEG2RAD;
+  yawAngle = Math.max(-maxYaw, Math.min(maxYaw, yawAngle));
+
+  // Calculate pitch (rotation around x axis)
+  // Project toTarget and neckForward onto YZ plane (ignore X for pitch)
+  const toTargetYZ = new Vector3(0, toTarget.y, toTarget.z).normalize();
+  const neckForwardYZ = new Vector3(0, neckForward.y, neckForward.z).normalize();
+  let pitchAngle = neckForwardYZ.angleTo(toTargetYZ);
+  const crossPitch = new Vector3().crossVectors(neckForwardYZ, toTargetYZ);
+  const signPitch = Math.sign(crossPitch.x); // x axis is right
+  pitchAngle *= signPitch;
+
+  // Clamp pitch angle (±60°)
+  const maxPitch = 60 * DEG2RAD;
+
+  // Decay pitch for higher yaw: when looking to the side, reduce pitch range
+  // Decay factor: 1 at yaw=0, 0 at |yaw|=maxYaw
+  const yawAbs = Math.abs(yawAngle);
+  // Make decay sharper: use a higher exponent (e.g. 2.5)
+  const pitchDecay = Math.pow(1 - (yawAbs / maxYaw), 2.5); // Sharper dropoff from center to side
+  const decayedMaxPitch = maxPitch * Math.max(0, pitchDecay);
+
+  // Clamp pitch to decayed range
+  pitchAngle = Math.max(-decayedMaxPitch, Math.min(decayedMaxPitch, pitchAngle));
+
+  // Build target quaternion: yaw (y) and pitch (x)
+  const defaultQuat = new Quaternion().fromArray(state.gazeState.neckDefaultQuaternion!);
+  const euler = new Euler(pitchAngle, yawAngle, 0, "YXZ");
+  const constrainedQuat = defaultQuat.clone().multiply(new Quaternion().setFromEuler(euler));
+
+  // Smoothly interpolate neck toward constrained orientation
+  state.bones.neck.quaternion.slerp(
+    constrainedQuat,
+    1 - Math.exp(-delta * state.gazeState.eyeOptions.interpolationFactor)
+  );
+
+  // Eyes follow neck movement with slight delay for natural look
+  updateEyeGaze(state, target);
+}
 /**
  * Initiate gaze behavior
  */
+
 export const initiateGaze = (state: EmoteState, options: GazeOptions = {}): void => {
-  if (!state.bones?.head) return
-  console.log("DEBUG initiate gaze", state.camera)
+  if (!state.bones?.neck) return
 
   const { delay = -1, duration = -1, randomness = 0 } = options
 
@@ -255,165 +353,111 @@ export const initiateGaze = (state: EmoteState, options: GazeOptions = {}): void
 
   // Store current head quaternion (simplified for now)
   if (state.vrm && state.vrm.scene) {
-    const headBone = state.vrm.humanoid?.getNormalizedBoneNode('head')
-    if (headBone) {
-      state.gazeState.headDefaultQuaternion = [
-        headBone.quaternion.x,
-        headBone.quaternion.y, 
-        headBone.quaternion.z,
-        headBone.quaternion.w
+    const neckBone = state.vrm.humanoid?.getNormalizedBoneNode('neck')
+    if (neckBone) {
+      state.gazeState.neckDefaultQuaternion = [
+        neckBone.quaternion.x,
+        neckBone.quaternion.y, 
+        neckBone.quaternion.z,
+        neckBone.quaternion.w
       ]
     }
-  }}
+}}
 
+/**
+ * Returns the player's visibility state relative to the avatar's eyes.
+ * - "focused": player is in central vision (foveal)
+ * - "peripheral": player is in peripheral vision
+ * - null: not visible
+ */
 
-const playerIsVisible = (state: EmoteState, camera: Camera): boolean => {
-  if(!state.node || !camera || !state.bones?.leftEye || !state.bones?.rightEye) return false
-  const leftEyeWorldPos = state.bones.leftEye.position
-  const rightEyeWorldPos = state.bones.rightEye.position
-  const cameraPos = camera.position
+function getPlayerVisionState(
+  state: EmoteState,
+  camera: Camera,
+): PlayerVisionType {
+  if (!state.node || !camera || !state.bones?.leftEye || !state.bones?.rightEye) return null;
+
+  // Parameter defaults
+  const {
+    maxDistance ,
+    focusedHorizontalAngle ,
+    focusedVerticalAngle,
+    peripheralHorizontalAngle ,
+    peripheralVerticalAngle,
+  } = state.gazeState.eyeOptions;
+
+  // Get world positions
+  const leftEyeWorldPos = state.bones.leftEye.getWorldPosition(new Vector3());
+  const rightEyeWorldPos = state.bones.rightEye.getWorldPosition(new Vector3());
+  const hipsWorldPos = state.bones.hips.getWorldPosition(new Vector3());
+  const cameraPos = camera.position;
+
 
   // Calculate the midpoint between the eyes (approximate head center)
   const eyeMidpoint = new Vector3()
     .addVectors(leftEyeWorldPos, rightEyeWorldPos)
-    .multiplyScalar(0.5)
-
+    .multiplyScalar(0.5);
   // Vector from eye midpoint to camera
-  const toCameraVec = new Vector3().subVectors(cameraPos, eyeMidpoint)
-  const toCamera = toCameraVec.clone().normalize()
+  const toCameraVec = new Vector3().subVectors(cameraPos, eyeMidpoint);
+  const cameraDistance = toCameraVec.length();
 
-// Calculate the forward direction from the eyes (average of both eyes' forward)
-  const leftEyeForward = new Vector3(0, 0, -1)
-    .applyQuaternion(state.bones.leftEye.quaternion)
-    .normalize()
-  const rightEyeForward = new Vector3(0, 0, -1)
-    .applyQuaternion(state.bones.rightEye.quaternion)
-    .normalize()
-  const avgEyeForward = new Vector3()
-    .addVectors(leftEyeForward, rightEyeForward)
-    .normalize()
-    // Angle between average eye forward and toCamera
-  const angle = avgEyeForward.angleTo(toCamera)
-
-  // Human vision field: ~120 degrees binocular, ~200 degrees monocular (peripheral)
-  // We'll use 60 deg (binocular, 1.05 rad) for "focused" vision, and 100 deg (1.75 rad) for peripheral
-  const focusedConeAngle = Math.PI / 3 // 60 deg
-  const peripheralConeAngle = 1.75 // ~100 deg
-
-  // Add a visual distance threshold
-  const visualDistance = 2 // meters, adjust as needed
-  const cameraDistance = toCameraVec.length()
-
-  // Check if camera is within the focused or peripheral vision field and within visual distance
-  if (cameraDistance <= visualDistance) {
-    if (angle < focusedConeAngle) {
-      return true // Focused vision
-    } else if (angle < peripheralConeAngle) {
-      return true // Peripheral vision (less strong, but still "seen")
-    } else {
-      return false
-    }
-  }
-  return false
-} 
-
-
-function smoothVector(
-  current: Vector3,
-  target: Vector3,
-  delta: number,
-  factor: number
-): Vector3 {
-  return current.lerp(target, 1 - Math.exp(-delta * factor));
-}
-
-function canSeeWithEyes(state: EmoteState, target: Vector3, maxAngle: number = Math.PI / 3): boolean {
-  if (!state.bones?.leftEye || !state.bones?.rightEye) return false;
-
-  const leftEyePos = state.bones.leftEye.getWorldPosition(new Vector3());
-  const rightEyePos = state.bones.rightEye.getWorldPosition(new Vector3());
-  const eyeMid = new Vector3().addVectors(leftEyePos, rightEyePos).multiplyScalar(0.5);
-
-  const toTarget = target.clone().sub(eyeMid).normalize();
-
-  const leftForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.leftEye.quaternion).normalize();
-  const rightForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.rightEye.quaternion).normalize();
-  const avgForward = new Vector3().addVectors(leftForward, rightForward).normalize();
-
-  const angle = avgForward.angleTo(toTarget);
-  return angle < maxAngle; // default ~60°
-}
-
-// Apply eye-only gaze
-function updateEyeGaze(state: EmoteState, target: Vector3, blend: number = 1.0) {
-  if (!state.vrm?.lookAt) return;
-  // Blend between forward and target for subtlety
-  const eyeTarget = target.clone().lerp(new Vector3(0, 1.5, -1), 1 - blend);
-  state.vrm.lookAt.lookAt(eyeTarget);
-}
-
-// Apply neck rotation toward target (blend with eyes instead of resetting eyes forward)
-function updateNeckGaze(state: EmoteState, target: Vector3, delta: number) {
-  if (!state.bones?.neck) return;
-
-  if (!state.gazeState.headDefaultQuaternion) {
-    state.gazeState.headDefaultQuaternion =
-      state.bones.neck.quaternion.toArray() as [number, number, number, number];
+  // Always visible if camera is above the avatar (y axis)
+  // Invisible if camera is below the avatar (y axis)
+  if (cameraPos.y < hipsWorldPos.y) {
+    return null;
   }
 
-  const baseBone = state.bones.spine2 || state.bones.spine || null;
-  if (!baseBone) return;
+  // Invisible if outside of specified range
+  if (cameraDistance > maxDistance) {
+    return null;
+  }
+  
+  // Helper to check if a single eye can see the target within given angles
+  function eyeCanSee(eye: any, hAngle: number, vAngle: number): boolean {
+    const eyePos = eye.getWorldPosition(new Vector3());
+    const eyeForward = new Vector3(0, 0, -1).applyQuaternion(eye.quaternion).normalize();
+    const eyeUp = new Vector3(0, 1, 0).applyQuaternion(eye.quaternion).normalize();
+    const toTarget = cameraPos.clone().sub(eyePos).normalize();
+    const eyeRight = new Vector3().crossVectors(eyeForward, eyeUp).normalize();
+    const horizontalAngle = Math.atan2(
+      toTarget.dot(eyeRight),
+      toTarget.dot(eyeForward)
+    );
+    const verticalAngle = Math.atan2(
+      toTarget.dot(eyeUp),
+      toTarget.dot(eyeForward)
+    );
+    // Convert degree angles to radians for comparison
+    const hAngleRad = hAngle * DEG2RAD;
+    const vAngleRad = vAngle * DEG2RAD;
+    // Uncomment for debugging:
+    // console.log("DEBUG vertical", (verticalAngle * 180 / Math.PI), vAngle);
+    // console.log("DEBUG horizontal", (horizontalAngle * 180 / Math.PI), hAngle);
+    return (
+      Math.abs(horizontalAngle) < hAngleRad &&
+      Math.abs(verticalAngle) < vAngleRad
+    );
+  }
 
-  const baseWorld = baseBone.getWorldPosition(new Vector3());
-  const neckWorld = state.bones.neck.getWorldPosition(new Vector3());
+  // Focused (central vision)
+  if (
+    eyeCanSee(state.bones.leftEye, focusedHorizontalAngle, focusedVerticalAngle) ||
+    eyeCanSee(state.bones.rightEye, focusedHorizontalAngle, focusedVerticalAngle)
+  ) {
+    return "focused";
+  }
 
-  const twistAxis = new Vector3().subVectors(neckWorld, baseWorld).normalize();
-  const toTarget = new Vector3().subVectors(target, neckWorld).normalize();
-  const projectedTarget = toTarget.clone()
-    .sub(twistAxis.clone().multiplyScalar(toTarget.dot(twistAxis)))
-    .normalize();
+  // Peripheral vision
+  if (
+    eyeCanSee(state.bones.leftEye, peripheralHorizontalAngle, peripheralVerticalAngle) ||
+    eyeCanSee(state.bones.rightEye, peripheralHorizontalAngle, peripheralVerticalAngle)
+  ) {
+    return "peripheral";
+  }
 
-  const neckForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.neck.quaternion).normalize();
-  const projectedForward = neckForward.clone()
-    .sub(twistAxis.clone().multiplyScalar(neckForward.dot(twistAxis)))
-    .normalize();
-
-  let angle = projectedForward.angleTo(projectedTarget);
-  const cross = new Vector3().crossVectors(projectedForward, projectedTarget);
-  const sign = Math.sign(cross.dot(twistAxis));
-  angle *= sign;
-
-  const twistQuat = new Quaternion().setFromAxisAngle(twistAxis, angle);
-  const targetQuat = state.bones.neck.quaternion.clone().premultiply(twistQuat);
-
-  // --------------------------
-  // 🔹 Apply neck constraints
-  // --------------------------
-  const defaultQuat = new Quaternion().fromArray(state.gazeState.headDefaultQuaternion!);
-  const relativeQuat = defaultQuat.clone().invert().multiply(targetQuat);
-
-  // Extract Euler angles from relative rotation
-  const euler = new Euler().setFromQuaternion(relativeQuat, "YXZ");
-
-  // Clamp angles (in radians)
-  const clamp = (val: number, min: number, max: number) => Math.max(min, Math.min(max, val));
-  euler.y = clamp(euler.y, -Math.PI / 3, Math.PI / 3); // yaw: ±60°
-  euler.x = clamp(euler.x, -Math.PI / 6, Math.PI / 6); // pitch: ±30°
-  euler.z = clamp(euler.z, -Math.PI / 9, Math.PI / 9); // roll: ±20°
-
-  // Rebuild constrained quaternion
-  const constrainedQuat = defaultQuat.clone().multiply(new Quaternion().setFromEuler(euler));
-
-  // Smoothly interpolate neck toward constrained orientation
-  state.bones.neck.quaternion.slerp(
-    constrainedQuat,
-    1 - Math.exp(-delta * state.gazeState.interpolationFactor)
-  );
-
-  // Eyes still follow partially
-  updateEyeGaze(state, target, 0.5);
+  // Not visible
+  return null;
 }
-
 /**
  * Update gaze behavior
  */
@@ -425,8 +469,9 @@ export const updateGaze = (state: EmoteState, delta: number): void => {
   const { gazeState } = state;
 
   // 1. Check visibility
-  const isVisible = playerIsVisible(state, camera);
-  if (isVisible && !gazeState.isPlayerVisible) initiateGaze(state);
+  const visibilityState = getPlayerVisionState(state, camera);
+  const isVisible =  visibilityState !== null;
+  if (isVisible && !gazeState.isPlayerVisible) initiateGaze(state, {duration : Infinity});
   gazeState.isPlayerVisible = isVisible;
 
   // 2. Determine focus state
@@ -449,19 +494,45 @@ export const updateGaze = (state: EmoteState, delta: number): void => {
   }
 
   // 4. Smooth target
-  gazeState.interpolatedTarget = smoothVector(
-    gazeState.interpolatedTarget as Vector3,
+  gazeState.eyeOptions.interpolatedTarget = smoothVector(
+    gazeState.eyeOptions.interpolatedTarget as Vector3,
     target,
     delta,
-    gazeState.interpolationFactor
+    gazeState.eyeOptions.interpolationFactor
   );
 
-  // 5. Eye vs neck control
-  const withinEyeCone = canSeeWithEyes(state, target, Math.PI / 4); // tighter ~45°
-  if (isVisible && withinEyeCone) {
-    updateEyeGaze(state, gazeState.interpolatedTarget as Vector3, 1.0);
+
+  if (isVisible) {
+    switch (visibilityState) {
+      case 'focused':
+        // In central/paracentral vision: Eyes follow directly, neck stays neutral
+        updateEyeGaze(state, gazeState.eyeOptions.interpolatedTarget as Vector3);
+        // Return neck to neutral position
+        if (state.gazeState.neckDefaultQuaternion && state.bones?.neck) {
+          const defaultQuat = new Quaternion().fromArray(state.gazeState.neckDefaultQuaternion);
+          state.bones.neck.quaternion.slerp(
+            defaultQuat,
+            1 - Math.exp(-delta * state.gazeState.eyeOptions.interpolationFactor)
+          );
+        }
+        break;
+      case 'peripheral':
+        // In peripheral vision: Lead with neck, then eyes follow
+      default:
+        // Beyond peripheral vision: Lead with neck, eyes follow
+        updateNeckGaze(state, gazeState.eyeOptions.interpolatedTarget as Vector3, delta);
+        break;
+    }
   } else {
-    updateNeckGaze(state, gazeState.interpolatedTarget as Vector3, delta);
+    // Not visible: Return neck and eyes to neutral position
+    if (state.gazeState.neckDefaultQuaternion && state.bones?.neck) {
+      const defaultQuat = new Quaternion().fromArray(state.gazeState.neckDefaultQuaternion);
+      state.bones.neck.quaternion.slerp(
+        defaultQuat,
+        1 - Math.exp(-delta * state.gazeState.eyeOptions.interpolationFactor)
+      );
+    }
+    updateEyeGaze(state, new Vector3(0, 1.5, -1));
   }
 };
 /**

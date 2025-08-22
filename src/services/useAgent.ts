@@ -73,7 +73,6 @@ import { useConversationService } from './conversation/conversationService'
 import type { ConversationMessage } from './conversation/conversationType'
 import type { EmotionType, GazeOptions, PerformanceData } from './emote/emoteTypes'
 import { useEmoteService } from './emote/useEmoteService'
-import { emotionIntegrationService } from './emotionIntegration'
 import { useLLMService } from './llm/llmService'
 import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMStatusUpdate } from './llm/llmTypes'
 import { useSTTService } from './stt/sttService'
@@ -209,8 +208,8 @@ export interface AgentService {
     // Viseme actions (for external avatar control)
     setupVisemesForVRM: (vrm: VRM) => void
     setupVisemesForMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
-    updateVisemes: (currentTime: number) => void
-    applyVisemesToRig: (currentTime: number, amplify?: number) => void
+    updateVisemes: (_delta: number) => void
+    applyVisemesToRig: (_delta: number, amplify?: number) => void
     resetVisemes: () => void
 
     // Emote actions (for external avatar control)
@@ -219,7 +218,7 @@ export interface AgentService {
     setEmotion: (emotion: EmotionType) => void
     performAction: (performanceData: PerformanceData) => void
     triggerGaze: (options?: GazeOptions) => void
-    updateEmotes: (currentTime?: number) => void
+    updateEmotes: (_delta: number) => void
     applyEmotesToVRM: (vrm: VRM) => void
     applyEmotesToMorphTargets: (morphs: MorphTargetObject[], dictionary: Record<string, number[]>) => void
     resetEmotes: () => void
@@ -296,7 +295,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   // Internal state
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const [vadDetecting, setVadDetecting] = useState(false)
-  const interruptCounterRef = useRef(Date.now())
+  const interruptCounterRef = useRef(performance.now())
 
   // Initialize conversation service
   const conversation = useConversationService()
@@ -342,8 +341,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const tts = useTTSService({
     config: ttsConfig,
     onSpeechStart: (text: string, whisperData: WhisperData) => {
-      const startTime = Date.now()
-      visemes.actions.generateSequence(whisperData, startTime)
+      visemes.actions.generateSequence(whisperData)
       callbacks.onTTSSpeechStart?.(text, whisperData)
     },
     onSpeechEnd: () => {

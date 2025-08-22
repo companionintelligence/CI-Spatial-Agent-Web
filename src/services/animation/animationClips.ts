@@ -2,6 +2,21 @@ import type { AnimationClip } from './animationTypes'
 
 export const ANIMATION_CLIPS: AnimationClip[] = [
   // Idle animations
+
+  {
+    name: 'Basic VRM Idle',
+    path: '/assets/animations/vrm/idle_loop.vrma',
+    duration: 5000,
+    weight: 1,
+    blendTime: 1000,
+    category: 'idle',
+    priority: 1,
+    loopCount: Infinity, // Infinite loops
+    blendCurve: 'easeInOut',
+    speed: 1
+  },
+
+  /*
   {
     name: 'Basic Idle',
     path: '/assets/animations/basic-idle.glb',
@@ -402,6 +417,7 @@ export const ANIMATION_CLIPS: AnimationClip[] = [
     loopCount: 2,
     speed: 0.9
   }
+  */
 ]
 
 export const getAnimationClips = (): AnimationClip[] => {

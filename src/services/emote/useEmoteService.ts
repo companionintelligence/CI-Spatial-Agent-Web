@@ -80,7 +80,6 @@ export const useEmoteService = () => {
 
   const setAvatarReferences = useCallback(
     (references: { bones?: Record<string, unknown>; node?: Object3D;  camera: Camera } ) => {
-      console.log("SETUP avatar references")
       const state = emoteStateRef.current
       if (references.bones) state.bones = references.bones as EmoteState['bones']
       if (references.node) state.node = references.node as EmoteState['node']

@@ -11,15 +11,20 @@ import { useAnimationService } from '../services/animation/useAnimationService'
 import { ANIMATION_CLIPS } from '../services/animation/animationClips'
 import { useLoader } from '@react-three/fiber'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
-import { VRMLoaderPlugin, VRM } from '@pixiv/three-vrm'
+import { VRMLoaderPlugin, VRM, VRMCore } from '@pixiv/three-vrm'
+import {
+  VRMAnimationLoaderPlugin,
+  VRMAnimation,
+  createVRMAnimationClip
+} from '@pixiv/three-vrm-animation';
 import type { GLTFParser } from 'three/examples/jsm/Addons.js'
-const AVATAR_MODEL = '/assets/avatars/vrm/personal-avatar.vrm'
+const AVATAR_MODEL = '/assets/avatars/vrm/takeshi.vrm'
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
   visemesEnabled: true,
   emotesEnabled: true,
-  animationsEnabled : false
+  animationsEnabled : true
 })
 
 interface AvatarModelProps {
@@ -28,71 +33,110 @@ interface AvatarModelProps {
   animationService?: ReturnType<typeof useAnimationService>
 }
 
-// Custom hook to load external animation files
-function useExternalAnimations(avatarRef: React.RefObject<THREE.Object3D | undefined | null> | THREE.Object3D) {
-  // Load each animation file individually
-  const animationGLTFs = ANIMATION_CLIPS.map(clip => {
-    try {
-      // eslint-disable-next-line react-hooks/rules-of-hooks
-      return useGLTF(clip.path)
-    } catch (error) {
-      console.warn(`Failed to load animation: ${clip.name} from ${clip.path}`, error)
-      return null
-    }
-  }).filter(Boolean)
+// Custom hook to load external animation files, including VRMA animations
+export const useExternalAnimations = (
+  avatarRef: React.RefObject<THREE.Object3D>,
+  vrm?: VRMCore
+) => {
+  // Split clips by type so hooks are deterministic
+  const vrmaClips = ANIMATION_CLIPS.filter((c) =>
+    c.path.toLowerCase().endsWith('.vrma')
+  )
 
-  // Collect all animations from the loaded GLTFs
+  const gltfClips = ANIMATION_CLIPS.filter(
+    (c) => !c.path.toLowerCase().endsWith('.vrma')
+  )
+
+  // Load VRMA animations
+  const vrmaGLTFs = vrmaClips.map((clip) =>
+    useLoader(GLTFLoader, clip.path, (loader) => {
+      loader.register(
+        (parser: GLTFParser) => new VRMAnimationLoaderPlugin(parser)
+      )
+    })
+  )
+
+  // Load GLTF/GLB animations
+  const gltfGLTFs = gltfClips.map((clip) => useGLTF(clip.path))
+
+  // Collect all animations
   const allAnimations = useMemo(() => {
     const animations: THREE.AnimationClip[] = []
-    
-    animationGLTFs.forEach((gltf, index) => {
-      if (gltf && gltf.animations) {
-        gltf.animations.forEach(animation => {
-          // Rename animation to match our clip names
-          const clip = ANIMATION_CLIPS[index]
-          if (clip) {
-            animation.name = clip.name
-            clip.duration = animation.duration
+
+    // Process VRMA
+    vrmaGLTFs.forEach((gltf, index) => {
+      const vrmAnimation: VRMAnimation | undefined =
+        (gltf as any).userData?.vrmAnimations[0]
+
+      if (vrmAnimation && vrm) {
+
+        const clip = createVRMAnimationClip(vrmAnimation, vrm)
+        clip.name = vrmaClips[index].name
+
+        // Remove "Normalized_" prefix from track names
+        clip.tracks = clip.tracks.filter(track => {
+          // Remove "Normalized_" prefix from track names
+          if (track.name.startsWith("Normalized_")) {
+            track.name = track.name.replace(/^Normalized_/, "")
           }
+          const lower = track.name.toLowerCase()
+          if (lower.includes("neck") || lower.includes("head")) {
+            return false
+          }
+          return true
+        })
+        
+        vrmaClips[index].duration = clip.duration
+        animations.push(clip)
+      }
+    })
+
+    // Process GLTF/GLB
+    gltfGLTFs.forEach((gltf, index) => {
+      if (gltf.animations && gltf.animations.length > 0) {
+        gltf.animations.forEach((animation) => {
+          animation.name = gltfClips[index].name
+          gltfClips[index].duration = animation.duration
           animations.push(animation)
         })
       }
     })
-    
+
     return animations
-  }, [animationGLTFs])
+  }, [vrmaGLTFs, gltfGLTFs, vrm])
 
-  // Use the animations with the avatar
+  // Hook into R3F's animation system
+
   const { actions, mixer } = useAnimations(allAnimations, avatarRef)
-
+  console.log("DEBUG" , actions)
   return { actions, mixer, animations: allAnimations }
 }
 
 const AvatarModelComponent = ({ visemeService, emoteService , animationService }: AvatarModelProps) => {
+  const {scene:viewerScene, camera:viewerCamera } =  useThree()
+
   const [state] = useSimpleStore(AvatarState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
 
   const { selectedModel, visemesEnabled, emotesEnabled ,animationsEnabled } = state
+
+  const helperRoot = new THREE.Group();
+  helperRoot.renderOrder = 10000;
+  viewerScene.add( helperRoot );
+
   const gltf = useLoader(GLTFLoader, AVATAR_MODEL, (loader) => {
     loader.register((parser: GLTFParser) => new VRMLoaderPlugin(parser))
   })  
   const isVRM = selectedModel.toLowerCase().endsWith(".vrm")
 
-  const vrm = isVRM ? (gltf.userData.vrm as VRM) : null
+  const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined
   const avatarScene = isVRM ? vrm?.scene : gltf.scene
   const avatarRef = useRef<THREE.Object3D>(null)
-  const {scene:viewerScene, camera:viewerCamera } =  useThree()
   // Load external animations from animationClips.ts
-  const { actions, mixer } = useExternalAnimations(avatarRef as any)
+  const { actions, mixer } = useExternalAnimations(avatarRef as any , vrm)
   // Setup animation service with R3F
   useEffect(() => {
-    console.log("DEBUG vrm" , vrm)
-    if (vrm) {
-      //visemeService.actions.setupForVRM(vrm);
-      console.log("Viseme service wired to VRM expressionManager");
-    }
-
     if (!avatarScene || !animationService || !actions || !mixer || !animationsEnabled) return
 
     // Setup the animation service with R3F actions and mixer
@@ -143,8 +187,6 @@ const AvatarModelComponent = ({ visemeService, emoteService , animationService }
   // Setup emote service integration
   useEffect(() => {
     if (!avatarScene || !emotesEnabled || !emoteService) return
-
-    console.log("DEBUG, viewer " , viewerCamera, viewerScene)
 
     let bones: Record<string, THREE.Bone> = {}
 

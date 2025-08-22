@@ -50,9 +50,9 @@ export function convertToVRMTarget(oculusTarget: VisemeTarget): VRMVisemeTarget 
 export function visemesSequence(
   _volume: VisemeState,
   whisperData: WhisperData | null,
-  time: number,
   config: VisemeConfig = defaultVisemeConfig
 ): VisemeSequenceItem[] {
+  const time = performance.now()
   // Input validation
   if (!whisperData) {
     console.warn('visemesSequence: No whisper data provided')
@@ -135,7 +135,6 @@ export function visemesUpdate(volume: VisemeState, _delta: number, config: Visem
   let visemesProcessed = 0
 
   for (const item of activeVisemes) {
-    console.log("DEBUG item, inactive viseme" , item)
     const begins = item.ts[0]
     const ends = item.ts[1]
 
@@ -193,7 +192,6 @@ export function visemesToRig(volume: VisemeState, _delta: number, amplify: numbe
   if (!volume.dirty) volume.dirty = {}
 
   let targetsUpdated = 0
-
   // Handle VRM avatars
   if (volume.vrm) {
     let targetToApply: VRMVisemeTarget
@@ -206,7 +204,6 @@ export function visemesToRig(volume: VisemeState, _delta: number, amplify: numbe
       targetToApply = convertToVRMTarget(volume.targets as VisemeTarget)
 
     }
-
 
     Object.entries(targetToApply).forEach(([key, value]) => {
       if (amplify !== 1.0) {

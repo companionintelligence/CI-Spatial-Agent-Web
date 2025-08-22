@@ -3,6 +3,7 @@ import type { Camera, Vector3 } from "@react-three/fiber"
 import type { Bone, Object3D } from "three/src/Three.WebGPU.Nodes.js"
 
 export type EmotionType = 'neutral' | 'happy' | 'angry' | 'sad' | 'fear' | 'disgust' | 'love' | 'sleep'
+export type PlayerVisionType = "focused" | "peripheral" | null;
 
 export interface FacialTarget {
   // Eye expressions
@@ -90,12 +91,23 @@ export interface EmoteState {
     isGazing: boolean
     gazeStartTime: number
     gazeEndTime: number
-    headDefaultQuaternion: [number, number, number, number] | null
-    headCurrentQuaternion: [number, number, number, number] | null
-    headTargetQuaternion: [number, number, number, number] | null
+    neckDefaultQuaternion: [number, number, number, number] | null
+    neckCurrentQuaternion: [number, number, number, number] | null
     isPlayerVisible: boolean
-    interpolatedTarget : Vector3
-    interpolationFactor : number
+    eyeOptions: {
+      interpolatedTarget : Vector3
+      interpolationFactor : number
+      maxDistance: number  
+      focusedHorizontalAngle : number 
+      focusedVerticalAngle  : number 
+      peripheralHorizontalAngle  : number 
+      peripheralVerticalAngle  : number 
+    },
+    neckOptions : {
+      maxPitch : number
+      maxYaw : number
+    }
+   
   }
 
   // Facial ticks state
