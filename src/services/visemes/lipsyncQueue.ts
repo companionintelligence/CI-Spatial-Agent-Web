@@ -63,7 +63,6 @@ export function lipsyncConvert(
                                    viseme === 'FF' ? config.lipsync.specialVisemes.FF : 
                                    level
 
-              console.log("DEBUG" , viseme)
               lipsyncAnim.push({
               template: { name: 'viseme' },
               ts: [t - Math.min(60, (2 * d) / 3), t + Math.min(25, d / 2), t + d + Math.min(60, d / 2)],

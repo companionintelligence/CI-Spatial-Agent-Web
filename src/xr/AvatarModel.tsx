@@ -18,10 +18,10 @@ import {
   createVRMAnimationClip
 } from '@pixiv/three-vrm-animation';
 import type { GLTFParser } from 'three/examples/jsm/Addons.js'
-const AVATAR_MODEL = '/assets/avatars/vrm/takeshi.vrm'
+import { AvatarOptions } from './AvatarOptions';
 
 export const AvatarState = createSimpleStore({
-  selectedModel: AVATAR_MODEL,
+  selectedModel: AvatarOptions.Savi,
   visemesEnabled: true,
   emotesEnabled: true,
   animationsEnabled : true
@@ -108,31 +108,69 @@ export const useExternalAnimations = (
   // Hook into R3F's animation system
 
   const { actions, mixer } = useAnimations(allAnimations, avatarRef)
-  console.log("DEBUG" , actions)
   return { actions, mixer, animations: allAnimations }
 }
 
 const AvatarModelComponent = ({ visemeService, emoteService , animationService }: AvatarModelProps) => {
-  const {scene:viewerScene, camera:viewerCamera } =  useThree()
+  const { scene: viewerScene, camera: viewerCamera } = useThree();
 
-  const [state] = useSimpleStore(AvatarState)
-  const morphTargetsRef = useRef<THREE.Mesh[]>([])
-  const bonesRef = useRef<Record<string, THREE.Bone>>({})
+  const [state] = useSimpleStore(AvatarState);
+  const morphTargetsRef = useRef<THREE.Mesh[]>([]);
+  const bonesRef = useRef<Record<string, THREE.Bone>>({});
 
-  const { selectedModel, visemesEnabled, emotesEnabled ,animationsEnabled } = state
+  const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled } = state;
 
   const helperRoot = new THREE.Group();
   helperRoot.renderOrder = 10000;
-  viewerScene.add( helperRoot );
+  viewerScene.add(helperRoot);
 
   const gltf = useLoader(GLTFLoader, AVATAR_MODEL, (loader) => {
-    loader.register((parser: GLTFParser) => new VRMLoaderPlugin(parser))
-  })  
-  const isVRM = selectedModel.toLowerCase().endsWith(".vrm")
+    loader.register((parser: GLTFParser) => new VRMLoaderPlugin(parser));
+  });
+  const isVRM = selectedModel.toLowerCase().endsWith(".vrm");
 
-  const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined
-  const avatarScene = isVRM ? vrm?.scene : gltf.scene
-  const avatarRef = useRef<THREE.Object3D>(null)
+  const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined;
+  const avatarScene = isVRM ? vrm?.scene : gltf.scene;
+  const avatarRef = useRef<THREE.Object3D>(null);
+
+  // Only for setup: position the camera along the forward of the face of the avatar once, when avatar loads
+  useEffect(() => {
+    if (!avatarRef.current || !viewerCamera) return;
+
+    // Try to find the head or face bone/node
+    let head: THREE.Object3D | null = null;
+
+    // VRM: try to use humanoid bone
+    if (isVRM && vrm?.humanoid) {
+      const normalizedBone = vrm.humanoid.getNormalizedBone('head');
+      head = normalizedBone?.node ?? null;
+    }
+
+    // Fallback: search for a node with "head" or "face" in the name
+
+    // If found, position the camera in front of the head (only once, for setup)
+    if (head) {
+      // Get world position and direction
+      const headWorldPos = new THREE.Vector3();
+      head.getWorldPosition(headWorldPos);
+
+      // Forward direction: -Z in local space
+      const forward = new THREE.Vector3(0, 0, -1);
+      forward.applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()));
+
+      // Position the camera a certain distance in front of the face
+      const cameraDistance = 3.0; // meters in front of face
+      const cameraPos = headWorldPos.clone().add(forward.multiplyScalar(cameraDistance));
+
+      viewerCamera.position.copy(cameraPos);
+      console.log("Camera position set to", headWorldPos)
+      viewerCamera.lookAt(headWorldPos);
+    }
+    avatarRef.current.position.x += -.05 // TEMP : slight hardcoded adjustment to compenstate for current animation
+    // Only run on initial avatar load
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [avatarRef.current]);
+
   // Load external animations from animationClips.ts
   const { actions, mixer } = useExternalAnimations(avatarRef as any , vrm)
   // Setup animation service with R3F

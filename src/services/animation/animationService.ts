@@ -80,7 +80,6 @@ export function initializeDefaultAnimation(state: AnimationState, personality: s
     state.cachedClips = getPersonalityAnimationClips(personality)
   }
   const firstClip = pickNextClip(state)
-  console.log("DEBUG", firstClip)
   //const firstClip = ANIMATION_CLIPS[0]
   if (firstClip) {
     playClip(state, firstClip, 0) // no blend for first clip
@@ -353,14 +352,13 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
     currentAction.play() 
     return
   }
-  
+
   if (currentAction && blendTime > 0) {
     // Start transition state
     state.isTransitioning = true
     state.nextClip = clip
     state.transitionProgress = 0
     state.transitionDuration = blendTime
-    console.log("transition")
     // Start new action with zero weight and correct speed
     action.setEffectiveWeight(0.0)
     action.play()
@@ -373,7 +371,6 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
       currentAction.setEffectiveWeight(0.0)
       currentAction.stop()
     }
-    console.log("switch")
 
     action.setEffectiveWeight(1.0)
     action.play()
