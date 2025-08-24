@@ -139,15 +139,21 @@ export const useVADService = ({
     }
   }, [])
 
-  const actions = useMemo(() => ({
-    startListening,
-    stopListening,
-    initializeVAD
-  }), [startListening, stopListening, initializeVAD])
+  const actions = useMemo(
+    () => ({
+      startListening,
+      stopListening,
+      initializeVAD
+    }),
+    [startListening, stopListening, initializeVAD]
+  )
 
-  return useMemo(() => ({
-    isListening,
-    isDetecting,
-    actions 
-  }), [isListening, isDetecting, actions])
+  return useMemo(
+    () => ({
+      isListening,
+      isDetecting,
+      actions
+    }),
+    [isListening, isDetecting, actions]
+  )
 }

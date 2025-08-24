@@ -1,13 +1,8 @@
 import * as THREE from 'three'
-import { ANIMATION_CLIPS } from './animationClips'
-import { getPersonalityConfiguration } from './personalityConfigs'
-import type {
-  AnimationState,
-  AnimationClip,
-  AnimationPerformanceData,
-  AnimationCategory
-} from './animationTypes'
 
+import { ANIMATION_CLIPS } from './config/animationClips'
+import type { AnimationCategory, AnimationClip, AnimationPerformanceData, AnimationState } from './animationTypes'
+import { getPersonalityConfiguration } from './config/personalityConfig'
 
 // --------------------- State Management ---------------------
 export function initializeAnimationState(): AnimationState {
@@ -27,7 +22,6 @@ export function initializeAnimationState(): AnimationState {
       isActive: true,
       currentPersonality: 'professional',
       lastCategory: 'idle'
-
     },
 
     cachedClips: [],
@@ -59,7 +53,7 @@ export function applyPersonality(state: AnimationState, personality: string) {
 
 export function getPersonalityAnimationClips(personality: string): AnimationClip[] {
   const config = getPersonalityConfiguration(personality)
-  return ANIMATION_CLIPS.filter(clip => config.categories.includes(clip.category))
+  return ANIMATION_CLIPS.filter((clip) => config.categories.includes(clip.category))
 }
 
 // --------------------- Setup ---------------------
@@ -79,8 +73,8 @@ export function initializeDefaultAnimation(state: AnimationState, personality: s
   if (!state.cachedClips.length) {
     state.cachedClips = getPersonalityAnimationClips(personality)
   }
-  //const firstClip = pickNextClip(state)
-  const firstClip = ANIMATION_CLIPS[1]
+  const firstClip = pickNextClip(state)
+  //const firstClip = ANIMATION_CLIPS[0]
   if (firstClip) {
     playClip(state, firstClip, 0) // no blend for first clip
     state.lastChangeTime = performance.now()
@@ -93,16 +87,12 @@ export function setAnimationEnabled(state: AnimationState, enabled: boolean) {
   state.enabled = enabled
 }
 
-export function startPerformance(
-  state: AnimationState,
-  performanceData: AnimationPerformanceData,
-  _startTime: number
-) {
+export function startPerformance(state: AnimationState, performanceData: AnimationPerformanceData, _startTime: number) {
   if (!state.actions) return
 
   // Find the corresponding configured clip
-  const configuredClip = ANIMATION_CLIPS.find(c => c.name === performanceData.name)
-  console.log("DEBUG : startPerformance" , configuredClip)
+  const configuredClip = ANIMATION_CLIPS.find((c) => c.name === performanceData.name)
+  console.log('DEBUG : startPerformance', configuredClip)
   if (!configuredClip) {
     // Fallback: if clip is unknown, attempt to play the raw action directly
     const action = state.actions[performanceData.name]
@@ -136,7 +126,6 @@ export function startPerformance(
     speed: performanceData.speed ?? configuredClip.speed ?? 1
   }
 
-  
   // Determine blend time (ms). Prefer explicit performance override, then clip default, then personality default
   const personalityBlend = getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
   const blendMs = performanceData.blendTime ?? configuredClip.blendTime ?? personalityBlend ?? 500
@@ -161,9 +150,9 @@ export function updateAnimation(state: AnimationState, delta: number) {
 
   // Handle weight-based transitions
   if (state.isTransitioning && state.nextClip && state.currentClip && state.actions) {
-    state.transitionProgress += (delta * 1000) // Convert delta to milliseconds
+    state.transitionProgress += delta * 1000 // Convert delta to milliseconds
     const progress = Math.min(state.transitionProgress / state.transitionDuration, 1.0)
-    
+
     // Apply easing curve based on blend curve
     function applyEasing(progress: number, blendCurve?: string): number {
       switch (blendCurve) {
@@ -172,19 +161,17 @@ export function updateAnimation(state: AnimationState, delta: number) {
         case 'easeOut':
           return progress * (2 - progress)
         case 'easeInOut':
-          return progress < 0.5
-            ? 2 * progress * progress
-            : -1 + (4 - 2 * progress) * progress
+          return progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress
         case 'bounce':
           // Simple bounce approximation
-          if (progress < (1 / 2.75)) {
+          if (progress < 1 / 2.75) {
             return 7.5625 * progress * progress
-          } else if (progress < (2 / 2.75)) {
-            return 7.5625 * (progress -= (1.5 / 2.75)) * progress + 0.75
-          } else if (progress < (2.5 / 2.75)) {
-            return 7.5625 * (progress -= (2.25 / 2.75)) * progress + 0.9375
+          } else if (progress < 2 / 2.75) {
+            return 7.5625 * (progress -= 1.5 / 2.75) * progress + 0.75
+          } else if (progress < 2.5 / 2.75) {
+            return 7.5625 * (progress -= 2.25 / 2.75) * progress + 0.9375
           } else {
-            return 7.5625 * (progress -= (2.625 / 2.75)) * progress + 0.984375
+            return 7.5625 * (progress -= 2.625 / 2.75) * progress + 0.984375
           }
         case 'linear':
         default:
@@ -221,20 +208,23 @@ export function updateAnimation(state: AnimationState, delta: number) {
   // Check if current clip finished early (loopCount based) → start next immediately
   // Early finish: If not transitioning, current clip exists, and its action is active
 
-  if(state.isTransitioning || !state.currentClip) return
+  if (state.isTransitioning || !state.currentClip) return
 
-  const elapsed = (now - state.lastChangeTime) * .001
+  const elapsed = (now - state.lastChangeTime) * 0.001
 
-
-
-  if(Number.isFinite(state.currentClip.loopCount ?? Infinity)){
+  if (Number.isFinite(state.currentClip.loopCount ?? Infinity)) {
     const loops = state.currentClip.loopCount ?? 1
     const effectiveDuration = state.currentClip.duration * loops
-    if(elapsed < effectiveDuration * .9 ) {console.groupEnd(); return}
+    if (elapsed < effectiveDuration * 0.9) {
+      console.groupEnd()
+      return
+    }
+  } else {
+    if (elapsed < state.cycleInterval * 0.001) {
+      console.groupEnd()
+      return
+    }
   }
-  else {
-    if(elapsed < state.cycleInterval * .001) {console.groupEnd() ;return;}
-  }   
 
   // If there are queued items, consume the next queued clip; otherwise pick via cycling
   let nextItem: { clip: AnimationClip; blendTime: number } | null = null
@@ -242,16 +232,13 @@ export function updateAnimation(state: AnimationState, delta: number) {
     nextItem = state.queue.shift() || null
   }
   const nextClip = nextItem?.clip ?? pickNextClip(state)
-  const nextBlend = (nextItem?.blendTime ?? nextClip.blendTime) || getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
-  playClip(
-    state,
-    nextClip,
-    nextBlend
-  )
+  const nextBlend =
+    (nextItem?.blendTime ?? nextClip.blendTime) ||
+    getPersonalityConfiguration(state.cyclingState.currentPersonality).blendTime
+  playClip(state, nextClip, nextBlend)
   state.lastChangeTime = now
   return
 }
-
 
 // --------------------- Helpers ---------------------
 
@@ -285,7 +272,7 @@ function pickNextClip(state: AnimationState): AnimationClip {
   const categoryToPick = useSequence ? nextCategory : weightedCategoryPick(personalityConfig.weights)
 
   // Filter clips of chosen category
-  const categoryClips = allClips.filter(c => c.category === categoryToPick)
+  const categoryClips = allClips.filter((c) => c.category === categoryToPick)
   if (categoryClips.length === 0) return allClips[Math.floor(Math.random() * allClips.length)]
 
   // Pick random clip from that category
@@ -312,10 +299,10 @@ function pickNextClip(state: AnimationState): AnimationClip {
   return chosenClip
 }
 
-function playClip(state: AnimationState, clip: AnimationClip, blendTime: number , _warp: boolean = true) {
-  console.log("DEBUG" , clip.name)
+function playClip(state: AnimationState, clip: AnimationClip, blendTime: number, _warp: boolean = true) {
   if (!state.actions || !state.mixer) return
   const action = state.actions[clip.name]
+
   if (!action) return
 
   action.reset()
@@ -334,10 +321,9 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
   }
   action.setLoop(loopMode, repetitions)
   action.clampWhenFinished = true
-  
+
   // Apply animation speed from clip configuration
   action.timeScale = clip.speed
-
   // If no current clip, start immediately with full weight
   if (!state.currentClip) {
     action.setEffectiveWeight(1.0)
@@ -348,17 +334,22 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
 
   // Set up weight-based transition
   const currentAction = state.actions[state.currentClip.name]
+
+  if (state.currentClip && state.currentClip.name === clip.name) {
+    currentAction.play()
+    return
+  }
+
   if (currentAction && blendTime > 0) {
     // Start transition state
     state.isTransitioning = true
     state.nextClip = clip
     state.transitionProgress = 0
     state.transitionDuration = blendTime
-
     // Start new action with zero weight and correct speed
     action.setEffectiveWeight(0.0)
     action.play()
-    
+
     // Current action starts at full weight
     currentAction.setEffectiveWeight(1.0)
   } else {
@@ -367,6 +358,7 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number 
       currentAction.setEffectiveWeight(0.0)
       currentAction.stop()
     }
+
     action.setEffectiveWeight(1.0)
     action.play()
     state.currentClip = clip
@@ -385,7 +377,7 @@ export function getCurrentAnimationInfo(state: AnimationState) {
 
 // --------------------- Queue API ---------------------
 export function enqueueAnimation(state: AnimationState, performanceData: AnimationPerformanceData) {
-  const configuredClip = ANIMATION_CLIPS.find(c => c.name === performanceData.name)
+  const configuredClip = ANIMATION_CLIPS.find((c) => c.name === performanceData.name)
   if (!configuredClip) return
   const runtimeClip = {
     ...configuredClip,

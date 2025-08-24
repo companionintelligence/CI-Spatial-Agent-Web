@@ -99,9 +99,8 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
       updateMessages?.(userMessage, cleanedResponse)
 
       const fragments = cleanedResponse.split(/(?<=[.!?])|(?<=,)/)
-      fragments.forEach((breath , index) => {
+      fragments.forEach((breath, index) => {
         if (responseCallback && breath.trim()) {
-
           responseCallback({
             text: breath,
             breath,

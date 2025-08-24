@@ -17,6 +17,8 @@
     "@hexafield/simple-store": "^1.0.1",
     "@huggingface/transformers": "^3.7.1",
     "@mlc-ai/web-llm": "^0.2.79",
+    "@pixiv/three-vrm": "^3.4.2",
+    "@pixiv/three-vrm-animation": "^3.4.2",
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
     "@react-three/xr": "^6.6.20",

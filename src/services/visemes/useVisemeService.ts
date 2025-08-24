@@ -1,5 +1,8 @@
+import type { VRM } from '@pixiv/three-vrm'
 import { useCallback, useMemo, useRef, useState } from 'react'
 
+import { defaultVisemeConfig, type VisemeConfig } from './config/visemeConfig'
+import { visemePerformanceMonitor } from './debug/visemePerformance'
 import {
   initializeVisemeState,
   setupVisemeStateForMorphTargets,
@@ -9,31 +12,35 @@ import {
   visemesUpdate
 } from './visemesService'
 import type { VisemeState, WhisperData } from './visemeTypes'
-import { defaultVisemeConfig, type VisemeConfig } from './visemeConfig'
-import { visemePerformanceMonitor } from './visemePerformance'
 
 export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
-  const visemeStateRef = useRef<VisemeState>(initializeVisemeState())
+  const visemeStateRef = useRef<VisemeState>(initializeVisemeState(false)) // Default to GLB mode
   const [config, setConfig] = useState<VisemeConfig>({
     ...defaultVisemeConfig,
     ...initialConfig
   })
 
-  const generateSequence = useCallback((whisperData: WhisperData | null, startTime: number) => {
-    const sequence = visemesSequence(visemeStateRef.current, whisperData, startTime, config)
-    visemeStateRef.current.sequence = sequence
-    return sequence
-  }, [config])
+  const generateSequence = useCallback(
+    (whisperData: WhisperData | null) => {
+      const sequence = visemesSequence(visemeStateRef.current, whisperData, config)
+      visemeStateRef.current.sequence = sequence
+      return sequence
+    },
+    [config]
+  )
 
-  const updateVisemes = useCallback((currentTime: number) => {
-    visemesUpdate(visemeStateRef.current, currentTime, config)
-  }, [config])
+  const update = useCallback(
+    (delta: number) => {
+      visemesUpdate(visemeStateRef.current, delta, config)
+    },
+    [config]
+  )
 
-  const applyToRig = useCallback((currentTime: number, amplify: number = 1.0) => {
-    visemesToRig(visemeStateRef.current, currentTime, amplify)
+  const applyToRig = useCallback((delta: number, amplify: number = 1.0) => {
+    visemesToRig(visemeStateRef.current, delta, amplify)
   }, [])
 
-  const setupForVRM = useCallback((vrm: { expressionManager: { setValue: (key: string, value: number) => void } }) => {
+  const setupForVRM = useCallback((vrm: VRM) => {
     setupVisemeStateForVRM(visemeStateRef.current, vrm)
   }, [])
 
@@ -57,7 +64,7 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
   }, [])
 
   const updateConfig = useCallback((newConfig: Partial<VisemeConfig>) => {
-    setConfig(prev => ({ ...prev, ...newConfig }))
+    setConfig((prev) => ({ ...prev, ...newConfig }))
   }, [])
 
   const getConfig = useCallback(() => {
@@ -76,42 +83,40 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
   }, [])
 
   // Viseme service actions and getters (for this service, not emote)
-  const actions = useMemo(() => ({
-    generateSequence,
-    updateVisemes,
-    applyToRig,
-    setupForVRM,
-    setupForMorphTargets,
-    reset,
-    updateConfig,
+  const actions = useMemo(
+    () => ({
+      update,
+      reset,
+      generateSequence,
+      setupForVRM,
+      setupForMorphTargets,
+      applyToRig,
+      updateConfig  
+    }),
+    [generateSequence, update, applyToRig, setupForVRM, setupForMorphTargets, reset, updateConfig]
+  )
+
+  const getters = useMemo(
+    () => ({
+      getCurrentTargets,
+      getSequence,
+      getConfig,
+      getState: () => visemeStateRef.current
+    }),
+    [getCurrentTargets, getSequence, getConfig]
+  )
+
+  const debug = useMemo(() => ({
+    getPerformanceMetrics,
     resetPerformance
-  }), [
-    generateSequence,
-    updateVisemes,
-    applyToRig,
-    setupForVRM,
-    setupForMorphTargets,
-    reset,
-    updateConfig,
-    resetPerformance
-  ])
+  }),[getPerformanceMetrics, resetPerformance])
 
-  const getters = useMemo(() => ({
-    getCurrentTargets,
-    getSequence,
-    getConfig,
-    getPerformanceMetrics
-  }), [
-    getCurrentTargets,
-    getSequence,
-    getConfig,
-    getPerformanceMetrics
-  ])
-  
-
-  return useMemo(() => ({
-    actions,
-    getters
-  }), [actions, getters])
-
+  return useMemo(
+    () => ({
+      actions,
+      getters,
+      debug
+    }),
+    [actions, getters , debug]
+  )
 }

@@ -203,7 +203,7 @@ tts.actions.processQueue()
 const ttsService = useTTSService({
   config: { speed: 1.2, pitch: 1.0, remote: false },
   onSpeechStart: (text, whisperData) => {
-    visemeService.actions.generateSequence(whisperData, Date.now())
+    visemeService.actions.generateSequence(whisperData, performance.now())
   }
 })
 ```
@@ -227,7 +227,7 @@ const visemes = useVisemeService()
 visemes.actions.generateSequence(whisperData: WhisperData, startTime: number)
 visemes.actions.updateVisemes(currentTime: number)
 visemes.actions.applyToRig(currentTime: number, amplify?: number)
-visemes.actions.setupForVRM(vrm: VRMObject)
+visemes.actions.setupForVRM(vrm: VRM)
 visemes.actions.setupForMorphTargets(morphs: MorphTarget[], dictionary: VisemeDictionary)
 visemes.actions.reset()
 
@@ -280,11 +280,11 @@ emotes.onBargeIn()
 emotes.update(currentTime?: number)
 
 // Setup
-emotes.setupForVRM(vrm: VRMObject)
+emotes.setupForVRM(vrm: VRM)
 emotes.setupForMorphTargets(morphs: MorphTarget[], dictionary: EmoteDictionary)
 
 // Application
-emotes.applyToVRM(vrm: VRMObject)
+emotes.applyToVRM(vrm: VRM)
 emotes.applyToMorphTargets(morphs: MorphTarget[], dictionary: EmoteDictionary)
 
 // State Access

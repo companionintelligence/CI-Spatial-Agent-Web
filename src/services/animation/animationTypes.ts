@@ -1,20 +1,8 @@
 import * as THREE from 'three'
 
-export type AnimationCategory = 
-  | 'idle' 
-  | 'gesture' 
-  | 'movement' 
-  | 'expression' 
-  | 'action'
-  | 'communication'
+export type AnimationCategory = 'idle' | 'gesture' | 'movement' | 'expression' | 'action' | 'communication'
 
-export type BlendCurve = 
-  | 'linear'
-  | 'easeIn'
-  | 'easeOut'
-  | 'easeInOut'
-  | 'bounce'
-  | 'elastic'
+export type BlendCurve = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut' | 'bounce' | 'elastic'
 
 export interface AnimationClip {
   name: string
@@ -24,10 +12,10 @@ export interface AnimationClip {
   blendTime: number
   category: AnimationCategory
   priority: number
-  speed:number
+  speed: number
   // Loop configuration
   loopCount: number // Infinity = infinite loops, 1 = once, 2+ = specific count (defaults to Infinity for idle, 1 for others)
-  
+
   // Blending configuration
   blendCurve?: BlendCurve // Easing function for transitions (defaults to 'linear')
 }
@@ -53,7 +41,7 @@ export interface AnimationState {
   // Personality & sequence control
   cyclingState: {
     nextCycleTime: number
-    isActive: boolean,
+    isActive: boolean
     currentPersonality: string
     lastCategory?: AnimationCategory
   }
@@ -91,7 +79,7 @@ export interface AnimationPerformanceData {
   category?: AnimationCategory
   duration?: number
   immediate?: boolean
-  loopCount ? : number
-  blendTime? : number
-  speed? : number
+  loopCount?: number
+  blendTime?: number
+  speed?: number
 }

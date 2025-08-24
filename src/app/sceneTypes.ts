@@ -26,8 +26,8 @@ export interface LightConfig {
 export const sceneConfig: SceneConfig = {
   near: 0.1,
   far: 100,
-  cameraPosition: [0, 1.8, 2],
-  cameraTarget: [0, 1.2, 0],
+  cameraPosition: [0, 1.8, -2],
+  cameraTarget: [0, 1.5, 0],
   background: 0x1a1a1a,
   roomLighting: true
 }

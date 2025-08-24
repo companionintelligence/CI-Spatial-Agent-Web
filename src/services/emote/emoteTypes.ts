@@ -1,4 +1,37 @@
+import type { VRM } from '@pixiv/three-vrm'
+import type { Camera, Vector3 } from '@react-three/fiber'
+import type { Bone, Object3D } from 'three/src/Three.WebGPU.Nodes.js'
+
+// Enhanced error handling types
+export type EmoteResult<T = void> = {
+  success: boolean
+  data?: T
+  error?: string
+}
+
 export type EmotionType = 'neutral' | 'happy' | 'angry' | 'sad' | 'fear' | 'disgust' | 'love' | 'sleep'
+export type PlayerVisionType = 'focused' | 'peripheral' | null
+
+export const VRM_EXPRESSIONS = {
+  // Basic emotions
+  happy: 'happy',
+  angry: 'angry',
+  sad: 'sad',
+  relaxed: 'relaxed',
+  surprised: 'surprised',
+
+  // Eye expressions
+  blink: 'blink',
+  blinkLeft: 'blinkLeft',
+  blinkRight: 'blinkRight',
+  lookUp: 'lookUp',
+  lookDown: 'lookDown',
+  lookLeft: 'lookLeft',
+  lookRight: 'lookRight',
+
+  // Additional expressions
+  neutral: 'neutral'
+} as const
 
 export interface FacialTarget {
   // Eye expressions
@@ -67,6 +100,35 @@ export interface FacialTarget {
   eyesRotateY: number
 }
 
+export interface BlinkState {
+  nextBlinkTime: number
+  isBlinking: boolean
+  blinkStartTime: number
+}
+
+export interface GazeNeckState {
+  quaternions: {
+    current: [number, number, number, number] | null
+    default: [number, number, number, number] | null
+  }
+}
+
+export interface TickState {
+  currentTick: keyof FacialTarget | null
+  tickStartTime: number
+}
+
+export interface GazeState {
+  isGazing: boolean
+  gazeTime: {
+    start: number
+    end: number
+  }
+  isPlayerVisible: boolean
+  target: Vector3
+  neckOptions: GazeNeckState
+}
+
 export interface EmoteState {
   targets: Partial<FacialTarget>
   currentEmotion: EmotionType
@@ -75,50 +137,23 @@ export interface EmoteState {
   relaxationTime: number
 
   // Animation state
-  blinkState: {
-    nextBlinkTime: number
-    isBlinking: boolean
-    blinkStartTime: number
-  }
+  blinkState: BlinkState
 
   // Gaze state
-  gazeState: {
-    isGazing: boolean
-    gazeStartTime: number
-    gazeEndTime: number
-    headDefaultQuaternion: [number, number, number, number] | null
-    headCurrentQuaternion: [number, number, number, number] | null
-    headTargetQuaternion: [number, number, number, number] | null
-    isPlayerVisible: boolean
-  }
+  gazeState: GazeState
 
   // Facial ticks state
-  tickState: {
-    currentTick: keyof FacialTarget | null
-    tickStartTime: number
-  }
-
+  tickState: TickState
   // Integration interfaces
-  vrm?: { expressionManager: { setValue: (key: string, value: number) => void } }
+  vrm?: VRM
   morphs?: { morphTargetInfluences: number[] }[]
   dictionary?: Record<string, number[]>
-  bones?: Record<string, { quaternion: { copy: (q: unknown) => void }; matrixWorld: unknown; up: unknown }>
-  node?: {
-    quaternion: { copy: (q: unknown) => void }
-    getWorldQuaternion: (q: unknown) => unknown
-    parent?: { children: unknown[] }
-  }
-  scene?: { camera: { position: unknown; matrixWorld: unknown } }
+  bones?: Record<string, Bone>
+  node?: Object3D // avatar
+  camera?: Camera // viewer camera
 }
 
-export interface MoodConfiguration {
-  baseline: Partial<FacialTarget>
-  speech?: {
-    deltaRate: number
-    deltaPitch: number
-    deltaVolume: number
-  }
-}
+// MoodConfiguration moved to emoteConfig.ts
 
 export interface PerformanceData {
   emotion?: EmotionType
@@ -126,13 +161,10 @@ export interface PerformanceData {
   whisper?: { words?: string[]; wtimes?: number[]; wdurations?: number[] } // Whisper data for lip sync coordination
   bcounter?: number // Utterance counter for gaze behavior
   bargein?: boolean // Interruption signal
+  relaxTime?: number // Relaxation time 
 }
 
-export interface GazeOptions {
-  delay?: number // Delay before starting gaze (-1 for random)
-  duration?: number // Duration of gaze (-1 for random)
-  randomness?: number // Probability of actually gazing (0-1)
-}
+// GazeOptions moved to emoteConfig.ts
 
 export const createEmptyFacialTarget = (): Partial<FacialTarget> => ({
   eyeBlinkLeft: 0,

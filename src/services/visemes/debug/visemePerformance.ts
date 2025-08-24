@@ -20,7 +20,7 @@ export class VisemePerformanceMonitor {
 
   endFrame(visemesProcessed: number, sequenceLength: number, updateTime: number, rigApplyTime: number) {
     const frameTime = performance.now() - this.frameStartTime
-    
+
     this.metrics.push({
       frameTime,
       visemesProcessed,
@@ -35,7 +35,8 @@ export class VisemePerformanceMonitor {
     }
 
     // Log performance warnings
-    if (frameTime > 16.67) { // 60fps threshold
+    if (frameTime > 16.67) {
+      // 60fps threshold
       console.warn(`Viseme frame took ${frameTime.toFixed(2)}ms (target: <16.67ms)`)
     }
   }
@@ -43,19 +44,22 @@ export class VisemePerformanceMonitor {
   getAverageMetrics(): Partial<VisemePerformanceMetrics> {
     if (this.metrics.length === 0) return {}
 
-    const totals = this.metrics.reduce((acc, metric) => ({
-      frameTime: acc.frameTime + metric.frameTime,
-      visemesProcessed: acc.visemesProcessed + metric.visemesProcessed,
-      sequenceLength: acc.sequenceLength + metric.sequenceLength,
-      updateTime: acc.updateTime + metric.updateTime,
-      rigApplyTime: acc.rigApplyTime + metric.rigApplyTime
-    }), {
-      frameTime: 0,
-      visemesProcessed: 0,
-      sequenceLength: 0,
-      updateTime: 0,
-      rigApplyTime: 0
-    })
+    const totals = this.metrics.reduce(
+      (acc, metric) => ({
+        frameTime: acc.frameTime + metric.frameTime,
+        visemesProcessed: acc.visemesProcessed + metric.visemesProcessed,
+        sequenceLength: acc.sequenceLength + metric.sequenceLength,
+        updateTime: acc.updateTime + metric.updateTime,
+        rigApplyTime: acc.rigApplyTime + metric.rigApplyTime
+      }),
+      {
+        frameTime: 0,
+        visemesProcessed: 0,
+        sequenceLength: 0,
+        updateTime: 0,
+        rigApplyTime: 0
+      }
+    )
 
     const count = this.metrics.length
     return {

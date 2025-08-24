@@ -1,8 +1,8 @@
 import { useSimpleStore } from '@hexafield/simple-store/react'
 import { useEffect, useRef, useState } from 'react'
 
-import { AvatarState } from '../xr/AvatarModel'
-import { AnimationOptions, AvatarOptions } from '../xr/AvatarOptions'
+import { AvatarState } from '../scene/AvatarModel'
+import { AnimationOptions, AvatarOptions } from '../scene/AvatarOptions'
 import { ToggleButton } from './common/ToggleButton'
 
 interface AvatarControlsProps {

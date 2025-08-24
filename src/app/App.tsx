@@ -1,19 +1,16 @@
 import type { XRStore } from '@react-three/xr'
-import React, { useCallback, useRef, useState, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
+import { useAgent } from '../services/useAgent'
 import { config } from './config'
 import { useResponsiveLayout } from './layoutService'
 import { sceneConfig } from './sceneTypes'
 import type { AppConfig } from './types'
 import { initialAppConfig } from './types'
-import { useAgent } from '../services/useAgent'
-
-
-
 
 export const App = () => {
   useResponsiveLayout() // Layout service for responsive behavior
@@ -33,12 +30,15 @@ export const App = () => {
   }, [])
 
   // Combine service config with app config
-  const agentConfig = useMemo(() => ({
-    ...config,
-    autoSubmitEnabled: appConfig.autoSubmitEnabled,
-    bargeInEnabled: appConfig.bargeInEnabled
-  }), [appConfig.autoSubmitEnabled, appConfig.bargeInEnabled])
-  
+  const agentConfig = useMemo(
+    () => ({
+      ...config,
+      autoSubmitEnabled: appConfig.autoSubmitEnabled,
+      bargeInEnabled: appConfig.bargeInEnabled
+    }),
+    [appConfig.autoSubmitEnabled, appConfig.bargeInEnabled]
+  )
+
   const agent = useAgent(agentConfig)
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

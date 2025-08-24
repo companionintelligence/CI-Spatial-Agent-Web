@@ -1,4 +1,4 @@
-import type { PersonalityConfiguration } from './animationTypes'
+import type { PersonalityConfiguration } from '../animationTypes'
 
 export const personalityConfigurations: Record<string, PersonalityConfiguration> = {
   friendly: {
@@ -15,7 +15,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.2
     }
   },
-
   energetic: {
     defaultCycleInterval: 5000,
     blendTime: 600,
@@ -30,7 +29,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.1
     }
   },
-
   calm: {
     defaultCycleInterval: 12000,
     blendTime: 1200,
@@ -45,7 +43,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.0
     }
   },
-
   professional: {
     defaultCycleInterval: 10000,
     blendTime: 1000,
@@ -60,22 +57,20 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       communication: 0.2
     }
   },
-
   playful: {
     defaultCycleInterval: 6000,
     blendTime: 700,
     randomizeOrder: true,
     categories: ['idle', 'gesture', 'movement', 'action', 'expression'],
     weights: {
-      idle: .2,
-      gesture: .2,
-      movement: .3,
-      expression: .1,
-      action: .1,
-      communication: .1
+      idle: 0.2,
+      gesture: 0.2,
+      movement: 0.3,
+      expression: 0.1,
+      action: 0.1,
+      communication: 0.1
     }
   },
-
   thoughtful: {
     defaultCycleInterval: 15000,
     blendTime: 1500,
@@ -91,7 +86,6 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
     }
   }
 }
-
 
 export const getPersonalityConfiguration = (personality: string): PersonalityConfiguration => {
   return personalityConfigurations[personality] || personalityConfigurations.friendly

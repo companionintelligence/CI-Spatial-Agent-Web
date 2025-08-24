@@ -1,5 +1,7 @@
+import type { VRM } from '@pixiv/three-vrm'
+
 export interface VisemeTarget {
-  viseme_PP: number
+  viseme_PP: number // Remove "viseme_" prefix but keep all 14
   viseme_FF: number
   viseme_TH: number
   viseme_DD: number
@@ -15,34 +17,19 @@ export interface VisemeTarget {
   viseme_U: number
 }
 
-export interface VisemeSequenceItem {
-  template: { name: string }
-  ts: [number, number, number] // [begin, peak, end] timestamps
-  vs: Partial<Record<keyof VisemeTarget, [null, number, number]>>
-  viseme?: string
-  time?: number
-  duration?: number
+// ADD: 5-viseme interface for VRM models
+export interface VRMVisemeTarget {
+  aa: number
+  ee: number
+  ih: number
+  oh: number
+  ou: number
 }
 
-export interface VisemeState {
-  targets: VisemeTarget
-  dirty: Partial<VisemeTarget>
-  sequence: VisemeSequenceItem[]
-  vrm?: { expressionManager: { setValue: (key: string, value: number) => void } }
-  morphs?: { morphTargetInfluences: number[] }[]
-  dictionary?: Record<string, number[]> // Mapping for non-VRM avatars
-}
+// ADD: Union type for flexibility
+export type AnyVisemeTarget = VisemeTarget | VRMVisemeTarget
 
-export interface WhisperData {
-  words?: string[]
-  wtimes?: number[]
-  wdurations?: number[]
-}
-
-export interface LipsyncResult {
-  anim?: VisemeSequenceItem[]
-}
-
+// KEEP: Original create function for GLB
 export const createEmptyVisemeTarget = (): VisemeTarget => ({
   viseme_PP: 0,
   viseme_FF: 0,
@@ -59,3 +46,41 @@ export const createEmptyVisemeTarget = (): VisemeTarget => ({
   viseme_O: 0,
   viseme_U: 0
 })
+
+// ADD: VRM create function
+export const createEmptyVRMVisemeTarget = (): VRMVisemeTarget => ({
+  aa: 0,
+  ee: 0,
+  ih: 0,
+  oh: 0,
+  ou: 0
+})
+
+export interface VisemeSequenceItem {
+  template: { name: string }
+  ts: [number, number, number]
+  vs: Record<string, [null, number, number]>
+  viseme?: string
+  time?: number
+  duration?: number
+}
+
+export interface VisemeState {
+  targets: VisemeTarget | VRMVisemeTarget
+  dirty: Partial<VisemeTarget> | Partial<VRMVisemeTarget>
+  sequence: VisemeSequenceItem[]
+  vrm?: VRM
+  morphs?: { morphTargetInfluences: number[] }[]
+  dictionary?: Record<string, number[]>
+  isVRMMode?: boolean // ADD: Flag to determine which system to use
+}
+
+export interface WhisperData {
+  words?: string[]
+  wtimes?: number[]
+  wdurations?: number[]
+}
+
+export interface LipsyncResult {
+  anim?: VisemeSequenceItem[]
+}

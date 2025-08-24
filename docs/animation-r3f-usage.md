@@ -109,12 +109,12 @@ useFrame((_, delta) => {
   }
   
   if (visemeService) {
-    visemeService.actions.updateVisemes(Date.now())
-    visemeService.actions.applyToRig(Date.now())
+    visemeService.actions.updateVisemes(performance.now())
+    visemeService.actions.applyToRig(performance.now())
   }
   
   if (emoteService) {
-    emoteService.actions.update(Date.now())
+    emoteService.actions.update(performance.now())
   }
 })
 ```
