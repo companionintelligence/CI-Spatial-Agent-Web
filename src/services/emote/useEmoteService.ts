@@ -1,67 +1,80 @@
-import { useCallback, useMemo, useRef } from 'react'
+import type { VRM } from '@pixiv/three-vrm'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { Camera, Object3D } from 'three'
 
+import { defaultEmoteConfig, type EmoteConfig } from './configs/emoteConfig'
 import {
   applyEmoteStateToMorphTargets,
   applyEmoteStateToVRM,
   applyEmotion,
   handleBargeIn,
   initializeEmoteState,
-  initiateGaze,
   resetEmoteState,
   setupEmoteStateForMorphTargets,
   setupEmoteStateForVRM,
   startPerformance,
-  updateEmoteState
+  emoteUpdate as emoteUpdate
 } from './emoteService'
-import type { EmoteState, EmotionType, FacialTarget, GazeOptions, PerformanceData } from './emoteTypes'
-import type { VRM } from '@pixiv/three-vrm'
-import type { Camera, Object3D } from 'three'
+import type { EmoteResult, EmoteState, EmotionType, FacialTarget, PerformanceData } from './emoteTypes'
+import { initiateGaze } from './modules/gazeService'
 
-export const useEmoteService = () => {
+export const useEmoteService = (initialConfig?: Partial<EmoteConfig>) => {
   const emoteStateRef = useRef<EmoteState>(initializeEmoteState())
+  const [config, setConfig] = useState<EmoteConfig>({
+    ...defaultEmoteConfig,
+    ...initialConfig
+  })
 
-  const setEmotion = useCallback((emotion: EmotionType) => {
-    applyEmotion(emoteStateRef.current, emotion)
+  const setEmotion = useCallback((emotion: EmotionType): EmoteResult => {
+    return applyEmotion(emoteStateRef.current, emotion)
   }, [])
 
-  const performAction = useCallback((performanceData: PerformanceData,_delta : number = .33) => {
-    startPerformance(emoteStateRef.current, performanceData, _delta)
+  const performAction = useCallback((performanceData: PerformanceData, _delta: number = 0.33): EmoteResult => {
+    return startPerformance(emoteStateRef.current, performanceData, _delta)
   }, [])
 
-  const triggerGaze = useCallback((options?: GazeOptions) => {
-    initiateGaze(emoteStateRef.current, options)
+  const triggerGaze = useCallback((): void => {
+    initiateGaze(emoteStateRef.current, config.gaze.options)
   }, [])
 
   const update = useCallback((_delta: number) => {
-    updateEmoteState(emoteStateRef.current, _delta)
-  }, [])
+    emoteUpdate(emoteStateRef.current, _delta , config)
+  }, [config])
 
   const reset = useCallback(() => {
     resetEmoteState(emoteStateRef.current)
   }, [])
 
+  const updateConfig = useCallback((newConfig: Partial<EmoteConfig>) => {
+    setConfig((prev) => ({ ...prev, ...newConfig }))
+  }, [])
+
+  const getConfig = useCallback(() => {
+    return config
+  }, [config])
+
   const onBargeIn = useCallback(() => {
     handleBargeIn(emoteStateRef.current)
   }, [])
 
-  const setupForVRM = useCallback((vrm:VRM) => {
-    setupEmoteStateForVRM(emoteStateRef.current, vrm)
+  const setupForVRM = useCallback((vrm: VRM): EmoteResult => {
+    return setupEmoteStateForVRM(emoteStateRef.current, vrm)
   }, [])
 
   const setupForMorphTargets = useCallback(
-    (morphs: { morphTargetInfluences: number[] }[], dictionary: Record<string, number[]>) => {
-      setupEmoteStateForMorphTargets(emoteStateRef.current, morphs, dictionary)
+    (morphs: { morphTargetInfluences: number[] }[], dictionary: Record<string, number[]>): EmoteResult => {
+      return setupEmoteStateForMorphTargets(emoteStateRef.current, morphs, dictionary)
     },
     []
   )
 
-  const applyToVRM = useCallback((vrm: VRM ) => {
-    applyEmoteStateToVRM(emoteStateRef.current, vrm)
+  const applyToVRM = useCallback((vrm: VRM): EmoteResult => {
+    return applyEmoteStateToVRM(emoteStateRef.current, vrm)
   }, [])
 
   const applyToMorphTargets = useCallback(
-    (morphs: { morphTargetInfluences: number[] }[], dictionary: Record<string, number[]>) => {
-      applyEmoteStateToMorphTargets(emoteStateRef.current, morphs, dictionary)
+    (morphs: { morphTargetInfluences: number[] }[], dictionary: Record<string, number[]>): EmoteResult => {
+      return applyEmoteStateToMorphTargets(emoteStateRef.current, morphs, dictionary)
     },
     []
   )
@@ -79,7 +92,7 @@ export const useEmoteService = () => {
   }, [])
 
   const setAvatarReferences = useCallback(
-    (references: { bones?: Record<string, unknown>; node?: Object3D;  camera: Camera } ) => {
+    (references: { bones?: Record<string, unknown>; node?: Object3D; camera: Camera }): void => {
       const state = emoteStateRef.current
       if (references.bones) state.bones = references.bones as EmoteState['bones']
       if (references.node) state.node = references.node as EmoteState['node']
@@ -88,31 +101,52 @@ export const useEmoteService = () => {
     []
   )
 
-  const actions = useMemo(() => ({
-    setEmotion,
-    performAction,
-    triggerGaze,
-    reset,
-    onBargeIn,
-    update,
-    setupForVRM,
-    setupForMorphTargets,
-    setAvatarReferences,
-    applyToVRM,
-    applyToMorphTargets
-  }), [setEmotion, performAction, triggerGaze, reset, onBargeIn, update, setupForVRM, setupForMorphTargets, setAvatarReferences, applyToVRM, applyToMorphTargets])
-  
-  const getters = useMemo(() => ({
-    getCurrentTargets,
-    getCurrentEmotion,
-    isPerforming,
-    getState: () => emoteStateRef.current
-  }), [getCurrentTargets, getCurrentEmotion, isPerforming])
+  const actions = useMemo(
+    () => ({
+      update,
+      reset,
+      setEmotion,
+      performAction,
+      triggerGaze,
+      onBargeIn,
+      setupForVRM,
+      setupForMorphTargets,
+      setAvatarReferences,
+      applyToVRM,
+      applyToMorphTargets,
+      updateConfig,
+    }),
+    [
+      setEmotion,
+      performAction,
+      triggerGaze,
+      reset,
+      onBargeIn,
+      update,
+      setupForVRM,
+      setupForMorphTargets,
+      setAvatarReferences,
+      applyToVRM,
+      applyToMorphTargets
+    ]
+  )
 
+  const getters = useMemo(
+    () => ({
+      getCurrentTargets,
+      getCurrentEmotion,
+      isPerforming,
+      getConfig,
+      getState: () => emoteStateRef.current
+    }),
+    [getCurrentTargets, getCurrentEmotion, isPerforming, getConfig]
+  )
 
-  return useMemo(() => ({
-    actions,
-    getters
-  }), [actions, getters])
-
+  return useMemo(
+    () => ({
+      actions,
+      getters
+    }),
+    [actions, getters]
+  )
 }

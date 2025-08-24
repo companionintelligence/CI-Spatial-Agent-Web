@@ -1,11 +1,11 @@
 import type { XRStore } from '@react-three/xr'
 import { memo } from 'react'
 
-import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { SceneConfig } from '../app/sceneTypes'
-import type { useVisemeService } from '../services/visemes/useVisemeService'
-import { Scene3D } from '../xr/Scene3D'
 import type { useAnimationService } from '../services/animation/useAnimationService'
+import type { useEmoteService } from '../services/emote/useEmoteService'
+import type { useVisemeService } from '../services/visemes/useVisemeService'
+import { Scene3D } from '../scene/Scene3D'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
@@ -15,8 +15,14 @@ interface AvatarViewportProps {
   setXRStore?: (store: XRStore) => void
 }
 
-const AvatarViewportComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: AvatarViewportProps) => {
-  console.log("viewport rerender")
+const AvatarViewportComponent = ({
+  sceneConfig,
+  visemeService,
+  emoteService,
+  animationService,
+  setXRStore
+}: AvatarViewportProps) => {
+  console.log('viewport rerender')
   return (
     <div
       style={{

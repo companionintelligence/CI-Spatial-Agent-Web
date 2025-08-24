@@ -1,4 +1,4 @@
-import type { PersonalityConfiguration } from './animationTypes'
+import type { PersonalityConfiguration } from '../animationTypes'
 
 export const personalityConfigurations: Record<string, PersonalityConfiguration> = {
   friendly: {
@@ -63,12 +63,12 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
     randomizeOrder: true,
     categories: ['idle', 'gesture', 'movement', 'action', 'expression'],
     weights: {
-      idle: .2,
-      gesture: .2,
-      movement: .3,
-      expression: .1,
-      action: .1,
-      communication: .1
+      idle: 0.2,
+      gesture: 0.2,
+      movement: 0.3,
+      expression: 0.1,
+      action: 0.1,
+      communication: 0.1
     }
   },
   thoughtful: {
@@ -84,10 +84,8 @@ export const personalityConfigurations: Record<string, PersonalityConfiguration>
       action: 0.0,
       communication: 0.0
     }
-  },
-
+  }
 }
-
 
 export const getPersonalityConfiguration = (personality: string): PersonalityConfiguration => {
   return personalityConfigurations[personality] || personalityConfigurations.friendly

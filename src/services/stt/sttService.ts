@@ -225,17 +225,23 @@ export const useSTTService = ({
     }
   }, [])
 
-  const actions = useMemo(() => ({
-    setAllowed: setAllowedState,
-    setDesired: setDesiredState,
-    startListening: () => setDesiredState(true),
-    stopListening: () => setDesiredState(false)
-  }), [setAllowedState, setDesiredState])
+  const actions = useMemo(
+    () => ({
+      setAllowed: setAllowedState,
+      setDesired: setDesiredState,
+      startListening: () => setDesiredState(true),
+      stopListening: () => setDesiredState(false)
+    }),
+    [setAllowedState, setDesiredState]
+  )
 
-  return useMemo(() => ({
-    isListening,
-    allowed,
-    desired,
-    actions
-  }), [isListening, allowed, desired, actions])
+  return useMemo(
+    () => ({
+      isListening,
+      allowed,
+      desired,
+      actions
+    }),
+    [isListening, allowed, desired, actions]
+  )
 }

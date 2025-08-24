@@ -1,14 +1,14 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { useEffect, useState, memo } from 'react'
+import { memo, useEffect, useState } from 'react'
 
-import { AvatarControls } from '../components/AvatarControls'
-import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { SceneConfig } from '../app/sceneTypes'
+import { AvatarControls } from '../components/AvatarControls'
+import type { useAnimationService } from '../services/animation/useAnimationService'
+import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { AvatarModel } from './AvatarModel'
-import type { useAnimationService } from '../services/animation/useAnimationService'
 
 interface Scene3DProps {
   sceneConfig: SceneConfig
@@ -18,7 +18,13 @@ interface Scene3DProps {
   setXRStore?: (store: XRStore) => void
 }
 
-const SceneContent = ({ sceneConfig, visemeService, emoteService, animationService , store }: Scene3DProps & { store: XRStore }) => {
+const SceneContent = ({
+  sceneConfig,
+  visemeService,
+  emoteService,
+  animationService,
+  store
+}: Scene3DProps & { store: XRStore }) => {
   return (
     <XR store={store}>
       {/* Camera setup */}

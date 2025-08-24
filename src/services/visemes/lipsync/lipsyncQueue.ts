@@ -1,6 +1,6 @@
+import { defaultVisemeConfig, type VisemeConfig } from '../config/visemeConfig'
+import type { LipsyncResult, VisemeSequenceItem, WhisperData } from '../visemeTypes'
 import { LipsyncEn } from './lipsyncEn'
-import type { LipsyncResult, VisemeSequenceItem, WhisperData } from './visemeTypes'
-import { defaultVisemeConfig, type VisemeConfig } from './visemeConfig'
 
 const lipsync = { en: new LipsyncEn() }
 
@@ -24,7 +24,7 @@ function convertRange(value: number, fromRange: [number, number], toRange: [numb
 }
 
 export function lipsyncConvert(
-  whisperData: WhisperData, 
+  whisperData: WhisperData,
   lipsyncLang: string = 'en',
   config: VisemeConfig = defaultVisemeConfig
 ): LipsyncResult {
@@ -59,16 +59,19 @@ export function lipsyncConvert(
             const viseme = visemeData.visemes[j]
 
             // Use configurable special viseme intensities
-            const specialIntensity = viseme === 'PP' ? config.lipsync.specialVisemes.PP : 
-                                   viseme === 'FF' ? config.lipsync.specialVisemes.FF : 
-                                   level
+            const specialIntensity =
+              viseme === 'PP'
+                ? config.lipsync.specialVisemes.PP
+                : viseme === 'FF'
+                ? config.lipsync.specialVisemes.FF
+                : level
 
-              lipsyncAnim.push({
+            lipsyncAnim.push({
               template: { name: 'viseme' },
               ts: [t - Math.min(60, (2 * d) / 3), t + Math.min(25, d / 2), t + d + Math.min(60, d / 2)],
               vs: {
                 // CHANGE: Remove "viseme_" prefix - use viseme name directly
-                [viseme]: [null, specialIntensity, 0]  // was: [`viseme_${viseme}`]: [null, specialIntensity, 0]
+                [`viseme_${viseme}`]: [null, specialIntensity, 0] // was: [`viseme_${viseme}`]: [null, specialIntensity, 0]
               },
               viseme,
               time,

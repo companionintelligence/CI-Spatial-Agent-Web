@@ -1,4 +1,4 @@
-import type { AnimationClip } from './animationTypes'
+import type { AnimationClip } from '../animationTypes'
 
 export const ANIMATION_CLIPS: AnimationClip[] = [
   // Idle animations
@@ -16,8 +16,7 @@ export const ANIMATION_CLIPS: AnimationClip[] = [
     speed: 1
   },
 
-  /*
-  {
+  /*{
     name: 'Basic Idle',
     path: '/assets/animations/basic-idle.glb',
     duration: 5000,
@@ -28,7 +27,8 @@ export const ANIMATION_CLIPS: AnimationClip[] = [
     loopCount: Infinity, // Infinite loops
     blendCurve: 'easeInOut',
     speed: 1
-  },
+  }*/
+  /*
   {
     name: 'Warrior Idle',
     path: '/assets/animations/warrior-idle.glb',
@@ -425,7 +425,7 @@ export const getAnimationClips = (): AnimationClip[] => {
 }
 
 export const getClipsByCategory = (category: AnimationClip['category']): AnimationClip[] => {
-  return ANIMATION_CLIPS.filter(clip => clip.category === category)
+  return ANIMATION_CLIPS.filter((clip) => clip.category === category)
 }
 
 export const getRandomClip = (category?: AnimationClip['category']): AnimationClip => {
@@ -434,5 +434,5 @@ export const getRandomClip = (category?: AnimationClip['category']): AnimationCl
 }
 
 export const getClipsByPriority = (priority: number): AnimationClip[] => {
-  return ANIMATION_CLIPS.filter(clip => clip.priority <= priority)
-} 
+  return ANIMATION_CLIPS.filter((clip) => clip.priority <= priority)
+}

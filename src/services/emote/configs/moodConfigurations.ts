@@ -1,6 +1,6 @@
-import type { MoodConfiguration } from './emoteTypes'
+import type { MoodOptions } from "./emoteConfig";
 
-export const moodConfigurations: Record<string, MoodConfiguration> = {
+export const moodConfigurations: Record<string, MoodOptions> = {
   neutral: {
     baseline: {
       eyesLookDown: 0.1
@@ -9,8 +9,8 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaRate: 0,
       deltaPitch: 0,
       deltaVolume: 0
-    }
-  },
+    }  
+  } as MoodOptions,
 
   happy: {
     baseline: {
@@ -22,7 +22,7 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: 0.1,
       deltaVolume: 0
     }
-  },
+  } as MoodOptions,
 
   angry: {
     baseline: {
@@ -42,7 +42,7 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: 0.2,
       deltaVolume: 0
     }
-  },
+  } as MoodOptions,
 
   sad: {
     baseline: {
@@ -67,7 +67,7 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: -0.2,
       deltaVolume: 0
     }
-  },
+  } as MoodOptions,
 
   fear: {
     baseline: {
@@ -86,7 +86,7 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: 0,
       deltaVolume: 0
     }
-  },
+  } as MoodOptions,
 
   disgust: {
     baseline: {
@@ -112,7 +112,7 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: 0,
       deltaVolume: 0
     }
-  },
+  } as MoodOptions,
 
   love: {
     baseline: {
@@ -137,7 +137,7 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: -0.7,
       deltaVolume: 0
     }
-  },
+  } as MoodOptions    ,
 
   sleep: {
     baseline: {
@@ -150,5 +150,5 @@ export const moodConfigurations: Record<string, MoodConfiguration> = {
       deltaPitch: -0.2,
       deltaVolume: 0
     }
-  }
+  } as MoodOptions,
 }

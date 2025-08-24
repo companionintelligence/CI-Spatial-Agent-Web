@@ -1,8 +1,12 @@
+import { useGLTF } from '@react-three/drei'
 import { useCallback, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 
+import { ANIMATION_CLIPS } from './config/animationClips'
 import {
   applyPersonality,
+  clearAnimationQueue,
+  enqueueAnimation,
   getCurrentAnimationInfo,
   getPersonalityAnimationClips,
   initializeAnimationState,
@@ -11,14 +15,10 @@ import {
   setAnimationEnabled,
   setupAnimationState,
   startPerformance,
-  updateAnimation,
-  enqueueAnimation,
-  clearAnimationQueue
+  updateAnimation
 } from './animationService'
-import type { AnimationState, AnimationClip, AnimationPerformanceData } from './animationTypes'
-import { getAvailablePersonalities } from './personalityConfigs'
-import { ANIMATION_CLIPS } from './animationClips'
-import { useGLTF } from '@react-three/drei'
+import type { AnimationClip, AnimationPerformanceData, AnimationState } from './animationTypes'
+import { getAvailablePersonalities } from './config/personalityConfig'
 
 export const useAnimationService = () => {
   const animationStateRef = useRef<AnimationState>(initializeAnimationState())
@@ -40,17 +40,16 @@ export const useAnimationService = () => {
     setAnimationEnabled(animationStateRef.current, enabled)
   }, [])
 
-  const setup = useCallback((
-    actions: Record<string, THREE.AnimationAction>,
-    mixer: THREE.AnimationMixer,
-    avatar?: THREE.Object3D
-  ) => {
-    setupAnimationState(animationStateRef.current, actions, mixer, avatar)
-    
-    // Initialize with a default animation
-    const personality = animationStateRef.current.cyclingState.currentPersonality
-    initializeDefaultAnimation(animationStateRef.current, personality)
-  }, [])
+  const setup = useCallback(
+    (actions: Record<string, THREE.AnimationAction>, mixer: THREE.AnimationMixer, avatar?: THREE.Object3D) => {
+      setupAnimationState(animationStateRef.current, actions, mixer, avatar)
+
+      // Initialize with a default animation
+      const personality = animationStateRef.current.cyclingState.currentPersonality
+      initializeDefaultAnimation(animationStateRef.current, personality)
+    },
+    []
+  )
 
   const update = useCallback((delta: number) => {
     updateAnimation(animationStateRef.current, delta)
@@ -77,44 +76,48 @@ export const useAnimationService = () => {
     return animationStateRef.current.isTransitioning
   }, [])
 
-  return useMemo(() => ({
-    actions: {
+  return useMemo(
+    () => ({
+      actions: {
+        setPersonality,
+        performAction,
+        enqueue: (performanceData: AnimationPerformanceData) =>
+          enqueueAnimation(animationStateRef.current, performanceData),
+        clearQueue: () => clearAnimationQueue(animationStateRef.current),
+        enableCycling,
+        reset,
+        setup,
+        update
+      },
+      // Info methods
+      getters: {
+        getCurrentInfo,
+        getCurrentPersonality,
+        getAvailableClips,
+        getAvailablePersonalities,
+        isEnabled,
+        isTransitioning,
+        getState: () => animationStateRef.current
+      }
+    }),
+    [
       setPersonality,
       performAction,
-      enqueue: (performanceData: AnimationPerformanceData) => enqueueAnimation(animationStateRef.current, performanceData),
-      clearQueue: () => clearAnimationQueue(animationStateRef.current),
       enableCycling,
       reset,
       setup,
-      update
-    },
-    // Info methods
-    getters: {
+      update,
       getCurrentInfo,
       getCurrentPersonality,
       getAvailableClips,
       getAvailablePersonalities,
       isEnabled,
-      isTransitioning,
-      getState: () => animationStateRef.current
-    }
-  }), [
-    setPersonality,
-    performAction,
-    enableCycling,
-    reset,
-    setup,
-    update,
-    getCurrentInfo,
-    getCurrentPersonality,
-    getAvailableClips,
-    getAvailablePersonalities,
-    isEnabled,
-    isTransitioning
-  ])
+      isTransitioning
+    ]
+  )
 }
 
 // Preload animation assets
-ANIMATION_CLIPS.forEach(clip => {
+ANIMATION_CLIPS.forEach((clip) => {
   useGLTF.preload(clip.path)
 })

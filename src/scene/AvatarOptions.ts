@@ -13,4 +13,4 @@ export const AvatarOptions = {
   'Unbranded Woman Short Hair': '/assets/avatars/unbranded-woman-short-hair.glb',
   Takeshi: '/assets/avatars/vrm/takeshi.vrm',
   Savi: '/assets/avatars/vrm/savi.vrm'
-};
+}

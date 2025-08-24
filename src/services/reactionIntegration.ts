@@ -1,11 +1,7 @@
+import type { AnimationPerformanceData } from './animation/animationTypes'
 import type { ConversationMessage } from './conversation/conversationType'
 import type { PerformanceData } from './emote/emoteTypes'
-import type { AnimationPerformanceData } from './animation/animationTypes'
-import {
-  detectEmotionFromText,
-  analyzeMessageForActions,
-  getEmotionIntensity
-} from './emotionIntegration'
+import { analyzeMessageForActions, detectEmotionFromText, getEmotionIntensity } from './emotionIntegration'
 
 /**
  * Build PerformanceData (facial/emote) and an AnimationPerformanceData (body animation)
@@ -14,7 +10,7 @@ import {
 export const createReactionFromMessage = (
   message: ConversationMessage,
   messageIndex: number = 0
-): { performance: PerformanceData; animation: AnimationPerformanceData | undefined} => {
+): { performance: PerformanceData; animation: AnimationPerformanceData | undefined } => {
   const emotion = detectEmotionFromText(message.text)
   const action = analyzeMessageForActions(message)
   const intensity = getEmotionIntensity(message.text)
@@ -71,7 +67,7 @@ export const selectAnimationForPerformance = (
     }
   }
 
-  if(base === undefined) return 
+  if (base === undefined) return
   // Intensity-based modulation
   const speedScale = clamp(0.75 + intensity * 0.5, 0.75, 1.25) // 0.75..1.25
   const blendScale = clamp(1.0 - intensity * 0.3, 0.7, 1.0) // higher intensity → faster blend
@@ -89,5 +85,3 @@ export const reactionIntegrationService = {
   createReactionFromMessage,
   selectAnimationForPerformance
 }
-
-

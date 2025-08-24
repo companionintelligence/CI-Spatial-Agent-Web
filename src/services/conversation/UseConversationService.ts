@@ -28,10 +28,10 @@ export const useConversationService = () => {
     (fragment: string, finished: boolean) => {
       setState((prev) => {
         const lastLLMStreamingMessage = prev.messages.find((msg) => msg.isUser === false && msg.text.endsWith('...'))
-        
+
         if (lastLLMStreamingMessage) {
-          const updatedMessages = prev.messages.map(msg => 
-            msg.id === lastLLMStreamingMessage.id 
+          const updatedMessages = prev.messages.map((msg) =>
+            msg.id === lastLLMStreamingMessage.id
               ? { ...msg, text: msg.text.slice(0, -3) + fragment + (finished ? '' : '...') }
               : msg
           )
@@ -68,15 +68,21 @@ export const useConversationService = () => {
     }))
   }, [setState])
 
-  const actions = useMemo(() => ({
-    addMessage,
-    streamMessage,
-    updateCurrentMessage,
-    clearCurrentMessage
-  }), [addMessage, streamMessage, updateCurrentMessage, clearCurrentMessage])
-  
-  return useMemo(() => ({
-    state,
-    actions
-  }), [state, actions])
+  const actions = useMemo(
+    () => ({
+      addMessage,
+      streamMessage,
+      updateCurrentMessage,
+      clearCurrentMessage
+    }),
+    [addMessage, streamMessage, updateCurrentMessage, clearCurrentMessage]
+  )
+
+  return useMemo(
+    () => ({
+      state,
+      actions
+    }),
+    [state, actions]
+  )
 }
