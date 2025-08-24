@@ -1,5 +1,5 @@
 import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
-import { VRM, VRMCore, VRMLoaderPlugin } from '@pixiv/three-vrm'
+import { VRM, VRMCore, VRMLoaderPlugin, VRMUtils } from '@pixiv/three-vrm'
 import { createVRMAnimationClip, VRMAnimation, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
@@ -13,8 +13,9 @@ import { useAnimationService } from '../services/animation/useAnimationService'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { AvatarOptions } from './AvatarOptions'
+import { Vector3 } from 'three'
 
-const AVATAR_MODEL = AvatarOptions.Shanee
+const AVATAR_MODEL = AvatarOptions.Savi
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
@@ -27,6 +28,7 @@ interface AvatarModelProps {
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
+  onHeadLocated?: (target: [number, number, number], position: [number, number, number]) => void
 }
 
 // Custom hook to load external animation files, including VRMA animations
@@ -98,7 +100,7 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D>
   return { actions, mixer, animations: allAnimations }
 }
 
-const AvatarModelComponent = ({ visemeService, emoteService, animationService }: AvatarModelProps) => {
+const AvatarModelComponent = ({ visemeService, emoteService, animationService, onHeadLocated }: AvatarModelProps) => {
   const { scene: viewerScene, camera: viewerCamera } = useThree()
 
   const [state] = useSimpleStore(AvatarState)
@@ -119,40 +121,56 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService }:
   const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined
   const avatarScene = isVRM ? vrm?.scene : gltf.scene
   const avatarRef = useRef<THREE.Object3D>(null)
+  
   // Only for setup: position the camera along the forward of the face of the avatar once, when avatar loads
+  // TODO : very manual and hardcoded, must standarize avatar input 
   useEffect(() => {
     if (!avatarRef.current || !viewerCamera) return
-
     // Try to find the head or face bone/node
     let head: THREE.Object3D | null = null
 
     // VRM: try to use humanoid bone
     if (isVRM && vrm?.humanoid) {
-      const normalizedBone = vrm.humanoid.getNormalizedBone('head')
+      const normalizedBone = vrm.humanoid.getRawBone('head')
       head = normalizedBone?.node ?? null
+      VRMUtils.rotateVRM0(vrm)
+    } else {
+      // GLB: try to find a bone named "head"
+      avatarRef.current?.traverse((child: any) => {
+        if (
+          !head &&
+          child.isBone &&
+          typeof child.name === 'string' &&
+          child.name.toLowerCase().includes('head')
+        ) {
+          head = child
+        }
+      })
     }
 
     // Fallback: search for a node with "head" or "face" in the name
-
+    
     // If found, position the camera in front of the head (only once, for setup)
-    if (head) {
-      // Get world position and direction
-      const headWorldPos = new THREE.Vector3()
+    if (head && avatarRef.current) {
+      // Get world position of the head
+      const headWorldPos = new Vector3()
       head.getWorldPosition(headWorldPos)
+      // Get the avatar's forward direction in world space (-Z in local space)
+      const avatarWorldQuat = new THREE.Quaternion()
+      avatarRef.current.getWorldQuaternion(avatarWorldQuat)
+      const avatarForward = new Vector3(0, 0, isVRM ? -1 : 1)  .applyQuaternion(avatarWorldQuat).normalize()
 
-      // Forward direction: -Z in local space
-      const forward = new THREE.Vector3(0, 0, -1)
-      forward.applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion()))
+      // Set camera target to the head's world position
+      const cameraTarget = headWorldPos.toArray() as [number, number, number]
 
-      // Position the camera a certain distance in front of the face
-      const cameraDistance = 3.0 // meters in front of face
-      const cameraPos = headWorldPos.clone().add(forward.multiplyScalar(cameraDistance))
+      // Set camera position a certain distance in front of the head, along the avatar's forward vector
+      const cameraDistance = .5 // You can adjust this distance as needed
+      const cameraPos = headWorldPos.clone().add(avatarForward.multiplyScalar(cameraDistance))
+      const cameraPosition = cameraPos.toArray() as [number, number, number]
 
-      viewerCamera.position.copy(cameraPos)
-      console.log('Camera position set to', headWorldPos)
-      viewerCamera.lookAt(headWorldPos)
+      onHeadLocated?.(cameraTarget, cameraPosition)
+      if(isVRM) avatarRef.current.position.x += .2  // hardcoded adjustment for now
     }
-    avatarRef.current.position.x += -0.05 // TEMP : slight hardcoded adjustment to compenstate for current animation
     // Only run on initial avatar load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [avatarRef.current])

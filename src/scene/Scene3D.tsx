@@ -1,7 +1,8 @@
 import { Environment, OrbitControls } from '@react-three/drei'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { memo, useEffect, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
 
 import type { SceneConfig } from '../app/sceneTypes'
 import type { useAnimationService } from '../services/animation/useAnimationService'
@@ -24,11 +25,31 @@ const SceneContent = ({
   animationService,
   store
 }: Scene3DProps & { store: XRStore }) => {
+  const controlsRef = useRef<any>(null)
+  const { camera } = useThree()
+  const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
+  const [camPos, setCamPos] = useState<[number, number, number]>(sceneConfig.cameraPosition)
+
+  useEffect(() => {
+    camera.position.set(camPos[0], camPos[1], camPos[2])
+    camera.lookAt(new THREE.Vector3(camTarget[0], camTarget[1], camTarget[2]))
+    if (controlsRef.current) {
+      controlsRef.current.target.set(camTarget[0], camTarget[1], camTarget[2])
+      controlsRef.current.update()
+    }
+  }, [camPos, camTarget, camera])
+
+  const handleHeadLocated = (target: [number, number, number], position: [number, number, number]) => {
+    setCamTarget(target)
+    setCamPos(position)
+  }
   return (
     <XR store={store}>
       {/* Camera setup */}
+      
       <OrbitControls
-        target={sceneConfig.cameraTarget}
+        ref={controlsRef}
+        target={camTarget}
         enablePan={true}
         enableZoom={true}
         enableRotate={true}
@@ -48,7 +69,12 @@ const SceneContent = ({
       <Environment preset="studio" />
 
       {/* Avatar with external animations */}
-      <AvatarModel visemeService={visemeService} emoteService={emoteService} animationService={animationService} />
+      <AvatarModel
+        visemeService={visemeService}
+        emoteService={emoteService}
+        animationService={animationService}
+        onHeadLocated={handleHeadLocated}
+      />
 
       {/* Ground plane */}
       {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
@@ -61,7 +87,7 @@ const SceneContent = ({
 
 const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: Scene3DProps) => {
   const store = createXRStore()
-  const [isControlsVisible, setIsControlsVisible] = useState(true)
+  
 
   useEffect(() => {
     if (setXRStore) {
@@ -73,9 +99,9 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       {/* Avatar Controls Component */}{' '}
       {/*<AvatarControls
-        isVisible={isControlsVisible}
-        onToggleVisibility={() => setIsControlsVisible(!isControlsVisible)}
-      />/}
+        isVisible={true}
+        onToggleVisibility={() => {}}
+      />*/}
       {/* Canvas */}
       <Canvas camera={{ position: [0, 1.6, 3], fov: 50 }} style={{ background: 'transparent' }} shadows>
         <SceneContent

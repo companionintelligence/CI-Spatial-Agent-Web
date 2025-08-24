@@ -156,9 +156,9 @@ function updateNeckGaze(state: EmoteState, target: Vector3, delta: number , conf
 
   // Compute direction to target in world space
   const toTarget = new Vector3().subVectors(target, neckWorld).normalize()
-
+  const neckWorldQuat = state.bones.neck.getWorldQuaternion(new Quaternion())
   // Get neck's forward direction in world space
-  const neckForward = new Vector3(0, 0, -1).applyQuaternion(state.bones.neck.quaternion).normalize()
+  const neckForward = new Vector3(0, 0, -1).applyQuaternion(neckWorldQuat).normalize()
 
   // Calculate yaw (rotation around y axis)
   const toTargetXZ = new Vector3(toTarget.x, 0, toTarget.z).normalize()
@@ -168,7 +168,6 @@ function updateNeckGaze(state: EmoteState, target: Vector3, delta: number , conf
   const signYaw = Math.sign(crossYaw.y) // y axis is up
   yawAngle *= signYaw
 
-  // Clamp yaw angle (±60°)
   const maxYaw = config.gaze.neck.yaw * DEG2RAD
   yawAngle = Math.max(-maxYaw, Math.min(maxYaw, yawAngle))
 
@@ -177,7 +176,7 @@ function updateNeckGaze(state: EmoteState, target: Vector3, delta: number , conf
   const toTargetYZ = new Vector3(0, toTarget.y, toTarget.z).normalize()
   const neckForwardYZ = new Vector3(0, neckForward.y, neckForward.z).normalize()
   let pitchAngle = neckForwardYZ.angleTo(toTargetYZ)
-  const crossPitch = new Vector3().crossVectors(neckForwardYZ, toTargetYZ)
+  const crossPitch = new Vector3().crossVectors(toTargetYZ ,neckForwardYZ)
   const signPitch = Math.sign(crossPitch.x) // x axis is right
   pitchAngle *= signPitch
 
