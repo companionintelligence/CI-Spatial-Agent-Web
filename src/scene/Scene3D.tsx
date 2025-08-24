@@ -4,7 +4,6 @@ import { createXRStore, XR, type XRStore } from '@react-three/xr'
 import { memo, useEffect, useState } from 'react'
 
 import type { SceneConfig } from '../app/sceneTypes'
-import { AvatarControls } from '../components/AvatarControls'
 import type { useAnimationService } from '../services/animation/useAnimationService'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
