@@ -6,6 +6,7 @@ import { ChatInput } from './ChatInput'
 import { ControlPanel } from '../ControlPanel'
 import type { AgentService } from '../../services/useAgent'
 import type { XRStore } from '@react-three/xr'
+import { shouldTriggerBargeIn } from '../../services/integration/emotionIntegration'
 
 interface ChatOverlayProps {
   config: AppConfig
@@ -25,9 +26,16 @@ export const ChatOverlay = memo(({
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      agent.actions.submitMessage(agent.state.currentMessage)
+      handleSubmit(agent.state.currentMessage)
     }
   }, [agent.actions, agent.state.currentMessage])
+
+  const handleSubmit = useCallback((message: string) => {
+    if(shouldTriggerBargeIn({text: message, isUser: true, id: '', timestamp: 0})) {
+      agent.actions.triggerBargein()
+    }
+    agent.actions.submitMessage(message)
+  }, [agent.actions])
 
   const handleEnterARMode = useCallback(() => {
     if (!xrStore) return
@@ -44,7 +52,7 @@ export const ChatOverlay = memo(({
       <ChatInput
         message={agent.state.currentMessage}
         onMessageChange={agent.actions.updateCurrentMessage}
-        onSubmit={agent.actions.submitMessage}
+        onSubmit={handleSubmit}
         onKeyPress={handleKeyPress}
         isRecording={config.microphone}
         vadDetecting={agent.state.vadIsDetecting}

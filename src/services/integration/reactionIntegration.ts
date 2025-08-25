@@ -1,7 +1,7 @@
 import type { AnimationPerformanceData } from '../animation/animationTypes'
 import type { ConversationMessage } from '../conversation/conversationType'
 import type { PerformanceData } from '../emote/emoteTypes'
-import { analyzeMessageForActions, detectEmotionFromText, getEmotionIntensity } from './emotionIntegration'
+import { analyzeMessageForActions, detectEmotionFromText, getEmotionIntensity, shouldTriggerBargeIn } from './emotionIntegration'
 
 /**
  * Build PerformanceData (facial/emote) and an AnimationPerformanceData (body animation)
@@ -14,7 +14,7 @@ export const createReactionFromMessage = (
   const emotion = detectEmotionFromText(message.text)
   const action = analyzeMessageForActions(message)
   const intensity = getEmotionIntensity(message.text)
-
+  
   const performance: PerformanceData = {
     emotion,
     action,

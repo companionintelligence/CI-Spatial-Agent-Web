@@ -18,6 +18,7 @@ import { defaultVadConfig, type VADConfig, type VADResult } from './vad/vadConfi
 import { defaultTTSConfig, type TTSConfig, type WhisperData } from './tts/ttsConfig'
 import { defaultSTTConfig, type STTConfig } from './stt/sttConfig'
 import { defaultLLMConfig, type LLMConfig } from './llm/llmConfig'
+import { shouldTriggerBargeIn } from './integration/emotionIntegration'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -283,21 +284,15 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     config: sttConfig,
     onPerform: (result) => {
       if (result.final) {
-        if (result.text.trim() === 'stop') {
-          const interrupt = Date.now()
-          interruptCounterRef.current = interrupt
-
-          if (tts.isSpeaking) {
-            tts.actions.stopSpeaking()
-          }
-
-          // Trigger barge-in behavior in emote system
+        const interrupt = Date.now()
+        // Handle barge-in if detected
+        if (shouldTriggerBargeIn({ text: result.text, isUser: true, id: '', timestamp: interrupt })) {
+          if(tts.isSpeaking){tts.actions.stopSpeaking()}
           emotes.actions.onBargeIn()
-
           console.log('STT: Stop command detected - barge-in activated')
-          return
         }
 
+        // Auto-submit or set interim transcript
         if (appConfig.autoSubmitEnabled) {
           conversation.actions.addMessage(result.text, true)
           setCurrentInterimTranscript('')
@@ -305,7 +300,6 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           setCurrentInterimTranscript(result.text)
         }
 
-        const interrupt = Date.now()
         interruptCounterRef.current = interrupt
         llmService.actions.processUserInput({
           text: result.text,
@@ -331,8 +325,13 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   }, [vadDetecting, stt.actions])
 
   useEffect(() => {
-    stt.actions.setAllowed(!tts.isSpeaking.current)
-  }, [tts.isSpeaking, stt.actions])
+    // Always allow STT if barge-in is enabled, otherwise only allow if not speaking
+    if (appConfig.bargeInEnabled) {
+      stt.actions.setAllowed(true)
+    } else {
+      stt.actions.setAllowed(!tts.isSpeaking.current)
+    }
+  }, [appConfig.bargeInEnabled, tts.isSpeaking, stt.actions])
 
   // Convenience action implementations
   const submitMessage = useCallback(

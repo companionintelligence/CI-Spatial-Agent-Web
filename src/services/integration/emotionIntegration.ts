@@ -194,9 +194,54 @@ export const createPerformanceFromMessage = (
  * Determine if a message should trigger barge-in behavior
  */
 export const shouldTriggerBargeIn = (message: ConversationMessage): boolean => {
-  // Typically this would be triggered by user interrupting the agent
-  // For now, we'll use a simple heuristic
-  return message.isUser && message.text.toLowerCase().includes('stop')
+  // Improved heuristic for barge-in detection:
+  // - User message
+  // - Contains strong interruptive keywords or phrases
+  // - Short, imperative, or urgent tone
+  if (!message.isUser || !message.text) return false
+
+  const lowerText = message.text.toLowerCase().trim()
+
+  // List of interruptive keywords/phrases
+  const bargeInPhrases = [
+    'stop',
+    'wait',
+    'hold on',
+    'pause',
+    'enough',
+    'that\'s enough',
+    'quiet',
+    'be quiet',
+    'shut up',
+    'cancel',
+    'interrupt',
+    'let me speak',
+    'let me talk',
+    'listen',
+    'no more',
+    'please stop',
+    'please wait'
+  ]
+
+  // Check for exact match for very short commands (e.g., "stop", "wait")
+  if (bargeInPhrases.some(phrase => lowerText === phrase)) return true
+
+  // Check for presence of barge-in phrases anywhere in the message
+  if (bargeInPhrases.some(phrase => lowerText.includes(phrase))) return true
+
+  // Heuristic: very short user utterances (1-2 words) that are imperative
+  const words = lowerText.split(/\s+/)
+  if (words.length <= 2 && (
+    words.includes('stop') ||
+    words.includes('wait') ||
+    words.includes('pause') ||
+    words.includes('enough') ||
+    words.includes('cancel')
+  )) {
+    return true
+  }
+
+  return false
 }
 
 /**

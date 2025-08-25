@@ -15,7 +15,7 @@ export const useConversationService = () => {
         isUser,
         timestamp: Date.now()
       }
-
+      
       setState((prev) => ({
         ...prev,
         messages: [...prev.messages, newMessage]

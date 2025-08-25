@@ -79,6 +79,7 @@ export const useSTTService = ({
   const rcounterRef = useRef(1)
   const bcounterRef = useRef(1)
   const activeRef = useRef(false)
+  const retryRef = useRef({ count: 0, timerId: 0 as number | undefined })
 
   const initRecognition = useCallback(() => {
     if (recognitionRef.current) return
@@ -123,15 +124,79 @@ export const useSTTService = ({
     }
 
     const kick = (event?: Event) => {
+      const anyEvent = event as unknown as { error?: string; message?: string }
+      const errorType = anyEvent?.error
+
       if (event) {
-        console.error('STT: speech recognition error, restarting', event)
+        console.error('STT: speech recognition error, restarting', { error: errorType, event })
       }
-      recognition.stop()
-      setTimeout(() => {
+
+      // Stop current session safely
+      try {
+        recognition.stop()
+      } catch {
+        // ignore stop errors
+      }
+
+      // Decide backoff based on error type
+      let delayMs = 200
+      let shouldRestart = desired && allowed
+
+      switch (errorType) {
+        case 'not-allowed':
+        case 'service-not-allowed':
+          // Permission denied or service not allowed – do not loop
+          setAllowed(false)
+          activeRef.current = false
+          shouldRestart = false
+          break
+        case 'audio-capture':
+          // No microphone available
+          setAllowed(false)
+          activeRef.current = false
+          shouldRestart = false
+          break
+        case 'network':
+          // Exponential backoff for transient network failures
+          retryRef.current.count = Math.min(retryRef.current.count + 1, 6)
+          delayMs = Math.min(200 * Math.pow(2, retryRef.current.count), 10000)
+          // If offline, wait for connectivity
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            shouldRestart = false
+            window.addEventListener(
+              'online',
+              () => {
+                if (desired && allowed) {
+                  recognition.start2()
+                }
+              },
+              { once: true }
+            )
+          }
+          break
+        case 'no-speech':
+        case 'aborted':
+        default:
+          // Quick restart for benign/transient issues
+          retryRef.current.count = 0
+          delayMs = 200
+          break
+      }
+
+      // Clear any pending restart
+      if (retryRef.current.timerId) {
+        clearTimeout(retryRef.current.timerId)
+        retryRef.current.timerId = undefined
+      }
+
+      if (!shouldRestart) return
+
+      // Schedule restart guarded by desired/allowed flags
+      retryRef.current.timerId = window.setTimeout(() => {
         if (desired && allowed) {
-          recognition.start()
+          recognition.start2?.()
         }
-      }, 200)
+      }, delayMs)
     }
 
     recognition.onerror = kick
@@ -139,6 +204,8 @@ export const useSTTService = ({
     recognition.onstart = () => {
       setIsListening(true)
       activeRef.current = true
+      // Reset backoff on successful start
+      retryRef.current.count = 0
     }
 
     recognition.onend = () => {
