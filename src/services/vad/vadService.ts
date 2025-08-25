@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-
-import type { AudioConfigPartial, VADResult } from '../audioTypes'
-import { defaultAudioConfig } from '../audioTypes'
+import {  defaultVadConfig, type VADConfig, type VADResult } from './vadConfig'
+import { MicVAD } from '@ricky0123/vad-web'
 
 // Type for VAD instance
 interface VADInstance {
@@ -15,7 +14,7 @@ interface VADProbs {
 }
 
 interface UseVADServiceProps {
-  config?: AudioConfigPartial
+  config?: Partial<VADConfig>
   onVADResult?: (result: VADResult) => void
   onSpeechStart?: () => void
   onSpeechEnd?: (audio: ArrayBuffer) => void
@@ -27,12 +26,15 @@ export const useVADService = ({
   onSpeechStart,
   onSpeechEnd
 }: UseVADServiceProps = {}) => {
-  const config = { ...defaultAudioConfig, ...configPartial }
+  const config = useMemo(() => ({ ...defaultVadConfig, ...configPartial }), [configPartial])
+
   const [isListening, setIsListening] = useState(false)
   const [isDetecting, setIsDetecting] = useState(false)
   const vadRef = useRef<VADInstance | null>(null)
   const [vadInstance, setVadInstance] = useState<VADInstance | null>(null)
 
+
+  useEffect(()=>{console.log("set listening" , isListening)},[isListening])
   const handleVADResult = useCallback(
     (result: VADResult) => {
       // console.log('VAD Result:', result)
@@ -46,8 +48,14 @@ export const useVADService = ({
 
   const initializeVAD = useCallback(async () => {
     try {
-      // Dynamically import VAD
-      const { MicVAD } = await import('@ricky0123/vad-web')
+      const originalWarn = console.warn
+      console.warn = (...args) => {
+        if (args[0]?.includes?.('onnxruntime') || 
+            args[0]?.includes?.('Removing initializer')) {
+          return // Suppress these warnings
+        }
+        originalWarn(...args)
+      }
 
       const vad = await MicVAD.new({
         positiveSpeechThreshold: config.vadThreshold,
@@ -63,7 +71,7 @@ export const useVADService = ({
           }
         },
         onSpeechStart: () => {
-          //   console.log('Speech started')
+          console.log('Speech started')
           setIsDetecting(true)
           onSpeechStart?.()
         },
@@ -85,7 +93,8 @@ export const useVADService = ({
           onSpeechEnd?.(buffer)
         }
       })
-
+      console.log("DEBUG initializeVAD" , vad)
+      console.warn = originalWarn
       vadRef.current = vad
       setVadInstance(vad)
     } catch (error) {
@@ -98,6 +107,7 @@ export const useVADService = ({
       await initializeVAD()
     }
 
+    console.log("DEBUG startListening" , vadRef.current)  
     if (vadRef.current) {
       try {
         vadRef.current.start()
@@ -123,6 +133,7 @@ export const useVADService = ({
 
   // Auto-start/stop based on microphone enabled setting
   useEffect(() => {
+    console.log("DEBUG useEffect" , config.microphoneEnabled , config.vadEnabled)
     if (config.microphoneEnabled && config.vadEnabled) {
       startListening()
     } else {

@@ -1,3 +1,4 @@
+import { createSimpleStore } from '@hexafield/simple-store'
 import type { ConversationState } from '../services/conversation/conversationType'
 
 export interface AppConfig {
@@ -25,3 +26,7 @@ export const initialAppConfig: AppConfig = {
   llmLocal: false,
   directedMode: false
 }
+
+export const AppConfigState = createSimpleStore(
+  initialAppConfig
+)

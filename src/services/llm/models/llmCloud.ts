@@ -5,7 +5,7 @@
  * Supports both standard chat completions and Flowise integration.
  */
 
-import type { LLMParams, LLMResult } from './llmTypes'
+import type { LLMParams, LLMResult } from '../llmTypes'
 
 function defaultProcessThinkBlocks(input: string) {
   const thinkBlocks: string[] = []

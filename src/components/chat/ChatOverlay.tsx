@@ -1,75 +1,64 @@
-import { useState } from 'react'
+import { useCallback, useState, memo, useEffect } from 'react'
 
-import type { AppConfig } from '../../app/types'
+import { AppConfigState, type AppConfig, type AppState } from '../../app/appConfig'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
-import { ControlButtons } from './ControlButtons'
+import { ControlPanel } from '../ControlPanel'
+import type { AgentService } from '../../services/useAgent'
+import type { XRStore } from '@react-three/xr'
 
 interface ChatOverlayProps {
-  message: string
-  onMessageChange: (message: string) => void
-  onSubmit: (message: string) => void
-  onKeyPress: (e: React.KeyboardEvent) => void
   config: AppConfig
-  isRecording: boolean
-  onToggleMicrophone: () => void
-  onToggleCloudMode: () => void
-  onToggleBargeIn: () => void
-  onToggleAutoSubmit: () => void
-  onToggleAgent: () => void
-  onEnterARMode?: () => void
-  vadDetecting?: boolean
-  sttTranscript?: string
-  ttsActive?: boolean
-  sttListening?: boolean
+  handleAppStateChange: (newAppState: AppConfig) => void
+  agent: AgentService
+  xrStore: XRStore
 }
 
-export const ChatOverlay = ({
-  message,
-  onMessageChange,
-  onSubmit,
-  onKeyPress,
+export const ChatOverlay = memo(({
   config,
-  isRecording,
-  onToggleMicrophone,
-  onToggleCloudMode,
-  onToggleBargeIn,
-  onToggleAutoSubmit,
-  onToggleAgent,
-  onEnterARMode,
-  vadDetecting = false,
-  sttTranscript = '',
-  ttsActive = false,
-  sttListening = false
+  handleAppStateChange,
+  agent,
+  xrStore,
 }: ChatOverlayProps) => {
   const [isButtonsVisible, setIsButtonsVisible] = useState(true)
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      agent.actions.submitMessage(agent.state.currentMessage)
+    }
+  }, [agent.actions, agent.state.currentMessage])
+
+  const handleEnterARMode = useCallback(() => {
+    if (!xrStore) return
+    xrStore.enterAR().then(() => {
+      AppConfigState.set((prev) => ({ ...prev, microphone: true }))
+      agent.actions.setSTTDesired(true)
+    })
+    console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
+  }, [xrStore, agent.actions])
 
   return (
     <>
       {/* Chat Input */}
       <ChatInput
-        message={message}
-        onMessageChange={onMessageChange}
-        onSubmit={onSubmit}
-        onKeyPress={onKeyPress}
-        isRecording={isRecording}
-        vadDetecting={vadDetecting}
-        sttTranscript={sttTranscript}
-        sttListening={sttListening}
+        message={agent.state.currentMessage}
+        onMessageChange={agent.actions.updateCurrentMessage}
+        onSubmit={agent.actions.submitMessage}
+        onKeyPress={handleKeyPress}
+        isRecording={config.microphone}
+        vadDetecting={agent.state.vadIsDetecting}
+        sttTranscript={agent.state.currentTranscript}
+        sttListening={agent.state.sttIsListening}
       />
 
       {/* Control Buttons */}
-      <ControlButtons
-        config={config}
-        isRecording={isRecording}
-        onToggleMicrophone={onToggleMicrophone}
-        onToggleCloudMode={onToggleCloudMode}
-        onToggleBargeIn={onToggleBargeIn}
-        onToggleAutoSubmit={onToggleAutoSubmit}
-        onToggleAgent={onToggleAgent}
-        onEnterARMode={onEnterARMode}
-        vadDetecting={vadDetecting}
-        ttsActive={ttsActive}
+      <ControlPanel
+        config={config} 
+        isRecording={config.microphone}
+        handleAppStateChange={handleAppStateChange}
+        onEnterARMode={handleEnterARMode}
+        vadDetecting={agent.state.vadIsDetecting}
         isVisible={isButtonsVisible}
       />
 
@@ -82,4 +71,6 @@ export const ChatOverlay = ({
       />
     </>
   )
-}
+})
+
+ChatOverlay.displayName = 'ChatOverlay'

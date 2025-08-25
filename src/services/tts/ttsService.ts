@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 
-import type { TTSConfigPartial, WhisperData } from '../audioTypes'
-import { defaultTTSConfig } from '../audioTypes'
+
 import { cleanText } from './textUtils'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'
+import { type TTSConfig, type WhisperData, defaultTTSConfig } from './ttsConfig'
 
 // Workerized TTS using vits-web library
 const createTTSWorker = (): Worker => {
@@ -33,7 +33,7 @@ self.addEventListener('message', async (e) => {
 }
 
 interface TTSServiceOptions {
-  config?: TTSConfigPartial
+  config?: Partial<TTSConfig>
   onSpeechStart?: (text: string, whisperData: WhisperData) => void
   onSpeechEnd?: () => void
 }

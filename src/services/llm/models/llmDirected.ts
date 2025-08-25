@@ -1,4 +1,4 @@
-import type { LLMParams, LLMResult } from './llmTypes'
+import type { LLMParams, LLMResult } from '../llmTypes'
 
 export interface DirectedResponse {
   id: string

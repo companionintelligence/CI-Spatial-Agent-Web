@@ -35,12 +35,12 @@ import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 import * as webllm from '@mlc-ai/web-llm'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { llmCloud } from './llmCloud'
-import { llmDirected } from './llmDirected'
-import { llmLocal } from './llmLocal'
-import { llmOllama } from './llmOllama'
-import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMState, LLMStatusUpdate } from './llmTypes'
-import { DEFAULT_LLM_CONFIG, SYSTEM_PROMPT } from './llmTypes'
+import { llmCloud } from './models/llmCloud'
+import { llmDirected } from './models/llmDirected'
+import { llmLocal } from './models/llmLocal'
+import { llmOllama } from './models/llmOllama'
+import { defaultLLMConfig, type LLMConfig, SYSTEM_PROMPT } from './llmConfig'
+import type { LLMStatusUpdate, LLMResponse, LLMState, LLMPerformRequest } from './llmTypes'
 
 // Constants from the original implementation
 const selectedModel = 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
@@ -59,7 +59,7 @@ type LLMServiceProps = {
 }
 
 export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse }: LLMServiceProps) => {
-  const config = useMemo(() => ({ ...DEFAULT_LLM_CONFIG, ...configPartial }), [configPartial])
+  const config = useMemo(() => ({ ...defaultLLMConfig, ...configPartial }), [configPartial])
   const [state, setState] = useState<LLMState>({
     messages: [{ role: 'system', content: SYSTEM_PROMPT }],
     thinking: false,

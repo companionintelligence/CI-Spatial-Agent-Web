@@ -1,5 +1,5 @@
-import type { ConversationMessage } from './conversation/conversationType'
-import type { EmotionType, PerformanceData } from './emote/emoteTypes'
+import type { ConversationMessage } from '../conversation/conversationType'
+import type { EmotionType, PerformanceData } from '../emote/emoteTypes'
 
 /**
  * Simple emotion detection based on keywords and patterns in text

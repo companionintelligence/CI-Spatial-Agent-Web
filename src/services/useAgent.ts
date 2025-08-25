@@ -1,88 +1,23 @@
-/**
- * Unified Agent Hook for CI-XR-Web
- *
- * This hook combines all conversational AI services (VAD, STT, LLM, TTS, Visemes, Emotes)
- * into a single, easy-to-use library API. It handles service coordination and state management
- * automatically while providing fine-grained control when needed.
- *
- * @example Basic Usage
- * ```typescript
- * const agent = useAgent({
- *   llm: { llm_provider: 'ollama', ollama_url: 'http://localhost:11434' },
- *   tts: { voice: 'en_US-hfc_female-medium', speed: 1.2 },
- *   stt: { language: 'en-US', continuous: true },
- *   audio: { vadThreshold: 0.8, microphoneEnabled: true },
- *   autoSubmitEnabled: true,
- *   bargeInEnabled: true
- * }, {
- *   onLLMResponse: (response) => console.log('AI says:', response.breath),
- *   onVADResult: (result) => setVadIndicator(result.isSpeech),
- *   onTTSSpeechStart: (text, whisperData) => startLipSync(whisperData)
- * })
- *
- * // Use the unified state and actions
- * const { state, actions } = agent
- *
- * // Submit a message to the AI
- * actions.submitMessage("Hello, how are you?")
- *
- * // Toggle microphone listening (now requires isRecording parameter)
- * actions.toggleMicrophone(isRecording)
- *
- * // Set up avatar integration
- * actions.setupVisemesForVRM(vrmAvatar)
- * actions.setupEmotesForVRM(vrmAvatar)
- *
- * // In your animation loop
- * useAnimationFrame((time) => {
- *   actions.updateVisemes(time)
- *   actions.updateEmotes(time)
- *   actions.applyVisemesToRig(time, 1.0)
- *   actions.applyEmotesToVRM(vrmAvatar)
- * })
- * ```
- *
- * @example Advanced Configuration
- * ```typescript
- * const agent = useAgent({
- *   // OpenAI LLM with custom system prompt
- *   llm: {
- *     llm_provider: 'openai',
- *     openai_api_key: 'your-key',
- *     openai_model: 'gpt-4',
- *     system_prompt: 'You are a helpful assistant.'
- *   },
- *   // ElevenLabs TTS
- *   tts: {
- *     remote: true,
- *     apiKey: 'your-elevenlabs-key',
- *     voice: 'voice-id',
- *     voiceSettings: { stability: 0.5, similarity_boost: 0.8 }
- *   },
- *   // App behavior
- *   autoSubmitEnabled: true,
- *   bargeInEnabled: true
- * })
- * ```
- */
-
 import type { VRM } from '@pixiv/three-vrm'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useAnimationService } from './animation/useAnimationService'
-import type { AudioConfigPartial, STTConfigPartial, TTSConfigPartial, VADResult, WhisperData } from './audioTypes'
 import { useConversationService } from './conversation/UseConversationService'
 import type { ConversationMessage } from './conversation/conversationType'
 import type { EmotionType, PerformanceData } from './emote/emoteTypes'
 import { useEmoteService } from './emote/useEmoteService'
 import { useLLMService } from './llm/llmService'
-import type { LLMConfig, LLMPerformRequest, LLMResponse, LLMStatusUpdate } from './llm/llmTypes'
-import { createReactionFromMessage } from './reactionIntegration'
+import type { LLMPerformRequest, LLMResponse, LLMStatusUpdate } from './llm/llmTypes'
+import { createReactionFromMessage } from './integration/reactionIntegration'
 import { useSTTService } from './stt/sttService'
-import { useVADService } from './stt/vadService'
+import { useVADService } from './vad/vadService'
 import { useTTSService } from './tts/ttsService'
 import { useVisemeService } from './visemes/useVisemeService'
 import type { GazeOptions } from './emote/configs/emoteConfig'
+import { defaultVadConfig, type VADConfig, type VADResult } from './vad/vadConfig'
+import { defaultTTSConfig, type TTSConfig, type WhisperData } from './tts/ttsConfig'
+import { defaultSTTConfig, type STTConfig } from './stt/sttConfig'
+import { defaultLLMConfig, type LLMConfig } from './llm/llmConfig'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -105,11 +40,11 @@ interface MorphTargetObject {
 // Configuration interfaces
 export interface AgentConfig {
   // Audio/VAD configuration
-  audio?: AudioConfigPartial
+  vad?: Partial<VADConfig>
   // TTS configuration
-  tts?: TTSConfigPartial
+  tts?:  Partial<TTSConfig>
   // STT configuration
-  stt?: STTConfigPartial
+  stt?:  Partial<STTConfig>
   // LLM configuration
   llm?: Partial<LLMConfig>
   // App behavior configuration
@@ -244,33 +179,6 @@ export interface AgentService {
   }
 }
 
-// Default configurations
-const defaultAudioConfig: AudioConfigPartial = {
-  microphoneEnabled: false,
-  vadThreshold: 0.8,
-  volume: 1.0,
-  vadEnabled: true
-}
-
-const defaultTTSConfig: TTSConfigPartial = {
-  voice: 'en_US-hfc_female-medium',
-  speed: 1.0,
-  pitch: 1.0,
-  volume: 1.0,
-  mode: 'browser'
-}
-
-const defaultSTTConfig: STTConfigPartial = {
-  language: 'en-US',
-  continuous: true,
-  remote: false
-}
-
-const defaultLLMConfig: Partial<LLMConfig> = {
-  llm_provider: 'mlc',
-  mlc_model: 'Llama-3.2-3B-Instruct-q4f16_1-MLC'
-}
-
 // Default app behavior configuration
 const defaultAppConfig = {
   autoSubmitEnabled: true,
@@ -287,9 +195,14 @@ const defaultAppConfig = {
  * @param callbacks - Callback functions for service events
  * @returns AgentService object with state, actions, and service instances
  */
+
+
+
+
+
 export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {}): AgentService => {
   // Merge configurations with defaults
-  const audioConfig = { ...defaultAudioConfig, ...config.audio }
+  const vadConfig = { ...defaultVadConfig, ...config.vad }
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
   const sttConfig = { ...defaultSTTConfig, ...config.stt }
   const llmConfig = { ...defaultLLMConfig, ...config.llm }
@@ -354,15 +267,9 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     }
   })
 
-  // Services that need to be responsive to app state changes
-  const vadConfigWithState = {
-    ...audioConfig
-    // microphoneEnabled will be controlled externally
-  }
-
   // Initialize VAD service
   const vad = useVADService({
-    config: vadConfigWithState,
+    config: vadConfig,
     onVADResult: (result) => {
       setVadDetecting(result.isSpeech)
       callbacks.onVADResult?.(result)
@@ -454,9 +361,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
 
   const toggleMicrophone = useCallback(
     (isRecording: boolean) => {
-      const newRecordingState = !isRecording
-
-      stt.actions.setDesired(newRecordingState)
+      stt.actions.setDesired(isRecording)
       setCurrentInterimTranscript('')
     },
     [stt.actions]

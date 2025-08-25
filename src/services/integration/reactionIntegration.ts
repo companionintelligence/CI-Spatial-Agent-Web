@@ -1,6 +1,6 @@
-import type { AnimationPerformanceData } from './animation/animationTypes'
-import type { ConversationMessage } from './conversation/conversationType'
-import type { PerformanceData } from './emote/emoteTypes'
+import type { AnimationPerformanceData } from '../animation/animationTypes'
+import type { ConversationMessage } from '../conversation/conversationType'
+import type { PerformanceData } from '../emote/emoteTypes'
 import { analyzeMessageForActions, detectEmotionFromText, getEmotionIntensity } from './emotionIntegration'
 
 /**

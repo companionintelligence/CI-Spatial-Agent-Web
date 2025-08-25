@@ -1,4 +1,4 @@
-import type { WhisperData } from '../audioTypes'
+import type { WhisperData } from './ttsConfig'
 
 /**
  * Generate approximated whisper data from text for visemes

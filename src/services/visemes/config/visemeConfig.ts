@@ -1,3 +1,4 @@
+
 /**
  * Centralized configuration for viseme timing and behavior
  * Modify these values to adjust how visemes look and feel

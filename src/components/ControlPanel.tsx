@@ -1,33 +1,24 @@
-import type { AppConfig } from '../../app/types'
-import { ControlButton } from '../common/ControlButton'
+import { memo } from 'react'
+import { AppConfigState, type AppConfig } from '../app/appConfig'
+import { ControlButton } from './common/ControlButton'
 
-interface ControlButtonsProps {
+interface ControlPanelProps {
   config: AppConfig
   isRecording: boolean
-  onToggleMicrophone: () => void
-  onToggleCloudMode: () => void
-  onToggleBargeIn: () => void
-  onToggleAutoSubmit: () => void
-  onToggleAgent: () => void
+  handleAppStateChange: (newAppState: AppConfig) => void
   onEnterARMode?: () => void
   vadDetecting?: boolean
-  ttsActive?: boolean
   isVisible: boolean
 }
 
-export const ControlButtons = ({
+export const ControlPanel = memo(({
   config,
+  handleAppStateChange,
   isRecording,
-  onToggleMicrophone,
-  onToggleCloudMode,
-  onToggleBargeIn,
-  onToggleAutoSubmit,
-  onToggleAgent,
   onEnterARMode,
   vadDetecting = false,
-  ttsActive = false,
   isVisible
-}: ControlButtonsProps) => {
+}: ControlPanelProps) => {
   const isMobile = window.innerWidth <= 768
 
   return (
@@ -64,7 +55,7 @@ export const ControlButtons = ({
       >
         <ControlButton
           isActive={isRecording}
-          onClick={onToggleMicrophone}
+          onClick={() => handleAppStateChange({ ...config, microphone: !config.microphone })}
           tooltipContent={
             isRecording
               ? vadDetecting
@@ -78,7 +69,7 @@ export const ControlButtons = ({
 
         <ControlButton
           isActive={config.cloudMode}
-          onClick={onToggleCloudMode}
+          onClick={() => handleAppStateChange({ ...config, cloudMode: !config.cloudMode })}
           tooltipContent={config.cloudMode ? 'Switch to Local Mode' : 'Switch to Cloud Mode'}
         >
           ☁️
@@ -86,7 +77,7 @@ export const ControlButtons = ({
 
         <ControlButton
           isActive={config.bargeInEnabled}
-          onClick={onToggleBargeIn}
+          onClick={() => handleAppStateChange({ ...config, bargeInEnabled: !config.bargeInEnabled })}
           tooltipContent={config.bargeInEnabled ? 'Disable Barge-in' : 'Enable Barge-in'}
         >
           ⚡
@@ -94,7 +85,7 @@ export const ControlButtons = ({
 
         <ControlButton
           isActive={config.autoSubmitEnabled}
-          onClick={onToggleAutoSubmit}
+          onClick={() => handleAppStateChange({ ...config, autoSubmitEnabled: !config.autoSubmitEnabled })}
           tooltipContent={config.autoSubmitEnabled ? 'Disable Auto-submit' : 'Enable Auto-submit'}
         >
           🚀
@@ -102,10 +93,10 @@ export const ControlButtons = ({
 
         <ControlButton
           isActive={config.agentEnabled}
-          onClick={onToggleAgent}
+          onClick={() => handleAppStateChange({ ...config, agentEnabled: !config.agentEnabled })}
           tooltipContent={config.agentEnabled ? 'Disable Agent Mode' : 'Enable Agent Mode'}
         >
-          {ttsActive ? '🔊' : '🤖'}
+          {config.agentEnabled ? '🔊' : '🤖'}
         </ControlButton>
 
         {onEnterARMode && (
@@ -116,4 +107,6 @@ export const ControlButtons = ({
       </div>
     </div>
   )
-}
+})
+
+ControlPanel.displayName = 'ControlPanel'

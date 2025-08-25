@@ -1,3 +1,5 @@
+import { useMemo, memo, useCallback } from "react"
+
 interface ChatInputProps {
   message: string
   onMessageChange: (message: string) => void
@@ -9,7 +11,7 @@ interface ChatInputProps {
   sttListening?: boolean
 }
 
-export const ChatInput = ({
+export const ChatInput = memo(({
   message,
   onMessageChange,
   onSubmit,
@@ -21,6 +23,24 @@ export const ChatInput = ({
 }: ChatInputProps) => {
   const isMobile = window.innerWidth <= 768
 
+  const displayValue = useMemo(() => {
+    return isRecording && sttTranscript ? (message + ' ' + sttTranscript).trim() : message
+  }, [isRecording, sttTranscript, message])
+
+  const placeholder = useMemo(() => {
+    if (!isRecording) return 'Type your message here...'
+    if (vadDetecting) return '🎤 Listening...'
+    if (sttListening) return '🎤 STT Ready - Speak now'
+    return '🎤 Starting...'
+  }, [isRecording, vadDetecting, sttListening])
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (!isRecording) onMessageChange(e.target.value)
+  }, [isRecording, onMessageChange])
+
+  const handleSubmit = useCallback(() => {
+    onSubmit(message)
+  }, [message, onSubmit])
   return (
     <div
       style={{
@@ -73,17 +93,9 @@ export const ChatInput = ({
                 ...(sttListening && !vadDetecting && { background: 'rgba(255,107,53,0.15)' })
               }}
               rows={1}
-              placeholder={
-                isRecording
-                  ? vadDetecting
-                    ? '🎤 Listening...'
-                    : sttListening
-                    ? '🎤 STT Ready - Speak now'
-                    : '🎤 Starting...'
-                  : 'Type your message here...'
-              }
-              value={isRecording && sttTranscript ? (message + ' ' + sttTranscript).trim() : message}
-              onChange={(e) => !isRecording && onMessageChange(e.target.value)}
+              placeholder={placeholder}
+              value={displayValue}
+              onChange={handleInputChange}
               onKeyPress={onKeyPress}
               readOnly={isRecording}
             />
@@ -99,7 +111,7 @@ export const ChatInput = ({
               }}
             >
               <button
-                onClick={() => onSubmit(message)}
+                onClick={handleSubmit}
                 style={{
                   background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
                   border: '0.0625rem solid rgba(255,255,255,0.08)',
@@ -134,4 +146,6 @@ export const ChatInput = ({
       </div>
     </div>
   )
-}
+})
+
+ChatInput.displayName = 'ChatInput'

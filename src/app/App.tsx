@@ -1,70 +1,53 @@
 import type { XRStore } from '@react-three/xr'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
 import { useAgent } from '../services/useAgent'
-import { config } from './config'
 import { useResponsiveLayout } from './layoutService'
 import { sceneConfig } from './sceneTypes'
-import type { AppConfig } from './types'
-import { initialAppConfig } from './types'
+import { AppConfigState, type AppConfig } from './appConfig'
+import { defaultVadConfig } from '../services/vad/vadConfig'
+import { defaultTTSConfig } from '../services/tts/ttsConfig'
+import { defaultSTTConfig } from '../services/stt/sttConfig'
+import { defaultLLMConfig } from '../services/llm/llmConfig'
+import { useSimpleStore } from '@hexafield/simple-store/react'
+
+export const config = {
+  vad: defaultVadConfig,
+  tts: defaultTTSConfig,
+  stt: defaultSTTConfig,
+  llm: defaultLLMConfig
+}
+
 
 export const App = () => {
   useResponsiveLayout() // Layout service for responsive behavior
 
   const xrStore = useRef<XRStore | null>(null)
-
-  // Manage app state locally
-  const [appConfig, setAppConfig] = useState<AppConfig>(initialAppConfig)
-  const [isRecording, setIsRecording] = useState(false)
-
+  const [appState, setAppState] = useSimpleStore(AppConfigState)
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
 
-  const updateConfig = useCallback((configUpdate: Partial<AppConfig>) => {
-    setAppConfig((prev) => ({ ...prev, ...configUpdate }))
-  }, [])
 
-  // Combine service config with app config
   const agentConfig = useMemo(
     () => ({
       ...config,
-      autoSubmitEnabled: appConfig.autoSubmitEnabled,
-      bargeInEnabled: appConfig.bargeInEnabled
+      autoSubmitEnabled: appState.autoSubmitEnabled,
+      bargeInEnabled: appState.bargeInEnabled,
     }),
-    [appConfig.autoSubmitEnabled, appConfig.bargeInEnabled]
+    [ appState.autoSubmitEnabled, appState.bargeInEnabled]
   )
 
   const agent = useAgent(agentConfig)
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      agent.actions.submitMessage(agent.state.currentMessage)
-    }
-  }
-
-  const handleToggleMicrophone = () => {
-    const newRecordingState = !isRecording
-    setIsRecording(newRecordingState)
-    updateConfig({ microphone: newRecordingState })
-    agent.actions.toggleMicrophone(isRecording)
-  }
-
-  const handleEnterARMode = useCallback(() => {
-    if (!xrStore.current) return
-    xrStore.current.enterAR().then(() => {
-      // Enable STT when entering AR mode
-      setIsRecording(true)
-      updateConfig({ microphone: true })
-      agent.actions.setSTTDesired(true)
-    })
-    console.log('AR + STT mode activated - click the AR button in the 3D view to enter AR')
-  }, [updateConfig, agent.actions])
+  const handleAppStateChange = useCallback((newAppState: AppConfig) => {
+    setAppState(newAppState)
+    agentConfig.vad.microphoneEnabled = newAppState.microphone
+  }, [agentConfig])
 
   return (
     <div
@@ -101,22 +84,10 @@ export const App = () => {
         <LogoOverlay />
 
         <ChatOverlay
-          message={agent.state.currentMessage}
-          onMessageChange={agent.actions.updateCurrentMessage}
-          onSubmit={agent.actions.submitMessage}
-          onKeyPress={handleKeyPress}
-          config={appConfig}
-          isRecording={isRecording}
-          onToggleMicrophone={handleToggleMicrophone}
-          onToggleCloudMode={() => updateConfig({ cloudMode: !appConfig.cloudMode })}
-          onToggleBargeIn={() => updateConfig({ bargeInEnabled: !appConfig.bargeInEnabled })}
-          onToggleAutoSubmit={() => updateConfig({ autoSubmitEnabled: !appConfig.autoSubmitEnabled })}
-          onToggleAgent={() => updateConfig({ agentEnabled: !appConfig.agentEnabled })}
-          onEnterARMode={handleEnterARMode}
-          vadDetecting={agent.state.vadIsDetecting}
-          sttTranscript={agent.state.currentTranscript}
-          ttsActive={agent.state.ttsIsSpeaking}
-          sttListening={agent.state.sttIsListening}
+          config={appState}
+          handleAppStateChange={handleAppStateChange}
+          agent={agent}
+          xrStore={xrStore.current!}    
         />
 
         <ChatPanel messages={agent.state.messages} />

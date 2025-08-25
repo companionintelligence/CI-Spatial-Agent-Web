@@ -7,7 +7,7 @@
 
 import * as webllm from '@mlc-ai/web-llm'
 
-import type { LLMParams, LLMResult, WebLLMStreamChunk } from './llmTypes'
+import type { LLMParams, LLMResult, WebLLMStreamChunk } from '../llmTypes'
 
 const MIN_BREATH_LENGTH = 20
 

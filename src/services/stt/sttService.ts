@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { defaultSTTConfig, type STTConfig } from './sttConfig'
 
-import type { STTConfigPartial } from '../audioTypes'
-import { defaultSTTConfig } from '../audioTypes'
 
 interface STTPerformResult {
   text: string
@@ -17,7 +16,7 @@ interface STTPerformResult {
 }
 
 interface UseSTTServiceProps {
-  config?: STTConfigPartial
+  config?: Partial<STTConfig>
   onPerform?: (result: STTPerformResult) => void
   onInterimTranscript?: (text: string) => void
 }
@@ -207,6 +206,7 @@ export const useSTTService = ({
     (state: boolean) => {
       setDesired(state)
       if (state) {
+        console.log("DEBUG setDesiredState init Recognition" , state)
         initRecognition()
       }
     },

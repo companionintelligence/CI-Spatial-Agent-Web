@@ -1,3 +1,6 @@
+import { AvatarOptions } from "../scene/AvatarOptions"
+import { ANIMATION_CLIPS } from "../services/animation/config/animationClips"
+
 export interface SceneConfig {
   near: number
   far: number
@@ -34,8 +37,8 @@ export const sceneConfig: SceneConfig = {
 
 export const defaultAvatarConfig: AvatarConfig = {
   uuid: 'alexandria',
-  modelUrl: '/assets/avatars/25-1-3_CI_model_female_Shanee.glb',
+  modelUrl: AvatarOptions.Savi,
   position: [0, 0, 0],
-  animationUrl: '/assets/animations/unarmed-idle.glb',
+  animationUrl: ANIMATION_CLIPS[0].path,
   visible: true
 }
