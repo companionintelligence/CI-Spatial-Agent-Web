@@ -133,7 +133,6 @@ export const useVADService = ({
 
   // Auto-start/stop based on microphone enabled setting
   useEffect(() => {
-    console.log("DEBUG useEffect" , config.microphoneEnabled , config.vadEnabled)
     if (config.microphoneEnabled && config.vadEnabled) {
       startListening()
     } else {

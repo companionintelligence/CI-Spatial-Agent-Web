@@ -328,10 +328,10 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   // Service coordination effects
   useEffect(() => {
     stt.actions.setDesired(vad.isDetecting)
-  }, [vad.isDetecting, stt.actions])
+  }, [vadDetecting, stt.actions])
 
   useEffect(() => {
-    stt.actions.setAllowed(!tts.isSpeaking)
+    stt.actions.setAllowed(!tts.isSpeaking.current)
   }, [tts.isSpeaking, stt.actions])
 
   // Convenience action implementations
