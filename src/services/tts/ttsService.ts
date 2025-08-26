@@ -47,6 +47,102 @@ interface QueuedMessage {
   error?: string
 }
 
+
+
+/**
+ * Analyze an AudioBuffer for noise/activity and print a compact report.
+ * Produces:
+ *   - levels: Uint8Array of 0..255 per analysis window (scaled dB)
+ *   - active: Uint8Array of 0/1 per window (above thresholdDb)
+ *
+ * Tunables:
+ *   windowMs: analysis window size
+ *   thresholdDb: what counts as "non-silence"
+ *   dbFloor/dbCeil: map [dbFloor..dbCeil] -> [0..255] for the levels array
+ */
+function analyzeAudioNoise(
+  buffer,
+  {
+    windowMs = 20,
+    thresholdDb = -50,
+    dbFloor = -90,
+    dbCeil = 0, // 0 dBFS ~= full-scale
+    mixToMono = true, // mix channels for analysis
+    log = true,
+  } = {}
+) {
+  const { numberOfChannels, sampleRate, length } = buffer;
+  if (length === 0) {
+    if (log) console.log("Empty buffer.");
+    return { levels: new Uint8Array(0), active: new Uint8Array(0), windowMs, sampleRate };
+  }
+
+  // Build a mono analysis signal (absolute sum / channels)
+  const mono = new Float32Array(length);
+  for (let ch = 0; ch < numberOfChannels; ch++) {
+    const data = buffer.getChannelData(ch);
+    for (let i = 0; i < length; i++) mono[i] += mixToMono ? Math.abs(data[i]) : data[i];
+  }
+  if (mixToMono && numberOfChannels > 1) {
+    for (let i = 0; i < length; i++) mono[i] /= numberOfChannels;
+  }
+
+  const winSize = Math.max(1, Math.floor((windowMs / 1000) * sampleRate));
+  const steps = Math.ceil(length / winSize);
+  const levels = new Uint8Array(steps);
+  const active = new Uint8Array(steps);
+
+  // Helpers
+  const clamp01 = (x) => Math.min(1, Math.max(0, x));
+  const mapDbToByte = (db) => {
+    const t = clamp01((db - dbFloor) / (dbCeil - dbFloor));
+    return Math.round(t * 255);
+  };
+
+  // Compute RMS -> dBFS per window
+  for (let k = 0; k < steps; k++) {
+    const start = k * winSize;
+    const end = Math.min(length, start + winSize);
+
+    let sumSq = 0;
+    for (let i = start; i < end; i++) {
+      const v = mono[i];
+      sumSq += v * v;
+    }
+    const n = Math.max(1, end - start);
+    const rms = Math.sqrt(sumSq / n);
+    const db = 20 * Math.log10(Math.max(rms, 1e-12)); // avoid -Inf
+
+    levels[k] = mapDbToByte(db);
+    active[k] = db > thresholdDb ? 1 : 0;
+  }
+
+  if (log) {
+    // Print compact arrays like [0,0,3,15,200,...]
+    const toShort = (arr, maxLen = 120) => {
+      const s = Array.from(arr).join(",");
+      return s.length <= maxLen ? s : s.slice(0, maxLen) + " …";
+    };
+
+    console.log(`sampleRate=${sampleRate}Hz, window=${windowMs}ms, windows=${steps}`);
+    console.log(`levels[0..255] ≈ [${toShort(levels)}]`);
+    console.log(`active[0/1]     ≈ [${toShort(active)}]`);
+
+    // Optional: quick ASCII sparkline (coarse)
+    const bars = Array.from(levels, v => " ▁▂▃▄▅▆▇█"[Math.min(8, Math.floor((v / 255) * 8))] || " ");
+    console.log("sparkline:", bars.join(""));
+  }
+
+  return { levels, active, windowMs, sampleRate };
+}
+
+
+
+
+
+
+
+
 let globalId = 0
 
 export const useTTSService = (options: TTSServiceOptions = {}) => {
@@ -72,6 +168,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       audioContext
         .decodeAudioData(audioBuffer.slice(0))
         .then((decodedAudio) => {
+
+analyzeAudioNoise(decodedAudio)
+
+          console.log("**** playing decodedaudio",decodedAudio)
           const source = audioContext.createBufferSource()
           source.buffer = decodedAudio
           source.connect(audioContext.destination)
@@ -263,6 +363,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               speechSynthesis.speak(utterance)
             })
           } else if (nextMessage.audio && nextMessage.audio.byteLength > 0) {
+            console.log("Playing audio now!",nextMessage.audio.byteLength,nextMessage.text,whisperData,nextMessage)
             await playAudioBuffer(nextMessage.audio)
           }
         } catch (playbackError) {
