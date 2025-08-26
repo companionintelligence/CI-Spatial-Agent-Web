@@ -66,40 +66,29 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     return workerRef.current
   }, [])
 
+  const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const audioContext = new AudioContext()
 
-  // play audio, return immmediatly, since we need the timing information
-  const playAudioBuffer = useCallback(
-    async (audioBuffer: ArrayBuffer): Promise<{ duration: number; ended: Promise<void>; stop: () => void }> => {
-      const audioContext = new AudioContext();
-      const decodedAudio = await audioContext.decodeAudioData(audioBuffer.slice(0));
+      audioContext
+        .decodeAudioData(audioBuffer.slice(0))
+        .then((decodedAudio) => {
+          const source = audioContext.createBufferSource()
+          source.buffer = decodedAudio
+          source.connect(audioContext.destination)
 
-      const source = audioContext.createBufferSource();
-      source.buffer = decodedAudio;
-      source.connect(audioContext.destination);
+          source.onended = () => {
+            resolve()
+          }
 
-      const duration = decodedAudio.duration;
-
-      // promise that resolves when playback ends
-      const ended = new Promise<void>((resolve) => {
-        source.onended = () => {
-          resolve();
-          audioContext.close().catch(() => {});
-        };
-      });
-
-      const stop = () => {
-        try {
-          source.stop();
-        } catch {}
-      };
-
-      source.start(0);
-
-      // resolve immediately with duration + handles
-      return { duration, ended, stop };
-    },
-    []
-  )
+          source.start(0)
+        })
+        .catch((error) => {
+          console.error('Audio decode error:', error)
+          reject(error)
+        })
+    })
+  }, [])
 
   // Generate audio using browser speech synthesis
   const generateBrowserAudio = useCallback(async (_message: QueuedMessage) => {
@@ -252,12 +241,16 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
         // Play the message
         nextMessage.status = 'playing'
-        console.log(`Playing message ${nextMessage.id}`)
 
-        // Generate whisper data and notify speech start
-        const whisperData = approximateWhisperDataFromText(nextMessage.text, config.speed, 0)
-        if (onSpeechStart) {
-          onSpeechStart(nextMessage.text, whisperData)
+        // Generate whisper data and notify speech start - todo improve
+        if(nextMessage.audio) {
+          const ctx = new AudioContext();
+          const decoded = await ctx.decodeAudioData(nextMessage.audio.slice(0));
+          const whisperData = approximateWhisperDataFromText(nextMessage.text, decoded.duration, config.speed, 0)
+          if (onSpeechStart) {
+            onSpeechStart(nextMessage.text, whisperData)
+          }
+          console.log('*** Playing message',nextMessage.id,'duration is',decoded.duration,'fake timing is',whisperData)
         }
 
         try {
@@ -275,15 +268,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               speechSynthesis.speak(utterance)
             })
           } else if (nextMessage.audio && nextMessage.audio.byteLength > 0) {
-
-
-            const { duration, ended } = await playAudioBuffer(nextMessage.audio);
-
-            console.log("**** Playing audio now!",nextMessage.audio.byteLength,nextMessage.text,whisperData,nextMessage)
-            console.log("**** Duration (s):", duration);
-
-            await ended;
-
+            await playAudioBuffer(nextMessage.audio);
           }
         } catch (playbackError) {
           console.error(`Error playing message ${nextMessage.id}:`, playbackError)

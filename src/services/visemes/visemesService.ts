@@ -74,6 +74,8 @@ export function visemesSequence(
   const result = lipsyncConvert(whisperData, 'en', config)
   const sequence = result?.anim || []
 
+  console.log('*** visemeService viseme timing', result, whisperData, sequence)
+
   // Validate sequence items
   const validSequence = sequence.filter((item) => {
     if (!item.ts || !Array.isArray(item.ts) || item.ts.length !== 3) {

@@ -1,92 +1,91 @@
 import type { WhisperData } from './ttsConfig'
 
 /**
- * Generate approximated whisper data from text for visemes
- * This simulates word timing data that would normally come from Whisper ASR
+ * Generate approximated whisper-like timings and rescale to the requested total duration.
+ * `duration` is in seconds. `startTime` in ms.
  */
 export function approximateWhisperDataFromText(
   text: string,
+  duration: number = 999.0,   // seconds
   speechRate: number = 1.0,
-  startTime: number = 0
+  startTime: number = 0     // ms
 ): WhisperData {
-  const words = text
-    .toLowerCase()
-    .replace(/[^\w\s]/g, '')
+  // Tokenize while preserving punctuation on tokens
+  const tokens = (text || "")
+    .trim()
     .split(/\s+/)
-    .filter((word) => word.length > 0)
+    .filter(Boolean);
 
-  if (words.length === 0) {
-    return { words: [], wtimes: [], wdurations: [] }
+  if (!tokens.length) {
+    return { words: [], wtimes: [], wdurations: [] };
   }
 
-  const wtimes: number[] = []
-  const wdurations: number[] = []
+  const baseWPM = 150;
+  const adjustedWPM = baseWPM * speechRate;
 
-  let currentTime = startTime
-  const baseWPM = 150 // words per minute
-  const adjustedWPM = baseWPM * speechRate
+  const wtimes: number[] = [];
+  const wdurations: number[] = [];
 
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i]
+  let t = startTime;
 
-    // More sophisticated duration calculation
-    const characterCount = word.length
-    const syllableCount = estimateSyllables(word)
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const word = token.toLowerCase().replace(/[^\w]/g, ""); // only for syllable calc
 
-    // Base duration on syllables but adjust for character count
-    const syllableDuration = ((60 / adjustedWPM) * 1000) / 2 // Half a word time per syllable
-    const characterModifier = Math.max(0.5, characterCount / 5) // Longer words take more time
+    const charCount = Math.max(1, word.length);
+    const syllables = estimateSyllables(word);
 
-    const duration = syllableCount * syllableDuration * characterModifier
+    // Half a word-time per syllable; adjust with crude char modifier
+    const syllableDuration = ((60 / adjustedWPM) * 1000) / 2; // ms
+    const charModifier = Math.max(0.5, charCount / 5);
 
-    wtimes.push(currentTime)
-    wdurations.push(duration)
+    const dur = syllables * syllableDuration * charModifier;
 
-    // Variable pause between words based on punctuation and context
-    let pauseDuration = 50 + Math.random() * 50 // 50-100ms base pause
+    wtimes.push(t);
+    wdurations.push(dur);
 
-    // Add longer pauses for sentence boundaries (simulated)
-    if (word.endsWith('.') || word.endsWith('!') || word.endsWith('?')) {
-      pauseDuration += 200 + Math.random() * 200
-    } else if (word.endsWith(',')) {
-      pauseDuration += 100 + Math.random() * 100
+    // Pause based on punctuation on the original token
+    let pause = 50 + Math.random() * 50; // 50–100 ms base
+    if (/[.!?]$/.test(token)) {
+      pause += 200 + Math.random() * 200;
+    } else if (/[,]$/.test(token)) {
+      pause += 100 + Math.random() * 100;
     }
 
-    currentTime += duration + pauseDuration
+    t += dur + pause;
   }
+
+  // === Rescale to requested total duration ===
+  const targetSpanMs = duration * 1000;
+  const firstStart = wtimes[0];
+  const lastEnd = wtimes[wtimes.length - 1] + wdurations[wdurations.length - 1];
+  const origSpanMs = Math.max(1, lastEnd - firstStart);
+  const scale = targetSpanMs / origSpanMs;
+
+  const scaledWtimes = wtimes.map((ms) => (ms - firstStart) * scale + startTime);
+  const scaledWdurations = wdurations.map((ms) => ms * scale);
 
   return {
-    words,
-    wtimes,
-    wdurations
-  }
+    words: tokens,
+    wtimes: scaledWtimes,
+    wdurations: scaledWdurations,
+  };
 }
 
-/**
- * Estimate syllables in a word (simple heuristic)
- */
+/** Simple heuristic */
 function estimateSyllables(word: string): number {
-  if (word.length <= 3) return 1
+  if (!word) return 1;
+  if (word.length <= 3) return 1;
 
-  const vowels = 'aeiouy'
-  let syllableCount = 0
-  let prevIsVowel = false
+  const vowels = "aeiouy";
+  let count = 0;
+  let prevV = false;
 
   for (let i = 0; i < word.length; i++) {
-    const char = word[i].toLowerCase()
-    const isVowel = vowels.includes(char)
-
-    if (isVowel && !prevIsVowel) {
-      syllableCount++
-    }
-
-    prevIsVowel = isVowel
+    const v = vowels.includes(word[i]);
+    if (v && !prevV) count++;
+    prevV = v;
   }
-
-  // Handle silent 'e' at the end
-  if (word.endsWith('e') && syllableCount > 1) {
-    syllableCount--
-  }
-
-  return Math.max(1, syllableCount)
+  if (word.endsWith("e") && count > 1) count--; // silent e
+  return Math.max(1, count);
 }
