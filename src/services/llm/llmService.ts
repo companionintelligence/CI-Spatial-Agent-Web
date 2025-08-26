@@ -190,6 +190,32 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       const text = request.text?.trim()
       if (!text || !text.length) return
 
+      // /say prefix: bypass LLM and speak directly
+      if (text.startsWith('/say ')) {
+        const sayText = text.slice(5).trim()
+        if (sayText.length && onResponse) {
+          onResponse({
+            text: sayText,
+            breath: sayText,
+            ready: true,
+            final: true,
+            interrupt: request.interrupt,
+            rcounter: 1000,
+            bcounter: 0
+          })
+        }
+        // Optionally, add to message history as an assistant message
+        setState((prev) => ({
+          ...prev,
+          messages: [
+            ...prev.messages,
+            { role: 'user', content: text },
+            { role: 'assistant', content: sayText }
+          ]
+        }))
+        return
+      }
+
       // Early return if loading or not ready
       if (state.loading || !state.ready) {
         return
