@@ -129,7 +129,7 @@ export interface AgentService {
     // TTS actions
     speak: (text: string) => Promise<number | null>
     stopSpeaking: () => void
-    playAudioBuffer: (audioBuffer: ArrayBuffer) => Promise<void>
+    playAudioBuffer: (audioBuffer: ArrayBuffer) => Promise<{ duration: number; ended: Promise<void>; stop: () => void; }>
     getTTSQueueStatus: () => {
       queueLength: number
       isProcessing: boolean
