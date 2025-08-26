@@ -169,12 +169,36 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         .decodeAudioData(audioBuffer.slice(0))
         .then((decodedAudio) => {
 
-analyzeAudioNoise(decodedAudio)
+          analyzeAudioNoise(decodedAudio)
 
           console.log("**** playing decodedaudio",decodedAudio)
           const source = audioContext.createBufferSource()
           source.buffer = decodedAudio
           source.connect(audioContext.destination)
+
+          // --- Download the audioBuffer as a file after playback starts ---
+          try {
+            const blob = new Blob([audioBuffer], { type: 'audio/mp3' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = `tts-audio-${Date.now()}.mp3`
+            a.style.display = 'none'
+            document.body.appendChild(a)
+            // Optionally, trigger download automatically:
+            // a.click()
+            // Or just make the link available for manual download:
+            // (You can uncomment a.click() above to auto-download)
+            setTimeout(() => {
+              document.body.removeChild(a)
+              URL.revokeObjectURL(url)
+            }, 10000)
+            // Optionally, log the download link for user
+            console.log('TTS audio available for download:', a.href)
+          } catch (err) {
+            console.warn('Failed to create download link for audio:', err)
+          }
+          // ---------------------------------------------------------------
 
           source.onended = () => {
             resolve()
