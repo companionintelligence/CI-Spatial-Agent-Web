@@ -1,4 +1,3 @@
-import { createSimpleStore } from "@hexafield/simple-store"
 
 export interface STTConfig {
   language: string

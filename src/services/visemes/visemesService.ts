@@ -2,7 +2,7 @@ import type { VRM } from '@pixiv/three-vrm'
 
 import { lipsyncConvert } from './lipsync/lipsyncQueue'
 import { applyCurve, defaultVisemeConfig, type VisemeConfig } from './config/visemeConfig'
-import { visemePerformanceMonitor } from './debug/visemePerformance'
+//import { visemePerformanceMonitor } from './debug/visemePerformance'
 import type { VisemeSequenceItem, VisemeState, VisemeTarget, VRMVisemeTarget, WhisperData } from './visemeTypes'
 import { createEmptyVisemeTarget, createEmptyVRMVisemeTarget } from './visemeTypes'
 
@@ -74,7 +74,6 @@ export function visemesSequence(
   const result = lipsyncConvert(whisperData, 'en', config)
   const sequence = result?.anim || []
 
-  console.log('DEBUG', sequence)
   // Validate sequence items
   const validSequence = sequence.filter((item) => {
     if (!item.ts || !Array.isArray(item.ts) || item.ts.length !== 3) {
@@ -176,7 +175,7 @@ export function visemesUpdate(volume: VisemeState, _delta: number, config: Visem
     })
   }
 
-  const updateTime = performance.now() - startTime
+  //const updateTime = performance.now() - startTime
 }
 /**
  * Apply viseme targets to the actual avatar rig

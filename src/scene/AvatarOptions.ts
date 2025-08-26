@@ -1,4 +1,5 @@
 export const AvatarOptions = {
+  Anselm: '/assets/avatars/rpm-mixamo-t-posed.glb',
   Ash: '/assets/avatars/25-1-3_CI_model_female_Ash.glb',
   Greg: '/assets/avatars/25-1-3_CI_model_male_Greg.glb',
   Brit: '/assets/avatars/25-1-3_CI_model_female_Brit.glb',
@@ -14,3 +15,5 @@ export const AvatarOptions = {
   Takeshi: '/assets/avatars/vrm/takeshi.vrm',
   Savi: '/assets/avatars/vrm/savi.vrm'
 }
+
+export const AnimationOptions = {}

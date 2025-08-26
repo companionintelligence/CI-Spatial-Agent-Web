@@ -1,4 +1,3 @@
-import { createSimpleStore } from "@hexafield/simple-store"
 
 export interface WhisperConfig {
     model: string

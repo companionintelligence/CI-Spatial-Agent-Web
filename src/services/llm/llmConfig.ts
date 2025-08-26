@@ -1,4 +1,3 @@
-import { createSimpleStore } from "@hexafield/simple-store"
 
 export const SYSTEM_PROMPT = `You are a helpful AI assistant with a friendly personality. You are embodied as a 3D avatar and can speak your responses out loud.
 

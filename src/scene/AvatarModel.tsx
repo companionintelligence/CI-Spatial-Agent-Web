@@ -15,11 +15,12 @@ import type { useVisemeService } from '../services/visemes/useVisemeService'
 import { AvatarOptions } from './AvatarOptions'
 import { Vector3 } from 'three'
 
-const AVATAR_MODEL = AvatarOptions.Savi
+const AVATAR_MODEL = AvatarOptions.Anselm
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
   visemesEnabled: true,
+  selectedAnimation: "",
   emotesEnabled: true,
   animationsEnabled: true
 })

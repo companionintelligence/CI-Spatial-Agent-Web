@@ -47,105 +47,10 @@ interface QueuedMessage {
   error?: string
 }
 
-
-
-/**
- * Analyze an AudioBuffer for noise/activity and print a compact report.
- * Produces:
- *   - levels: Uint8Array of 0..255 per analysis window (scaled dB)
- *   - active: Uint8Array of 0/1 per window (above thresholdDb)
- *
- * Tunables:
- *   windowMs: analysis window size
- *   thresholdDb: what counts as "non-silence"
- *   dbFloor/dbCeil: map [dbFloor..dbCeil] -> [0..255] for the levels array
- */
-function analyzeAudioNoise(
-  buffer,
-  {
-    windowMs = 20,
-    thresholdDb = -50,
-    dbFloor = -90,
-    dbCeil = 0, // 0 dBFS ~= full-scale
-    mixToMono = true, // mix channels for analysis
-    log = true,
-  } = {}
-) {
-  const { numberOfChannels, sampleRate, length } = buffer;
-  if (length === 0) {
-    if (log) console.log("Empty buffer.");
-    return { levels: new Uint8Array(0), active: new Uint8Array(0), windowMs, sampleRate };
-  }
-
-  // Build a mono analysis signal (absolute sum / channels)
-  const mono = new Float32Array(length);
-  for (let ch = 0; ch < numberOfChannels; ch++) {
-    const data = buffer.getChannelData(ch);
-    for (let i = 0; i < length; i++) mono[i] += mixToMono ? Math.abs(data[i]) : data[i];
-  }
-  if (mixToMono && numberOfChannels > 1) {
-    for (let i = 0; i < length; i++) mono[i] /= numberOfChannels;
-  }
-
-  const winSize = Math.max(1, Math.floor((windowMs / 1000) * sampleRate));
-  const steps = Math.ceil(length / winSize);
-  const levels = new Uint8Array(steps);
-  const active = new Uint8Array(steps);
-
-  // Helpers
-  const clamp01 = (x) => Math.min(1, Math.max(0, x));
-  const mapDbToByte = (db) => {
-    const t = clamp01((db - dbFloor) / (dbCeil - dbFloor));
-    return Math.round(t * 255);
-  };
-
-  // Compute RMS -> dBFS per window
-  for (let k = 0; k < steps; k++) {
-    const start = k * winSize;
-    const end = Math.min(length, start + winSize);
-
-    let sumSq = 0;
-    for (let i = start; i < end; i++) {
-      const v = mono[i];
-      sumSq += v * v;
-    }
-    const n = Math.max(1, end - start);
-    const rms = Math.sqrt(sumSq / n);
-    const db = 20 * Math.log10(Math.max(rms, 1e-12)); // avoid -Inf
-
-    levels[k] = mapDbToByte(db);
-    active[k] = db > thresholdDb ? 1 : 0;
-  }
-
-  if (log) {
-    // Print compact arrays like [0,0,3,15,200,...]
-    const toShort = (arr, maxLen = 120) => {
-      const s = Array.from(arr).join(",");
-      return s.length <= maxLen ? s : s.slice(0, maxLen) + " …";
-    };
-
-    console.log(`sampleRate=${sampleRate}Hz, window=${windowMs}ms, windows=${steps}`);
-    console.log(`levels[0..255] ≈ [${toShort(levels)}]`);
-    console.log(`active[0/1]     ≈ [${toShort(active)}]`);
-
-    // Optional: quick ASCII sparkline (coarse)
-    const bars = Array.from(levels, v => " ▁▂▃▄▅▆▇█"[Math.min(8, Math.floor((v / 255) * 8))] || " ");
-    console.log("sparkline:", bars.join(""));
-  }
-
-  return { levels, active, windowMs, sampleRate };
-}
-
-
-
-
-
-
-
-
 let globalId = 0
 
 export const useTTSService = (options: TTSServiceOptions = {}) => {
+
   const { config: configPartial = {}, onSpeechStart, onSpeechEnd } = options
   const config = useMemo(() => ({ ...defaultTTSConfig, ...configPartial }), [configPartial])
   const isProcessing = useRef(false)
@@ -161,57 +66,40 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     return workerRef.current
   }, [])
 
-  const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const audioContext = new AudioContext()
 
-      audioContext
-        .decodeAudioData(audioBuffer.slice(0))
-        .then((decodedAudio) => {
+  // play audio, return immmediatly, since we need the timing information
+  const playAudioBuffer = useCallback(
+    async (audioBuffer: ArrayBuffer): Promise<{ duration: number; ended: Promise<void>; stop: () => void }> => {
+      const audioContext = new AudioContext();
+      const decodedAudio = await audioContext.decodeAudioData(audioBuffer.slice(0));
 
-          analyzeAudioNoise(decodedAudio)
+      const source = audioContext.createBufferSource();
+      source.buffer = decodedAudio;
+      source.connect(audioContext.destination);
 
-          console.log("**** playing decodedaudio",decodedAudio)
-          const source = audioContext.createBufferSource()
-          source.buffer = decodedAudio
-          source.connect(audioContext.destination)
+      const duration = decodedAudio.duration;
 
-          // --- Download the audioBuffer as a file after playback starts ---
-          try {
-            const blob = new Blob([audioBuffer], { type: 'audio/mp3' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `tts-audio-${Date.now()}.mp3`
-            a.style.display = 'none'
-            document.body.appendChild(a)
-            // Optionally, trigger download automatically:
-            // a.click()
-            // Or just make the link available for manual download:
-            // (You can uncomment a.click() above to auto-download)
-            setTimeout(() => {
-              document.body.removeChild(a)
-              URL.revokeObjectURL(url)
-            }, 10000)
-            // Optionally, log the download link for user
-            console.log('TTS audio available for download:', a.href)
-          } catch (err) {
-            console.warn('Failed to create download link for audio:', err)
-          }
-          // ---------------------------------------------------------------
+      // promise that resolves when playback ends
+      const ended = new Promise<void>((resolve) => {
+        source.onended = () => {
+          resolve();
+          audioContext.close().catch(() => {});
+        };
+      });
 
-          source.onended = () => {
-            resolve()
-          }
+      const stop = () => {
+        try {
+          source.stop();
+        } catch {}
+      };
 
-          source.start(0)
-        })
-        .catch((error) => {
-          console.error('Audio decode error:', error)
-          reject(error)
-        })
-    })
-  }, [])
+      source.start(0);
+
+      // resolve immediately with duration + handles
+      return { duration, ended, stop };
+    },
+    []
+  )
 
   // Generate audio using browser speech synthesis
   const generateBrowserAudio = useCallback(async (_message: QueuedMessage) => {
@@ -387,8 +275,15 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               speechSynthesis.speak(utterance)
             })
           } else if (nextMessage.audio && nextMessage.audio.byteLength > 0) {
-            console.log("Playing audio now!",nextMessage.audio.byteLength,nextMessage.text,whisperData,nextMessage)
-            await playAudioBuffer(nextMessage.audio)
+
+
+            const { duration, ended } = await playAudioBuffer(nextMessage.audio);
+
+            console.log("**** Playing audio now!",nextMessage.audio.byteLength,nextMessage.text,whisperData,nextMessage)
+            console.log("**** Duration (s):", duration);
+
+            await ended;
+
           }
         } catch (playbackError) {
           console.error(`Error playing message ${nextMessage.id}:`, playbackError)

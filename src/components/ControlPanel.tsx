@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { AppConfigState, type AppConfig } from '../app/appConfig'
+import { type AppConfig } from '../app/appConfig'
 import { ControlButton } from './common/ControlButton'
 
 interface ControlPanelProps {

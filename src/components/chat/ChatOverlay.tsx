@@ -1,6 +1,6 @@
-import { useCallback, useState, memo, useEffect } from 'react'
+import { useCallback, useState, memo } from 'react'
 
-import { AppConfigState, type AppConfig, type AppState } from '../../app/appConfig'
+import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
 import { ControlPanel } from '../ControlPanel'
