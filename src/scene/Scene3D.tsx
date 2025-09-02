@@ -1,5 +1,6 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
+import { EffectComposer, Bloom, ToneMapping } from '@react-three/postprocessing'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
 import { memo, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
@@ -60,13 +61,36 @@ const SceneContent = ({
       {/* Lighting */}
       {sceneConfig.roomLighting && (
         <>
-          <ambientLight intensity={0.3} color={0xffffff} />
-          <directionalLight position={[1, 1, 1]} intensity={0.8} color={0xffffff} castShadow />
+          <ambientLight intensity={0.4} color={0xffffff} />
+          <directionalLight 
+            position={[2, 4, 2]} 
+            intensity={1.2} 
+            color={0xffffff} 
+            castShadow 
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
+            shadow-camera-far={50}
+            shadow-camera-left={-10}
+            shadow-camera-right={10}
+            shadow-camera-top={10}
+            shadow-camera-bottom={-10}
+          />
+          <spotLight
+            position={[-1, 2, 1]}
+            intensity={0.6}
+            color={0x6666ff}
+            angle={0.3}
+            penumbra={0.5}
+            castShadow
+          />
         </>
       )}
 
-      {/* Environment */}
-      <Environment preset="studio" />
+      {/* Environment with background */}
+      <Environment preset="studio" background={true} environmentIntensity={0.8} />
+      
+      {/* Fog for depth */}
+      <fog attach="fog" args={[sceneConfig.background || 0x1a1a1a, 5, 20]} />
 
       {/* Avatar with external animations */}
       <AvatarModel
@@ -77,10 +101,20 @@ const SceneContent = ({
       />
 
       {/* Ground plane */}
-      {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[10, 10]} />
         <meshStandardMaterial color="#2A2A2A" />
-      </mesh> */}
+      </mesh>
+
+      {/* Post-processing effects */}
+      <EffectComposer>
+        <Bloom 
+          intensity={0.2} 
+          luminanceThreshold={0.9} 
+          luminanceSmoothing={0.025}
+        />
+        <ToneMapping />
+      </EffectComposer>
     </XR>
   )
 }
@@ -103,7 +137,19 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
         onToggleVisibility={() => {}}
       />*/}
       {/* Canvas */}
-      <Canvas camera={{ position: [0, 1.6, 3], fov: 50 }} style={{ background: 'transparent' }} shadows>
+      <Canvas 
+        camera={{ position: [0, 1.6, 3], fov: 50 }} 
+        shadows 
+        style={{ 
+          background: `linear-gradient(180deg, #${sceneConfig.background?.toString(16).padStart(6, '0') || '1a1a1a'} 0%, #000000 100%)` 
+        }}
+        gl={{ 
+          antialias: true, 
+          alpha: false,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.0
+        }}
+      >
         <SceneContent
           sceneConfig={sceneConfig}
           visemeService={visemeService}
