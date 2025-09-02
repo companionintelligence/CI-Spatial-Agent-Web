@@ -9,6 +9,8 @@ export interface AppConfig {
   agentEnabled: boolean
   llmLocal: boolean
   directedMode: boolean
+  cameraEnabled: boolean
+  cameraBackendEnabled: boolean
 }
 
 export interface AppState {
@@ -24,7 +26,9 @@ export const initialAppConfig: AppConfig = {
   autoSubmitEnabled: true,
   agentEnabled: true,
   llmLocal: false,
-  directedMode: false
+  directedMode: false,
+  cameraEnabled: false,
+  cameraBackendEnabled: false
 }
 
 export const AppConfigState = createSimpleStore(

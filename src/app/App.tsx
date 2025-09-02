@@ -13,13 +13,15 @@ import { defaultVadConfig } from '../services/vad/vadConfig'
 import { defaultTTSConfig } from '../services/tts/ttsConfig'
 import { defaultSTTConfig } from '../services/stt/sttConfig'
 import { defaultLLMConfig } from '../services/llm/llmConfig'
+import { defaultCameraConfig } from '../services/camera/cameraConfig'
 import { useSimpleStore } from '@hexafield/simple-store/react'
 
 export const config = {
   vad: defaultVadConfig,
   tts: defaultTTSConfig,
   stt: defaultSTTConfig,
-  llm: defaultLLMConfig
+  llm: defaultLLMConfig,
+  camera: defaultCameraConfig
 }
 
 
@@ -36,10 +38,15 @@ export const App = () => {
   const agentConfig = useMemo(
     () => ({
       ...config,
+      camera: {
+        ...config.camera,
+        enabled: appState.cameraEnabled,
+        backend_enabled: appState.cameraBackendEnabled
+      },
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
     }),
-    [ appState.autoSubmitEnabled, appState.bargeInEnabled]
+    [ appState.autoSubmitEnabled, appState.bargeInEnabled, appState.cameraEnabled, appState.cameraBackendEnabled]
   )
 
   const agent = useAgent(agentConfig)
@@ -47,7 +54,24 @@ export const App = () => {
   const handleAppStateChange = useCallback((newAppState: AppConfig) => {
     setAppState(newAppState)
     agentConfig.vad.microphoneEnabled = newAppState.microphone
-  }, [agentConfig])
+    
+    // Update camera configuration when settings change
+    if (newAppState.cameraEnabled !== appState.cameraEnabled) {
+      if (newAppState.cameraEnabled) {
+        agent.actions.initializeCamera()
+      } else {
+        agent.actions.stopCameraStreaming()
+      }
+    }
+    
+    if (newAppState.cameraBackendEnabled !== appState.cameraBackendEnabled && newAppState.cameraEnabled) {
+      if (newAppState.cameraBackendEnabled) {
+        agent.actions.startCameraStreaming()
+      } else {
+        agent.actions.stopCameraStreaming()
+      }
+    }
+  }, [agentConfig, appState.cameraEnabled, appState.cameraBackendEnabled, agent.actions])
 
   return (
     <div

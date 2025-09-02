@@ -99,6 +99,24 @@ export const ControlPanel = memo(({
           {config.agentEnabled ? '🔊' : '🤖'}
         </ControlButton>
 
+        <ControlButton
+          isActive={config.cameraEnabled}
+          onClick={() => handleAppStateChange({ ...config, cameraEnabled: !config.cameraEnabled })}
+          tooltipContent={config.cameraEnabled ? 'Disable Camera' : 'Enable Camera'}
+        >
+          📷
+        </ControlButton>
+
+        {config.cameraEnabled && (
+          <ControlButton
+            isActive={config.cameraBackendEnabled}
+            onClick={() => handleAppStateChange({ ...config, cameraBackendEnabled: !config.cameraBackendEnabled })}
+            tooltipContent={config.cameraBackendEnabled ? 'Disable Camera Backend' : 'Enable Camera Backend'}
+          >
+            📤
+          </ControlButton>
+        )}
+
         {onEnterARMode && (
           <ControlButton isActive={false} onClick={onEnterARMode} tooltipContent="Enter AR Mode">
             🥽

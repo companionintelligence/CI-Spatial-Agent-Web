@@ -18,6 +18,9 @@ import { defaultVadConfig, type VADConfig, type VADResult } from './vad/vadConfi
 import { defaultTTSConfig, type TTSConfig, type WhisperData } from './tts/ttsConfig'
 import { defaultSTTConfig, type STTConfig } from './stt/sttConfig'
 import { defaultLLMConfig, type LLMConfig } from './llm/llmConfig'
+import { defaultCameraConfig, type CameraConfig } from './camera/cameraConfig'
+import { useCameraService } from './camera/cameraService'
+import type { CameraStatusUpdate, CameraAnalysisResult, CameraBackendResponse } from './camera/cameraTypes'
 import { shouldTriggerBargeIn } from './integration/emotionIntegration'
 
 // STT service result interface (defined locally in sttService.ts)
@@ -48,6 +51,8 @@ export interface AgentConfig {
   stt?:  Partial<STTConfig>
   // LLM configuration
   llm?: Partial<LLMConfig>
+  // Camera configuration
+  camera?: Partial<CameraConfig>
   // App behavior configuration
   autoSubmitEnabled?: boolean
   bargeInEnabled?: boolean
@@ -75,6 +80,12 @@ export interface AgentCallbacks {
   // Conversation callbacks
   onMessageAdded?: (message: ConversationMessage) => void
   onMessageUpdated?: (messages: ConversationMessage[]) => void
+
+  // Camera callbacks
+  onCameraStatus?: (status: CameraStatusUpdate) => void
+  onCameraFrame?: (frame: any) => void
+  onCameraAnalysis?: (analysis: CameraAnalysisResult) => void
+  onCameraBackendResponse?: (response: CameraBackendResponse) => void
 
   // General callbacks
   onError?: (error: Error) => void
@@ -107,6 +118,12 @@ export interface AgentService {
     // Conversation state
     messages: ConversationMessage[]
     currentMessage: string
+
+    // Camera state
+    cameraReady: boolean
+    cameraStreaming: boolean
+    cameraHasPermission: boolean
+    cameraError: string | null
   }
 
   // Actions
@@ -141,6 +158,12 @@ export interface AgentService {
     addMessage: (text: string, isUser: boolean) => void
     updateCurrentMessage: (message: string) => void
     clearCurrentMessage: () => void
+
+    // Camera actions
+    initializeCamera: () => void
+    startCameraStreaming: () => void
+    stopCameraStreaming: () => void
+    captureFrame: () => Promise<any | null>
 
     // Convenience actions
     submitMessage: (message: string) => void
@@ -177,6 +200,7 @@ export interface AgentService {
     visemes: ReturnType<typeof useVisemeService>
     emotes: ReturnType<typeof useEmoteService>
     animations: ReturnType<typeof useAnimationService>
+    camera: ReturnType<typeof useCameraService>
   }
 }
 
@@ -207,6 +231,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
   const sttConfig = { ...defaultSTTConfig, ...config.stt }
   const llmConfig = { ...defaultLLMConfig, ...config.llm }
+  const cameraConfig = { ...defaultCameraConfig, ...config.camera }
   const appConfig = {
     autoSubmitEnabled: config.autoSubmitEnabled ?? defaultAppConfig.autoSubmitEnabled,
     bargeInEnabled: config.bargeInEnabled ?? defaultAppConfig.bargeInEnabled
@@ -224,6 +249,30 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const visemes = useVisemeService()
   const emotes = useEmoteService()
   const animations = useAnimationService()
+  
+  // Initialize camera service
+  const camera = useCameraService({
+    config: cameraConfig,
+    onStatusUpdate: callbacks.onCameraStatus,
+    onFrame: callbacks.onCameraFrame,
+    onAnalysis: (analysis) => {
+      // Integrate camera analysis with emotion system
+      if (analysis.emotions && analysis.emotions.length > 0) {
+        const emotion = analysis.emotions[0]
+        if (emotion.confidence > 0.7) { // Only trigger if confident
+          emotes.actions.setEmotion(emotion.emotion as EmotionType)
+        }
+      }
+      
+      // Integrate attention data with gaze system
+      if (analysis.attention && analysis.attention.isLooking && analysis.attention.attentionScore > 0.5) {
+        emotes.actions.triggerGaze({ duration: 2000, randomness: 0.8 })
+      }
+      
+      callbacks.onCameraAnalysis?.(analysis)
+    },
+    onBackendResponse: callbacks.onCameraBackendResponse
+  })
   // Initialize LLM service
   const llmService = useLLMService({
     config: llmConfig,
@@ -387,9 +436,10 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       tts,
       visemes,
       emotes,
-      animations
+      animations,
+      camera
     }),
-    [conversation, vad, stt, llmService, tts, visemes, emotes, animations]
+    [conversation, vad, stt, llmService, tts, visemes, emotes, animations, camera]
   )
 
   // Memoize the actions object to prevent unnecessary re-renders
@@ -420,6 +470,12 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       addMessage: conversation.actions.addMessage,
       updateCurrentMessage: conversation.actions.updateCurrentMessage,
       clearCurrentMessage: conversation.actions.clearCurrentMessage,
+
+      // Camera actions
+      initializeCamera: camera.actions.initialize,
+      startCameraStreaming: camera.actions.startStreaming,
+      stopCameraStreaming: camera.actions.stopStreaming,
+      captureFrame: camera.actions.captureFrame,
 
       // Convenience actions
       submitMessage,
@@ -462,6 +518,10 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       conversation.actions.addMessage,
       conversation.actions.updateCurrentMessage,
       conversation.actions.clearCurrentMessage,
+      camera.actions.initialize,
+      camera.actions.startStreaming,
+      camera.actions.stopStreaming,
+      camera.actions.captureFrame,
       submitMessage,
       toggleMicrophone,
       triggerBargein,
@@ -498,7 +558,11 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       ttsIsSpeaking: tts.isSpeaking.current,
       ttsAudioQueue: tts.audioQueue,
       messages: conversation.state.messages,
-      currentMessage: conversation.state.currentMessage
+      currentMessage: conversation.state.currentMessage,
+      cameraReady: camera.getters.isReady(),
+      cameraStreaming: camera.getters.isStreaming(),
+      cameraHasPermission: camera.state.hasPermission,
+      cameraError: camera.state.error
     }),
     [
       vad.isListening,
@@ -514,7 +578,11 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       tts.isSpeaking.current,
       tts.audioQueue,
       conversation.state.messages,
-      conversation.state.currentMessage
+      conversation.state.currentMessage,
+      camera.getters.isReady(),
+      camera.getters.isStreaming(),
+      camera.state.hasPermission,
+      camera.state.error
     ]
   )
 
