@@ -4,6 +4,7 @@ import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
 import { ControlPanel } from '../ControlPanel'
+import { WaveformVisualizer } from '../common/WaveformVisualizer'
 import type { AgentService } from '../../services/useAgent'
 import type { XRStore } from '@react-three/xr'
 import { shouldTriggerBargeIn } from '../../services/integration/emotionIntegration'
@@ -48,6 +49,27 @@ export const ChatOverlay = memo(({
 
   return (
     <>
+      {/* Waveform Visualizer - positioned above ChatInput */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '9.5rem',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 999,
+          width: window.innerWidth <= 768 ? '18.75rem' : '25rem',
+          maxWidth: '90%',
+          pointerEvents: 'none'
+        }}
+      >
+        <WaveformVisualizer
+          isActive={config.microphone}
+          isDetecting={agent.state.vadIsDetecting}
+          width={window.innerWidth <= 768 ? 280 : 360}
+          height={48}
+        />
+      </div>
+
       {/* Chat Input */}
       <ChatInput
         message={agent.state.currentMessage}
