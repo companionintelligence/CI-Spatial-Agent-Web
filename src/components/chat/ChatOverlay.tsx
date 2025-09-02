@@ -4,6 +4,7 @@ import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatInput } from './ChatInput'
 import { ControlPanel } from '../ControlPanel'
+import KeywordAnimationTester from '../KeywordAnimationTester'
 import type { AgentService } from '../../services/useAgent'
 import type { XRStore } from '@react-three/xr'
 import { shouldTriggerBargeIn } from '../../services/integration/emotionIntegration'
@@ -22,6 +23,7 @@ export const ChatOverlay = memo(({
   xrStore,
 }: ChatOverlayProps) => {
   const [isButtonsVisible, setIsButtonsVisible] = useState(true)
+  const [isKeywordTesterVisible, setIsKeywordTesterVisible] = useState(false)
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -60,6 +62,23 @@ export const ChatOverlay = memo(({
         sttListening={agent.state.sttIsListening}
       />
 
+      {/* Keyword Animation Tester */}
+      {isKeywordTesterVisible && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '1rem',
+            left: '1rem',
+            right: '1rem',
+            maxWidth: '60rem',
+            margin: '0 auto',
+            zIndex: 900
+          }}
+        >
+          <KeywordAnimationTester />
+        </div>
+      )}
+
       {/* Control Buttons */}
       <ControlPanel
         config={config} 
@@ -76,6 +95,14 @@ export const ChatOverlay = memo(({
         onToggle={() => setIsButtonsVisible(!isButtonsVisible)}
         label="Controls"
         position="bottom-left"
+      />
+      
+      {/* Keyword Tester Toggle Button */}
+      <ToggleButton
+        isVisible={isKeywordTesterVisible}
+        onToggle={() => setIsKeywordTesterVisible(!isKeywordTesterVisible)}
+        label="Animation Tester"
+        position="bottom-right"
       />
     </>
   )

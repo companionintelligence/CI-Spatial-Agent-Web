@@ -2,7 +2,7 @@ interface ToggleButtonProps {
   isVisible: boolean
   onToggle: () => void
   label: string
-  position: 'left' | 'right' | 'bottom-left'
+  position: 'left' | 'right' | 'bottom-left' | 'bottom-right'
   isMobile?: boolean
   panelWidth?: { mobile: string; desktop: string }
 }
@@ -18,6 +18,9 @@ export const ToggleButton = ({
   const getPosition = () => {
     if (position === 'bottom-left') {
       return { bottom: '1.25rem', left: '1.25rem' }
+    }
+    if (position === 'bottom-right') {
+      return { bottom: '1.25rem', right: '1.25rem' }
     }
 
     const basePosition = isVisible
@@ -42,7 +45,7 @@ export const ToggleButton = ({
   }
 
   const getIcon = () => {
-    if (position === 'bottom-left') {
+    if (position === 'bottom-left' || position === 'bottom-right') {
       return isVisible ? '▼' : '▲'
     }
 
@@ -50,7 +53,7 @@ export const ToggleButton = ({
   }
 
   const getTransform = () => {
-    if (position === 'bottom-left') {
+    if (position === 'bottom-left' || position === 'bottom-right') {
       return 'none'
     }
     return 'translateY(-50%)'
@@ -61,7 +64,7 @@ export const ToggleButton = ({
       onClick={onToggle}
       style={{
         position: 'absolute',
-        top: position === 'bottom-left' ? 'auto' : '3%',
+        top: position === 'bottom-left' || position === 'bottom-right' ? 'auto' : '3%',
         ...getPosition(),
         transform: getTransform(),
         zIndex: 1000,
@@ -84,12 +87,12 @@ export const ToggleButton = ({
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.background = 'linear-gradient(180deg, rgba(16,25,30,0.8) 0%, rgba(17,43,48,0.8) 100%)'
-        e.currentTarget.style.transform = position === 'bottom-left' ? 'scale(1.05)' : 'translateY(-50%) scale(1.05)'
+        e.currentTarget.style.transform = (position === 'bottom-left' || position === 'bottom-right') ? 'scale(1.05)' : 'translateY(-50%) scale(1.05)'
         e.currentTarget.style.boxShadow = '0 0.25rem 0.5rem rgba(0,0,0,0.2)'
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.background = 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)'
-        e.currentTarget.style.transform = position === 'bottom-left' ? 'scale(1)' : 'translateY(-50%) scale(1)'
+        e.currentTarget.style.transform = (position === 'bottom-left' || position === 'bottom-right') ? 'scale(1)' : 'translateY(-50%) scale(1)'
         e.currentTarget.style.boxShadow = '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}
     >
