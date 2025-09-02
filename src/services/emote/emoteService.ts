@@ -130,6 +130,11 @@ const applyEmotionInternal = (state: EmoteState, emotion: EmotionType): void => 
     applyExpression(state, VRM_EXPRESSIONS[vrmEmotion], 0.8)
   }
 
+  // Log emotion change
+  if (state.currentEmotion !== emotion) {
+    console.log(`Emotion changed: ${state.currentEmotion} → ${emotion}`)
+  }
+
   state.currentEmotion = emotion
 }
 
@@ -160,7 +165,7 @@ const mapEmotionToVRM = (emotion: EmotionType): keyof typeof VRM_EXPRESSIONS | n
  */
 
 /**
- * Main update function with modular approach
+ * Main update function with modular approach and improved relaxation handling
  */
 export const emoteUpdate = (state: EmoteState, delta: number, config: EmoteConfig): void => {
   const currentTime = performance.now()
@@ -169,12 +174,60 @@ export const emoteUpdate = (state: EmoteState, delta: number, config: EmoteConfi
   updateVRMSystems(state, delta)
 
   // Update core modules
-  updateBlinking(state, delta , config)
-  updateGaze(state, delta ,config)
-  // Apply facial ticks only when not performing
+  updateBlinking(state, delta, config)
+  updateGaze(state, delta, config)
+  
+  // Handle performance state and gradual emotion fade-out
+  if (state.isPerforming) {
+    // Check if we're past the relaxation time
+    if (state.relaxationTime <= currentTime) {
+      if (config.relaxation.enableGradualFadeOut) {
+        // Begin fade-out process instead of abrupt stop
+        const fadeOutDuration = config.relaxation.fadeOutDuration
+        const fadeOutStartTime = state.relaxationTime
+        const fadeProgress = Math.min(1.0, (currentTime - fadeOutStartTime) / fadeOutDuration)
+        
+        // Log fade-out progress if debugging enabled
+        if (config.debug.logFadeOutProgress) {
+          console.log(`Emote fade-out progress: ${(fadeProgress * 100).toFixed(1)}%`)
+        }
+        
+        // Gradually reduce emotion intensity during fade-out
+        if (fadeProgress < 1.0) {
+          const fadeMultiplier = 1.0 - fadeProgress
+          Object.entries(state.targets).forEach(([key, value]) => {
+            if (typeof value === 'number' && value > 0) {
+              // Fade emotions but preserve base blinking and neutral expressions
+              if (!key.includes('blink') && !key.includes('neutral')) {
+                state.targets[key as keyof FacialTarget] = value * fadeMultiplier
+              }
+            }
+          })
+        } else {
+          // Fade-out complete - reset to neutral
+          state.isPerforming = false
+          // Apply neutral emotion with fade-in
+          applyEmotion(state, 'neutral')
+          
+          if (config.debug.logEmotionChanges) {
+            console.log('Emote performance ended - returned to neutral')
+          }
+        }
+      } else {
+        // Abrupt stop (legacy behavior)
+        state.isPerforming = false
+        applyEmotion(state, 'neutral')
+        
+        if (config.debug.logEmotionChanges) {
+          console.log('Emote performance ended abruptly - returned to neutral')
+        }
+      }
+    }
+  }
+  
+  // Apply facial ticks only when not performing or during fade-out
   if (!state.isPerforming || state.relaxationTime <= currentTime) {
-    updateFacialTicks(state, delta , config)
-    state.isPerforming = false
+    updateFacialTicks(state, delta, config)
   }
 }
 
@@ -192,11 +245,21 @@ const updateVRMSystems = (state: EmoteState, delta: number): void => {
   }, 'VRM system update failed')
 }
 
-export const startPerformance = (state: EmoteState, performanceData: PerformanceData, _delta: number ): EmoteResult => {
+/**
+ * Start a performance based on performance data
+ */
+export const startPerformance = (state: EmoteState, performanceData: PerformanceData, _delta: number): EmoteResult => {
   return safeExecute(() => {
     if (!performanceData) return
 
     const startTime = performance.now()
+
+    // If we're in the middle of a fade-out from a previous emotion, interrupt it
+    // to allow the new emotion to take full effect
+    if (state.isPerforming && state.relaxationTime <= startTime) {
+      // Reset any faded values before applying new emotion
+      state.isPerforming = false
+    }
 
     // Apply emotion if specified
     if (performanceData.emotion) {
@@ -224,6 +287,8 @@ export const startPerformance = (state: EmoteState, performanceData: Performance
 
     // Set relaxation time (when performance should end)
     state.relaxationTime = startTime + (performanceData.relaxTime ?? 500)
+    
+    console.log(`Emote performance started: ${performanceData.emotion} for ${(performanceData.relaxTime ?? 500)}ms`)
   }, 'Failed to start performance')
 }
 

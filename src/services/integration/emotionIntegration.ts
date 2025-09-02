@@ -2,120 +2,139 @@ import type { ConversationMessage } from '../conversation/conversationType'
 import type { EmotionType, PerformanceData } from '../emote/emoteTypes'
 
 /**
- * Simple emotion detection based on keywords and patterns in text
- * In a production system, this could be replaced with a more sophisticated
- * emotion analysis service or AI model
+ * Enhanced emotion detection based on keywords, patterns, and contextual cues in text
+ * Improved from simple keyword matching to better sentiment analysis
  */
 export const detectEmotionFromText = (text: string): EmotionType => {
   const lowerText = text.toLowerCase()
-
-  // Happy indicators
-  if (
-    lowerText.includes('happy') ||
-    lowerText.includes('joy') ||
-    lowerText.includes('excited') ||
-    lowerText.includes('great') ||
-    lowerText.includes('wonderful') ||
-    lowerText.includes('amazing') ||
-    lowerText.includes('fantastic') ||
-    lowerText.includes('excellent') ||
-    lowerText.includes('love') ||
-    lowerText.includes('celebrate') ||
-    lowerText.includes('😊') ||
-    lowerText.includes('😄') ||
-    lowerText.includes('🎉') ||
-    lowerText.includes('👍')
-  ) {
-    return 'happy'
+  
+  // Initialize emotion scores
+  const emotionScores = {
+    happy: 0,
+    sad: 0,
+    angry: 0,
+    fear: 0,
+    disgust: 0,
+    love: 0,
+    neutral: 0
   }
 
-  // Sad indicators
-  if (
-    lowerText.includes('sad') ||
-    lowerText.includes('sorry') ||
-    lowerText.includes('disappointed') ||
-    lowerText.includes('unfortunate') ||
-    lowerText.includes('regret') ||
-    lowerText.includes('cry') ||
-    lowerText.includes('tears') ||
-    lowerText.includes('hurt') ||
-    lowerText.includes('😢') ||
-    lowerText.includes('😭') ||
-    lowerText.includes('💔')
-  ) {
-    return 'sad'
+  // Enhanced Happy indicators with weights
+  const happyPatterns = [
+    { patterns: ['ecstatic', 'overjoyed', 'elated', 'thrilled'], weight: 3 },
+    { patterns: ['happy', 'joy', 'joyful', 'excited', 'delighted'], weight: 2 },
+    { patterns: ['great', 'wonderful', 'amazing', 'fantastic', 'excellent', 'awesome', 'brilliant'], weight: 2 },
+    { patterns: ['love', 'adore', 'celebrate', 'cheerful', 'glad', 'pleased'], weight: 2 },
+    { patterns: ['good', 'nice', 'fun', 'cool', 'sweet', 'perfect'], weight: 1 },
+    { patterns: ['😊', '😄', '😃', '😁', '🎉', '👍', '🙂', '😌'], weight: 2 }
+  ]
+
+  // Enhanced Sad indicators
+  const sadPatterns = [
+    { patterns: ['devastated', 'heartbroken', 'miserable', 'depressed'], weight: 3 },
+    { patterns: ['sad', 'sorrow', 'grief', 'melancholy', 'disappointed'], weight: 2 },
+    { patterns: ['sorry', 'unfortunately', 'regret', 'regrettably'], weight: 2 },
+    { patterns: ['cry', 'crying', 'tears', 'weep', 'hurt', 'pain'], weight: 2 },
+    { patterns: ['down', 'low', 'blue', 'gloomy', 'upset'], weight: 1 },
+    { patterns: ['😢', '😭', '💔', '😔', '😞', '☹️'], weight: 2 }
+  ]
+
+  // Enhanced Angry indicators
+  const angryPatterns = [
+    { patterns: ['furious', 'enraged', 'livid', 'irate'], weight: 3 },
+    { patterns: ['angry', 'mad', 'rage', 'wrath', 'irritated'], weight: 2 },
+    { patterns: ['frustrated', 'annoyed', 'annoying', 'infuriating'], weight: 2 },
+    { patterns: ['outrageous', 'ridiculous', 'absurd', 'unacceptable'], weight: 2 },
+    { patterns: ['hate', 'despise', 'loathe', 'can\'t stand'], weight: 2 },
+    { patterns: ['😠', '😡', '🤬', '💢', '😤'], weight: 2 }
+  ]
+
+  // Enhanced Fear indicators
+  const fearPatterns = [
+    { patterns: ['terrified', 'petrified', 'horrified', 'panic'], weight: 3 },
+    { patterns: ['scared', 'afraid', 'frightened', 'fearful'], weight: 2 },
+    { patterns: ['nervous', 'worried', 'anxious', 'concerned'], weight: 2 },
+    { patterns: ['dread', 'apprehensive', 'uneasy', 'alarmed'], weight: 2 },
+    { patterns: ['scared', 'spooked', 'startled'], weight: 1 },
+    { patterns: ['😨', '😰', '😱', '🫣', '😖'], weight: 2 }
+  ]
+
+  // Enhanced Disgust indicators
+  const disgustPatterns = [
+    { patterns: ['disgusting', 'revolting', 'repulsive', 'sickening'], weight: 3 },
+    { patterns: ['gross', 'yuck', 'nasty', 'foul'], weight: 2 },
+    { patterns: ['awful', 'terrible', 'horrible', 'appalling'], weight: 2 },
+    { patterns: ['repugnant', 'repulsive', 'vile', 'loathsome'], weight: 2 },
+    { patterns: ['ugh', 'eww', 'sick', 'nauseous'], weight: 1 },
+    { patterns: ['🤢', '🤮', '😷', '🤧'], weight: 2 }
+  ]
+
+  // Enhanced Love/affection indicators
+  const lovePatterns = [
+    { patterns: ['love you', 'adore you', 'worship', 'devoted'], weight: 3 },
+    { patterns: ['love', 'adore', 'cherish', 'treasure'], weight: 2 },
+    { patterns: ['romantic', 'romance', 'passion', 'intimate'], weight: 2 },
+    { patterns: ['sweetheart', 'darling', 'beloved', 'dear'], weight: 2 },
+    { patterns: ['affection', 'fondness', 'warmth', 'care'], weight: 1 },
+    { patterns: ['💕', '💖', '💗', '❤️', '😍', '🥰', '💘'], weight: 2 }
+  ]
+
+  // Calculate scores for each emotion
+  const patternGroups = [
+    { patterns: happyPatterns, emotion: 'happy' as keyof typeof emotionScores },
+    { patterns: sadPatterns, emotion: 'sad' as keyof typeof emotionScores },
+    { patterns: angryPatterns, emotion: 'angry' as keyof typeof emotionScores },
+    { patterns: fearPatterns, emotion: 'fear' as keyof typeof emotionScores },
+    { patterns: disgustPatterns, emotion: 'disgust' as keyof typeof emotionScores },
+    { patterns: lovePatterns, emotion: 'love' as keyof typeof emotionScores }
+  ]
+
+  patternGroups.forEach(({ patterns, emotion }) => {
+    patterns.forEach(({ patterns: patternList, weight }) => {
+      patternList.forEach(pattern => {
+        if (lowerText.includes(pattern)) {
+          emotionScores[emotion] += weight
+        }
+      })
+    })
+  })
+
+  // Additional contextual analysis
+  
+  // Negation detection - reduce positive emotions if negated
+  const negationWords = ['not', 'no', 'never', 'don\'t', 'doesn\'t', 'didn\'t', 'won\'t', 'can\'t', 'isn\'t', 'aren\'t']
+  const hasNegation = negationWords.some(word => lowerText.includes(word))
+  
+  if (hasNegation) {
+    emotionScores.happy *= 0.3
+    emotionScores.love *= 0.3
+    emotionScores.sad += 1
   }
 
-  // Angry indicators
-  if (
-    lowerText.includes('angry') ||
-    lowerText.includes('mad') ||
-    lowerText.includes('furious') ||
-    lowerText.includes('annoying') ||
-    lowerText.includes('irritated') ||
-    lowerText.includes('frustrated') ||
-    lowerText.includes('outrageous') ||
-    lowerText.includes('ridiculous') ||
-    lowerText.includes('😠') ||
-    lowerText.includes('😡') ||
-    lowerText.includes('🤬')
-  ) {
-    return 'angry'
+  // Question detection - often indicates uncertainty or curiosity (neutral)
+  if (lowerText.includes('?') || lowerText.startsWith('what') || lowerText.startsWith('how') || lowerText.startsWith('why')) {
+    emotionScores.neutral += 1
   }
 
-  // Fear indicators
-  if (
-    lowerText.includes('scared') ||
-    lowerText.includes('afraid') ||
-    lowerText.includes('frightened') ||
-    lowerText.includes('terrified') ||
-    lowerText.includes('nervous') ||
-    lowerText.includes('worried') ||
-    lowerText.includes('anxious') ||
-    lowerText.includes('panic') ||
-    lowerText.includes('😨') ||
-    lowerText.includes('😰') ||
-    lowerText.includes('😱')
-  ) {
-    return 'fear'
+  // Exclamation detection - amplifies existing emotions
+  const exclamationCount = (lowerText.match(/!/g) || []).length
+  if (exclamationCount > 0) {
+    const amplifyFactor = 1 + (exclamationCount * 0.3)
+    Object.keys(emotionScores).forEach(key => {
+      if (key !== 'neutral' && emotionScores[key as keyof typeof emotionScores] > 0) {
+        emotionScores[key as keyof typeof emotionScores] *= amplifyFactor
+      }
+    })
   }
 
-  // Disgust indicators
-  if (
-    lowerText.includes('disgusting') ||
-    lowerText.includes('gross') ||
-    lowerText.includes('yuck') ||
-    lowerText.includes('revolting') ||
-    lowerText.includes('nasty') ||
-    lowerText.includes('awful') ||
-    lowerText.includes('terrible') ||
-    lowerText.includes('🤢') ||
-    lowerText.includes('🤮') ||
-    lowerText.includes('😷')
-  ) {
-    return 'disgust'
-  }
+  // Find the highest scoring emotion
+  const maxEmotion = Object.entries(emotionScores).reduce((max, [emotion, score]) => 
+    score > max.score ? { emotion: emotion as EmotionType, score } : max,
+    { emotion: 'neutral' as EmotionType, score: 0 }
+  )
 
-  // Love/affection indicators
-  if (
-    lowerText.includes('love you') ||
-    lowerText.includes('adore') ||
-    lowerText.includes('cherish') ||
-    lowerText.includes('romantic') ||
-    lowerText.includes('sweetheart') ||
-    lowerText.includes('darling') ||
-    lowerText.includes('beloved') ||
-    lowerText.includes('💕') ||
-    lowerText.includes('💖') ||
-    lowerText.includes('💗') ||
-    lowerText.includes('❤️') ||
-    lowerText.includes('😍')
-  ) {
-    return 'love'
-  }
-
-  // Default to neutral
-  return 'neutral'
+  // Return the emotion with highest score, or neutral if no strong emotion detected
+  return maxEmotion.score > 0 ? maxEmotion.emotion : 'neutral'
 }
 
 /**
@@ -245,39 +264,91 @@ export const shouldTriggerBargeIn = (message: ConversationMessage): boolean => {
 }
 
 /**
- * Get emotion intensity based on message content
- * Returns a value between 0 and 1
+ * Enhanced emotion intensity calculation based on message content
+ * Returns a value between 0 and 1, considering multiple factors
  */
 export const getEmotionIntensity = (text: string): number => {
   const lowerText = text.toLowerCase()
-
-  // High intensity indicators
-  const highIntensityWords = [
-    'extremely',
-    'incredibly',
-    'absolutely',
-    'completely',
-    'totally',
-    'amazing',
-    'fantastic',
-    'terrible',
-    'awful',
-    'furious',
-    'thrilled'
+  let intensity = 0.3 // Base intensity
+  
+  // Intensity amplifiers with different weights
+  const intensityModifiers = [
+    // Very high intensity words (0.4 boost each)
+    {
+      patterns: ['extremely', 'incredibly', 'absolutely', 'completely', 'totally', 'utterly', 'entirely'],
+      boost: 0.4
+    },
+    // High intensity words (0.3 boost each)  
+    {
+      patterns: ['very', 'really', 'quite', 'pretty', 'rather', 'seriously', 'definitely'],
+      boost: 0.3
+    },
+    // Strong emotion words (0.3 boost each)
+    {
+      patterns: ['amazing', 'fantastic', 'terrible', 'awful', 'furious', 'thrilled', 'devastated', 'ecstatic'],
+      boost: 0.3
+    },
+    // Medium intensity words (0.2 boost each)
+    {
+      patterns: ['good', 'bad', 'nice', 'great', 'okay', 'fine', 'wonderful', 'horrible'],
+      boost: 0.2
+    },
+    // Mild intensity words (0.1 boost each)
+    {
+      patterns: ['a bit', 'somewhat', 'kind of', 'sort of', 'a little', 'slightly'],
+      boost: 0.1
+    }
   ]
-
-  // Medium intensity indicators
-  const mediumIntensityWords = ['very', 'really', 'quite', 'pretty', 'rather', 'good', 'bad', 'nice', 'great', 'okay']
-
-  // Count intensity markers
-  const highCount = highIntensityWords.reduce((count, word) => (lowerText.includes(word) ? count + 1 : count), 0)
-
-  const mediumCount = mediumIntensityWords.reduce((count, word) => (lowerText.includes(word) ? count + 1 : count), 0)
-
-  if (highCount > 0) return 0.8 + Math.min(highCount, 3) * 0.067 // 0.8 to 1.0
-  if (mediumCount > 0) return 0.5 + Math.min(mediumCount, 3) * 0.1 // 0.5 to 0.8
-
-  return 0.3 // Default low intensity
+  
+  // Apply intensity modifiers
+  intensityModifiers.forEach(({ patterns, boost }) => {
+    patterns.forEach(pattern => {
+      if (lowerText.includes(pattern)) {
+        intensity += boost
+      }
+    })
+  })
+  
+  // Punctuation and typography-based intensity
+  const exclamationCount = (lowerText.match(/!/g) || []).length
+  if (exclamationCount > 0) {
+    intensity += Math.min(exclamationCount * 0.15, 0.3) // Max 0.3 boost from exclamations
+  }
+  
+  const questionCount = (lowerText.match(/\?/g) || []).length
+  if (questionCount > 0) {
+    intensity += Math.min(questionCount * 0.1, 0.2) // Questions add moderate intensity
+  }
+  
+  // CAPS detection (indicates strong emotion)
+  const capsWords = text.match(/[A-Z]{2,}/g)
+  if (capsWords && capsWords.length > 0) {
+    intensity += Math.min(capsWords.length * 0.2, 0.4) // Max 0.4 boost from caps
+  }
+  
+  // Repetitive punctuation (!!!, ???, etc.)
+  const repetitivePunctuation = text.match(/[!?]{2,}/g)
+  if (repetitivePunctuation && repetitivePunctuation.length > 0) {
+    intensity += 0.25 // Strong emotional emphasis
+  }
+  
+  // Length-based modulation (longer texts might have diluted emotion)
+  const wordCount = lowerText.trim().split(/\s+/).length
+  if (wordCount > 50) {
+    intensity *= 0.9 // Slightly reduce for very long texts
+  } else if (wordCount < 5) {
+    intensity *= 1.1 // Slightly increase for very short, punchy texts
+  }
+  
+  // Emoji intensity (strong visual emotional indicators)
+  const emojiPattern = /[\u{1f300}-\u{1f5ff}\u{1f900}-\u{1f9ff}\u{1f600}-\u{1f64f}\u{1f680}-\u{1f6ff}\u{2600}-\u{26ff}\u{2700}-\u{27bf}\u{1f1e6}-\u{1f1ff}\u{1f191}-\u{1f251}\u{1f004}\u{1f0cf}\u{1f170}-\u{1f171}\u{1f17e}-\u{1f17f}\u{1f18e}\u{3030}\u{2b50}\u{2b55}\u{2934}-\u{2935}\u{2b05}-\u{2b07}\u{2b1b}-\u{2b1c}\u{3297}\u{3299}\u{303d}\u{00a9}\u{00ae}\u{2122}\u{23f3}\u{24c2}\u{23e9}-\u{23ef}\u{25b6}\u{23f8}-\u{23fa}]/gu
+  const emojiCount = (text.match(emojiPattern) || []).length
+  if (emojiCount > 0) {
+    intensity += Math.min(emojiCount * 0.2, 0.4) // Max 0.4 boost from emojis
+  }
+  
+  // Clamp final intensity between 0.1 and 1.0
+  return Math.max(0.1, Math.min(1.0, intensity))
 }
 
 /**

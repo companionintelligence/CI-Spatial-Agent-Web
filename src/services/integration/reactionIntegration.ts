@@ -4,6 +4,37 @@ import type { PerformanceData } from '../emote/emoteTypes'
 import { analyzeMessageForActions, detectEmotionFromText, getEmotionIntensity } from './emotionIntegration'
 
 /**
+ * Calculate appropriate emotion duration based on text length, emotion type, and intensity
+ */
+const calculateEmotionDuration = (text: string, emotion: string, intensity: number): number => {
+  // Base duration calculation from text length (assume ~150-200 wpm reading speed)
+  const wordCount = text.trim().split(/\s+/).length
+  const baseSpeechDuration = (wordCount / 3.0) * 1000 // ~180 wpm, convert to ms
+  
+  // Emotion-specific duration multipliers
+  const emotionMultipliers = {
+    'happy': 1.2,    // Happy expressions should linger
+    'love': 1.3,     // Love expressions should be sustained
+    'angry': 1.1,    // Angry expressions are intense but shorter
+    'sad': 1.4,      // Sad expressions should persist longer
+    'fear': 0.9,     // Fear expressions are more fleeting
+    'disgust': 0.8,  // Disgust expressions are brief
+    'neutral': 0.7   // Neutral shouldn't overstay
+  }
+  
+  const emotionMultiplier = emotionMultipliers[emotion as keyof typeof emotionMultipliers] || 1.0
+  
+  // Intensity affects duration (higher intensity = longer duration)
+  const intensityMultiplier = 0.8 + (intensity * 0.6) // Range: 0.8 to 1.4
+  
+  // Calculate final duration with minimum and maximum bounds
+  const calculatedDuration = baseSpeechDuration * emotionMultiplier * intensityMultiplier
+  
+  // Apply reasonable bounds: minimum 2 seconds, maximum 15 seconds
+  return Math.max(2000, Math.min(15000, calculatedDuration))
+}
+
+/**
  * Build PerformanceData (facial/emote) and an AnimationPerformanceData (body animation)
  * from a conversation message. Uses emotionIntegration as the base and adds animation mapping.
  */
@@ -15,10 +46,14 @@ export const createReactionFromMessage = (
   const action = analyzeMessageForActions(message)
   const intensity = getEmotionIntensity(message.text)
   
+  // Calculate appropriate emotion duration based on content
+  const relaxTime = calculateEmotionDuration(message.text, emotion, intensity)
+  
   const performance: PerformanceData = {
     emotion,
     action,
     bcounter: messageIndex,
+    relaxTime, // Add calculated relaxation time
     whisper: message.visemeData as { words?: string[]; wtimes?: number[]; wdurations?: number[] } | undefined
   }
 

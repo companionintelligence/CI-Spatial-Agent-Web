@@ -263,7 +263,9 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       callbacks.onTTSSpeechStart?.(text, whisperData)
     },
     onSpeechEnd: () => {
-      emotes.actions.reset()
+      // Don't reset emotes immediately - let them naturally expire based on relaxTime
+      // This allows facial expressions to persist beyond the speech duration
+      // emotes.actions.reset() // REMOVED - emotes will reset via relaxationTime mechanism
       callbacks.onTTSSpeechEnd?.()
     }
   })

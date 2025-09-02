@@ -27,9 +27,11 @@ export interface EmoteConfig {
     options: GazeOptions
   }
   
-  // Relaxation timing
+  // Relaxation and fade-out timing
   relaxation: {
     defaultTime: number
+    fadeOutDuration: number // How long emotions take to fade out
+    enableGradualFadeOut: boolean // Whether to use gradual fade vs abrupt stop
   }
   
   tick:{
@@ -37,9 +39,16 @@ export interface EmoteConfig {
     frequency: number
     probability: number
   }
+  
   // Mood configuration
   mood: MoodOptions
   
+  // Debug and logging options
+  debug: {
+    logEmotionChanges: boolean
+    logPerformanceMetrics: boolean
+    logFadeOutProgress: boolean
+  }
 }
 
 export interface GazeOptions {
@@ -93,7 +102,9 @@ export const defaultEmoteConfig: EmoteConfig = {
     probability: 0.1
   },
   relaxation: {
-    defaultTime: 5000 // 5 seconds
+    defaultTime: 5000, // 5 seconds default
+    fadeOutDuration: 1500, // 1.5 seconds for gradual fade-out
+    enableGradualFadeOut: true // Enable smooth emotion transitions
   },
   mood: {
     baseline: {},
@@ -102,5 +113,10 @@ export const defaultEmoteConfig: EmoteConfig = {
       deltaPitch: 1.0,
       deltaVolume: 1.0
     }
+  },
+  debug: {
+    logEmotionChanges: true, // Log when emotions change
+    logPerformanceMetrics: false, // Disable performance logging by default
+    logFadeOutProgress: false // Disable fade-out logging by default (can be verbose)
   }
 }
