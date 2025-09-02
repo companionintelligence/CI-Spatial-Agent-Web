@@ -1,11 +1,13 @@
 import type { XRStore } from '@react-three/xr'
-import { memo } from 'react'
+import { memo, useState } from 'react'
 
 import type { SceneConfig } from '../app/sceneTypes'
 import type { useAnimationService } from '../services/animation/useAnimationService'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
+import type { SceneLocation } from '../services/webxr/sceneUnderstanding'
 import { Scene3D } from '../scene/Scene3D'
+import { WebXRSceneControls } from './webxr/WebXRSceneControls'
 
 interface AvatarViewportProps {
   sceneConfig: SceneConfig
@@ -13,6 +15,7 @@ interface AvatarViewportProps {
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
   setXRStore?: (store: XRStore) => void
+  enableSceneUnderstanding?: boolean
 }
 
 const AvatarViewportComponent = ({
@@ -20,8 +23,23 @@ const AvatarViewportComponent = ({
   visemeService,
   emoteService,
   animationService,
-  setXRStore
+  setXRStore,
+  enableSceneUnderstanding = true
 }: AvatarViewportProps) => {
+  const [xrStore, setXRStoreLocal] = useState<XRStore | null>(null)
+
+  const handleXRStoreChange = (store: XRStore) => {
+    setXRStoreLocal(store)
+    if (setXRStore) {
+      setXRStore(store)
+    }
+  }
+
+  const handleLocationSelected = (location: SceneLocation) => {
+    console.log('Selected location:', location)
+    // Could add highlighting or camera movement here
+  }
+
   console.log('viewport rerender')
   return (
     <div
@@ -35,7 +53,8 @@ const AvatarViewportComponent = ({
         border: '1px solid rgba(255,255,255,0.10)',
         borderRadius: '16px',
         overflow: 'hidden',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.07)'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.07)',
+        position: 'relative'
       }}
     >
       <div
@@ -51,8 +70,17 @@ const AvatarViewportComponent = ({
           visemeService={visemeService}
           emoteService={emoteService}
           animationService={animationService}
-          setXRStore={setXRStore}
+          setXRStore={handleXRStoreChange}
+          enableSceneUnderstanding={enableSceneUnderstanding}
         />
+        
+        {/* WebXR Scene Understanding Controls */}
+        {enableSceneUnderstanding && (
+          <WebXRSceneControls
+            xrStore={xrStore}
+            onLocationSelected={handleLocationSelected}
+          />
+        )}
       </div>
     </div>
   )

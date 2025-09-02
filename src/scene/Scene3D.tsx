@@ -8,6 +8,7 @@ import type { SceneConfig } from '../app/sceneTypes'
 import type { useAnimationService } from '../services/animation/useAnimationService'
 import type { useEmoteService } from '../services/emote/useEmoteService'
 import type { useVisemeService } from '../services/visemes/useVisemeService'
+import { useWebXRSceneUnderstanding } from '../services/webxr/useWebXRSceneUnderstanding'
 import { AvatarModel } from './AvatarModel'
 
 interface Scene3DProps {
@@ -16,6 +17,7 @@ interface Scene3DProps {
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
   setXRStore?: (store: XRStore) => void
+  enableSceneUnderstanding?: boolean
 }
 
 const SceneContent = ({
@@ -23,12 +25,20 @@ const SceneContent = ({
   visemeService,
   emoteService,
   animationService,
-  store
+  store,
+  enableSceneUnderstanding = false
 }: Scene3DProps & { store: XRStore }) => {
   const controlsRef = useRef<any>(null)
   const { camera } = useThree()
   const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
   const [camPos, setCamPos] = useState<[number, number, number]>(sceneConfig.cameraPosition)
+
+  // Initialize WebXR Scene Understanding
+  const sceneUnderstanding = useWebXRSceneUnderstanding(store, {
+    enabled: enableSceneUnderstanding,
+    autoAnalyzeImages: true,
+    autoSendToServer: true
+  })
 
   useEffect(() => {
     camera.position.set(camPos[0], camPos[1], camPos[2])
@@ -38,6 +48,26 @@ const SceneContent = ({
       controlsRef.current.update()
     }
   }, [camPos, camTarget, camera])
+
+  // Log scene understanding status
+  useEffect(() => {
+    if (enableSceneUnderstanding) {
+      console.log('Scene Understanding Status:', {
+        isInitialized: sceneUnderstanding.isInitialized,
+        isSessionActive: sceneUnderstanding.isSessionActive,
+        locationsCount: sceneUnderstanding.locations.length,
+        boundedGeometry: sceneUnderstanding.boundedGeometry,
+        error: sceneUnderstanding.error
+      })
+    }
+  }, [
+    enableSceneUnderstanding,
+    sceneUnderstanding.isInitialized,
+    sceneUnderstanding.isSessionActive,
+    sceneUnderstanding.locations.length,
+    sceneUnderstanding.boundedGeometry,
+    sceneUnderstanding.error
+  ])
 
   const handleHeadLocated = (target: [number, number, number], position: [number, number, number]) => {
     setCamTarget(target)
@@ -76,6 +106,39 @@ const SceneContent = ({
         onHeadLocated={handleHeadLocated}
       />
 
+      {/* Scene Understanding Debug Visualizations */}
+      {enableSceneUnderstanding && sceneUnderstanding.locations.map(location => (
+        <mesh key={location.id} position={location.anchor.position}>
+          <sphereGeometry args={[0.05]} />
+          <meshStandardMaterial color="yellow" emissive="yellow" emissiveIntensity={0.3} />
+        </mesh>
+      ))}
+
+      {/* Bounded Reference Space Visualization */}
+      {enableSceneUnderstanding && sceneUnderstanding.boundedGeometry && (
+        <lineSegments>
+          <bufferGeometry>
+            <bufferAttribute
+              attach="attributes-position"
+              args={[
+                new Float32Array(
+                  sceneUnderstanding.boundedGeometry.boundsGeometry.flatMap((point, index, array) => {
+                    const nextIndex = (index + 1) % array.length
+                    const nextPoint = array[nextIndex]
+                    return [
+                      point.x, point.y, point.z,
+                      nextPoint.x, nextPoint.y, nextPoint.z
+                    ]
+                  })
+                ),
+                3
+              ]}
+            />
+          </bufferGeometry>
+          <lineBasicMaterial color="cyan" />
+        </lineSegments>
+      )}
+
       {/* Ground plane */}
       {/* <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
         <planeGeometry args={[10, 10]} />
@@ -85,7 +148,7 @@ const SceneContent = ({
   )
 }
 
-const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore }: Scene3DProps) => {
+const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore, enableSceneUnderstanding = true }: Scene3DProps) => {
   const store = createXRStore()
   
 
@@ -110,6 +173,7 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
           emoteService={emoteService}
           animationService={animationService}
           store={store}
+          enableSceneUnderstanding={enableSceneUnderstanding}
         />
       </Canvas>
     </div>
