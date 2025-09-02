@@ -1,10 +1,11 @@
 import type { XRStore } from '@react-three/xr'
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 
 import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
+import { RPMAnimationDemo } from '../components/RPMAnimationDemo'
 import { useAgent } from '../services/useAgent'
 import { useResponsiveLayout } from './layoutService'
 import { sceneConfig } from './sceneTypes'
@@ -28,10 +29,11 @@ export const App = () => {
 
   const xrStore = useRef<XRStore | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState)
+  const [showRPMDemo, setShowRPMDemo] = useState(false)
+  
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
-
 
   const agentConfig = useMemo(
     () => ({
@@ -39,7 +41,7 @@ export const App = () => {
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
     }),
-    [ appState.autoSubmitEnabled, appState.bargeInEnabled]
+    [appState.autoSubmitEnabled, appState.bargeInEnabled]
   )
 
   const agent = useAgent(agentConfig)
@@ -64,34 +66,63 @@ export const App = () => {
         lineHeight: 1.5
       }}
     >
-      {/* Main 3D Viewport - Full Screen */}
-      <div
+      {/* RPM Demo Toggle Button */}
+      <button
+        onClick={() => setShowRPMDemo(!showRPMDemo)}
         style={{
-          flex: 1,
-          position: 'relative',
-          height: '100%',
-          width: '100%'
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 1000,
+          padding: '10px 15px',
+          backgroundColor: showRPMDemo ? '#ff6b6b' : '#4CAF50',
+          color: 'white',
+          border: 'none',
+          borderRadius: '5px',
+          cursor: 'pointer',
+          fontWeight: 'bold'
         }}
       >
-        <AvatarViewport
-          sceneConfig={sceneConfig}
-          visemeService={agent.services.visemes}
-          emoteService={agent.services.emotes}
-          animationService={agent.services.animations}
-          setXRStore={setXRStore}
-        />
+        {showRPMDemo ? 'Hide RPM Demo' : 'Show RPM Demo'}
+      </button>
 
-        <LogoOverlay />
+      {/* Show either the main app or RPM demo */}
+      {showRPMDemo ? (
+        <div style={{ height: '100vh', overflow: 'auto', backgroundColor: '#ffffff', color: '#000000' }}>
+          <RPMAnimationDemo />
+        </div>
+      ) : (
+        <>
+          {/* Main 3D Viewport - Full Screen */}
+          <div
+            style={{
+              flex: 1,
+              position: 'relative',
+              height: '100%',
+              width: '100%'
+            }}
+          >
+            <AvatarViewport
+              sceneConfig={sceneConfig}
+              visemeService={agent.services.visemes}
+              emoteService={agent.services.emotes}
+              animationService={agent.services.animations}
+              setXRStore={setXRStore}
+            />
 
-        <ChatOverlay
-          config={appState}
-          handleAppStateChange={handleAppStateChange}
-          agent={agent}
-          xrStore={xrStore.current!}    
-        />
+            <LogoOverlay />
 
-        <ChatPanel messages={agent.state.messages} />
-      </div>
+            <ChatOverlay
+              config={appState}
+              handleAppStateChange={handleAppStateChange}
+              agent={agent}
+              xrStore={xrStore.current!}    
+            />
+
+            <ChatPanel messages={agent.state.messages} />
+          </div>
+        </>
+      )}
     </div>
   )
 }

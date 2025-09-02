@@ -1,8 +1,13 @@
 import type { AnimationClip } from '../animationTypes'
+import { RPM_ANIMATION_LIBRARY, convertRPMToAnimationClips } from './rpmAnimationLibrary'
+import { EXTENDED_RPM_ANIMATIONS, getAllExtendedRPMAnimations } from './extendedRPMAnimations'
+
+// Convert RPM animations to standard AnimationClip format
+const rpmAnimationClips = convertRPMToAnimationClips(RPM_ANIMATION_LIBRARY)
+const extendedRpmAnimationClips = convertRPMToAnimationClips(getAllExtendedRPMAnimations())
 
 export const ANIMATION_CLIPS: AnimationClip[] = [
-  // Idle animations
-
+  // === LOCAL VRM/EXISTING ANIMATIONS ===
   {
     name: 'Basic VRM Idle',
     path: '/assets/animations/vrm/idle_loop.vrma',
@@ -416,9 +421,38 @@ export const ANIMATION_CLIPS: AnimationClip[] = [
     priority: 1,
     loopCount: 2,
     speed: 0.9
+  },
+  {
+    name: 'RPM Feminine Talk',
+    rpmId: 'talk',
+    gender: 'feminine',
+    remotePath: `${RPM_BASE_URL}/feminine/glb/talk.glb`,
+    duration: 4200,
+    weight: 0.8,
+    blendTime: 500,
+    category: 'communication',
+    priority: 1,
+    speed: 0.95,
+    loopCount: 2,
+    description: 'Feminine speaking gestures'
   }
+
+  // Note: This is a representative sample. The actual RPM library contains 400+ animations
+  // This structure can be extended to include all animations from the library
   */
+
+  // === READY PLAYER ME ANIMATION LIBRARY INTEGRATION ===
+  // Dynamically include animations from RPM library
+  ...rpmAnimationClips,
+  
+  // === EXTENDED RPM ANIMATIONS ===
+  // Include the comprehensive set of 400+ animations
+  ...extendedRpmAnimationClips
 ]
+
+/**
+ * Enhanced animation clip utilities with RPM integration
+ */
 
 export const getAnimationClips = (): AnimationClip[] => {
   return ANIMATION_CLIPS
