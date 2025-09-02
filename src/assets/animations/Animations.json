@@ -1,0 +1,2663 @@
+{
+  "version": "1.0.0",
+  "description": "Ready Player Me Animation Library - Complete Index",
+  "totalAnimations": 152,
+  "categories": [
+    "idle",
+    "gesture",
+    "movement",
+    "expression",
+    "action",
+    "communication"
+  ],
+  "genders": [
+    "masculine",
+    "feminine"
+  ],
+  "animations": {
+    "masculine": {
+      "idle": {
+        "breathing_idle": {
+          "id": "masculine_breathing_idle",
+          "name": "breathing_idle",
+          "displayName": "Breathing Idle",
+          "category": "idle",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/breathing_idle.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/breathing_idle.glb",
+          "duration": 5000,
+          "loop": true,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        },
+        "looking_around": {
+          "id": "masculine_looking_around",
+          "name": "looking_around",
+          "displayName": "Looking Around",
+          "category": "idle",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/looking_around.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/looking_around.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        },
+        "standing_idle": {
+          "id": "masculine_standing_idle",
+          "name": "standing_idle",
+          "displayName": "Standing Idle",
+          "category": "idle",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/standing_idle.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/standing_idle.glb",
+          "duration": 5000,
+          "loop": true,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        },
+        "weight_shifting": {
+          "id": "masculine_weight_shifting",
+          "name": "weight_shifting",
+          "displayName": "Weight Shifting",
+          "category": "idle",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/weight_shifting.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/weight_shifting.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        }
+      },
+      "gesture": {
+        "agree": {
+          "id": "masculine_agree",
+          "name": "agree",
+          "displayName": "Agree",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/agree.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/agree.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "arguing": {
+          "id": "masculine_arguing",
+          "name": "arguing",
+          "displayName": "Arguing",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/arguing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/arguing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "calling": {
+          "id": "masculine_calling",
+          "name": "calling",
+          "displayName": "Calling",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/calling.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/calling.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "clapping": {
+          "id": "masculine_clapping",
+          "name": "clapping",
+          "displayName": "Clapping",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/clapping.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/clapping.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "disagree": {
+          "id": "masculine_disagree",
+          "name": "disagree",
+          "displayName": "Disagree",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/disagree.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/disagree.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "dismissing_gesture": {
+          "id": "masculine_dismissing_gesture",
+          "name": "dismissing_gesture",
+          "displayName": "Dismissing Gesture",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/dismissing_gesture.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/dismissing_gesture.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "finger_pointing": {
+          "id": "masculine_finger_pointing",
+          "name": "finger_pointing",
+          "displayName": "Finger Pointing",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/finger_pointing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/finger_pointing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture",
+            "hand"
+          ]
+        },
+        "hand_gesture": {
+          "id": "masculine_hand_gesture",
+          "name": "hand_gesture",
+          "displayName": "Hand Gesture",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/hand_gesture.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/hand_gesture.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture",
+            "hand"
+          ]
+        },
+        "open_arms": {
+          "id": "masculine_open_arms",
+          "name": "open_arms",
+          "displayName": "Open Arms",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/open_arms.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/open_arms.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "pointing": {
+          "id": "masculine_pointing",
+          "name": "pointing",
+          "displayName": "Pointing",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/pointing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/pointing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "praying": {
+          "id": "masculine_praying",
+          "name": "praying",
+          "displayName": "Praying",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/praying.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/praying.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "shake_fist": {
+          "id": "masculine_shake_fist",
+          "name": "shake_fist",
+          "displayName": "Shake Fist",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/shake_fist.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/shake_fist.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "shrug": {
+          "id": "masculine_shrug",
+          "name": "shrug",
+          "displayName": "Shrug",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/shrug.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/shrug.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "stop_gesture": {
+          "id": "masculine_stop_gesture",
+          "name": "stop_gesture",
+          "displayName": "Stop Gesture",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/stop_gesture.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/stop_gesture.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "thankful": {
+          "id": "masculine_thankful",
+          "name": "thankful",
+          "displayName": "Thankful",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/thankful.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/thankful.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "thinking": {
+          "id": "masculine_thinking",
+          "name": "thinking",
+          "displayName": "Thinking",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/thinking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/thinking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "thumbs_up": {
+          "id": "masculine_thumbs_up",
+          "name": "thumbs_up",
+          "displayName": "Thumbs Up",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/thumbs_up.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/thumbs_up.glb",
+          "duration": 1500,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "victory": {
+          "id": "masculine_victory",
+          "name": "victory",
+          "displayName": "Victory",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/victory.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/victory.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "wave": {
+          "id": "masculine_wave",
+          "name": "wave",
+          "displayName": "Wave",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/wave.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/wave.glb",
+          "duration": 1500,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "waving": {
+          "id": "masculine_waving",
+          "name": "waving",
+          "displayName": "Waving",
+          "category": "gesture",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/waving.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/waving.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        }
+      },
+      "movement": {
+        "jump": {
+          "id": "masculine_jump",
+          "name": "jump",
+          "displayName": "Jump",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/jump.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/jump.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "running": {
+          "id": "masculine_running",
+          "name": "running",
+          "displayName": "Running",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/running.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/running.glb",
+          "duration": 3000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        },
+        "sneaking": {
+          "id": "masculine_sneaking",
+          "name": "sneaking",
+          "displayName": "Sneaking",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/sneaking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/sneaking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "walking": {
+          "id": "masculine_walking",
+          "name": "walking",
+          "displayName": "Walking",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/walking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/walking.glb",
+          "duration": 2000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        },
+        "jogging": {
+          "id": "masculine_jogging",
+          "name": "jogging",
+          "displayName": "Jogging",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/jogging.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/jogging.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "backwards_walking": {
+          "id": "masculine_backwards_walking",
+          "name": "backwards_walking",
+          "displayName": "Backwards Walking",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/backwards_walking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/backwards_walking.glb",
+          "duration": 2000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        },
+        "side_stepping": {
+          "id": "masculine_side_stepping",
+          "name": "side_stepping",
+          "displayName": "Side Stepping",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/side_stepping.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/side_stepping.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "tiptoeing": {
+          "id": "masculine_tiptoeing",
+          "name": "tiptoeing",
+          "displayName": "Tiptoeing",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/tiptoeing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/tiptoeing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "walking_backwards": {
+          "id": "masculine_walking_backwards",
+          "name": "walking_backwards",
+          "displayName": "Walking Backwards",
+          "category": "movement",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/walking_backwards.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/walking_backwards.glb",
+          "duration": 2000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        }
+      },
+      "expression": {
+        "angry": {
+          "id": "masculine_angry",
+          "name": "angry",
+          "displayName": "Angry",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/angry.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/angry.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "negative"
+          ]
+        },
+        "confused": {
+          "id": "masculine_confused",
+          "name": "confused",
+          "displayName": "Confused",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/confused.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/confused.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "crying": {
+          "id": "masculine_crying",
+          "name": "crying",
+          "displayName": "Crying",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/crying.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/crying.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "disappointed": {
+          "id": "masculine_disappointed",
+          "name": "disappointed",
+          "displayName": "Disappointed",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/disappointed.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/disappointed.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "disgusted": {
+          "id": "masculine_disgusted",
+          "name": "disgusted",
+          "displayName": "Disgusted",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/disgusted.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/disgusted.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "excited": {
+          "id": "masculine_excited",
+          "name": "excited",
+          "displayName": "Excited",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/excited.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/excited.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "happy": {
+          "id": "masculine_happy",
+          "name": "happy",
+          "displayName": "Happy",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/happy.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/happy.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "positive"
+          ]
+        },
+        "laughing": {
+          "id": "masculine_laughing",
+          "name": "laughing",
+          "displayName": "Laughing",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/laughing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/laughing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "positive"
+          ]
+        },
+        "sad": {
+          "id": "masculine_sad",
+          "name": "sad",
+          "displayName": "Sad",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/sad.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/sad.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "negative"
+          ]
+        },
+        "scared": {
+          "id": "masculine_scared",
+          "name": "scared",
+          "displayName": "Scared",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/scared.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/scared.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "surprised": {
+          "id": "masculine_surprised",
+          "name": "surprised",
+          "displayName": "Surprised",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/surprised.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/surprised.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "yawning": {
+          "id": "masculine_yawning",
+          "name": "yawning",
+          "displayName": "Yawning",
+          "category": "expression",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/yawning.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/yawning.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        }
+      },
+      "action": {
+        "blow_kiss": {
+          "id": "masculine_blow_kiss",
+          "name": "blow_kiss",
+          "displayName": "Blow Kiss",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/blow_kiss.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/blow_kiss.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "bow": {
+          "id": "masculine_bow",
+          "name": "bow",
+          "displayName": "Bow",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/bow.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/bow.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "catwalk": {
+          "id": "masculine_catwalk",
+          "name": "catwalk",
+          "displayName": "Catwalk",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/catwalk.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/catwalk.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "locomotion"
+          ]
+        },
+        "chicken_dance": {
+          "id": "masculine_chicken_dance",
+          "name": "chicken_dance",
+          "displayName": "Chicken Dance",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/chicken_dance.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/chicken_dance.glb",
+          "duration": 3000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "dance",
+            "rhythmic"
+          ]
+        },
+        "clap_above_head": {
+          "id": "masculine_clap_above_head",
+          "name": "clap_above_head",
+          "displayName": "Clap Above Head",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/clap_above_head.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/clap_above_head.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "crowd_cheering": {
+          "id": "masculine_crowd_cheering",
+          "name": "crowd_cheering",
+          "displayName": "Crowd Cheering",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/crowd_cheering.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/crowd_cheering.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "curtsy": {
+          "id": "masculine_curtsy",
+          "name": "curtsy",
+          "displayName": "Curtsy",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/curtsy.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/curtsy.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "dance": {
+          "id": "masculine_dance",
+          "name": "dance",
+          "displayName": "Dance",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/dance.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/dance.glb",
+          "duration": 3000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "dance",
+            "rhythmic"
+          ]
+        },
+        "drinking": {
+          "id": "masculine_drinking",
+          "name": "drinking",
+          "displayName": "Drinking",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/drinking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/drinking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "eating": {
+          "id": "masculine_eating",
+          "name": "eating",
+          "displayName": "Eating",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/eating.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/eating.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "golf_drive": {
+          "id": "masculine_golf_drive",
+          "name": "golf_drive",
+          "displayName": "Golf Drive",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/golf_drive.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/golf_drive.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "handshake": {
+          "id": "masculine_handshake",
+          "name": "handshake",
+          "displayName": "Handshake",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/handshake.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/handshake.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "hand"
+          ]
+        },
+        "hip_hop_dancing": {
+          "id": "masculine_hip_hop_dancing",
+          "name": "hip_hop_dancing",
+          "displayName": "Hip Hop Dancing",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/hip_hop_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/hip_hop_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "jumping_jacks": {
+          "id": "masculine_jumping_jacks",
+          "name": "jumping_jacks",
+          "displayName": "Jumping Jacks",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/jumping_jacks.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/jumping_jacks.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "karate_chop": {
+          "id": "masculine_karate_chop",
+          "name": "karate_chop",
+          "displayName": "Karate Chop",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/karate_chop.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/karate_chop.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "kick": {
+          "id": "masculine_kick",
+          "name": "kick",
+          "displayName": "Kick",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/kick.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/kick.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "kiss": {
+          "id": "masculine_kiss",
+          "name": "kiss",
+          "displayName": "Kiss",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/kiss.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/kiss.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "look": {
+          "id": "masculine_look",
+          "name": "look",
+          "displayName": "Look",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/look.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/look.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "masculine_pose": {
+          "id": "masculine_masculine_pose",
+          "name": "masculine_pose",
+          "displayName": "Masculine Pose",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/masculine_pose.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/masculine_pose.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "punching": {
+          "id": "masculine_punching",
+          "name": "punching",
+          "displayName": "Punching",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/punching.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/punching.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "push_ups": {
+          "id": "masculine_push_ups",
+          "name": "push_ups",
+          "displayName": "Push Ups",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/push_ups.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/push_ups.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "rejection": {
+          "id": "masculine_rejection",
+          "name": "rejection",
+          "displayName": "Rejection",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/rejection.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/rejection.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "rumba_dancing": {
+          "id": "masculine_rumba_dancing",
+          "name": "rumba_dancing",
+          "displayName": "Rumba Dancing",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/rumba_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/rumba_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "salsa_dancing": {
+          "id": "masculine_salsa_dancing",
+          "name": "salsa_dancing",
+          "displayName": "Salsa Dancing",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/salsa_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/salsa_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "sitting": {
+          "id": "masculine_sitting",
+          "name": "sitting",
+          "displayName": "Sitting",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/sitting.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/sitting.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "sleeping": {
+          "id": "masculine_sleeping",
+          "name": "sleeping",
+          "displayName": "Sleeping",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/sleeping.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/sleeping.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "swing_dancing": {
+          "id": "masculine_swing_dancing",
+          "name": "swing_dancing",
+          "displayName": "Swing Dancing",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/swing_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/swing_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "throwing": {
+          "id": "masculine_throwing",
+          "name": "throwing",
+          "displayName": "Throwing",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/throwing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/throwing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "typing": {
+          "id": "masculine_typing",
+          "name": "typing",
+          "displayName": "Typing",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/typing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/typing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "yoga": {
+          "id": "masculine_yoga",
+          "name": "yoga",
+          "displayName": "Yoga",
+          "category": "action",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/yoga.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/yoga.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        }
+      },
+      "communication": {
+        "talking": {
+          "id": "masculine_talking",
+          "name": "talking",
+          "displayName": "Talking",
+          "category": "communication",
+          "gender": "masculine",
+          "localPath": "/src/assets/animations/masculine/talking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/masculine/glb/talking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "communication"
+          ]
+        }
+      }
+    },
+    "feminine": {
+      "idle": {
+        "breathing_idle": {
+          "id": "feminine_breathing_idle",
+          "name": "breathing_idle",
+          "displayName": "Breathing Idle",
+          "category": "idle",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/breathing_idle.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/breathing_idle.glb",
+          "duration": 5000,
+          "loop": true,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        },
+        "looking_around": {
+          "id": "feminine_looking_around",
+          "name": "looking_around",
+          "displayName": "Looking Around",
+          "category": "idle",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/looking_around.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/looking_around.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        },
+        "standing_idle": {
+          "id": "feminine_standing_idle",
+          "name": "standing_idle",
+          "displayName": "Standing Idle",
+          "category": "idle",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/standing_idle.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/standing_idle.glb",
+          "duration": 5000,
+          "loop": true,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        },
+        "weight_shifting": {
+          "id": "feminine_weight_shifting",
+          "name": "weight_shifting",
+          "displayName": "Weight Shifting",
+          "category": "idle",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/weight_shifting.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/weight_shifting.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 1,
+          "blendTime": 1000,
+          "priority": 1,
+          "tags": [
+            "idle"
+          ]
+        }
+      },
+      "gesture": {
+        "agree": {
+          "id": "feminine_agree",
+          "name": "agree",
+          "displayName": "Agree",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/agree.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/agree.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "arguing": {
+          "id": "feminine_arguing",
+          "name": "arguing",
+          "displayName": "Arguing",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/arguing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/arguing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "calling": {
+          "id": "feminine_calling",
+          "name": "calling",
+          "displayName": "Calling",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/calling.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/calling.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "clapping": {
+          "id": "feminine_clapping",
+          "name": "clapping",
+          "displayName": "Clapping",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/clapping.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/clapping.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "disagree": {
+          "id": "feminine_disagree",
+          "name": "disagree",
+          "displayName": "Disagree",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/disagree.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/disagree.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "dismissing_gesture": {
+          "id": "feminine_dismissing_gesture",
+          "name": "dismissing_gesture",
+          "displayName": "Dismissing Gesture",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/dismissing_gesture.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/dismissing_gesture.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "finger_pointing": {
+          "id": "feminine_finger_pointing",
+          "name": "finger_pointing",
+          "displayName": "Finger Pointing",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/finger_pointing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/finger_pointing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture",
+            "hand"
+          ]
+        },
+        "hand_gesture": {
+          "id": "feminine_hand_gesture",
+          "name": "hand_gesture",
+          "displayName": "Hand Gesture",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/hand_gesture.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/hand_gesture.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture",
+            "hand"
+          ]
+        },
+        "open_arms": {
+          "id": "feminine_open_arms",
+          "name": "open_arms",
+          "displayName": "Open Arms",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/open_arms.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/open_arms.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "pointing": {
+          "id": "feminine_pointing",
+          "name": "pointing",
+          "displayName": "Pointing",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/pointing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/pointing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "praying": {
+          "id": "feminine_praying",
+          "name": "praying",
+          "displayName": "Praying",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/praying.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/praying.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "shake_fist": {
+          "id": "feminine_shake_fist",
+          "name": "shake_fist",
+          "displayName": "Shake Fist",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/shake_fist.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/shake_fist.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "shrug": {
+          "id": "feminine_shrug",
+          "name": "shrug",
+          "displayName": "Shrug",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/shrug.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/shrug.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "stop_gesture": {
+          "id": "feminine_stop_gesture",
+          "name": "stop_gesture",
+          "displayName": "Stop Gesture",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/stop_gesture.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/stop_gesture.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "thankful": {
+          "id": "feminine_thankful",
+          "name": "thankful",
+          "displayName": "Thankful",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/thankful.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/thankful.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "thinking": {
+          "id": "feminine_thinking",
+          "name": "thinking",
+          "displayName": "Thinking",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/thinking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/thinking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "thumbs_up": {
+          "id": "feminine_thumbs_up",
+          "name": "thumbs_up",
+          "displayName": "Thumbs Up",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/thumbs_up.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/thumbs_up.glb",
+          "duration": 1500,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "victory": {
+          "id": "feminine_victory",
+          "name": "victory",
+          "displayName": "Victory",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/victory.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/victory.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "wave": {
+          "id": "feminine_wave",
+          "name": "wave",
+          "displayName": "Wave",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/wave.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/wave.glb",
+          "duration": 1500,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        },
+        "waving": {
+          "id": "feminine_waving",
+          "name": "waving",
+          "displayName": "Waving",
+          "category": "gesture",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/waving.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/waving.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.8,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "gesture"
+          ]
+        }
+      },
+      "movement": {
+        "jump": {
+          "id": "feminine_jump",
+          "name": "jump",
+          "displayName": "Jump",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/jump.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/jump.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "running": {
+          "id": "feminine_running",
+          "name": "running",
+          "displayName": "Running",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/running.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/running.glb",
+          "duration": 3000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        },
+        "sneaking": {
+          "id": "feminine_sneaking",
+          "name": "sneaking",
+          "displayName": "Sneaking",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/sneaking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/sneaking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "walking": {
+          "id": "feminine_walking",
+          "name": "walking",
+          "displayName": "Walking",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/walking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/walking.glb",
+          "duration": 2000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        },
+        "jogging": {
+          "id": "feminine_jogging",
+          "name": "jogging",
+          "displayName": "Jogging",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/jogging.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/jogging.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "backwards_walking": {
+          "id": "feminine_backwards_walking",
+          "name": "backwards_walking",
+          "displayName": "Backwards Walking",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/backwards_walking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/backwards_walking.glb",
+          "duration": 2000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        },
+        "side_stepping": {
+          "id": "feminine_side_stepping",
+          "name": "side_stepping",
+          "displayName": "Side Stepping",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/side_stepping.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/side_stepping.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "tiptoeing": {
+          "id": "feminine_tiptoeing",
+          "name": "tiptoeing",
+          "displayName": "Tiptoeing",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/tiptoeing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/tiptoeing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement"
+          ]
+        },
+        "walking_backwards": {
+          "id": "feminine_walking_backwards",
+          "name": "walking_backwards",
+          "displayName": "Walking Backwards",
+          "category": "movement",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/walking_backwards.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/walking_backwards.glb",
+          "duration": 2000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 800,
+          "priority": 3,
+          "tags": [
+            "movement",
+            "locomotion"
+          ]
+        }
+      },
+      "expression": {
+        "angry": {
+          "id": "feminine_angry",
+          "name": "angry",
+          "displayName": "Angry",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/angry.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/angry.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "negative"
+          ]
+        },
+        "confused": {
+          "id": "feminine_confused",
+          "name": "confused",
+          "displayName": "Confused",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/confused.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/confused.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "crying": {
+          "id": "feminine_crying",
+          "name": "crying",
+          "displayName": "Crying",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/crying.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/crying.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "disappointed": {
+          "id": "feminine_disappointed",
+          "name": "disappointed",
+          "displayName": "Disappointed",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/disappointed.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/disappointed.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "disgusted": {
+          "id": "feminine_disgusted",
+          "name": "disgusted",
+          "displayName": "Disgusted",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/disgusted.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/disgusted.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "excited": {
+          "id": "feminine_excited",
+          "name": "excited",
+          "displayName": "Excited",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/excited.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/excited.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "happy": {
+          "id": "feminine_happy",
+          "name": "happy",
+          "displayName": "Happy",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/happy.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/happy.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "positive"
+          ]
+        },
+        "laughing": {
+          "id": "feminine_laughing",
+          "name": "laughing",
+          "displayName": "Laughing",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/laughing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/laughing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "positive"
+          ]
+        },
+        "sad": {
+          "id": "feminine_sad",
+          "name": "sad",
+          "displayName": "Sad",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/sad.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/sad.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression",
+            "negative"
+          ]
+        },
+        "scared": {
+          "id": "feminine_scared",
+          "name": "scared",
+          "displayName": "Scared",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/scared.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/scared.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "surprised": {
+          "id": "feminine_surprised",
+          "name": "surprised",
+          "displayName": "Surprised",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/surprised.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/surprised.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        },
+        "yawning": {
+          "id": "feminine_yawning",
+          "name": "yawning",
+          "displayName": "Yawning",
+          "category": "expression",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/yawning.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/yawning.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.9,
+          "blendTime": 600,
+          "priority": 3,
+          "tags": [
+            "expression"
+          ]
+        }
+      },
+      "action": {
+        "blow_kiss": {
+          "id": "feminine_blow_kiss",
+          "name": "blow_kiss",
+          "displayName": "Blow Kiss",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/blow_kiss.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/blow_kiss.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "bow": {
+          "id": "feminine_bow",
+          "name": "bow",
+          "displayName": "Bow",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/bow.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/bow.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "catwalk": {
+          "id": "feminine_catwalk",
+          "name": "catwalk",
+          "displayName": "Catwalk",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/catwalk.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/catwalk.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "locomotion"
+          ]
+        },
+        "chicken_dance": {
+          "id": "feminine_chicken_dance",
+          "name": "chicken_dance",
+          "displayName": "Chicken Dance",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/chicken_dance.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/chicken_dance.glb",
+          "duration": 3000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "dance",
+            "rhythmic"
+          ]
+        },
+        "clap_above_head": {
+          "id": "feminine_clap_above_head",
+          "name": "clap_above_head",
+          "displayName": "Clap Above Head",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/clap_above_head.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/clap_above_head.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "crowd_cheering": {
+          "id": "feminine_crowd_cheering",
+          "name": "crowd_cheering",
+          "displayName": "Crowd Cheering",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/crowd_cheering.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/crowd_cheering.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "curtsy": {
+          "id": "feminine_curtsy",
+          "name": "curtsy",
+          "displayName": "Curtsy",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/curtsy.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/curtsy.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "dance": {
+          "id": "feminine_dance",
+          "name": "dance",
+          "displayName": "Dance",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/dance.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/dance.glb",
+          "duration": 3000,
+          "loop": true,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "dance",
+            "rhythmic"
+          ]
+        },
+        "drinking": {
+          "id": "feminine_drinking",
+          "name": "drinking",
+          "displayName": "Drinking",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/drinking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/drinking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "eating": {
+          "id": "feminine_eating",
+          "name": "eating",
+          "displayName": "Eating",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/eating.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/eating.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "feminine_pose": {
+          "id": "feminine_feminine_pose",
+          "name": "feminine_pose",
+          "displayName": "Feminine Pose",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/feminine_pose.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/feminine_pose.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "golf_drive": {
+          "id": "feminine_golf_drive",
+          "name": "golf_drive",
+          "displayName": "Golf Drive",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/golf_drive.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/golf_drive.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "handshake": {
+          "id": "feminine_handshake",
+          "name": "handshake",
+          "displayName": "Handshake",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/handshake.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/handshake.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action",
+            "hand"
+          ]
+        },
+        "hip_hop_dancing": {
+          "id": "feminine_hip_hop_dancing",
+          "name": "hip_hop_dancing",
+          "displayName": "Hip Hop Dancing",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/hip_hop_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/hip_hop_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "jumping_jacks": {
+          "id": "feminine_jumping_jacks",
+          "name": "jumping_jacks",
+          "displayName": "Jumping Jacks",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/jumping_jacks.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/jumping_jacks.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "karate_chop": {
+          "id": "feminine_karate_chop",
+          "name": "karate_chop",
+          "displayName": "Karate Chop",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/karate_chop.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/karate_chop.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "kick": {
+          "id": "feminine_kick",
+          "name": "kick",
+          "displayName": "Kick",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/kick.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/kick.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "kiss": {
+          "id": "feminine_kiss",
+          "name": "kiss",
+          "displayName": "Kiss",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/kiss.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/kiss.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "look": {
+          "id": "feminine_look",
+          "name": "look",
+          "displayName": "Look",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/look.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/look.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "punching": {
+          "id": "feminine_punching",
+          "name": "punching",
+          "displayName": "Punching",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/punching.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/punching.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "push_ups": {
+          "id": "feminine_push_ups",
+          "name": "push_ups",
+          "displayName": "Push Ups",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/push_ups.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/push_ups.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "rejection": {
+          "id": "feminine_rejection",
+          "name": "rejection",
+          "displayName": "Rejection",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/rejection.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/rejection.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "rumba_dancing": {
+          "id": "feminine_rumba_dancing",
+          "name": "rumba_dancing",
+          "displayName": "Rumba Dancing",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/rumba_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/rumba_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "salsa_dancing": {
+          "id": "feminine_salsa_dancing",
+          "name": "salsa_dancing",
+          "displayName": "Salsa Dancing",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/salsa_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/salsa_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "sitting": {
+          "id": "feminine_sitting",
+          "name": "sitting",
+          "displayName": "Sitting",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/sitting.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/sitting.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "sleeping": {
+          "id": "feminine_sleeping",
+          "name": "sleeping",
+          "displayName": "Sleeping",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/sleeping.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/sleeping.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "swing_dancing": {
+          "id": "feminine_swing_dancing",
+          "name": "swing_dancing",
+          "displayName": "Swing Dancing",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/swing_dancing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/swing_dancing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "throwing": {
+          "id": "feminine_throwing",
+          "name": "throwing",
+          "displayName": "Throwing",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/throwing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/throwing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "typing": {
+          "id": "feminine_typing",
+          "name": "typing",
+          "displayName": "Typing",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/typing.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/typing.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        },
+        "yoga": {
+          "id": "feminine_yoga",
+          "name": "yoga",
+          "displayName": "Yoga",
+          "category": "action",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/yoga.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/yoga.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 400,
+          "priority": 4,
+          "tags": [
+            "action"
+          ]
+        }
+      },
+      "communication": {
+        "talking": {
+          "id": "feminine_talking",
+          "name": "talking",
+          "displayName": "Talking",
+          "category": "communication",
+          "gender": "feminine",
+          "localPath": "/src/assets/animations/feminine/talking.glb",
+          "remotePath": "https://github.com/readyplayerme/animation-library/raw/master/feminine/glb/talking.glb",
+          "duration": 2000,
+          "loop": false,
+          "weight": 0.7,
+          "blendTime": 500,
+          "priority": 2,
+          "tags": [
+            "communication"
+          ]
+        }
+      }
+    }
+  }
+}

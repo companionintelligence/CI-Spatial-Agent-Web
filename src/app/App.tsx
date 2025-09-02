@@ -5,7 +5,7 @@ import { AvatarViewport } from '../components/AvatarViewport'
 import { ChatOverlay } from '../components/chat/ChatOverlay'
 import { ChatPanel } from '../components/chat/ChatPanel'
 import { LogoOverlay } from '../components/common/LogoOverlay'
-import { RPMAnimationDemo } from '../components/RPMAnimationDemo'
+import { EnhancedRPMAnimationDemo } from '../components/EnhancedRPMAnimationDemo'
 import { useAgent } from '../services/useAgent'
 import { useResponsiveLayout } from './layoutService'
 import { sceneConfig } from './sceneTypes'
@@ -86,10 +86,10 @@ export const App = () => {
         {showRPMDemo ? 'Hide RPM Demo' : 'Show RPM Demo'}
       </button>
 
-      {/* Show either the main app or RPM demo */}
+      {/* Show either the main app or Enhanced RPM demo */}
       {showRPMDemo ? (
         <div style={{ height: '100vh', overflow: 'auto', backgroundColor: '#ffffff', color: '#000000' }}>
-          <RPMAnimationDemo />
+          <EnhancedRPMAnimationDemo />
         </div>
       ) : (
         <>

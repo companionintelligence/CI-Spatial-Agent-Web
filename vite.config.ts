@@ -21,5 +21,11 @@ export default defineConfig(({ command }) => ({
         }
       : {})
   },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
+  assetsInclude: ['**/*.glb', '**/*.json'],
   plugins: [react()]
 }))
