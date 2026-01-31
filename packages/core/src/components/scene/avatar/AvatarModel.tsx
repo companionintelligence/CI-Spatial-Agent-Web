@@ -18,7 +18,7 @@ import type { useEmoteService } from '../../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../../services/visemes/useVisemeService'
 import type { AnimationClip } from '../../../services/animation/animationTypes'
 
-const AVATAR_MODEL = AvatarOptions.Takeshi
+const AVATAR_MODEL = AvatarOptions.Liam
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,

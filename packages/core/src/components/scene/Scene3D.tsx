@@ -8,7 +8,6 @@ import type { useAnimationService } from '../../services/animation/useAnimationS
 import type { useEmoteService } from '../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../services/visemes/useVisemeService'
 import { AvatarModel } from './avatar/AvatarModel'
-import { WebGPURenderer } from 'three/webgpu'
 import { GraphicsFallback } from './GraphicsFallback'
 
 
@@ -21,17 +20,12 @@ interface Scene3DProps {
   webGPUEnabled: boolean
 }
 
-const createGLContext = (webGPUEnabled: boolean) => {
-  if (webGPUEnabled) {
-    return async (props: any) => {
-      const renderer = new WebGPURenderer(props)
-      await renderer.init()
-      return renderer
-    }
-  }
-  
+// WebGL context config - WebGPU support can be added later when stable
+const createGLContext = (_webGPUEnabled: boolean) => {
+  // For now, always use WebGL for stability
+  // WebGPU support via three/webgpu is still experimental
   return {
-    antialias: false,
+    antialias: true,
     powerPreference: 'high-performance' as WebGLPowerPreference,
     alpha: true,
     stencil: false,
@@ -78,14 +72,34 @@ const SceneContent = ({
         maxDistance={10}
       />
 
-      {sceneConfig.roomLighting && (
-        <>
-          <ambientLight intensity={0.3} color={0xffffff} />
-          <directionalLight position={[1, 1, 1]} intensity={0.8} color={0xffffff} castShadow />
-        </>
-      )}
+      {/* Improved lighting setup */}
+      <ambientLight intensity={0.4} color={0xffffff} />
+      
+      {/* Key light - main directional light from front-right */}
+      <directionalLight 
+        position={[3, 5, 5]} 
+        intensity={1.2} 
+        color={0xffffff} 
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0001}
+      />
+      
+      {/* Fill light - softer light from left */}
+      <directionalLight 
+        position={[-3, 3, 2]} 
+        intensity={0.5} 
+        color={0xeeeeff}
+      />
+      
+      {/* Rim/back light for depth */}
+      <directionalLight 
+        position={[0, 3, -5]} 
+        intensity={0.3} 
+        color={0xffeedd}
+      />
 
-      <Environment preset="studio" />
+      <Environment preset="studio" background={false} />
 
       <AvatarModel
         visemeService={visemeService}
