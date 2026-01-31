@@ -1,0 +1,65 @@
+{
+  "name": "Avatar Companion",
+  "short_name": "Avatar Avatar",
+  "description": "A XR AI agent with 3D avatars and conversational capabilities",
+  "version": "0.0.0",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#000000",
+  "xr_main_scene": {
+    "default_size": {
+      "width": 1400,
+      "height": 2100
+    }
+  },
+  "scope": "/",
+  "lang": "en",
+  "categories": ["productivity", "utilities", "entertainment"],
+  "icons": [
+    {
+      "src": "/icons/icon192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon1024maskable.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "features": [
+    "3D Avatar Interaction",
+    "Voice Recognition",
+    "Text-to-Speech",
+    "AI Conversation",
+    "WebSpatial XR Support",
+    "Real-time Animation"
+  ],
+  "permissions": [
+    "microphone"
+  ],
+  "file_handlers": [
+    {
+      "action": "/",
+      "accept": {
+        "model/vrm": [".vrm"],
+        "application/vrma": [".vrma"]
+      }
+    }
+  ]
+}

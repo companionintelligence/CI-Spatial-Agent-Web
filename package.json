@@ -1,0 +1,24 @@
+{
+  "name": "ci-avatar",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "pnpm --filter @ci-avatar/web dev",
+    "dev:vision": "pnpm --filter @ci-avatar/vision-pro dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=20"
+  }
+}
