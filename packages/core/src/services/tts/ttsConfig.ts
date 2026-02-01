@@ -41,7 +41,7 @@ export interface TTSConfig {
     speed: parseFloat(import.meta.env.VITE_TTS_SPEED || "1.0") || 1.0,
     pitch: parseFloat(import.meta.env.VITE_TTS_PITCH || "1.0") || 1.0,
     volume: parseFloat(import.meta.env.VITE_TTS_VOLUME || "1.0") || 1.0,
-    mode: import.meta.env.VITE_TTS_MODE || 'browser', // 'browser', 'local' or 'remote'
+    mode: (import.meta.env.VITE_TTS_MODE || 'browser') as 'browser' | 'local' | 'remote', // 'browser', 'local' or 'remote'
     apiKey: import.meta.env.VITE_TTS_API_KEY,
     url: import.meta.env.VITE_TTS_URL || 'https://api.openai.com/v1/audio/speech',
     model: import.meta.env.VITE_TTS_MODEL || 'tts-1',

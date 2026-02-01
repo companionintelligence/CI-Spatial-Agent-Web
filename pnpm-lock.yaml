@@ -8,6 +8,15 @@ importers:
 
   .:
     devDependencies:
+      '@playwright/test':
+        specifier: ^1.58.1
+        version: 1.58.1
+      '@types/node':
+        specifier: ^25.1.0
+        version: 25.1.0
+      playwright:
+        specifier: ^1.58.1
+        version: 1.58.1
       prettier:
         specifier: ^3.6.2
         version: 3.8.1
@@ -1306,6 +1315,11 @@ packages:
   '@pixiv/types-vrmc-vrm-animation-1.0@3.4.5':
     resolution: {integrity: sha512-pUyhddl1DAb+jhCHLvbVIMeKUCfR5nzRV30qJ7Pvu2o6MToPlI6KvDnYVgFDx0k7g3rJKmTm6vbPpqMP6OgRxQ==}
 
+  '@playwright/test@1.58.1':
+    resolution: {integrity: sha512-6LdVIUERWxQMmUSSQi0I53GgCBYgM2RpGngCPY7hSeju+VrKjq3lvs7HpJoPbDiY5QM5EYRtRX5fvrinnMAz3w==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   '@pmndrs/handle@6.6.29':
     resolution: {integrity: sha512-zfvakgxva2P5nB6HeOuSMGyFFFP6B5cRO61DeHKSm4z7WRW2FT8baaxW5izsYqymzc4Xutc9fpeIxbFL/GbmAw==}
 
@@ -2397,6 +2411,11 @@ packages:
     resolution: {integrity: sha512-oRXApq54ETRj4eMiFzGnHWGy+zo5raudjuxN0b8H7s/RU2oW0Wvsx9O0ACRN/kRq9E8Vu/ReskGB5o3ji+FzHQ==}
     engines: {node: '>=12'}
 
+  fsevents@2.3.2:
+    resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
+    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
+    os: [darwin]
+
   fsevents@2.3.3:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -2928,6 +2947,16 @@ packages:
 
   platform@1.3.6:
     resolution: {integrity: sha512-fnWVljUchTro6RiCFvCXBbNhJc2NijN7oIQxbwsyL0buWJPG85v81ehlHI9fXrJsMNgTofEoWIQeClKpgxFLrg==}
+
+  playwright-core@1.58.1:
+    resolution: {integrity: sha512-bcWzOaTxcW+VOOGBCQgnaKToLJ65d6AqfLVKEWvexyS3AS6rbXl+xdpYRMGSRBClPvyj44njOWoxjNdL/H9UNg==}
+    engines: {node: '>=18'}
+    hasBin: true
+
+  playwright@1.58.1:
+    resolution: {integrity: sha512-+2uTZHxSCcxjvGc5C891LrS1/NlxglGxzrC4seZiVjcYVQfUa87wBL6rTDqzGjuoWNjnBzRqKmF6zRYGMvQUaQ==}
+    engines: {node: '>=18'}
+    hasBin: true
 
   plist@3.1.0:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
@@ -4568,6 +4597,10 @@ snapshots:
     dependencies:
       '@pixiv/types-vrmc-vrm-1.0': 2.0.3
 
+  '@playwright/test@1.58.1':
+    dependencies:
+      playwright: 1.58.1
+
   '@pmndrs/handle@6.6.29(@types/react@19.2.10)(react@19.2.4)':
     dependencies:
       '@pmndrs/pointer-events': 6.6.29
@@ -5607,6 +5640,9 @@ snapshots:
       jsonfile: 6.2.0
       universalify: 2.0.1
 
+  fsevents@2.3.2:
+    optional: true
+
   fsevents@2.3.3:
     optional: true
 
@@ -6136,6 +6172,14 @@ snapshots:
       pngjs: 3.4.0
 
   platform@1.3.6: {}
+
+  playwright-core@1.58.1: {}
+
+  playwright@1.58.1:
+    dependencies:
+      playwright-core: 1.58.1
+    optionalDependencies:
+      fsevents: 2.3.2
 
   plist@3.1.0:
     dependencies:

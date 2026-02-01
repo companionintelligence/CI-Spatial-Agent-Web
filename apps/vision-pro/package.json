@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:avp": "XR_ENV=avp vite",
     "dev:avp:host": "XR_ENV=avp vite --host",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",

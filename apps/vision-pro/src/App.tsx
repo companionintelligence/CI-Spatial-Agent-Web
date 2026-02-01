@@ -1,4 +1,3 @@
-import type { XRStore } from '@react-three/xr'
 import { useCallback, useMemo, useRef } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
 
@@ -33,9 +32,9 @@ export const config = {
 export const App = () => {
   useResponsiveLayout()
 
-  const xrStore = useRef<XRStore | null>(null)
-  const [appState, setAppState] = useSimpleStore(AppConfigState)
-  const setXRStore = useCallback((store: XRStore) => {
+  const xrStore = useRef<any | null>(null)
+  const [appState, setAppState] = useSimpleStore(AppConfigState) as [AppConfig, (value: AppConfig) => void]
+  const setXRStore = useCallback((store: any) => {
     xrStore.current = store
   }, [])
 

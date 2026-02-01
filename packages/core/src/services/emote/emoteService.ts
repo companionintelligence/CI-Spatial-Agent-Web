@@ -11,7 +11,7 @@ import {
 } from './emoteTypes'
 import { updateBlinking } from './modules/blinkingService'
 import { updateFacialTicks } from './modules/facialTicksService'
-import { initiateGaze, updateGaze } from './modules/gazeService'
+import { updateGaze } from './modules/gazeService'
 import { moodConfigurations } from './configs/moodConfigurations'
 import { safeExecute } from './utils/errorHandling'
 import { applyExpression, resetAllExpressions, applyExpressionSafely } from './utils/expressionUtils'

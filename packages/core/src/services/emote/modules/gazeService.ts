@@ -1,10 +1,14 @@
-import type { Camera } from '@react-three/fiber'
 import { Euler, Quaternion, Vector3, MathUtils } from 'three'
 
 import type { EmoteState, PlayerVisionType } from '../emoteTypes'
 import { safeExecute } from '../utils/errorHandling'
 import type { EmoteConfig } from '../configs/emoteConfig'
 import { applyEmotion, startPerformance } from '../emoteService'
+
+// Type for Camera (r3f uses three.Camera)
+type CameraType = {
+  position: Vector3
+}
 
 export const updateGaze = (state: EmoteState, delta: number , config : EmoteConfig): void => {
   const result = safeExecute(() => updateGazeInternal(state, delta , config), 'Gaze update failed')
@@ -48,7 +52,7 @@ const updateGazeInternal = (state: EmoteState, delta: number , config : EmoteCon
 
 const calculateGazeTarget = (
   state: EmoteState,
-  camera: Camera,
+  camera: CameraType,
   visibilityState: PlayerVisionType,
   currentTime: number,
   isActiveFocus: boolean
@@ -210,7 +214,7 @@ function returnNeckToNeutral(state: EmoteState, delta: number , config: EmoteCon
   }
 }
 
-function getPlayerVisionState(state: EmoteState, camera: Camera , config: EmoteConfig): PlayerVisionType {
+function getPlayerVisionState(state: EmoteState, camera: CameraType , config: EmoteConfig): PlayerVisionType {
   if (!state.node || !camera) return null
 
   // Parameter defaults

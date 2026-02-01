@@ -11,9 +11,20 @@
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:agent": "playwright test tests/agent.spec.ts",
+    "test:audio": "playwright test tests/audio.spec.ts",
+    "test:animation": "playwright test tests/animation.spec.ts",
+    "test:report": "playwright show-report playwright-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.1",
+    "@types/node": "^25.1.0",
+    "playwright": "^1.58.1",
     "prettier": "^3.6.2",
     "typescript": "^5.8.3"
   },

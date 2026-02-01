@@ -1,0 +1,1136 @@
+{
+  "config": {
+    "configFile": "/Users/liam/devel/ci/CI-XR-Web/playwright.config.ts",
+    "rootDir": "/Users/liam/devel/ci/CI-XR-Web/tests",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/liam/devel/ci/CI-XR-Web/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/liam/devel/ci/CI-XR-Web/tests",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "runAgents": "none",
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.58.1",
+    "workers": 1,
+    "webServer": {
+      "command": "VITE_LLM_PROVIDER=ollama VITE_LLM_OLLAMA_API_URL=http://localhost:11434 VITE_LLM_OLLAMA_MODEL=gemma3:1b pnpm dev:web",
+      "url": "http://localhost:5174",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "agent.spec.ts",
+      "file": "agent.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Agent Question Bank Tests",
+          "file": "agent.spec.ts",
+          "line": 73,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should load the application successfully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "00574607846d83245288-6fa2ffcc74fee448e319",
+              "file": "agent.spec.ts",
+              "line": 85,
+              "column": 7
+            },
+            {
+              "title": "should have avatar visible and animating",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "00574607846d83245288-efead1f509d8b06ed2af",
+              "file": "agent.spec.ts",
+              "line": 97,
+              "column": 7
+            },
+            {
+              "title": "should handle rapid consecutive messages",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "00574607846d83245288-0555b3e1050c125b555f",
+              "file": "agent.spec.ts",
+              "line": 186,
+              "column": 7
+            },
+            {
+              "title": "should maintain conversation context",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "00574607846d83245288-767f4333de0cda13a291",
+              "file": "agent.spec.ts",
+              "line": 202,
+              "column": 7
+            }
+          ],
+          "suites": [
+            {
+              "title": "Greeting Questions",
+              "file": "agent.spec.ts",
+              "line": 107,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should respond to: \"Hello\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-6a85f325ea565cbddba8",
+                  "file": "agent.spec.ts",
+                  "line": 109,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"Hi there\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-1c7b8e862ae17fa04fb7",
+                  "file": "agent.spec.ts",
+                  "line": 109,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"Good morning\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-a56a0a34c550023ffa2d",
+                  "file": "agent.spec.ts",
+                  "line": 109,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"How are you?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-fef437fda39fbd6aadc3",
+                  "file": "agent.spec.ts",
+                  "line": 109,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"What's up?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-3e95d2f4b684649613c4",
+                  "file": "agent.spec.ts",
+                  "line": 109,
+                  "column": 11
+                }
+              ]
+            },
+            {
+              "title": "Information Questions",
+              "file": "agent.spec.ts",
+              "line": 129,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should respond to: \"What is your name?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-09ad363d0cc5427507f7",
+                  "file": "agent.spec.ts",
+                  "line": 131,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"What can you do?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-7ab38bb2f4be153ee32d",
+                  "file": "agent.spec.ts",
+                  "line": 131,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"Tell me about yourself\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-7536f3b0acd2af2fba49",
+                  "file": "agent.spec.ts",
+                  "line": 131,
+                  "column": 11
+                }
+              ]
+            },
+            {
+              "title": "Technical Questions",
+              "file": "agent.spec.ts",
+              "line": 145,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should respond to: \"What is artificial intelligence?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-04ee0e81711884b99563",
+                  "file": "agent.spec.ts",
+                  "line": 147,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"Explain machine learning\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-d6c3d53e87977e681dbb",
+                  "file": "agent.spec.ts",
+                  "line": 147,
+                  "column": 11
+                }
+              ]
+            },
+            {
+              "title": "Conversational Questions",
+              "file": "agent.spec.ts",
+              "line": 157,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should respond to: \"Tell me a joke\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-93a94ece4a381874e071",
+                  "file": "agent.spec.ts",
+                  "line": 159,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"What's your favorite color?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-f5c64e55bc47d1b7838c",
+                  "file": "agent.spec.ts",
+                  "line": 159,
+                  "column": 11
+                }
+              ]
+            },
+            {
+              "title": "Math and Logic Questions",
+              "file": "agent.spec.ts",
+              "line": 169,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should respond to: \"What is 2 plus 2?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-a05b49c46e0a3605ccc7",
+                  "file": "agent.spec.ts",
+                  "line": 171,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"Calculate 15 times 7\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-920ad0ef5ebc0457f79e",
+                  "file": "agent.spec.ts",
+                  "line": 171,
+                  "column": 11
+                },
+                {
+                  "title": "should respond to: \"What is the square root of 144?\"",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chromium",
+                      "projectName": "chromium",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "00574607846d83245288-15703b8f3300a60bbd43",
+                  "file": "agent.spec.ts",
+                  "line": 171,
+                  "column": 11
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "animation.spec.ts",
+      "file": "animation.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Avatar Animation Tests",
+          "file": "animation.spec.ts",
+          "line": 98,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have 3D canvas rendering",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-cfe3a2d18bf203be978b",
+              "file": "animation.spec.ts",
+              "line": 104,
+              "column": 7
+            },
+            {
+              "title": "should have Three.js and WebGL context",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-a7e3a80cbec0e0e7ccc2",
+              "file": "animation.spec.ts",
+              "line": 115,
+              "column": 7
+            },
+            {
+              "title": "should have avatar actively animating (idle state)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-1fce3725da2071ad5814",
+              "file": "animation.spec.ts",
+              "line": 124,
+              "column": 7
+            },
+            {
+              "title": "should maintain acceptable frame rate",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-a0164c9aeae26afb4d13",
+              "file": "animation.spec.ts",
+              "line": 137,
+              "column": 7
+            },
+            {
+              "title": "should show different animations during conversation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-216f9dd921645a5f9394",
+              "file": "animation.spec.ts",
+              "line": 156,
+              "column": 7
+            },
+            {
+              "title": "should have lip sync during speech",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-a49a7e99f0741716f923",
+              "file": "animation.spec.ts",
+              "line": 178,
+              "column": 7
+            },
+            {
+              "title": "should have blinking animation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-b23f1c17165feffd1948",
+              "file": "animation.spec.ts",
+              "line": 196,
+              "column": 7
+            },
+            {
+              "title": "should respond to emotes/emotions",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-0f19a8da061684f124fe",
+              "file": "animation.spec.ts",
+              "line": 222,
+              "column": 7
+            },
+            {
+              "title": "should have gaze following behavior",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-d3311ca6c743d6492587",
+              "file": "animation.spec.ts",
+              "line": 249,
+              "column": 7
+            },
+            {
+              "title": "should handle animation state transitions smoothly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-f03f6d48146ba1f3075b",
+              "file": "animation.spec.ts",
+              "line": 271,
+              "column": 7
+            },
+            {
+              "title": "should load and display VRM avatar model",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-f574db5ed70ef9186f3d",
+              "file": "animation.spec.ts",
+              "line": 291,
+              "column": 7
+            },
+            {
+              "title": "should have facial expressions in animation",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-8e97cd77f54ddb4fdd49",
+              "file": "animation.spec.ts",
+              "line": 311,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Avatar Performance Tests",
+          "file": "animation.spec.ts",
+          "line": 327,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should not have memory leaks during extended use",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-6de59acab699ead0fe2d",
+              "file": "animation.spec.ts",
+              "line": 328,
+              "column": 7
+            },
+            {
+              "title": "should handle window resize gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "79e75bce57fbccf461eb-036189a6fc5610045231",
+              "file": "animation.spec.ts",
+              "line": 366,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "audio.spec.ts",
+      "file": "audio.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Speech-to-Text (STT) Tests",
+          "file": "audio.spec.ts",
+          "line": 95,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should detect STT API availability",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-55df6a9b37780e8155c5",
+              "file": "audio.spec.ts",
+              "line": 107,
+              "column": 7
+            },
+            {
+              "title": "should have microphone toggle button",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-874f0a79f6d0ef5496fc",
+              "file": "audio.spec.ts",
+              "line": 117,
+              "column": 7
+            },
+            {
+              "title": "should handle microphone permission request",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-1068673aaf5c14d3faa5",
+              "file": "audio.spec.ts",
+              "line": 137,
+              "column": 7
+            },
+            {
+              "title": "should initialize VAD service",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-1dccd17458f7ad778142",
+              "file": "audio.spec.ts",
+              "line": 152,
+              "column": 7
+            },
+            {
+              "title": "should detect speech input capability",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-769984ef6ffa6cb23d03",
+              "file": "audio.spec.ts",
+              "line": 167,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Text-to-Speech (TTS) Tests",
+          "file": "audio.spec.ts",
+          "line": 183,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should detect TTS API availability",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-f25a54f8bcd60ba1f9bd",
+              "file": "audio.spec.ts",
+              "line": 190,
+              "column": 7
+            },
+            {
+              "title": "should get available TTS voices",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-64c7dded4e1a1e2827e8",
+              "file": "audio.spec.ts",
+              "line": 196,
+              "column": 7
+            },
+            {
+              "title": "should trigger TTS when agent responds",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-3debec1ccd03fd12ce74",
+              "file": "audio.spec.ts",
+              "line": 210,
+              "column": 7
+            },
+            {
+              "title": "should use configured TTS voice settings",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-4c76dfe2168b39ed2181",
+              "file": "audio.spec.ts",
+              "line": 231,
+              "column": 7
+            },
+            {
+              "title": "should generate viseme data for lip sync",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-3ec0ca11cfcd92798ccb",
+              "file": "audio.spec.ts",
+              "line": 247,
+              "column": 7
+            },
+            {
+              "title": "should handle TTS queue when multiple messages are sent",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-3b121a89488b2189a022",
+              "file": "audio.spec.ts",
+              "line": 269,
+              "column": 7
+            }
+          ]
+        },
+        {
+          "title": "Audio Integration Tests",
+          "file": "audio.spec.ts",
+          "line": 291,
+          "column": 6,
+          "specs": [
+            {
+              "title": "should have audio context for processing",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-d9af8141e76a739618b1",
+              "file": "audio.spec.ts",
+              "line": 300,
+              "column": 7
+            },
+            {
+              "title": "should handle audio permissions gracefully",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-d31d0e32e9943846b8ab",
+              "file": "audio.spec.ts",
+              "line": 322,
+              "column": 7
+            },
+            {
+              "title": "should coordinate STT and TTS (no simultaneous talk)",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [],
+                  "status": "skipped"
+                }
+              ],
+              "id": "87be2dcdb54c25970a35-4c4bf30fbf81d3e3b889",
+              "file": "audio.spec.ts",
+              "line": 337,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-02-01T05:03:00.538Z",
+    "duration": 105.35900000000004,
+    "expected": 0,
+    "skipped": 47,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

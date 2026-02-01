@@ -29,6 +29,14 @@ export default defineConfig({
       }
     )
   ],
+  build: {
+    rollupOptions: {
+      external: [
+        '@webspatial/react-sdk/jsx-runtime',
+        '@webspatial/react-sdk/web/jsx-runtime'
+      ]
+    }
+  },
   server: {
     host: true, // This allows external connections
     port: 5174,
