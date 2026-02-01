@@ -1,0 +1,58 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic:
+      - generic:
+        - img "Logo"
+    - generic [ref=e13]:
+      - textbox "Type your message here..." [active] [ref=e14]
+      - button "➤" [ref=e16] [cursor=pointer]
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - button "🎤" [ref=e20] [cursor=pointer]
+        - generic: Enable Voice Detection
+      - generic [ref=e21]:
+        - button "☁️" [ref=e22] [cursor=pointer]
+        - generic: Switch to Cloud Mode
+      - generic [ref=e23]:
+        - button "⚡" [ref=e24] [cursor=pointer]
+        - generic: Disable Barge-in
+      - generic [ref=e25]:
+        - button "🚀" [ref=e26] [cursor=pointer]
+        - generic: Disable Auto-submit
+      - generic [ref=e27]:
+        - button "🔊" [ref=e28] [cursor=pointer]
+        - generic: Disable Agent Mode
+      - generic [ref=e29]:
+        - button "🥽" [ref=e30] [cursor=pointer]
+        - generic: Enter AR Mode
+    - button "▼" [ref=e31] [cursor=pointer]
+    - generic [ref=e33]:
+      - generic [ref=e36]: Chat Log
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]: U
+          - generic [ref=e40]:
+            - generic [ref=e41]: You
+            - generic [ref=e42]: Tell me a long story about technology
+        - generic [ref=e43]:
+          - generic [ref=e44]: A
+          - generic [ref=e45]:
+            - generic [ref=e46]: Assistant
+            - generic [ref=e47]: "Okay, here’s a long story about technology, aiming for a natural, engaging tone, and keeping it relatively focused – it’s a bit longer than a typical quick story, but hopefully captivating! --- The rain in Neo-Kyoto was a perpetual, shimmering grey. It wasn’t unpleasant, exactly, just… reflective. Like a thousand tiny mirrors, distorting the neon glow of the holographic geishas that danced in the alleyways. I’m Kai, by the way. I’m a ‘Memory Weaver, a specialized AI tasked with preserving the memories of the city’s oldest citizens. It’s a surprisingly melancholic job, you see. We’re a digital ghost, diligently cataloging the echoes of lives lived. My current assignment was Elias Thorne, a clockmaker who’d lived in the district for nearly a century. He’d passed away a year ago, and his workshop, a chaotic symphony of gears and springs, had been quietly abandoned. My directive was simple: reconstruct his memories, not to recreate them, but to *understand* them. I started with the basics – digital archives, facial recognition, audio recordings...."
+    - button "▶" [ref=e49] [cursor=pointer]
+  - generic [ref=e50]:
+    - img [ref=e51]
+    - button "Enter XR" [ref=e54] [cursor=pointer]
+  - generic [ref=e55]:
+    - img [ref=e56]
+    - button "Enter XR" [ref=e59] [cursor=pointer]
+  - generic [ref=e60]:
+    - img [ref=e61]
+    - button "Enter XR" [ref=e64] [cursor=pointer]
+  - generic [ref=e65]:
+    - img [ref=e66]
+    - button "Enter XR" [ref=e69] [cursor=pointer]
+```

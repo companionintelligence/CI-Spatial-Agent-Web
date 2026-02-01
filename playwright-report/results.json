@@ -10,14 +10,18 @@
     "grep": {},
     "grepInvert": null,
     "maxFailures": 0,
-    "metadata": {},
+    "metadata": {
+      "actualWorkers": 1
+    },
     "preserveOutput": "always",
     "projects": [
       {
         "outputDir": "/Users/liam/devel/ci/CI-XR-Web/test-results",
         "repeatEach": 1,
         "retries": 0,
-        "metadata": {},
+        "metadata": {
+          "actualWorkers": 1
+        },
         "id": "chromium",
         "name": "chromium",
         "testDir": "/Users/liam/devel/ci/CI-XR-Web/tests",
@@ -67,445 +71,6 @@
   },
   "suites": [
     {
-      "title": "agent.spec.ts",
-      "file": "agent.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Agent Question Bank Tests",
-          "file": "agent.spec.ts",
-          "line": 73,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should load the application successfully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "00574607846d83245288-6fa2ffcc74fee448e319",
-              "file": "agent.spec.ts",
-              "line": 85,
-              "column": 7
-            },
-            {
-              "title": "should have avatar visible and animating",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "00574607846d83245288-efead1f509d8b06ed2af",
-              "file": "agent.spec.ts",
-              "line": 97,
-              "column": 7
-            },
-            {
-              "title": "should handle rapid consecutive messages",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "00574607846d83245288-0555b3e1050c125b555f",
-              "file": "agent.spec.ts",
-              "line": 186,
-              "column": 7
-            },
-            {
-              "title": "should maintain conversation context",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "00574607846d83245288-767f4333de0cda13a291",
-              "file": "agent.spec.ts",
-              "line": 202,
-              "column": 7
-            }
-          ],
-          "suites": [
-            {
-              "title": "Greeting Questions",
-              "file": "agent.spec.ts",
-              "line": 107,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "should respond to: \"Hello\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-6a85f325ea565cbddba8",
-                  "file": "agent.spec.ts",
-                  "line": 109,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"Hi there\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-1c7b8e862ae17fa04fb7",
-                  "file": "agent.spec.ts",
-                  "line": 109,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"Good morning\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-a56a0a34c550023ffa2d",
-                  "file": "agent.spec.ts",
-                  "line": 109,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"How are you?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-fef437fda39fbd6aadc3",
-                  "file": "agent.spec.ts",
-                  "line": 109,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"What's up?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-3e95d2f4b684649613c4",
-                  "file": "agent.spec.ts",
-                  "line": 109,
-                  "column": 11
-                }
-              ]
-            },
-            {
-              "title": "Information Questions",
-              "file": "agent.spec.ts",
-              "line": 129,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "should respond to: \"What is your name?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-09ad363d0cc5427507f7",
-                  "file": "agent.spec.ts",
-                  "line": 131,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"What can you do?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-7ab38bb2f4be153ee32d",
-                  "file": "agent.spec.ts",
-                  "line": 131,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"Tell me about yourself\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-7536f3b0acd2af2fba49",
-                  "file": "agent.spec.ts",
-                  "line": 131,
-                  "column": 11
-                }
-              ]
-            },
-            {
-              "title": "Technical Questions",
-              "file": "agent.spec.ts",
-              "line": 145,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "should respond to: \"What is artificial intelligence?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-04ee0e81711884b99563",
-                  "file": "agent.spec.ts",
-                  "line": 147,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"Explain machine learning\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-d6c3d53e87977e681dbb",
-                  "file": "agent.spec.ts",
-                  "line": 147,
-                  "column": 11
-                }
-              ]
-            },
-            {
-              "title": "Conversational Questions",
-              "file": "agent.spec.ts",
-              "line": 157,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "should respond to: \"Tell me a joke\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-93a94ece4a381874e071",
-                  "file": "agent.spec.ts",
-                  "line": 159,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"What's your favorite color?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-f5c64e55bc47d1b7838c",
-                  "file": "agent.spec.ts",
-                  "line": 159,
-                  "column": 11
-                }
-              ]
-            },
-            {
-              "title": "Math and Logic Questions",
-              "file": "agent.spec.ts",
-              "line": 169,
-              "column": 8,
-              "specs": [
-                {
-                  "title": "should respond to: \"What is 2 plus 2?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-a05b49c46e0a3605ccc7",
-                  "file": "agent.spec.ts",
-                  "line": 171,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"Calculate 15 times 7\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-920ad0ef5ebc0457f79e",
-                  "file": "agent.spec.ts",
-                  "line": 171,
-                  "column": 11
-                },
-                {
-                  "title": "should respond to: \"What is the square root of 144?\"",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 60000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [],
-                      "status": "skipped"
-                    }
-                  ],
-                  "id": "00574607846d83245288-15703b8f3300a60bbd43",
-                  "file": "agent.spec.ts",
-                  "line": 171,
-                  "column": 11
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
       "title": "animation.spec.ts",
       "file": "animation.spec.ts",
       "column": 0,
@@ -529,8 +94,22 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 5032,
+                      "errors": [],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:02.775Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-cfe3a2d18bf203be978b",
@@ -549,8 +128,26 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4152,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Rendering Info: { hasThree: \u001b[33mfalse\u001b[39m, hasWebGL: \u001b[33mtrue\u001b[39m, canvasCount: \u001b[33m1\u001b[39m }\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:08.130Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-a7e3a80cbec0e0e7ccc2",
@@ -560,7 +157,7 @@
             },
             {
               "title": "should have avatar actively animating (idle state)",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -569,8 +166,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5917,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:131:25",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 25,
+                          "line": 131
+                        },
+                        "snippet": "  129 |     const isAnimating = await isAvatarAnimating(page)\n  130 |     \n> 131 |     expect(isAnimating).toBe(true)\n      |                         ^\n  132 |     \n  133 |     // Take a screenshot showing animation\n  134 |     await page.screenshot({ path: 'playwright-report/screenshots/avatar-idle-animation.png' })"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 25,
+                            "line": 131
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  129 |     const isAnimating = await isAvatarAnimating(page)\n  130 |     \n> 131 |     expect(isAnimating).toBe(true)\n      |                         ^\n  132 |     \n  133 |     // Take a screenshot showing animation\n  134 |     await page.screenshot({ path: 'playwright-report/screenshots/avatar-idle-animation.png' })\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:131:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:12.288Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-07e08-ively-animating-idle-state--chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-07e08-ively-animating-idle-state--chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-07e08-ively-animating-idle-state--chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 25,
+                        "line": 131
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-1fce3725da2071ad5814",
@@ -589,8 +240,29 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7465,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Estimated FPS: 119.52\n"
+                        },
+                        {
+                          "text": "✅ Excellent frame rate (near 60 FPS)\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:18.720Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-a0164c9aeae26afb4d13",
@@ -600,7 +272,7 @@
             },
             {
               "title": "should show different animations during conversation",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -609,8 +281,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7359,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: not \u001b[32m0\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: not \u001b[32m0\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:172:67",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 67,
+                          "line": 172
+                        },
+                        "snippet": "  170 |     \n  171 |     // The animations should be different\n> 172 |     expect(Buffer.compare(idleScreenshot, talkingScreenshot)).not.toBe(0)\n      |                                                                   ^\n  173 |     \n  174 |     // Save both for visual comparison\n  175 |     await page.screenshot({ path: 'playwright-report/screenshots/avatar-talking.png' })"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 67,
+                            "line": 172
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mnot\u001b[2m.\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: not \u001b[32m0\u001b[39m\n\n  170 |     \n  171 |     // The animations should be different\n> 172 |     expect(Buffer.compare(idleScreenshot, talkingScreenshot)).not.toBe(0)\n      |                                                                   ^\n  173 |     \n  174 |     // Save both for visual comparison\n  175 |     await page.screenshot({ path: 'playwright-report/screenshots/avatar-talking.png' })\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:172:67"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:26.317Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-89ace-mations-during-conversation-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-89ace-mations-during-conversation-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-89ace-mations-during-conversation-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 67,
+                        "line": 172
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-216f9dd921645a5f9394",
@@ -620,7 +346,7 @@
             },
             {
               "title": "should have lip sync during speech",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -629,8 +355,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 2,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7954,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:190:25",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 25,
+                          "line": 190
+                        },
+                        "snippet": "  188 |     const isAnimating = await isAvatarAnimating(page, 10, 100) // More samples, shorter interval\n  189 |     \n> 190 |     expect(isAnimating).toBe(true)\n      |                         ^\n  191 |     \n  192 |     // Take screenshot during speech\n  193 |     await page.screenshot({ path: 'playwright-report/screenshots/avatar-lip-sync.png' })"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 25,
+                            "line": 190
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  188 |     const isAnimating = await isAvatarAnimating(page, 10, 100) // More samples, shorter interval\n  189 |     \n> 190 |     expect(isAnimating).toBe(true)\n      |                         ^\n  191 |     \n  192 |     // Take screenshot during speech\n  193 |     await page.screenshot({ path: 'playwright-report/screenshots/avatar-lip-sync.png' })\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:190:25"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:34.192Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-261f4-have-lip-sync-during-speech-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-261f4-have-lip-sync-during-speech-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-261f4-have-lip-sync-during-speech-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 25,
+                        "line": 190
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-a49a7e99f0741716f923",
@@ -640,7 +420,7 @@
             },
             {
               "title": "should have blinking animation",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -649,8 +429,66 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 12828,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m5\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m5\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:219:26",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 26,
+                          "line": 219
+                        },
+                        "snippet": "  217 |     \n  218 |     // Should have multiple frame changes due to blinking and idle animation\n> 219 |     expect(frameChanges).toBeGreaterThan(5)\n      |                          ^\n  220 |   })\n  221 |\n  222 |   test('should respond to emotes/emotions', async ({ page }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 26,
+                            "line": 219
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m5\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\n  217 |     \n  218 |     // Should have multiple frame changes due to blinking and idle animation\n> 219 |     expect(frameChanges).toBeGreaterThan(5)\n      |                          ^\n  220 |   })\n  221 |\n  222 |   test('should respond to emotes/emotions', async ({ page }) => {\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:219:26"
+                        }
+                      ],
+                      "stdout": [
+                        {
+                          "text": "Frame changes in 10000ms: 0\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:42.809Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-de7a9-uld-have-blinking-animation-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-de7a9-uld-have-blinking-animation-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-de7a9-uld-have-blinking-animation-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 26,
+                        "line": 219
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-b23f1c17165feffd1948",
@@ -660,7 +498,7 @@
             },
             {
               "title": "should respond to emotes/emotions",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -669,8 +507,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 7710,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:242:27",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 27,
+                          "line": 242
+                        },
+                        "snippet": "  240 |       // Check avatar is still animating after emotion\n  241 |       const isAnimating = await isAvatarAnimating(page)\n> 242 |       expect(isAnimating).toBe(true)\n      |                           ^\n  243 |       \n  244 |       // Wait before next message\n  245 |       await page.waitForTimeout(1000)"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 27,
+                            "line": 242
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  240 |       // Check avatar is still animating after emotion\n  241 |       const isAnimating = await isAvatarAnimating(page)\n> 242 |       expect(isAnimating).toBe(true)\n      |                           ^\n  243 |       \n  244 |       // Wait before next message\n  245 |       await page.waitForTimeout(1000)\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:242:27"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:14:56.246Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-161e6--respond-to-emotes-emotions-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-161e6--respond-to-emotes-emotions-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-161e6--respond-to-emotes-emotions-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 27,
+                        "line": 242
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-0f19a8da061684f124fe",
@@ -680,7 +572,7 @@
             },
             {
               "title": "should have gaze following behavior",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -689,8 +581,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 5,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 9847,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:268:29",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 29,
+                          "line": 268
+                        },
+                        "snippet": "  266 |     }\n  267 |     \n> 268 |     expect(differentFrames).toBeGreaterThan(0)\n      |                             ^\n  269 |   })\n  270 |\n  271 |   test('should handle animation state transitions smoothly', async ({ page }) => {"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 29,
+                            "line": 268
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeGreaterThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: > \u001b[32m0\u001b[39m\nReceived:   \u001b[31m0\u001b[39m\n\n  266 |     }\n  267 |     \n> 268 |     expect(differentFrames).toBeGreaterThan(0)\n      |                             ^\n  269 |   })\n  270 |\n  271 |   test('should handle animation state transitions smoothly', async ({ page }) => {\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:268:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:15:04.600Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-b9b8b-ave-gaze-following-behavior-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-b9b8b-ave-gaze-following-behavior-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-b9b8b-ave-gaze-following-behavior-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 29,
+                        "line": 268
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-d3311ca6c743d6492587",
@@ -709,8 +655,29 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 8111,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "FPS before transition: 116.28\n"
+                        },
+                        {
+                          "text": "FPS during transition: 120.63\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:15:15.109Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-f03f6d48146ba1f3075b",
@@ -729,8 +696,26 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 4484,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "VRM Info: { hasVRM: \u001b[33mfalse\u001b[39m }\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:15:23.389Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-f574db5ed70ef9186f3d",
@@ -740,7 +725,7 @@
             },
             {
               "title": "should have facial expressions in animation",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -749,8 +734,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 6,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 8639,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:323:33",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 33,
+                          "line": 323
+                        },
+                        "snippet": "  321 |     \n  322 |     const isActivelyAnimating = await isAvatarAnimating(page, 10, 150)\n> 323 |     expect(isActivelyAnimating).toBe(true)\n      |                                 ^\n  324 |   })\n  325 | })\n  326 |"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 33,
+                            "line": 323
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  321 |     \n  322 |     const isActivelyAnimating = await isAvatarAnimating(page, 10, 150)\n> 323 |     expect(isActivelyAnimating).toBe(true)\n      |                                 ^\n  324 |   })\n  325 | })\n  326 |\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:323:33"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:15:27.879Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-06b1b-al-expressions-in-animation-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-06b1b-al-expressions-in-animation-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Animation-06b1b-al-expressions-in-animation-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 33,
+                        "line": 323
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-8e97cd77f54ddb4fdd49",
@@ -777,8 +816,32 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 19873,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "Initial memory: \u001b[33m123000000\u001b[39m\n"
+                        },
+                        {
+                          "text": "Final memory: \u001b[33m123000000\u001b[39m\n"
+                        },
+                        {
+                          "text": "Memory growth: 0.00%\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:15:37.069Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-6de59acab699ead0fe2d",
@@ -788,7 +851,7 @@
             },
             {
               "title": "should handle window resize gracefully",
-              "ok": true,
+              "ok": false,
               "tags": [],
               "tests": [
                 {
@@ -797,8 +860,62 @@
                   "expectedStatus": "passed",
                   "projectId": "chromium",
                   "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
+                  "results": [
+                    {
+                      "workerIndex": 7,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 5665,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:372:29",
+                        "location": {
+                          "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                          "column": 29,
+                          "line": 372
+                        },
+                        "snippet": "  370 |     // Check animation before resize\n  371 |     const animatingBefore = await isAvatarAnimating(page)\n> 372 |     expect(animatingBefore).toBe(true)\n      |                             ^\n  373 |     \n  374 |     // Resize window\n  375 |     await page.setViewportSize({ width: 800, height: 600 })"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                            "column": 29,
+                            "line": 372
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  370 |     // Check animation before resize\n  371 |     const animatingBefore = await isAvatarAnimating(page)\n> 372 |     expect(animatingBefore).toBe(true)\n      |                             ^\n  373 |     \n  374 |     // Resize window\n  375 |     await page.setViewportSize({ width: 800, height: 600 })\n    at /Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts:372:29"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-02-01T05:15:57.106Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Performan-d654a-le-window-resize-gracefully-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Performan-d654a-le-window-resize-gracefully-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/liam/devel/ci/CI-XR-Web/test-results/animation-Avatar-Performan-d654a-le-window-resize-gracefully-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/liam/devel/ci/CI-XR-Web/tests/animation.spec.ts",
+                        "column": 29,
+                        "line": 372
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
                 }
               ],
               "id": "79e75bce57fbccf461eb-036189a6fc5610045231",
@@ -809,328 +926,15 @@
           ]
         }
       ]
-    },
-    {
-      "title": "audio.spec.ts",
-      "file": "audio.spec.ts",
-      "column": 0,
-      "line": 0,
-      "specs": [],
-      "suites": [
-        {
-          "title": "Speech-to-Text (STT) Tests",
-          "file": "audio.spec.ts",
-          "line": 95,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should detect STT API availability",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-55df6a9b37780e8155c5",
-              "file": "audio.spec.ts",
-              "line": 107,
-              "column": 7
-            },
-            {
-              "title": "should have microphone toggle button",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-874f0a79f6d0ef5496fc",
-              "file": "audio.spec.ts",
-              "line": 117,
-              "column": 7
-            },
-            {
-              "title": "should handle microphone permission request",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-1068673aaf5c14d3faa5",
-              "file": "audio.spec.ts",
-              "line": 137,
-              "column": 7
-            },
-            {
-              "title": "should initialize VAD service",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-1dccd17458f7ad778142",
-              "file": "audio.spec.ts",
-              "line": 152,
-              "column": 7
-            },
-            {
-              "title": "should detect speech input capability",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-769984ef6ffa6cb23d03",
-              "file": "audio.spec.ts",
-              "line": 167,
-              "column": 7
-            }
-          ]
-        },
-        {
-          "title": "Text-to-Speech (TTS) Tests",
-          "file": "audio.spec.ts",
-          "line": 183,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should detect TTS API availability",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-f25a54f8bcd60ba1f9bd",
-              "file": "audio.spec.ts",
-              "line": 190,
-              "column": 7
-            },
-            {
-              "title": "should get available TTS voices",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-64c7dded4e1a1e2827e8",
-              "file": "audio.spec.ts",
-              "line": 196,
-              "column": 7
-            },
-            {
-              "title": "should trigger TTS when agent responds",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-3debec1ccd03fd12ce74",
-              "file": "audio.spec.ts",
-              "line": 210,
-              "column": 7
-            },
-            {
-              "title": "should use configured TTS voice settings",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-4c76dfe2168b39ed2181",
-              "file": "audio.spec.ts",
-              "line": 231,
-              "column": 7
-            },
-            {
-              "title": "should generate viseme data for lip sync",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-3ec0ca11cfcd92798ccb",
-              "file": "audio.spec.ts",
-              "line": 247,
-              "column": 7
-            },
-            {
-              "title": "should handle TTS queue when multiple messages are sent",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-3b121a89488b2189a022",
-              "file": "audio.spec.ts",
-              "line": 269,
-              "column": 7
-            }
-          ]
-        },
-        {
-          "title": "Audio Integration Tests",
-          "file": "audio.spec.ts",
-          "line": 291,
-          "column": 6,
-          "specs": [
-            {
-              "title": "should have audio context for processing",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-d9af8141e76a739618b1",
-              "file": "audio.spec.ts",
-              "line": 300,
-              "column": 7
-            },
-            {
-              "title": "should handle audio permissions gracefully",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-d31d0e32e9943846b8ab",
-              "file": "audio.spec.ts",
-              "line": 322,
-              "column": 7
-            },
-            {
-              "title": "should coordinate STT and TTS (no simultaneous talk)",
-              "ok": true,
-              "tags": [],
-              "tests": [
-                {
-                  "timeout": 60000,
-                  "annotations": [],
-                  "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
-                  "results": [],
-                  "status": "skipped"
-                }
-              ],
-              "id": "87be2dcdb54c25970a35-4c4bf30fbf81d3e3b889",
-              "file": "audio.spec.ts",
-              "line": 337,
-              "column": 7
-            }
-          ]
-        }
-      ]
     }
   ],
   "errors": [],
   "stats": {
-    "startTime": "2026-02-01T05:03:00.538Z",
-    "duration": 105.35900000000004,
-    "expected": 0,
-    "skipped": 47,
-    "unexpected": 0,
+    "startTime": "2026-02-01T05:14:01.045Z",
+    "duration": 121772.581,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 8,
     "flaky": 0
   }
 }

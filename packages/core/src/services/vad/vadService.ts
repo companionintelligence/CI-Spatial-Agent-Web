@@ -59,8 +59,8 @@ export const useVADService = ({
 
       const vad = await MicVAD.new({
         positiveSpeechThreshold: config.vadThreshold,
-        minSpeechFrames: 5,
-        preSpeechPadFrames: 10,
+        minSpeechMs: 300,
+        preSpeechPadMs: 100, // Changed from preSpeechPadFrames to preSpeechPadMs
         model: 'v5',
         onFrameProcessed: (probs: VADProbs) => {
           if (probs.isSpeech && probs.isSpeech > config.vadThreshold) {

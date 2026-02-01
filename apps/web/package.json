@@ -13,6 +13,7 @@
   "dependencies": {
     "@ci-avatar/core": "workspace:*",
     "@hexafield/simple-store": "^1.0.1",
+    "@react-three/xr": "^6.6.29",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "three": "^0.178.0"

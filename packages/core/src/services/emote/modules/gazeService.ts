@@ -3,15 +3,14 @@ import { Euler, Quaternion, Vector3, MathUtils } from 'three'
 import type { EmoteState, PlayerVisionType } from '../emoteTypes'
 import { safeExecute } from '../utils/errorHandling'
 import type { EmoteConfig } from '../configs/emoteConfig'
-import { applyEmotion, startPerformance } from '../emoteService'
 
 // Type for Camera (r3f uses three.Camera)
 type CameraType = {
   position: Vector3
 }
 
-export const updateGaze = (state: EmoteState, delta: number , config : EmoteConfig): void => {
-  const result = safeExecute(() => updateGazeInternal(state, delta , config), 'Gaze update failed')
+export const updateGaze = (state: EmoteState, delta: number, config: EmoteConfig): void => {
+  const result = safeExecute(() => updateGazeInternal(state, delta, config), 'Gaze update failed')
 
   if (!result.success) {
     // Fallback to neutral gaze

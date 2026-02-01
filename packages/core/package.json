@@ -19,17 +19,19 @@
     "@pixiv/three-vrm-animation": "^3.4.2",
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
+    "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.20",
-    "@ricky0123/vad-web": "^0.0.24",
+    "@ricky0123/vad-web": "^0.0.30",
     "ollama": "^0.6.3",
+    "postprocessing": "^6.38.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "three": "^0.178.0"
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@types/three": "^0.178.1",
+    "@types/three": "^0.182.0",
     "typescript": "^5.8.3",
     "vite": "^7.3.1"
   },

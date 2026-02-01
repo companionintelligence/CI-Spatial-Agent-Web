@@ -47,15 +47,16 @@ export default defineConfig({
     // Viewport size
     viewport: { width: 1280, height: 720 },
     
-    // Permissions for microphone and audio
-    permissions: ['microphone', 'speaker'],
+    // Permissions for microphone (speaker is not a valid permission)
+    permissions: ['microphone'],
     
     // Launch browser with these args to allow audio/video
     launchOptions: {
       args: [
         '--use-fake-ui-for-media-stream',
         '--use-fake-device-for-media-stream',
-        '--allow-file-access'
+        '--allow-file-access',
+        '--autoplay-policy=no-user-gesture-required'
       ]
     }
   },
