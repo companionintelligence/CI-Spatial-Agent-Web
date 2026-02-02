@@ -17,7 +17,6 @@
   },
   "dependencies": {
     "@ci-avatar/core": "workspace:*",
-    "@google/model-viewer": "^4.1.0",
     "@hexafield/simple-store": "^1.0.1",
     "@webspatial/core-sdk": "^1.0.5",
     "@webspatial/react-sdk": "^1.0.5",

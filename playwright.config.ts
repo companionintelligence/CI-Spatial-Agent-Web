@@ -33,7 +33,7 @@ export default defineConfig({
   
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: 'http://localhost:5174',
+    baseURL: 'http://localhost:5173',
     
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -81,7 +81,7 @@ export default defineConfig({
   // Run your local dev server before starting the tests
   webServer: {
     command: 'VITE_LLM_PROVIDER=ollama VITE_LLM_OLLAMA_API_URL=http://localhost:11434 VITE_LLM_OLLAMA_MODEL=gemma3:1b pnpm dev:web',
-    url: 'http://localhost:5174',
+    url: 'http://localhost:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
   },

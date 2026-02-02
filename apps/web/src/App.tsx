@@ -41,16 +41,19 @@ export const App = () => {
       ...config,
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
+      vad: {
+        ...config.vad,
+        microphoneEnabled: appState.microphone
+      }
     }),
-    [appState.autoSubmitEnabled, appState.bargeInEnabled]
+    [appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone]
   )
 
   const agent = useAgent(agentConfig)
 
   const handleAppStateChange = useCallback((newAppState: AppConfig) => {
     setAppState(newAppState)
-    agentConfig.vad.microphoneEnabled = newAppState.microphone
-  }, [agentConfig, setAppState])
+  }, [setAppState])
 
   const hasWebGPU = useHasWebGPU()
   const webGPUEnabled = appState.webGPUEnabled && hasWebGPU

@@ -1,6 +1,7 @@
 import { memo } from 'react'
 import { type AppConfig } from '../../app/appConfig'
 import { ControlButton } from '../common/ControlButton'
+import { useHasWebGPU } from '../../utils/useHasWebGPU' 
 
 interface ControlPanelProps {
   config: AppConfig
@@ -21,6 +22,7 @@ export const ControlPanel = memo(({
   isVisible
 }: ControlPanelProps) => {
   const isMobile = window.innerWidth <= 768
+  const hasWebGPU = useHasWebGPU()
 
   return (
     <div
@@ -98,6 +100,15 @@ export const ControlPanel = memo(({
           tooltipContent={config.agentEnabled ? 'Disable Agent Mode' : 'Enable Agent Mode'}
         >
           {config.agentEnabled ? '🔊' : '🤖'}
+        </ControlButton>
+
+        <ControlButton
+          isActive={config.webGPUEnabled}
+          onClick={() => handleAppStateChange({ ...config, webGPUEnabled: !config.webGPUEnabled })}
+          disabled={!hasWebGPU}
+          tooltipContent={!hasWebGPU ? 'WebGPU not supported' : config.webGPUEnabled ? 'Disable WebGPU (Use WebGL)' : 'Enable WebGPU'}
+        >
+          {config.webGPUEnabled ? '🎮' : '🕸️'}
         </ControlButton>
 
         {onEnterARMode && (

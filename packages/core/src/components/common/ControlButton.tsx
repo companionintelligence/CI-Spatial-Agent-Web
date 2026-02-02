@@ -8,6 +8,7 @@ interface ControlButtonProps {
   children: React.ReactNode
   tooltipContent?: string
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
+  disabled?: boolean
 }
 
 export const ControlButton = ({
@@ -15,17 +16,21 @@ export const ControlButton = ({
   onClick,
   children,
   tooltipContent,
-  tooltipPosition = 'top'
+  tooltipPosition = 'top',
+  disabled = false
 }: ControlButtonProps) => {
   const buttonElement = (
     <button
+      onClick={onClick}
+      disabled={disabled}
       style={{
         width: '40px',
         height: '40px',
         padding: '0',
         borderRadius: '9999px',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        opacity: disabled ? 0.5 : 1,
         background: isActive
           ? 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)'
           : 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
