@@ -184,6 +184,37 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     [config.apiKey, config.url, config.model, config.voice, config.speed]
   )
 
+  // Generate audio using Pocket TTS server
+  const generatePocketAudio = useCallback(
+    async (message: QueuedMessage) => {
+      const serverUrl = config.pocketTts?.serverUrl || 'http://localhost:8000'
+      const voice = config.pocketTts?.voice || 'marius'
+
+      const formData = new FormData()
+      formData.append('text', message.text)
+      
+      // Check if voice is a URL (http://, https://, or hf://) or a predefined voice name
+      if (voice.startsWith('http://') || voice.startsWith('https://') || voice.startsWith('hf://')) {
+        formData.append('voice_url', voice)
+      } else {
+        // Use predefined voice name as voice_url
+        formData.append('voice_url', voice)
+      }
+
+      const response = await fetch(`${serverUrl}/tts`, {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        throw new Error(`Pocket TTS API error: ${response.status} ${response.statusText}`)
+      }
+
+      message.audio = await response.arrayBuffer()
+    },
+    [config.pocketTts?.serverUrl, config.pocketTts?.voice]
+  )
+
   // Generate audio for a specific message
   const generateAudioForMessage = useCallback(
     async (message: QueuedMessage) => {
@@ -197,6 +228,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           await generateBrowserAudio(message)
         } else if (config.mode === 'local') {
           await generateLocalAudio(message)
+        } else if (config.mode === 'pocket') {
+          await generatePocketAudio(message)
         }
         message.status = 'ready'
       } catch (error) {
@@ -205,7 +238,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         message.error = error instanceof Error ? error.message : 'Unknown error'
       }
     },
-    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio]
+    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
   )
 
   // Process the queue sequentially
@@ -235,8 +268,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
             nextExpectedId.current = nextMessage.id + 1
             continue
           } else if (nextMessage.status === 'generating') {
-            // For local mode, wait a bit for generation to complete
-            if (config.mode === 'local') {
+            // For local and pocket modes, wait a bit for generation to complete
+            if (config.mode === 'local' || config.mode === 'pocket') {
               await new Promise((resolve) => setTimeout(resolve, 100))
               continue
             }
@@ -359,8 +392,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       messageQueue.current.push(queuedMessage)
       console.log(`Queued message ${messageId}:`, cleanedText.substring(0, 50))
 
-      // For local mode, start generating all pending messages immediately
-      if (config.mode === 'local') {
+      // For local and pocket modes, start generating all pending messages immediately
+      if (config.mode === 'local' || config.mode === 'pocket') {
         const allPendingMessages = messageQueue.current.filter((msg) => msg.status === 'pending')
         allPendingMessages.forEach((message) => {
           generateAudioForMessage(message) // Don't await - let them generate in parallel
