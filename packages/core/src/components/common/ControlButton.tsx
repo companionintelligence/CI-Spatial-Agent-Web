@@ -43,7 +43,6 @@ export const ControlButton = ({
         fontSize: '1rem',
         boxShadow: isActive ? '0 0.125rem 0.5rem rgba(0,131,145,0.2)' : '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}
-      onClick={onClick}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'scale(1.05)'
         e.currentTarget.style.boxShadow = '0 0.25rem 0.5rem rgba(0,0,0,0.2)'

@@ -16,13 +16,13 @@
     "@react-three/xr": "^6.6.29",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "three": "^0.178.0"
+    "three": "^0.182.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.30.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
-    "@types/three": "^0.178.1",
+    "@types/three": "^0.182.0",
     "@vitejs/plugin-react-swc": "^3.10.2",
     "eslint": "^9.30.1",
     "eslint-plugin-react-hooks": "^5.2.0",
