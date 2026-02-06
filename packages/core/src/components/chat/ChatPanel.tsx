@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useXRLayout } from '../../utils/useXRLayout'
 
 import type { ConversationMessage } from '../../services/conversation/conversationType'
 import { ToggleButton } from '../common/ToggleButton'
@@ -10,6 +11,7 @@ interface ChatPanelProps {
 
 export const ChatPanel = ({ messages }: ChatPanelProps) => {
   const isMobile = window.innerWidth <= 768
+  const { isXR } = useXRLayout()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const [isVisible, setVisible] = useState(true)
@@ -50,10 +52,10 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
       <div
         style={{
           position: 'absolute',
-          top: '1rem',
+          top: isXR ? '2rem' : '1rem',
           right: 0,
           height: '80%',
-          width: isVisible ? (isMobile ? '12.5rem' : '17.5rem') : '0',
+          width: isVisible ? (isXR ? '22rem' : isMobile ? '12.5rem' : '17.5rem') : '0',
           zIndex: 999,
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
@@ -71,10 +73,10 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
             opacity: isVisible ? 1 : 0,
             transition: 'opacity 0.3s ease',
             height: '100%',
-            paddingTop: isMobile ? '2.5rem' : '3.75rem',
-            paddingLeft: isMobile ? '0.75rem' : '1.25rem',
-            paddingRight: isMobile ? '0.75rem' : '1.25rem',
-            paddingBottom: isMobile ? '0.75rem' : '1.25rem',
+            paddingTop: isXR ? '3rem' : isMobile ? '2.5rem' : '3.75rem',
+            paddingLeft: isXR ? '1.5rem' : isMobile ? '0.75rem' : '1.25rem',
+            paddingRight: isXR ? '1.5rem' : isMobile ? '0.75rem' : '1.25rem',
+            paddingBottom: isXR ? '1.5rem' : isMobile ? '0.75rem' : '1.25rem',
             overflow: 'hidden',
             pointerEvents: isVisible ? 'auto' : 'none',
             display: 'flex',
@@ -84,8 +86,8 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
           {/* Chat Log Header */}
           <div
             style={{
-              marginBottom: isMobile ? '0.75rem' : '1.25rem',
-              paddingBottom: isMobile ? '0.5rem' : '0.75rem',
+              marginBottom: isXR ? '1.25rem' : isMobile ? '0.75rem' : '1.25rem',
+              paddingBottom: isXR ? '0.75rem' : isMobile ? '0.5rem' : '0.75rem',
               borderBottom: '0.0625rem solid rgba(255, 255, 255, 0.2)',
               display: 'flex',
               alignItems: 'center',
@@ -94,8 +96,8 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
           >
             <div
               style={{
-                width: isMobile ? '0.375rem' : '0.5rem',
-                height: isMobile ? '0.375rem' : '0.5rem',
+                width: isXR ? '0.6rem' : isMobile ? '0.375rem' : '0.5rem',
+                height: isXR ? '0.6rem' : isMobile ? '0.375rem' : '0.5rem',
                 borderRadius: '50%',
                 background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
                 boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
@@ -104,7 +106,7 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
             <span
               style={{
                 color: 'white',
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                fontSize: isXR ? '1rem' : isMobile ? '0.75rem' : '0.875rem',
                 fontWeight: '600',
                 letterSpacing: '0.03125rem'
               }}
@@ -121,7 +123,8 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
               color: '#FFFFFF',
               fontFamily:
                 "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-              paddingRight: '0.5rem',
+              fontSize: isXR ? '1rem' : '0.875rem',
+              paddingRight: isXR ? '0.75rem' : '0.5rem',
               // Custom scrollbar styling
               scrollbarWidth: 'thin',
               scrollbarColor: 'rgba(255, 255, 255, 0.2) transparent',
@@ -147,7 +150,8 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
         label="Chat"
         position="right"
         isMobile={isMobile}
-        panelWidth={{ mobile: '12.5rem', desktop: '17.5rem' }}
+        panelWidth={{ mobile: '12.5rem', desktop: isXR ? '22rem' : '17.5rem' }}
+        size={isXR ? 44 : 32}
       />
     </>
   )

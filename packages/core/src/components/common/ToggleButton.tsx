@@ -5,6 +5,7 @@ interface ToggleButtonProps {
   position: 'left' | 'right' | 'bottom-left'
   isMobile?: boolean
   panelWidth?: { mobile: string; desktop: string }
+  size?: number
 }
 
 export const ToggleButton = ({
@@ -13,7 +14,8 @@ export const ToggleButton = ({
   label,
   position,
   isMobile = false,
-  panelWidth = { mobile: '0.625rem', desktop: '1.25rem' }
+  panelWidth = { mobile: '0.625rem', desktop: '1.25rem' },
+  size = 32
 }: ToggleButtonProps) => {
   const getPosition = () => {
     if (position === 'bottom-left') {
@@ -69,17 +71,17 @@ export const ToggleButton = ({
         backdropFilter: 'blur(1.25rem)',
         border: '0.0625rem solid rgba(255,255,255,0.08)',
         borderRadius: '0.375rem',
-        padding: '0.5rem 0.75rem',
+        padding: `${Math.max(6, Math.round(size * 0.25))}px ${Math.max(10, Math.round(size * 0.35))}px`,
         cursor: 'pointer',
         color: 'white',
-        fontSize: '0.75rem',
+        fontSize: `${Math.max(12, Math.round(size * 0.35))}px`,
         fontWeight: '600',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex',
         alignItems: 'center',
         gap: '0.375rem',
-        minWidth: '2rem',
-        height: '2rem',
+        minWidth: `${Math.max(32, size)}px`,
+        height: `${Math.max(32, size)}px`,
         boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}
       onMouseEnter={(e) => {

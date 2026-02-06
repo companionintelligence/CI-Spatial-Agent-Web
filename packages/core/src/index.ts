@@ -81,6 +81,7 @@ export { useResponsiveLayout } from './app/layoutService'
 
 // Utils
 export { useHasWebGPU } from './utils/useHasWebGPU'
+export { useXRLayout } from './utils/useXRLayout'
 
 // Integration
 export { 
