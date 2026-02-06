@@ -8,6 +8,8 @@
   "scripts": {
     "dev:web": "pnpm --filter @ci-avatar/web dev",
     "dev:vision": "pnpm --filter @ci-avatar/vision-pro dev",
+    "ollama:serve": "sh -c 'OLLAMA_ORIGINS=\"${OLLAMA_ORIGINS:-https://avatars-zbe.pages.dev}\" ollama serve'",
+    "ollama:tunnel": "sh -c 'cloudflared tunnel --url \"${OLLAMA_HOST_URL:-http://localhost:11434}\" --http-host-header=\"localhost:11434\"'",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
