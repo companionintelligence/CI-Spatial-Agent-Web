@@ -57,6 +57,7 @@ export { Viewport3D } from './components/scene/Viewport3D'
 export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel } from './components/scene/avatar/AvatarModel'
+export type { SceneActions } from './components/scene/Scene3D'
 
 // Components - Chat
 export { ChatOverlay } from './components/chat/ChatOverlay'

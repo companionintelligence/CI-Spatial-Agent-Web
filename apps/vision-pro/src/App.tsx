@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
 
 import {
@@ -16,7 +16,8 @@ import {
   defaultSTTConfig,
   defaultLLMConfig,
   sceneConfig,
-  useHasWebGPU
+  useHasWebGPU,
+  type SceneActions
 } from '@ci-avatar/core'
 
 // Vision Pro specific: WebSpatial integration would go here
@@ -34,6 +35,7 @@ export const App = () => {
 
   const xrStore = useRef<any | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState) as [AppConfig, (value: AppConfig) => void]
+  const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const setXRStore = useCallback((store: any) => {
     xrStore.current = store
   }, [])
@@ -69,6 +71,7 @@ export const App = () => {
           emoteService={agent.services.emotes}
           animationService={agent.services.animations}
           setXRStore={setXRStore}
+          onSceneActionsReady={setSceneActions}
           webGPUEnabled={webGPUEnabled}
         />
         <LogoOverlay />
@@ -77,7 +80,8 @@ export const App = () => {
           config={appState}
           handleAppStateChange={handleAppStateChange}
           agent={agent}
-          xrStore={xrStore.current!}
+          xrStore={xrStore.current}
+          sceneActions={sceneActions}
         />
         <ChatPanel
           messages={agent.state.messages.map((id) => 
