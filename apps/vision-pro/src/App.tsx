@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
 
 import {
@@ -7,6 +7,7 @@ import {
   ChatPanel,
   LogoOverlay,
   ControlOverlay,
+  OnboardingOverlay,
   useAgent,
   useResponsiveLayout,
   AppConfigState,
@@ -34,6 +35,7 @@ export const App = () => {
 
   const xrStore = useRef<any | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState) as [AppConfig, (value: AppConfig) => void]
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const setXRStore = useCallback((store: any) => {
     xrStore.current = store
   }, [])
@@ -60,6 +62,25 @@ export const App = () => {
   const hasWebGPU = useHasWebGPU()
   const webGPUEnabled = appState.webGPUEnabled && hasWebGPU
 
+  useEffect(() => {
+    const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
+    if (!hasOnboarded) {
+      setShowOnboarding(true)
+    }
+  }, [])
+
+  const handleEnableMic = useCallback(() => {
+    AppConfigState.set((prev) => ({ ...prev, microphone: true }))
+    agent.actions.initializeVAD()
+    setShowOnboarding(false)
+    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+  }, [agent.actions])
+
+  const handleSkipOnboarding = useCallback(() => {
+    setShowOnboarding(false)
+    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+  }, [])
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
       <div className="relative h-screen w-full">
@@ -83,6 +104,11 @@ export const App = () => {
           messages={agent.state.messages.map((id) => 
             agent.services.conversation.actions.getMessagebyId(id)
           )}
+        />
+        <OnboardingOverlay
+          isOpen={showOnboarding && !appState.microphone}
+          onEnableMic={handleEnableMic}
+          onSkip={handleSkipOnboarding}
         />
       </div>
     </div>
