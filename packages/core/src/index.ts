@@ -69,6 +69,7 @@ export { LogoOverlay } from './components/common/LogoOverlay'
 export { ControlButton } from './components/common/ControlButton'
 export { ToggleButton } from './components/common/ToggleButton'
 export { Tooltip } from './components/common/Tooltip'
+export { OnboardingOverlay } from './components/common/OnboardingOverlay'
 
 // Components - Control
 export { ControlOverlay } from './components/control/ControlOverlay'
