@@ -8,6 +8,9 @@ interface ToggleButtonProps {
   size?: number
 }
 
+// Keep toggle buttons at a minimum 32px touch target even when a smaller size is requested.
+const MIN_BUTTON_SIZE = 32
+
 export const ToggleButton = ({
   isVisible,
   onToggle,
@@ -15,9 +18,9 @@ export const ToggleButton = ({
   position,
   isMobile = false,
   panelWidth = { mobile: '0.625rem', desktop: '1.25rem' },
-  size = 32
+  size = MIN_BUTTON_SIZE
 }: ToggleButtonProps) => {
-  const buttonOffset = `${Math.max(32, size)}px`
+  const resolvedButtonSize = Math.max(MIN_BUTTON_SIZE, size)
 
   const getPosition = () => {
     if (position === 'bottom-left') {
@@ -37,7 +40,7 @@ export const ToggleButton = ({
     } else {
       // For right position, only subtract button width when maximized
       if (isVisible) {
-        return { right: `calc(${basePosition} - ${buttonOffset})` }
+        return { right: `calc(${basePosition} - ${resolvedButtonSize}px)` }
       } else {
         return { right: basePosition }
       }
@@ -62,6 +65,7 @@ export const ToggleButton = ({
   return (
     <button
       onClick={onToggle}
+      aria-label={`${isVisible ? 'Hide' : 'Show'} ${label}`}
       style={{
         position: 'absolute',
         top: position === 'bottom-left' ? 'auto' : '3%',
@@ -81,8 +85,8 @@ export const ToggleButton = ({
         display: 'flex',
         alignItems: 'center',
         gap: '0.375rem',
-        minWidth: `${Math.max(32, size)}px`,
-        height: `${Math.max(32, size)}px`,
+        minWidth: `${resolvedButtonSize}px`,
+        height: `${resolvedButtonSize}px`,
         boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}
       onMouseEnter={(e) => {
