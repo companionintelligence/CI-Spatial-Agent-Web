@@ -6,6 +6,7 @@ import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import type { AgentService } from '../../services/useAgent'
 import { ControlPanel } from './ControlPanel'
 import type { SceneActions } from '../scene/Scene3D'
+import { useXRLayout } from '../../utils/useXRLayout'
 
 interface ControlOverlayProps {
   config: AppConfig
@@ -27,6 +28,7 @@ export const ControlOverlay = memo(({
   const [xrMode, setXrMode] = useState<XRSessionMode | null>(null)
   const [xrSessionActive, setXrSessionActive] = useState(false)
   const [xrSupport, setXrSupport] = useState({ ar: false, vr: false })
+  const { isXR } = useXRLayout()
   
   const handleEnterARMode = useCallback(() => {
     if (!xrStore) return
@@ -129,6 +131,7 @@ export const ControlOverlay = memo(({
         onToggle={() => setIsButtonsVisible(!isButtonsVisible)}
         label={"Controls"}
         position="bottom-left"
+        size={isXR ? 44 : 32}
       />
     </>
   )

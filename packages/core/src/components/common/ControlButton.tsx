@@ -9,6 +9,7 @@ interface ControlButtonProps {
   tooltipContent?: string
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
   disabled?: boolean
+  size?: number
 }
 
 export const ControlButton = ({
@@ -17,15 +18,16 @@ export const ControlButton = ({
   children,
   tooltipContent,
   tooltipPosition = 'top',
-  disabled = false
+  disabled = false,
+  size = 40
 }: ControlButtonProps) => {
   const buttonElement = (
     <button
       onClick={onClick}
       disabled={disabled}
       style={{
-        width: '40px',
-        height: '40px',
+        width: `${size}px`,
+        height: `${size}px`,
         padding: '0',
         borderRadius: '9999px',
         cursor: disabled ? 'not-allowed' : 'pointer',
@@ -40,7 +42,7 @@ export const ControlButton = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '1rem',
+        fontSize: `${Math.max(14, Math.round(size * 0.4))}px`,
         boxShadow: isActive ? '0 0.125rem 0.5rem rgba(0,131,145,0.2)' : '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}
       onMouseEnter={(e) => {

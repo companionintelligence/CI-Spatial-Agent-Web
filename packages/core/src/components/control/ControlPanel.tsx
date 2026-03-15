@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { type AppConfig } from '../../app/appConfig'
 import { ControlButton } from '../common/ControlButton'
 import { useHasWebGPU } from '../../utils/useHasWebGPU' 
+import { useXRLayout } from '../../utils/useXRLayout'
 
 interface ControlPanelProps {
   config: AppConfig
@@ -39,12 +40,14 @@ export const ControlPanel = memo(({
 }: ControlPanelProps) => {
   const isMobile = window.innerWidth <= 768
   const hasWebGPU = useHasWebGPU()
+  const { isXR } = useXRLayout()
+  const controlButtonSize = isXR ? 56 : 40
 
   return (
     <div
       style={{
         position: 'absolute',
-        bottom: '1.25rem',
+        bottom: isXR ? '2rem' : '1.25rem',
         left: '50%',
         zIndex: 1000,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -62,18 +65,19 @@ export const ControlPanel = memo(({
           boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.04)',
           display: 'flex',
           justifyContent: 'center',
-          padding: '0.75rem 1.25rem',
-          gap: '0.75rem',
+          padding: isXR ? '1rem 1.5rem' : '0.75rem 1.25rem',
+          gap: isXR ? '1rem' : '0.75rem',
           flexWrap: 'wrap',
-          minHeight: '3.5rem',
+          minHeight: isXR ? '4.5rem' : '3.5rem',
           alignItems: 'center',
           width: 'fit-content',
           margin: '0 auto',
-          maxWidth: isMobile ? '17.5rem' : '25rem'
+          maxWidth: isXR ? '32rem' : isMobile ? '17.5rem' : '25rem'
         }}
       >
         <ControlButton
           isActive={isRecording}
+          size={controlButtonSize}
           onClick={() => handleAppStateChange({ ...config, microphone: !config.microphone })}
           tooltipContent={
             isRecording
@@ -88,6 +92,7 @@ export const ControlPanel = memo(({
 
         <ControlButton
           isActive={config.cloudMode}
+          size={controlButtonSize}
           onClick={() => handleAppStateChange({ ...config, cloudMode: !config.cloudMode })}
           tooltipContent={config.cloudMode ? 'Switch to Local Mode' : 'Switch to Cloud Mode'}
         >
@@ -96,6 +101,7 @@ export const ControlPanel = memo(({
 
         <ControlButton
           isActive={config.bargeInEnabled}
+          size={controlButtonSize}
           onClick={() => handleAppStateChange({ ...config, bargeInEnabled: !config.bargeInEnabled })}
           tooltipContent={config.bargeInEnabled ? 'Disable Barge-in' : 'Enable Barge-in'}
         >
@@ -104,6 +110,7 @@ export const ControlPanel = memo(({
 
         <ControlButton
           isActive={config.autoSubmitEnabled}
+          size={controlButtonSize}
           onClick={() => handleAppStateChange({ ...config, autoSubmitEnabled: !config.autoSubmitEnabled })}
           tooltipContent={config.autoSubmitEnabled ? 'Disable Auto-submit' : 'Enable Auto-submit'}
         >
@@ -112,6 +119,7 @@ export const ControlPanel = memo(({
 
         <ControlButton
           isActive={config.agentEnabled}
+          size={controlButtonSize}
           onClick={() => handleAppStateChange({ ...config, agentEnabled: !config.agentEnabled })}
           tooltipContent={config.agentEnabled ? 'Disable Agent Mode' : 'Enable Agent Mode'}
         >
@@ -120,6 +128,7 @@ export const ControlPanel = memo(({
 
         <ControlButton
           isActive={config.webGPUEnabled}
+          size={controlButtonSize}
           onClick={() => handleAppStateChange({ ...config, webGPUEnabled: !config.webGPUEnabled })}
           disabled={!hasWebGPU}
           tooltipContent={!hasWebGPU ? 'WebGPU not supported' : config.webGPUEnabled ? 'Disable WebGPU (Use WebGL)' : 'Enable WebGPU'}

@@ -1,4 +1,6 @@
-# CI Avatar Monorepo
+# CI Spatial Companion
+
+WebXR and WebSpatial
 
 Embodied AI Avatar framework with WebXR and Vision Pro support.
 

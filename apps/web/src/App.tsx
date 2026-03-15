@@ -1,5 +1,5 @@
 import type { XRStore } from '@react-three/xr'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
 
 import {
@@ -8,6 +8,7 @@ import {
   ChatPanel,
   LogoOverlay,
   ControlOverlay,
+  OnboardingOverlay,
   useAgent,
   useResponsiveLayout,
   AppConfigState,
@@ -34,6 +35,7 @@ export const App = () => {
   const xrStore = useRef<XRStore | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState)
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
+  const [showOnboarding, setShowOnboarding] = useState(false)
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
@@ -60,6 +62,25 @@ export const App = () => {
   const hasWebGPU = useHasWebGPU()
   const webGPUEnabled = appState.webGPUEnabled && hasWebGPU
 
+  useEffect(() => {
+    const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
+    if (!hasOnboarded) {
+      setShowOnboarding(true)
+    }
+  }, [])
+
+  const handleEnableMic = useCallback(() => {
+    AppConfigState.set((prev) => ({ ...prev, microphone: true }))
+    agent.actions.initializeVAD()
+    setShowOnboarding(false)
+    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+  }, [agent.actions])
+
+  const handleSkipOnboarding = useCallback(() => {
+    setShowOnboarding(false)
+    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+  }, [])
+
   return (
     <div className="app-container">
       <div className="viewport-container">
@@ -85,6 +106,11 @@ export const App = () => {
           messages={agent.state.messages.map((id) => 
             agent.services.conversation.actions.getMessagebyId(id)
           )}
+        />
+        <OnboardingOverlay
+          isOpen={showOnboarding && !appState.microphone}
+          onEnableMic={handleEnableMic}
+          onSkip={handleSkipOnboarding}
         />
       </div>
     </div>

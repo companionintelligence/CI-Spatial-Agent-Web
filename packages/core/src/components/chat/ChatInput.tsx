@@ -1,4 +1,5 @@
 import { useMemo, memo, useCallback } from "react"
+import { useXRLayout } from '../../utils/useXRLayout'
 
 interface ChatInputProps {
   message: string
@@ -22,6 +23,7 @@ export const ChatInput = memo(({
   sttListening = false
 }: ChatInputProps) => {
   const isMobile = window.innerWidth <= 768
+  const { isXR } = useXRLayout()
 
   const displayValue = useMemo(() => {
     return isRecording && sttTranscript ? (message + ' ' + sttTranscript).trim() : message
@@ -45,11 +47,11 @@ export const ChatInput = memo(({
     <div
       style={{
         position: 'absolute',
-        bottom: '7.5rem',
+        bottom: isXR ? '9rem' : '7.5rem',
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 1000,
-        width: isMobile ? '18.75rem' : '25rem',
+        width: isXR ? '30rem' : isMobile ? '18.75rem' : '25rem',
         maxWidth: '90%',
         pointerEvents: 'none'
       }}
@@ -74,7 +76,7 @@ export const ChatInput = memo(({
               className="chat-input"
               style={{
                 width: '100%',
-                padding: '0.75rem 3.125rem 0.75rem 1.25rem',
+                padding: isXR ? '0.9rem 3.5rem 0.9rem 1.5rem' : '0.75rem 3.125rem 0.75rem 1.25rem',
                 borderRadius: '9999px',
                 resize: 'none',
                 border: 'none',
@@ -85,8 +87,8 @@ export const ChatInput = memo(({
                 overflow: 'auto',
                 fontFamily:
                   "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-                fontSize: '1rem',
-                lineHeight: '1.5',
+                fontSize: isXR ? '1.1rem' : '1rem',
+                lineHeight: isXR ? '1.6' : '1.5',
                 boxShadow: '0 0.0625rem 0.125rem rgba(0,0,0,0.03)',
                 boxSizing: 'border-box',
                 ...(vadDetecting && { background: 'rgba(19,196,209,0.15)' }),
@@ -116,11 +118,11 @@ export const ChatInput = memo(({
                   background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
                   border: '0.0625rem solid rgba(255,255,255,0.08)',
                   borderRadius: '50%',
-                  width: '2rem',
-                  height: '2rem',
+                  width: isXR ? '2.5rem' : '2rem',
+                  height: isXR ? '2.5rem' : '2rem',
                   cursor: 'pointer',
                   color: 'white',
-                  fontSize: '0.875rem',
+                  fontSize: isXR ? '1rem' : '0.875rem',
                   fontWeight: '600',
                   display: 'flex',
                   alignItems: 'center',
