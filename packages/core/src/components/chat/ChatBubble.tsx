@@ -50,11 +50,11 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
             : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
           border: message.isUser ? '0.0625rem solid rgba(255,255,255,0.08)' : '0.0625rem solid rgba(255,255,255,0.06)',
           boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.07)',
-          fontSize: '0.875rem',
+          fontSize: '1em',
           lineHeight: '1.4'
         }}
       >
-        <div style={{ marginBottom: '0.125rem', fontSize: '0.625rem', opacity: 0.7 }}>
+        <div style={{ marginBottom: '0.125rem', fontSize: '0.75em', opacity: 0.7 }}>
           {message.isUser ? 'You' : 'Assistant'}
         </div>
         <div>{message.text}</div>

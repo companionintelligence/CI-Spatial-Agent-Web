@@ -5,6 +5,7 @@ import type { XRStore } from '@react-three/xr'
 import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import type { AgentService } from '../../services/useAgent'
 import { ControlPanel } from './ControlPanel'
+import { useXRLayout } from '../../utils/useXRLayout'
 
 interface ControlOverlayProps {
   config: AppConfig
@@ -21,6 +22,7 @@ export const ControlOverlay = memo(({
   xrStore,
 }: ControlOverlayProps) => {
   const [isButtonsVisible, setIsButtonsVisible] = useState(true)
+  const { isXR } = useXRLayout()
   
   const handleEnterARMode = useCallback(() => {
     if (!xrStore) return
@@ -49,6 +51,7 @@ export const ControlOverlay = memo(({
         onToggle={() => setIsButtonsVisible(!isButtonsVisible)}
         label={"Controls"}
         position="bottom-left"
+        size={isXR ? 44 : 32}
       />
     </>
   )
