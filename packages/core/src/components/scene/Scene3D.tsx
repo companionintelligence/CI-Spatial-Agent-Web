@@ -21,7 +21,14 @@ interface Scene3DProps {
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
   setXRStore?: (store: XRStore) => void
+  onSceneActionsReady?: (actions: SceneActions) => void
   webGPUEnabled: boolean
+}
+
+export interface SceneActions {
+  recenter: () => void
+  scaleBy: (delta: number) => void
+  resetScale: () => void
 }
 
 const SceneContent = ({
@@ -32,8 +39,11 @@ const SceneContent = ({
   store,
   webGPUEnabled,
   quality,
-  capabilities
-}: Scene3DProps & { store: XRStore; quality: any; capabilities: any }) => {
+  capabilities,
+  worldGroupRef,
+  worldScale,
+  setRecenterHandler
+}: Scene3DProps & { store: XRStore; quality: any; capabilities: any; worldGroupRef: React.RefObject<THREE.Group>; worldScale: number; setRecenterHandler?: (fn: () => void) => void }) => {
   const controlsRef = useRef<any>(null)
   const { camera, gl } = useThree()
   const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
@@ -62,6 +72,18 @@ const SceneContent = ({
       controlsRef.current.update()
     }
   }, [camPos, camTarget, camera])
+
+  useEffect(() => {
+    if (!setRecenterHandler) return
+    setRecenterHandler(() => {
+      setCamTarget(sceneConfig.cameraTarget)
+      setCamPos(sceneConfig.cameraPosition)
+      if (worldGroupRef.current) {
+        worldGroupRef.current.position.set(0, 0, 0)
+        worldGroupRef.current.rotation.set(0, 0, 0)
+      }
+    })
+  }, [sceneConfig.cameraTarget, sceneConfig.cameraPosition, setRecenterHandler, worldGroupRef])
 
   const handleHeadLocated = (target: [number, number, number], position: [number, number, number]) => {
     setCamTarget(target)
@@ -129,13 +151,15 @@ const SceneContent = ({
       {/* XR enhancements for VR/AR */}
       <XREnhancements enabled={true} showGrid={false} />
 
-      <AvatarModel
-        visemeService={visemeService}
-        emoteService={emoteService}
-        animationService={animationService}
-        onHeadLocated={handleHeadLocated}
-        webGPUEnabled={webGPUEnabled}
-      />
+      <group ref={worldGroupRef} scale={worldScale}>
+        <AvatarModel
+          visemeService={visemeService}
+          emoteService={emoteService}
+          animationService={animationService}
+          onHeadLocated={handleHeadLocated}
+          webGPUEnabled={webGPUEnabled}
+        />
+      </group>
 
       {/* Post-processing effects for enhanced visuals */}
       <PostProcessing 
@@ -147,15 +171,43 @@ const SceneContent = ({
   )
 }
 
-const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore, webGPUEnabled }: Scene3DProps) => {
+const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore, onSceneActionsReady, webGPUEnabled }: Scene3DProps) => {
   const store = createXRStore()
   const { capabilities, quality, isLoading } = useRendererConfig()
+  const worldGroupRef = useRef<THREE.Group>(null)
+  const recenterSceneRef = useRef<() => void>()
+  const [worldScale, setWorldScale] = useState(1)
 
   useEffect(() => {
     if (setXRStore) {
       setXRStore(store)
     }
   }, [setXRStore, store])
+
+  useEffect(() => {
+    if (!onSceneActionsReady) return
+    const actions: SceneActions = {
+      recenter: () => {
+        recenterSceneRef.current?.()
+        const origin = store.getState().origin
+        if (origin) {
+          origin.position.set(0, 0, 0)
+          origin.rotation.set(0, 0, 0)
+        }
+        setWorldScale(1)
+      },
+      scaleBy: (delta: number) => {
+        setWorldScale((prev) => {
+          const next = Math.min(2, Math.max(0.5, prev + delta))
+          return next
+        })
+      },
+      resetScale: () => {
+        setWorldScale(1)
+      }
+    }
+    onSceneActionsReady(actions)
+  }, [onSceneActionsReady, store])
 
   // Show loading state while detecting capabilities
   if (isLoading || !capabilities || !quality) {
@@ -200,6 +252,11 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
           webGPUEnabled={webGPUEnabled}
           quality={quality}
           capabilities={capabilities}
+          worldGroupRef={worldGroupRef}
+          worldScale={worldScale}
+          setRecenterHandler={(fn) => {
+            recenterSceneRef.current = fn
+          }}
         />
       </Canvas>
     </div>

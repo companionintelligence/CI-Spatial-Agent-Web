@@ -210,7 +210,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
 
   const processUserInput = useCallback(
     async (request: LLMPerformRequest) => {
-      if (!request.final || !request.bargein) return
+      if (!request.final) return
 
       const text = request.text?.trim()
       if (!text || !text.length) return
@@ -229,10 +229,10 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         setState((prev) => ({ ...prev, _latest_interrupt: request.interrupt }))
 
         const baseParams = {
-          userMessage: text + "default",
+          userMessage: text,
           interrupt: request.interrupt,
           messages: state.messages,
-          latestInterrupt: state._latest_interrupt,
+          latestInterrupt: request.interrupt,
           responseCallback: onResponse,
           updateMessages: (userMsg: string, assistantMsg: string) => {
             setState((prev) => ({
@@ -286,7 +286,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         userMessage: text,
         interrupt: request.interrupt,
         messages: state.messages,
-        latestInterrupt: state._latest_interrupt,
+        latestInterrupt: request.interrupt,
         responseCallback: onResponse,
         updateMessages: (userMsg: string, assistantMsg: string) => {
           setState((prev) => ({

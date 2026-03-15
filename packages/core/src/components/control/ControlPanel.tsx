@@ -9,6 +9,14 @@ interface ControlPanelProps {
   isRecording: boolean
   handleAppStateChange: (newAppState: AppConfig) => void
   onEnterARMode?: () => void
+  onEnterVRMode?: () => void
+  onExitXR?: () => void
+  onRecenter?: () => void
+  onScaleUp?: () => void
+  onScaleDown?: () => void
+  xrStatusText?: string
+  xrCanEnterAR?: boolean
+  xrCanEnterVR?: boolean
   vadDetecting?: boolean
   ttsActive?: boolean
   isVisible: boolean
@@ -19,6 +27,14 @@ export const ControlPanel = memo(({
   handleAppStateChange,
   isRecording,
   onEnterARMode,
+  onEnterVRMode,
+  onExitXR,
+  onRecenter,
+  onScaleUp,
+  onScaleDown,
+  xrStatusText,
+  xrCanEnterAR = false,
+  xrCanEnterVR = false,
   vadDetecting = false,
   isVisible
 }: ControlPanelProps) => {
@@ -120,12 +136,64 @@ export const ControlPanel = memo(({
           {config.webGPUEnabled ? '🎮' : '🕸️'}
         </ControlButton>
 
-        {onEnterARMode && (
-          <ControlButton isActive={false} size={controlButtonSize} onClick={onEnterARMode} tooltipContent="Enter AR Mode">
+        {onEnterVRMode && (
+          <ControlButton
+            isActive={false}
+            onClick={onEnterVRMode}
+            disabled={!xrCanEnterVR}
+            tooltipContent={xrCanEnterVR ? 'Enter VR Mode' : 'VR not supported'}
+          >
             🥽
           </ControlButton>
         )}
+
+        {onEnterARMode && (
+          <ControlButton
+            isActive={false}
+            onClick={onEnterARMode}
+            disabled={!xrCanEnterAR}
+            tooltipContent={xrCanEnterAR ? 'Enter AR Mode' : 'AR not supported'}
+          >
+            📱
+          </ControlButton>
+        )}
+
+        {onExitXR && (
+          <ControlButton isActive={false} onClick={onExitXR} tooltipContent="Exit XR Session">
+            ⏹️
+          </ControlButton>
+        )}
+
+        {onRecenter && (
+          <ControlButton isActive={false} onClick={onRecenter} tooltipContent="Recenter View">
+            🎯
+          </ControlButton>
+        )}
+
+        {onScaleDown && (
+          <ControlButton isActive={false} onClick={onScaleDown} tooltipContent="Scale Down">
+            ➖
+          </ControlButton>
+        )}
+
+        {onScaleUp && (
+          <ControlButton isActive={false} onClick={onScaleUp} tooltipContent="Scale Up">
+            ➕
+          </ControlButton>
+        )}
       </div>
+      {xrStatusText && (
+        <div
+          style={{
+            marginTop: '0.5rem',
+            textAlign: 'center',
+            fontSize: '0.75rem',
+            color: 'rgba(255,255,255,0.7)'
+          }}
+        >
+          {xrStatusText}
+        </div>
+      )}
     </div>
   )
 })
