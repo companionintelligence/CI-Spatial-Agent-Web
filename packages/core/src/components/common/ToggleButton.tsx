@@ -17,6 +17,8 @@ export const ToggleButton = ({
   panelWidth = { mobile: '0.625rem', desktop: '1.25rem' },
   size = 32
 }: ToggleButtonProps) => {
+  const buttonOffset = `${Math.max(32, size)}px`
+
   const getPosition = () => {
     if (position === 'bottom-left') {
       return { bottom: '1.25rem', left: '1.25rem' }
@@ -35,8 +37,7 @@ export const ToggleButton = ({
     } else {
       // For right position, only subtract button width when maximized
       if (isVisible) {
-        const buttonWidth = '2rem'
-        return { right: `calc(${basePosition} - ${buttonWidth})` }
+        return { right: `calc(${basePosition} - ${buttonOffset})` }
       } else {
         return { right: basePosition }
       }
