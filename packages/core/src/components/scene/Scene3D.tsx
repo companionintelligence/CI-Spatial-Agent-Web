@@ -43,7 +43,7 @@ const SceneContent = ({
   worldGroupRef,
   worldScale,
   setRecenterHandler
-}: Scene3DProps & { store: XRStore; quality: any; capabilities: any; worldGroupRef: React.RefObject<THREE.Group>; worldScale: number; setRecenterHandler?: (fn: () => void) => void }) => {
+}: Scene3DProps & { store: XRStore; quality: any; capabilities: any; worldGroupRef: React.RefObject<THREE.Group | null>; worldScale: number; setRecenterHandler?: (fn: () => void) => void }) => {
   const controlsRef = useRef<any>(null)
   const { camera, gl } = useThree()
   const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
@@ -175,7 +175,7 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
   const store = createXRStore()
   const { capabilities, quality, isLoading } = useRendererConfig()
   const worldGroupRef = useRef<THREE.Group>(null)
-  const recenterSceneRef = useRef<() => void>()
+  const recenterSceneRef = useRef<(() => void) | undefined>(undefined)
   const [worldScale, setWorldScale] = useState(1)
 
   useEffect(() => {
