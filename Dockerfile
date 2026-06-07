@@ -7,11 +7,11 @@ FROM node:22-bookworm-slim AS build
 RUN corepack enable
 WORKDIR /app
 COPY . .
-RUN pnpm install --no-frozen-lockfile
-# vite-direct build (skips `tsc -b`): the app's tsc typecheck currently fails on
-# packages/core Scene3D.tsx type errors while vite itself builds clean. See repo
-# build notes — this only skips typecheck, not the actual bundle.
-RUN pnpm --filter @ci-avatar/web exec vite build
+RUN pnpm install --frozen-lockfile
+# Full build: `tsc -b && vite build`. Both the lockfile drift and the
+# packages/core Scene3D.tsx type errors that previously forced workarounds
+# here are fixed, so the typecheck gate is back in the container build.
+RUN pnpm --filter @ci-avatar/web build
 
 # ---- runtime stage ----
 FROM nginx:1.27-alpine
