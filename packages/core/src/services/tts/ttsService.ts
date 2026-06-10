@@ -56,6 +56,9 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   const messageQueue = useRef<QueuedMessage[]>([])
   const nextExpectedId = useRef(0)
   const workerRef = useRef<Worker | null>(null)
+  // Once the Pocket TTS server proves unreachable (network-level failure), stop
+  // hammering it for every message — degrade to silent text chat with one warning.
+  const pocketUnreachable = useRef(false)
 
   // Initialize worker for local TTS
   const getOrCreateWorker = useCallback(() => {
@@ -201,10 +204,26 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         formData.append('voice_url', voice)
       }
 
-      const response = await fetch(`${serverUrl}/tts`, {
-        method: 'POST',
-        body: formData
-      })
+      if (pocketUnreachable.current) {
+        throw new Error('POCKET_TTS_UNREACHABLE')
+      }
+
+      let response: Response
+      try {
+        response = await fetch(`${serverUrl}/tts`, {
+          method: 'POST',
+          body: formData
+        })
+      } catch (err) {
+        // Network-level failure (server not running / wrong host). Remember it so
+        // the rest of the session degrades quietly instead of erroring per message.
+        pocketUnreachable.current = true
+        console.warn(
+          `TTS: Pocket TTS server unreachable at ${serverUrl}; speech is disabled. ` +
+            'Run a Pocket TTS server there, set VITE_POCKET_TTS_URL, or set VITE_TTS_MODE=browser.'
+        )
+        throw new Error('POCKET_TTS_UNREACHABLE')
+      }
 
       if (!response.ok) {
         throw new Error(`Pocket TTS API error: ${response.status} ${response.statusText}`)
@@ -233,9 +252,14 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         }
         message.status = 'ready'
       } catch (error) {
-        console.error(`Error generating audio for message ${message.id}:`, error)
+        const errMessage = error instanceof Error ? error.message : 'Unknown error'
+        // The unreachable-server case is already warned about once; don't spam
+        // the console for every queued message.
+        if (errMessage !== 'POCKET_TTS_UNREACHABLE') {
+          console.error(`Error generating audio for message ${message.id}:`, error)
+        }
         message.status = 'error'
-        message.error = error instanceof Error ? error.message : 'Unknown error'
+        message.error = errMessage
       }
     },
     [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
@@ -263,7 +287,9 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         // If message is not ready after generation, skip for now
         if (nextMessage.status !== 'ready') {
           if (nextMessage.status === 'error') {
-            console.error(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
+            if (nextMessage.error !== 'POCKET_TTS_UNREACHABLE') {
+              console.warn(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
+            }
             messageQueue.current = messageQueue.current.filter((msg) => msg.id !== nextMessage.id)
             nextExpectedId.current = nextMessage.id + 1
             continue

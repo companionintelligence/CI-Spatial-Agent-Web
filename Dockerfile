@@ -8,6 +8,19 @@ RUN corepack enable
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
+# Vite envs are baked in at build time. Pass these as --build-arg to point the
+# image at an LLM/TTS backend; the defaults keep the offline scripted-responses
+# mode that the published image ships with.
+ARG VITE_LLM_PROVIDER
+ARG VITE_LLM_OLLAMA_API_URL
+ARG VITE_LLM_OLLAMA_MODEL
+ARG VITE_TTS_MODE
+ARG VITE_POCKET_TTS_URL
+ENV VITE_LLM_PROVIDER=${VITE_LLM_PROVIDER} \
+    VITE_LLM_OLLAMA_API_URL=${VITE_LLM_OLLAMA_API_URL} \
+    VITE_LLM_OLLAMA_MODEL=${VITE_LLM_OLLAMA_MODEL} \
+    VITE_TTS_MODE=${VITE_TTS_MODE} \
+    VITE_POCKET_TTS_URL=${VITE_POCKET_TTS_URL}
 # Full build: `tsc -b && vite build`. Both the lockfile drift and the
 # packages/core Scene3D.tsx type errors that previously forced workarounds
 # here are fixed, so the typecheck gate is back in the container build.
