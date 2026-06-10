@@ -27,6 +27,46 @@ pnpm dev:web
 pnpm dev:vision
 ```
 
+## Docker / CI Hub
+
+A public multi-arch (amd64 + arm64) image is published to GHCR and used by the CI Hub
+app store as **Avatar Companion**. nginx serves the built web app on internal port **5173**.
+
+```bash
+docker run -d -p 8080:5173 ghcr.io/companionintelligence/ci-spatial-companion-webxr:latest
+# open http://localhost:8080
+```
+
+The published image is fully self-contained: with no LLM/TTS backend configured it
+falls back to offline scripted responses (`script` provider), so the avatar, chat,
+and animations work out of the box. Speech audio is disabled unless a TTS backend
+is reachable.
+
+### Connecting an LLM/TTS backend
+
+Vite environment variables are **baked in at build time** — setting them on
+`docker run` has no effect. To produce an image wired to a backend, pass build args:
+
+```bash
+docker build \
+  --build-arg VITE_LLM_PROVIDER=ollama \
+  --build-arg VITE_LLM_OLLAMA_API_URL=https://ollama.example.com \
+  --build-arg VITE_LLM_OLLAMA_MODEL=gemma3:1b \
+  -t avatar-companion .
+```
+
+| Build arg / env | Default | Purpose |
+|---|---|---|
+| `VITE_LLM_PROVIDER` | `script` | `script`, `ollama`, `mlc` (in-browser WebLLM), or `openai` |
+| `VITE_LLM_OLLAMA_API_URL` | — | Ollama server URL (required for `ollama`) |
+| `VITE_LLM_OLLAMA_MODEL` | `gemma3:1b` | Ollama model name |
+| `VITE_TTS_MODE` | `pocket` | `pocket`, `browser` (speechSynthesis), `local`, or `remote` |
+| `VITE_POCKET_TTS_URL` | `http://localhost:8000` | Pocket TTS server URL |
+
+Note: the LLM/TTS requests are made from the **browser**, not the container, so the
+backend URL must be reachable from the user's machine and must allow the app's
+origin via CORS (for Ollama set `OLLAMA_ORIGINS`, see `pnpm ollama:serve`).
+
 ## Core Features
 
 - **3D Avatar System**: VRM-based avatars with emotion and speech animation

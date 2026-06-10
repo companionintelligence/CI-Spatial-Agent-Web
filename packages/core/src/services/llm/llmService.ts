@@ -305,6 +305,23 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         processThinkBlocks
       }
 
+      // Surface a backend failure to the user as a visible chat message instead
+      // of failing silently (previously errors only went to the console).
+      const surfaceBackendFailure = (backend: string, error: Error) => {
+        console.error(`LLM: ${backend} reasoning failed:`, error)
+        onStatus?.({
+          color: 'error',
+          text: `${backend} backend unreachable`
+        })
+        onResponse?.({
+          text: '',
+          breath: `I couldn't reach my ${backend} language model backend. Please check that it is running and that this app is configured to point at it.`,
+          ready: true,
+          final: true,
+          interrupt: request.interrupt
+        })
+      }
+
       try {
         // Route to appropriate LLM based on config
         if (config.llm_provider === 'script') {
@@ -319,7 +336,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
             llmModel: config.ollama_model
           })
           if (!result.success && result.error) {
-            console.error('LLM: Ollama reasoning failed:', result.error)
+            surfaceBackendFailure('Ollama', result.error)
           }
         } else if (config.llm_provider === 'mlc' && config.mlc_model && state.engine) {
           const result = await llmLocal({
@@ -343,7 +360,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
             llmUrl: config.openai_api_url
           })
           if (!result.success && result.error) {
-            console.error('LLM: Remote reasoning failed:', result.error)
+            surfaceBackendFailure('OpenAI-compatible', result.error)
           }
         } else {
           console.error('LLM: Unsupported provider or missing configuration', config.llm_provider)
