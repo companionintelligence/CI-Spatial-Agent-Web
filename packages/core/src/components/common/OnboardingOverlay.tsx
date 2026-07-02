@@ -79,7 +79,7 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
           <button
             onClick={onEnableMic}
             style={{
-              background: 'linear-gradient(135deg, rgba(0,131,145,0.6) 0%, rgba(19,196,209,0.6) 100%)',
+              background: 'linear-gradient(135deg, rgba(0,131,145,0.6) 0%, rgba(15,113,122,0.6) 100%)',
               border: '0.0625rem solid rgba(0,131,145,0.4)',
               color: '#FFFFFF',
               padding: isXR ? '0.75rem 1.25rem' : '0.6rem 1rem',

@@ -34,7 +34,7 @@ const viewport3DComponent = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        background: 'linear-gradient(180deg, #0C1418 0%, #17252A 100%)',
+        background: 'linear-gradient(180deg, var(--background) 0%, var(--card) 100%)',
         backdropFilter: 'blur(16px)',
         border: '1px solid rgba(255,255,255,0.10)',
         borderRadius: '16px',
@@ -46,7 +46,7 @@ const viewport3DComponent = ({
         style={{
           width: '100%',
           height: '100%',
-          backgroundColor: '#1B1E20',
+          backgroundColor: 'var(--card)',
           position: 'relative'
         }}
       >
