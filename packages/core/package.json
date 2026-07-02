@@ -9,7 +9,8 @@
     ".": "./src/index.ts",
     "./services/*": "./src/services/*/index.ts",
     "./components/*": "./src/components/*/index.ts",
-    "./utils": "./src/utils/index.ts"
+    "./utils": "./src/utils/index.ts",
+    "./styles/*": "./src/styles/*"
   },
   "dependencies": {
     "@hexafield/simple-store": "^1.0.1",

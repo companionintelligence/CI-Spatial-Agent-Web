@@ -24,8 +24,8 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
           height: '2rem',
           borderRadius: '50%',
           background: message.isUser
-            ? 'linear-gradient(135deg, #4a90e2, #7b68ee)'
-            : 'linear-gradient(135deg, #00A0AF, #13C4D1)',
+            ? 'linear-gradient(135deg, var(--primary), var(--ring))'
+            : 'linear-gradient(135deg, var(--accent), var(--primary))',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
