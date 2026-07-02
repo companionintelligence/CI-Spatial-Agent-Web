@@ -31,7 +31,7 @@ export default {
         // Retained CI teal aliases (used by the first-wave normalization).
         'ci-teal': '#abd4d8',
         'ci-cyan': '#0f717a',
-        'dark-bg': '#0F1113',
+        'dark-bg': '#041620',
         'dark-bg-secondary': '#1B1E20',
       },
       fontFamily: {
@@ -49,7 +49,7 @@ export default {
         'ci-glow': '0 0 0.5rem rgba(15, 113, 122, 0.5)',
       },
       backgroundImage: {  
-        'gradient-radial': 'radial-gradient(circle at top, #0F1113 0%, #1B1E20 100%)',
+        'gradient-radial': 'radial-gradient(circle at top, #041620 0%, #1B1E20 100%)',
         'gradient-panel': 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
         'gradient-panel-light': 'linear-gradient(180deg, rgba(16,25,30,0.3) 0%, rgba(17,43,48,0.0) 100%)',
         'gradient-button': 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)',

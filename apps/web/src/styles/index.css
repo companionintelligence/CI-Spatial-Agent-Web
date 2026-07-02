@@ -1,3 +1,10 @@
+/*
+ * App shell is intentionally DARK-ONLY: this is an XR HUD, not a light-themable
+ * document surface. The shell background is canon dark --background (#041620);
+ * theme-aware surfaces (cards, popovers, panels) use the token vars from
+ * @ci-avatar/core globals.css (:root / .dark) and follow the ThemeProvider.
+ * We keep color-scheme: dark and do not ship a light shell.
+ */
 :root {
   --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-family: var(--font-sans);
@@ -6,7 +13,7 @@
 
   color-scheme: dark;
   color: #FFFFFF;
-  background-color: #0F1113;
+  background-color: #041620;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -66,10 +73,15 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+/*
+ * Dark-only shell: even under a light OS preference we keep the canon dark
+ * shell (#041620) so the XR HUD stays legible. This is intentional, not a
+ * missing light theme — theme-aware surfaces still respond to the tokens.
+ */
 @media (prefers-color-scheme: light) {
   :root {
     color: #FFFFFF;
-    background-color: #0F1113;
+    background-color: #041620;
   }
   a:hover {
     color: #abd4d8;
