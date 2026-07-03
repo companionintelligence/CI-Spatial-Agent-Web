@@ -4,6 +4,14 @@ WebXR and WebSpatial
 
 Embodied AI Avatar framework with WebXR and Vision Pro support.
 
+## Interface
+
+The 3D avatar viewport with the 2D control dock, logo, and chat-log chrome overlaid on top.
+
+![Avatar Companion — dark](docs/ui/webxr-dark.png)
+
+The shell is intentionally **dark-only**: it is an XR HUD, not a light-themable document surface, so the canon dark background (`#041620`) is kept even under a light OS preference. On the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/style) — teal primary, Montserrat, light + dark.
+
 ## Structure
 
 ```
