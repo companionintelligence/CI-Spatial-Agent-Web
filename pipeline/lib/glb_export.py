@@ -13,10 +13,45 @@ try:
 except ImportError:
     bpy = None
 
+# Shape keys we always keep on export: the face-morph contract. Anything not in
+# this set and not a "face" morph (eye/brow/mouth/nose/cheek/jaw/viseme) is a
+# body corrective / live key that only bloats the GLB, so prune_noncontract_morphs
+# drops it. Kept in sync with mappings.OCULUS_VISEMES + ARKIT_MORPHS.
+_FACE_MORPH_HINTS = ('viseme_', 'eye', 'brow', 'mouth', 'nose', 'cheek', 'jaw', 'tongue')
+
 
 def _require_bpy():
     if bpy is None:
         raise RuntimeError('glb_export.py must run inside Blender (bpy unavailable)')
+
+
+def prune_noncontract_morphs(mesh):
+    """Remove body-corrective / live-key shape keys that aren't face morphs.
+
+    HumGen leaves ~30 non-face shape keys on the body (``cor_*`` posture
+    correctives, ``LIVE_KEY_*``, the gender morph ``Male``/``Female``, etc.). Each
+    morph target stores a full-mesh position delta, so on a 25 k-vert body they
+    dominate the GLB size. We keep only the contract face morphs (visemes + ARKit)
+    and drop the rest, shrinking the export several-fold without touching geometry
+    or the Basis. Shape keys are removed in reverse order so indices stay valid.
+    """
+    _require_bpy()
+    sk = mesh.data.shape_keys
+    if sk is None:
+        return 0
+    keep_lower = tuple(h.lower() for h in _FACE_MORPH_HINTS)
+    removed = 0
+    for kb in reversed(list(sk.key_blocks)):
+        if kb == kb.relative_key and kb.name == 'Basis':
+            continue  # never remove Basis
+        name = kb.name
+        low = name.lower()
+        is_face = low.startswith('viseme_') or any(h in low for h in keep_lower)
+        if not is_face:
+            mesh.shape_key_remove(kb)
+            removed += 1
+    print(f'[glb_export] pruned {removed} non-contract shape keys from {mesh.name}')
+    return removed
 
 
 def bake_textures(human, folder, samples=4):
@@ -59,12 +94,15 @@ def bake_textures(human, folder, samples=4):
         return False
 
 
-def export_glb(out_path, armature=None):
+def export_glb(out_path, armature=None, prune_morphs=True):
     """Export the current scene selection to ``out_path`` (.glb, +Z forward).
 
     The GLB path in the app uses forward = +Z, so we export in Blender's default
     orientation (the RPM T-pose was authored that way). We DO NOT bake in body
     animations — those stay the shared RPM clip library.
+
+    ``prune_morphs`` drops non-face shape keys (body correctives / live keys) from
+    the skinned meshes first, which shrinks the GLB several-fold.
     """
     _require_bpy()
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
@@ -75,6 +113,8 @@ def export_glb(out_path, armature=None):
         armature.select_set(True)
         for child in armature.children:
             child.select_set(True)
+            if prune_morphs and child.type == 'MESH':
+                prune_noncontract_morphs(child)
         bpy.context.view_layer.objects.active = armature
 
     # TODO: verify export flags on installed 4.5 glTF2 exporter. Key options:
@@ -94,10 +134,11 @@ def export_glb(out_path, armature=None):
         use_selection=(armature is not None),
         export_yup=True,
         export_morph=True,
-        export_morph_normal=True,
+        export_morph_normal=False,        # position-only deltas — halves morph size
         export_skins=True,
         export_animations=False,          # body anims live in the shared clip lib
         export_apply=False,               # preserve shape keys (morph targets)
     )
-    print(f'[glb_export] wrote {out_path}')
+    size_mb = os.path.getsize(out_path) / (1024 * 1024)
+    print(f'[glb_export] wrote {out_path} ({size_mb:.1f} MB)')
     return out_path

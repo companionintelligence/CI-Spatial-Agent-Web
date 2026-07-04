@@ -52,9 +52,23 @@ Inspecting the installer source resolved the scaffold's flagged TODOs:
   `io_scene_gltf2.zip` is **not needed** for our GLB pipeline (and that zip only ships
   3.6/4.0/4.1 builds — none for 4.5). Only install it if you specifically need
   `to_gltf_embedded`.
-- **Still open:** the 15 Oculus `viseme_*` morphs are NOT part of HumGen's ARKit set — they
-  need a separate derivation (viseme-from-ARKit or a dedicated viseme rig). This is the last
-  face-morph gap; author it against the installed mesh's shape keys via BlenderMCP.
+- **ARKit needs the facial rig loaded first.** `prepare_for_arkit` only operates on
+  `human.keys.all_added_shapekeys`; on a fresh human those don't exist yet, so the op is a
+  no-op. Call `human.expression.load_facial_rig()` first — it imports the 43 FACS body keys
+  (+ 5 tongue keys) from `<content>/models/face_rig.json` — **then** run
+  `prepare_for_arkit(suffix='long')`, which renames the `_L`/`_R` halves to `Left`/`Right`,
+  yielding 33/35 of the app's ARKit contract morphs verbatim. `facemorphs.load_facial_rig`
+  does both. The 2 remaining (`eyesClosed`, `mouthSmile`) are synthesised as combined L/R
+  blends (`mappings.ARKIT_SYNTHESISED`).
+- **The 15 Oculus `viseme_*` morphs are now DERIVED (solved).** They are not in HumGen's ARKit
+  set, so `facemorphs.derive_visemes` bakes each as its own shape key from a weighted blend of
+  the ARKit mouth/jaw shapes (`mappings.VISEME_FROM_ARKIT`, the standard ARKit→Oculus-viseme
+  correspondence) via `shape_key_add(from_mix=True)` so they export as real morph targets.
+  Verified: 14/15 deform (`viseme_sil` is the neutral rest morph), 15/15 present.
+- **Content path MUST end with a separator.** HumGen concatenates `str(pref.filepath) +
+  relative_path` raw (no `os.path.join`) for hair etc., so `~/HumGen_content` (no trailing `/`)
+  yields `/HumGen_contenthair/...` → `FileNotFoundError`. `generate_avatar._enable_addons`
+  appends `os.sep`.
 
 ## What this produces
 
@@ -231,28 +245,41 @@ Verified against the shipping reference export `25-1-3_CI_model_male_Greg.glb`
 (PASS, 15/15 visemes · 35/35 ARKit · 8/8 bones) and a bare RPM T-pose (correctly
 FAILs — bones present, morphs absent).
 
-## Status / what still needs the installed addons
+## Status
 
-The scaffold is complete and the **validator + all mapping tables are verified**
-against on-disk assets. What cannot be validated until HumGen3D + the VRM addon
-are installed:
+The GLB pipeline is **complete and verified end-to-end** against the installed
+HumGen3D v4.0.29 + content packs. `generate_avatar.py` produces a validated,
+app-ready GLB in one headless run:
 
-- **HumGen v4 API calls** (`humgen.py`) — ✅ VERIFIED against installed v4.0.29:
-  `Human.get_preset_options('male')` returns 42 presets; `Human.from_preset(opts[0])`
-  builds a `Human` with an `HG_Body` mesh (25 286 verts / 25 324 polys, 24 shape
-  keys). No `finish_creation_phase` in v4. Export is `human.export.to_glb(path)`
-  (`export` is a `@property`); bake first via `human.process.baking.bake_all(folder, 4)`
-  and pass `bake_textures=False` (the built-in bake-on-export path is broken in 4.0.29).
-- **HumGen → app morph names** (`mappings.HUMGEN_TO_OCULUS_VISEME` /
-  `HUMGEN_TO_ARKIT`) — HumGen ships a FACS set whose names won't 1:1 match; the
-  real rename/bind table must be read off the installed mesh
-  (`facemorphs.dump_shape_keys(mesh)`). Marked `# NEEDS VERIFICATION`.
-- **Strategy-D weight transfer** (`skeleton.py`) — the HG-deform-bone → RPM-bone
-  remap needs the installed HG rig's bone names; mesh/reparent plumbing is done.
-- **VRM addon data paths** (`vrm_export.py`) — `vrm_addon_extension.vrm1.*` paths
-  differ by addon version. Flagged.
+```bash
+"/Applications/Blender 4.5.app/Contents/MacOS/Blender" --background --factory-startup \
+  --python pipeline/generate_avatar.py -- \
+  --seed 12 --gender female --name humgen-aria-01 --height 1.68 \
+  --emit glb --out apps/web/public/assets/avatars --content-path ~/HumGen_content
+node pipeline/validate_avatar.mjs apps/web/public/assets/avatars/humgen-aria-01.glb
+#   ✓ visemes 15/15   ✓ ARKit morphs 35/35   ✓ RPM bones 8/8   PASS
+```
 
-Author these interactively via **BlenderMCP** against the real addons, then bake
-the confirmed names into `mappings.py` / the `# TODO` sites and re-run the
-validator to lock the rig contract.
+What's DONE and verified:
+
+- **HumGen v4 API** (`humgen.py`) — ✅ `Human.get_preset_options` / `from_preset`;
+  `.body/.face/.skin.randomize()` (call directly, never truthiness-test the prop
+  collections — they recurse); `human.height.set(cm)`; body = `human.objects.body`.
+- **Face morphs** (`facemorphs.py`) — ✅ `load_facial_rig()` → `prepare_for_arkit('long')`
+  gives 33/35 ARKit morphs; `eyesClosed`/`mouthSmile` synthesised; all 15 `viseme_*`
+  derived from ARKit blends and baked as real morph targets.
+- **Strategy D re-skin** (`skeleton.py`) — ✅ FULL re-skin. Imports the in-tree
+  `rpm-mixamo-t-posed.glb`, which carries both the RPM armature AND a real skinned
+  reference body (`Wolf3D_Avatar`, 82 RPM-named groups). Data Transfer
+  (POLYINTERP_NEAREST VGROUP_WEIGHTS) copies those weights onto the HumGen body,
+  which is then bound to the RPM armature; eyes/teeth are rebound; the HG rig is
+  dropped. Output rides the RPM skeleton bone-for-bone (Hips→…→Head/LeftEye/RightEye).
+- **GLB export** (`glb_export.py`) — ✅ bakes textures, prunes non-face shape keys,
+  exports position-only morph deltas (≈17 MB for a full female avatar).
+
+Still scaffold-only (not needed for the GLB rig contract):
+
+- **VRM export** (`vrm_export.py`) — the `saturday06/VRM-Addon-for-Blender` addon
+  (`io_scene_vrm`) is not installed on this machine, so `--emit vrm` is skipped
+  gracefully. Its `vrm_addon_extension.vrm1.*` data paths are still flagged `# TODO`.
 ```

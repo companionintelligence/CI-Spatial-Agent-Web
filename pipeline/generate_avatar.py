@@ -23,10 +23,14 @@ import os
 import sys
 import traceback
 
-# --- make `pipeline/` importable regardless of Blender's cwd ---
+# --- make `pipeline/` and `pipeline/lib/` importable regardless of Blender's cwd
+# (mappings.py lives in pipeline/; the step modules live in pipeline/lib/ and
+# import each other + mappings as flat modules). ---
 _PIPELINE_DIR = os.path.dirname(os.path.abspath(__file__))
-if _PIPELINE_DIR not in sys.path:
-    sys.path.insert(0, _PIPELINE_DIR)
+_LIB_DIR = os.path.join(_PIPELINE_DIR, 'lib')
+for _p in (_LIB_DIR, _PIPELINE_DIR):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 
 try:
     import bpy
@@ -70,24 +74,44 @@ def _reset_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def _enable_addons(content_path):
-    """Enable HumGen3D + VRM addon (needed because we run --factory-startup)."""
-    for module in ('HumGen3D', 'io_scene_vrm'):
-        try:
-            bpy.ops.preferences.addon_enable(module=module)
-        except Exception as e:  # noqa: BLE001
+def _enable_addons(content_path, want_vrm=False):
+    """Enable HumGen3D (required) + the VRM addon (optional).
+
+    HumGen3D is hard-required. The VRM addon (``io_scene_vrm``) is only needed for
+    ``--emit vrm``; if it isn't installed we warn and continue so the GLB path
+    still runs (the VRM addon ships separately from HumGen).
+    """
+    try:
+        bpy.ops.preferences.addon_enable(module='HumGen3D')
+    except Exception as e:  # noqa: BLE001
+        raise RuntimeError(
+            f'could not enable HumGen3D: {e}. Run pipeline/install_addons.py '
+            f'first (see pipeline/README.md).'
+        ) from e
+
+    try:
+        bpy.ops.preferences.addon_enable(module='io_scene_vrm')
+    except Exception as e:  # noqa: BLE001
+        if want_vrm:
             raise RuntimeError(
-                f'could not enable {module!r}: {e}. Run pipeline/install_addons.py '
-                f'first (see pipeline/README.md).'
+                f'could not enable io_scene_vrm (needed for --emit vrm): {e}. '
+                f'Install the VRM addon (see pipeline/README.md §3).'
             ) from e
+        print(f'[generate_avatar] VRM addon unavailable ({e}); GLB-only run continues.')
     if content_path:
-        # best-effort content path set (see install_addons.py for the caveat)
+        # best-effort content path set (see install_addons.py for the caveat).
+        # HumGen concatenates `str(pref.filepath) + relative_path` RAW (no
+        # os.path.join) in several places (e.g. hair/basehair.py), so the path
+        # MUST end with a separator or you get `/HumGen_contenthair/...`.
+        cp = os.path.expanduser(content_path)
+        if not cp.endswith(os.sep):
+            cp += os.sep
         prefs = bpy.context.preferences.addons.get('HumGen3D')
         if prefs is not None:
             p = prefs.preferences
             for attr in ('filepath', 'filepath_', 'content_path', 'content_filepath'):
                 if hasattr(p, attr):
-                    setattr(p, attr, os.path.expanduser(content_path))
+                    setattr(p, attr, cp)
                     break
 
 
@@ -102,36 +126,55 @@ def build_avatar(args):
     import glb_export
     import vrm_export
 
+    emit = {e.strip().lower() for e in args.emit.split(',') if e.strip()}
+
     _reset_scene()
     if not args.skip_addon_enable:
-        _enable_addons(args.content_path)
+        _enable_addons(args.content_path, want_vrm=('vrm' in emit))
 
     # 1. generate the HumGen human
     human = humgen.generate_human(seed=args.seed, gender=args.gender, height=args.height)
+    body = humgen.get_body_object(human)
 
-    # 2. Strategy D — re-skin body onto RPM skeleton, drop HG rig
-    rpm_arm, body = skeleton.reskin_to_rpm(args.gender)
+    # 2. bind face morphs (ARKit + visemes) — MUST run before the re-skin, while
+    #    the HumGen rig is still present (load_facial_rig / prepare_for_arkit
+    #    depend on it). This bakes the viseme_* + ARKit shape keys onto the body.
+    facemorphs.bind_all(body, human=human)
 
-    # 3. rename/bind face morphs to the app's viseme_* + ARKit names
-    morph_names = facemorphs.bind_all(body)
+    # 3. bake HumGen's procedural skin to textures before we swap the rig (the raw
+    #    glTF exporter can't run HumGen's on-export bake, and unbaked skin exports
+    #    empty). Bake into a temp subdir — the PNGs get embedded into the GLB on
+    #    export, so we don't want the loose files cluttering the assets dir.
+    _bake_dir = os.path.join(os.path.abspath(args.out), f'.bake_{args.name}')
+    glb_export.bake_textures(human, _bake_dir)
 
-    # 4. sanity-check the rig contract in-Blender before we export
+    # 4. Strategy D — re-skin body onto RPM skeleton, drop HG rig
+    rpm_arm, body = skeleton.reskin_to_rpm(args.gender, human=human)
+
+    # 5. sanity-check the rig contract in-Blender before we export
     _preflight_contract(rpm_arm, body)
 
-    emit = {e.strip().lower() for e in args.emit.split(',') if e.strip()}
     written = []
 
-    # 5. GLB export
+    # 6. GLB export
     if 'glb' in emit:
         glb_path = os.path.join(os.path.abspath(args.out), f'{args.name}.glb')
         glb_export.export_glb(glb_path, armature=rpm_arm)
         written.append(glb_path)
 
-    # 6. VRM export
+    # 7. VRM export
     if 'vrm' in emit:
         vrm_path = os.path.join(os.path.abspath(args.out), 'vrm', f'{args.name}.vrm')
         vrm_export.export_vrm(vrm_path, rpm_arm, body)
         written.append(vrm_path)
+
+    # 8. clean up the intermediate baked-texture dir (PNGs are embedded in the GLB)
+    try:
+        import shutil
+        if os.path.isdir(_bake_dir):
+            shutil.rmtree(_bake_dir)
+    except Exception as e:  # noqa: BLE001
+        print(f'[generate_avatar] could not remove bake dir {_bake_dir}: {e}')
 
     return written
 
