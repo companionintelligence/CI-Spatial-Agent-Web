@@ -6,11 +6,61 @@ Embodied AI Avatar framework with WebXR and Vision Pro support.
 
 ## Interface
 
-The 3D avatar viewport with the 2D control dock, logo, and chat-log chrome overlaid on top.
+The app is a full-viewport **3D avatar viewport** with a 2D HUD — logo, chat-log
+panel, chat input, and a floating control dock — composited on top. The shell is
+intentionally **dark-only**: it is an XR HUD, not a light-themable document
+surface, so the canon dark background (`--teal-950` `#041620`) is kept even under a
+light OS preference. It follows the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/style):
+teal `--primary`, Montserrat, and the enriched-palette v0.2.0 tokens adopted in
+`packages/core/src/styles/globals.css`.
 
-![Avatar Companion — dark](docs/ui/webxr-dark.png)
+All screenshots below are the **real UI rendered headlessly** (WebGL via
+`chrome-headless-shell`/SwiftShader). With no LLM/TTS backend configured the app
+falls back to the offline scripted (`script`) LLM provider, so the avatar, control
+dock, and chat conversation all render out of the box — no backend needed for any
+screen here. XR (AR/VR) session entry and speech audio require a headset / native
+runtime and are **not** exercised in these captures (the dock reports
+`XR: unavailable` under headless Chromium); see the note at the end of this section.
 
-The shell is intentionally **dark-only**: it is an XR HUD, not a light-themable document surface, so the canon dark background (`#041620`) is kept even under a light OS preference. On the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/style) — teal primary, Montserrat, light + dark.
+### First-run onboarding
+
+The microphone-permission modal shown on first load (before `ci_avatar_onboarded`
+is set in `localStorage`), layered over the live avatar scene. "Skip" drops
+straight into text chat.
+
+![First-run onboarding — dark](docs/ui/webxr-onboarding-dark.png)
+
+### HUD shell
+
+The default state once onboarding is dismissed: the Companion Intelligence logo, the
+VRM avatar, the collapsible **Chat Log** panel (empty), the floating control dock,
+and the live `XR:` status line.
+
+![HUD shell — dark](docs/ui/webxr-shell-dark.png)
+
+### Chat conversation
+
+The **Chat Log** populated by a real exchange with the offline scripted provider —
+`You` / `Assistant` bubbles rendered with the canon teal gradient. No LLM backend
+is running; the responses come from the bundled directed-response set.
+
+![Chat conversation — dark](docs/ui/webxr-chat-dark.png)
+
+### Controls collapsed
+
+With the control dock hidden via its **Controls** toggle (bottom-left), the HUD
+reduces to the logo, Chat Log, and the exposed `Type your message here…` chat
+input — the minimal text-only interaction surface.
+
+![Controls collapsed — dark](docs/ui/webxr-controls-collapsed-dark.png)
+
+> **Backend / native-runtime-gated surfaces (not captured):** entering an immersive
+> **AR/VR session** requires a WebXR-capable headset (the 🥽 / 📱 dock buttons and
+> the XR recenter/scale/exit controls only activate inside a session), the **Vision
+> Pro** WebSpatial build (`apps/vision-pro`) needs visionOS, and **voice** (mic VAD →
+> STT → TTS lip-sync) and **cloud/WebGPU** modes need device permissions or a
+> reachable backend. Those states are not fabricated here; only what genuinely
+> renders headlessly is shown.
 
 ## Structure
 
@@ -63,13 +113,13 @@ docker build \
   -t avatar-companion .
 ```
 
-| Build arg / env | Default | Purpose |
-|---|---|---|
-| `VITE_LLM_PROVIDER` | `script` | `script`, `ollama`, `mlc` (in-browser WebLLM), or `openai` |
-| `VITE_LLM_OLLAMA_API_URL` | — | Ollama server URL (required for `ollama`) |
-| `VITE_LLM_OLLAMA_MODEL` | `gemma3:1b` | Ollama model name |
-| `VITE_TTS_MODE` | `pocket` | `pocket`, `browser` (speechSynthesis), `local`, or `remote` |
-| `VITE_POCKET_TTS_URL` | `http://localhost:8000` | Pocket TTS server URL |
+| Build arg / env           | Default                 | Purpose                                                     |
+| ------------------------- | ----------------------- | ----------------------------------------------------------- |
+| `VITE_LLM_PROVIDER`       | `script`                | `script`, `ollama`, `mlc` (in-browser WebLLM), or `openai`  |
+| `VITE_LLM_OLLAMA_API_URL` | —                       | Ollama server URL (required for `ollama`)                   |
+| `VITE_LLM_OLLAMA_MODEL`   | `gemma3:1b`             | Ollama model name                                           |
+| `VITE_TTS_MODE`           | `pocket`                | `pocket`, `browser` (speechSynthesis), `local`, or `remote` |
+| `VITE_POCKET_TTS_URL`     | `http://localhost:8000` | Pocket TTS server URL                                       |
 
 Note: the LLM/TTS requests are made from the **browser**, not the container, so the
 backend URL must be reachable from the user's machine and must allow the app's
@@ -86,6 +136,7 @@ origin via CORS (for Ollama set `OLLAMA_ORIGINS`, see `pnpm ollama:serve`).
 ## Architecture
 
 ### Services
+
 - `llm/` - Language model integration (WebLLM, Ollama, Cloud APIs)
 - `tts/` - Text-to-speech with VITS
 - `stt/` - Speech-to-text with Whisper
@@ -95,6 +146,7 @@ origin via CORS (for Ollama set `OLLAMA_ORIGINS`, see `pnpm ollama:serve`).
 - `animation/` - Body animation system
 
 ### Components
+
 - `scene/` - 3D scene and avatar rendering
 - `chat/` - Chat UI components
 - `control/` - Settings and control panels
