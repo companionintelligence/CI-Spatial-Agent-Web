@@ -75,10 +75,9 @@ export const App = () => {
 
   const handleEnableMic = useCallback(() => {
     AppConfigState.set((prev) => ({ ...prev, microphone: true }))
-    agent.actions.initializeVAD()
     setShowOnboarding(false)
     window.localStorage.setItem('ci_avatar_onboarded', 'true')
-  }, [agent.actions])
+  }, [])
 
   const handleSkipOnboarding = useCallback(() => {
     setShowOnboarding(false)

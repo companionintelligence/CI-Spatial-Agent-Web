@@ -99,8 +99,8 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
                 width: isXR ? '0.6rem' : isMobile ? '0.375rem' : '0.5rem',
                 height: isXR ? '0.6rem' : isMobile ? '0.375rem' : '0.5rem',
                 borderRadius: '50%',
-                background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
-                boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
+                background: 'linear-gradient(45deg, var(--primary), var(--ring))',
+                boxShadow: '0 0 0.5rem var(--primary)'
               }}
             />
             <span
@@ -122,7 +122,7 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
               overflowY: 'auto',
               color: '#FFFFFF',
               fontFamily:
-                "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                "var(--font-sans, 'Montserrat', system-ui, sans-serif)",
               fontSize: isXR ? '1rem' : '0.875rem',
               paddingRight: isXR ? '0.75rem' : '0.5rem',
               // Custom scrollbar styling

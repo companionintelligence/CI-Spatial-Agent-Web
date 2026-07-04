@@ -8,9 +8,9 @@ export const GraphicsFallback = memo(() => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(135deg, #0C1418 0%, #17252A 100%)',
+      background: 'linear-gradient(135deg, var(--background) 0%, var(--card) 100%)',
       color: '#f5f5f5',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
+      fontFamily: 'var(--font-sans, system-ui, -apple-system, sans-serif)'
     }}>
       <div style={{
         margin: '0 16px',

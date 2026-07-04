@@ -76,6 +76,10 @@ export { OnboardingOverlay } from './components/common/OnboardingOverlay'
 export { ControlOverlay } from './components/control/ControlOverlay'
 export { ControlPanel } from './components/control/ControlPanel'
 
+// Theme
+export { ThemeProvider, useTheme } from './theme/ThemeProvider'
+export type { Theme } from './theme/ThemeProvider'
+
 // App utilities
 export { AppConfigState, initialAppConfig } from './app/appConfig'
 export type { AppConfig, AppState } from './app/appConfig'

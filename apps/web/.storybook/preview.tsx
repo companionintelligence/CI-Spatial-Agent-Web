@@ -1,9 +1,13 @@
 import type { Preview } from '@storybook/react-vite'
-import '@ci-avatar/core/styles/tokens.css'
+
+import '@fontsource/montserrat/400.css'
+import '@fontsource/montserrat/600.css'
+import '@fontsource/montserrat/700.css'
+import '@ci-avatar/core/styles/globals.css'
 
 /**
  * The overlays are dark-glassmorphism and mostly `position: absolute`, so every
- * story renders inside a relative, dark, sized stage.
+ * story renders inside a relative, dark (canonical `.dark` tokens), sized stage.
  */
 const preview: Preview = {
   parameters: {
@@ -21,6 +25,7 @@ const preview: Preview = {
   decorators: [
     (Story) => (
       <div
+        className="dark"
         style={{
           position: 'relative',
           width: 440,

@@ -160,7 +160,7 @@ const Dropdown = ({
                     boxSizing: 'border-box'
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#4a90e2'
+                    e.target.style.borderColor = 'var(--primary)'
                     e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.15)'
                   }}
                   onBlur={(e) => {
@@ -221,11 +221,11 @@ const Dropdown = ({
                       e.currentTarget.style.backgroundColor = 'transparent'
                     }}
                   >
-                    {option.value === value && <span style={{ color: '#4a90e2', fontSize: '0.875rem' }}>✓</span>}
+                    {option.value === value && <span style={{ color: 'var(--primary)', fontSize: '0.875rem' }}>✓</span>}
                     <span
                       style={{
                         flex: 1,
-                        color: option.value === value ? '#4a90e2' : 'white'
+                        color: option.value === value ? 'var(--primary)' : 'white'
                       }}
                     >
                       {option.label}
@@ -298,8 +298,8 @@ export const AvatarControls = ({ isVisible, onToggleVisibility }: AvatarControls
               width: isMobile ? '0.5rem' : '0.625rem',
               height: isMobile ? '0.5rem' : '0.625rem',
               borderRadius: '50%',
-              background: 'linear-gradient(45deg, #4a90e2, #7b68ee)',
-              boxShadow: '0 0 0.5rem rgba(74, 144, 226, 0.5)'
+              background: 'linear-gradient(45deg, var(--primary), var(--ring))',
+              boxShadow: '0 0 0.5rem var(--primary)'
             }}
           />
           <span

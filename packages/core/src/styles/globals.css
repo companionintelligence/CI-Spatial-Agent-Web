@@ -1,0 +1,177 @@
+/*
+ * Companion Intelligence — canonical design tokens (shared across the org).
+ *
+ * Source of truth: CI-Hub/packages/frontend/src/styles/globals.css (authored in oklch).
+ * This file is the framework-agnostic subset: it defines only the :root / .dark
+ * custom properties so it can be consumed by BOTH the Tailwind-v3 vision-pro app
+ * and the plain-CSS web app (and by the inline styles in @ci-avatar/core, which
+ * reference these variables directly via var(--…)).
+ *
+ * Do NOT add Tailwind v4 directives here (@import "tailwindcss", @theme inline,
+ * @apply, @plugin, @config). Neither app in this repo is on Tailwind v4, and those
+ * directives would break the build. Keep this file to raw CSS custom properties.
+ */
+
+:root {
+  /* Typography */
+  --font-sans: "Montserrat", system-ui, sans-serif;
+
+  --radius: 0.625rem;
+
+  /* Light theme (default) */
+  --background: oklch(96.415% 0 0);
+  --foreground: oklch(15.775% 0.028 227.251);
+  --card: oklch(97.67% 0.003 286.351);
+  --card-foreground: oklch(19.008% 0.032 234.379);
+  --popover: oklch(100% 0 0);
+  --popover-foreground: oklch(19.008% 0.032 234.379);
+  --primary: oklch(50.2043% 0.0822 204.9225);
+  --primary-foreground: oklch(98.4% 0.003 247.858);
+  --secondary: oklch(96.8% 0.007 247.896);
+  --secondary-foreground: oklch(23.937% 0.038 233.156);
+  --muted: oklch(96.8% 0.007 247.896);
+  --muted-foreground: oklch(55.4% 0.046 257.417);
+  --accent: oklch(96.8% 0.007 247.896);
+  --accent-foreground: oklch(23.937% 0.038 233.156);
+  --destructive: oklch(62% 0.22 27);
+  --destructive-foreground: oklch(98.4% 0.003 247.858);
+  --border: oklch(92.9% 0.013 255.508);
+  --input: oklch(92.9% 0.013 255.508);
+  --ring: oklch(70.4% 0.04 256.788);
+  --chart-1: oklch(64.6% 0.222 41.116);
+  --chart-2: oklch(60% 0.118 184.704);
+  --chart-3: oklch(39.8% 0.07 227.392);
+  --chart-4: oklch(82.8% 0.189 84.429);
+  --chart-5: oklch(76.9% 0.188 70.08);
+  --sidebar: oklch(98.4% 0.003 247.858);
+  --sidebar-foreground: oklch(12.9% 0.042 264.695);
+  --sidebar-primary: oklch(20.8% 0.042 265.755);
+  --sidebar-primary-foreground: oklch(98.4% 0.003 247.858);
+  --sidebar-accent: oklch(96.8% 0.007 247.896);
+  --sidebar-accent-foreground: oklch(23.937% 0.038 233.156);
+  --sidebar-border: oklch(92.9% 0.013 255.508);
+  --sidebar-ring: oklch(69.074% 0.058 208.988);
+
+  /* CI enriched palette v0.2.0 — brand teal ramp + accent hues + radius scale (mode-independent) */
+  --teal-50: #eef7f8;
+  --teal-100: #d3e9ec;
+  --teal-200: #abd4d8;
+  --teal-300: #7fbcc2;
+  --teal-400: #4c9aa3;
+  --teal-500: #1c8791;
+  --teal-600: #0f717a;
+  --teal-700: #0d5f67;
+  --teal-800: #0e4a52;
+  --teal-900: #0a222e;
+  --teal-950: #041620;
+  --aqua: #00a9a7;
+  --aqua-light: #72ddd4;
+  --mint: #58ebbf;
+  --teal-accent: #2c676d;
+  --teal-mid: #409b9b;
+  --radius-sm: calc(var(--radius, 0.625rem) - 4px);
+  --radius-md: calc(var(--radius, 0.625rem) - 2px);
+  --radius-lg: var(--radius, 0.625rem);
+  --radius-xl: calc(var(--radius, 0.625rem) + 4px);
+  --radius-2xl: calc(var(--radius, 0.625rem) + 10px);
+
+  /* enriched — semantic status + gradients + elevation (light) */
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --info: #0284c7;
+  --info-foreground: #ffffff;
+  --gradient-brand: linear-gradient(135deg, #0f717a, #00a9a7);
+  --gradient-hero: linear-gradient(135deg, #e8f9f8, #abd4d8);
+  --gradient-aurora: radial-gradient(
+    120% 90% at 50% -10%,
+    rgba(80, 150, 150, 0.1),
+    transparent 60%
+  );
+  --shadow-sm: 0 1px 2px rgba(15, 113, 122, 0.08);
+  --shadow-md: 0 4px 12px rgba(15, 113, 122, 0.1);
+  --shadow-lg: 0 12px 30px rgba(15, 113, 122, 0.14);
+}
+
+/*
+ * Companion Intelligence brand palette — dark theme
+ * Shell #041620 → card/popover/secondary/muted #0a222e → sidebar accent #1d293d
+ * Teal accents #2c676d / #409b9b, mint #58ebbf; body copy neutral grey.
+ */
+.dark {
+  --background: oklch(19.008% 0.032 234.379);
+  --foreground: oklch(69.112% 0.03 185.201);
+
+  --card: oklch(23.937% 0.038 233.156);
+  --card-foreground: oklch(69.112% 0.03 185.201);
+  --popover: oklch(23.937% 0.038 233.156);
+  --popover-foreground: oklch(69.112% 0.03 185.201);
+
+  --primary: oklch(84.195% 0.043 203.701);
+  --primary-foreground: oklch(19.008% 0.032 234.379);
+
+  --secondary: oklch(23.937% 0.038 233.156);
+  --secondary-foreground: oklch(97.742% 0.004 236.496);
+
+  --muted: oklch(23.937% 0.038 233.156);
+  --muted-foreground: oklch(67.595% 0.019 253.397);
+
+  --accent: oklch(47.7468% 0.0615 204.345);
+  --accent-foreground: oklch(97.742% 0.004 236.496);
+
+  --destructive: oklch(69.638% 0.157 21.99);
+  --destructive-foreground: oklch(97.742% 0.004 236.496);
+
+  --border: oklch(47.7468% 0.0615 204.345);
+  --input: oklch(63.571% 0.051 224.103);
+  --ring: oklch(84.973% 0.141 169.678);
+
+  --chart-1: oklch(84.973% 0.141 169.678);
+  --chart-2: oklch(63.5528% 0.0856 195.2151);
+  --chart-3: oklch(62.9189% 0.1072 191.5661);
+  --chart-4: oklch(69.074% 0.058 208.988);
+  --chart-5: oklch(47.7468% 0.0615 204.345);
+
+  --sidebar: oklch(19.008% 0.032 234.379);
+  --sidebar-foreground: oklch(97.742% 0.004 236.496);
+  --sidebar-primary: oklch(84.195% 0.043 203.701);
+  --sidebar-primary-foreground: oklch(19.008% 0.032 234.379);
+  --sidebar-accent: oklch(27.989% 0.041 260.329);
+  --sidebar-accent-foreground: oklch(97.742% 0.004 236.496);
+  --sidebar-border: oklch(47.7468% 0.0615 204.345);
+  --sidebar-ring: oklch(84.973% 0.141 169.678);
+
+  /* enriched — semantic status + gradients + elevation (dark) */
+  --success: #4ade80;
+  --success-foreground: #052e16;
+  --warning: #fbbf24;
+  --warning-foreground: #422006;
+  --info: #38bdf8;
+  --info-foreground: #082f49;
+  --gradient-aurora: radial-gradient(
+    120% 90% at 50% -10%,
+    rgba(64, 155, 155, 0.28),
+    transparent 60%
+  );
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/*
+ * XR surface extension (local to this repo — not org canon). The overlay chrome
+ * uses a translucent "glass" surface derived from the canonical tokens so it
+ * stays headset-legible over the 3D scene. Mode-independent: the var() refs
+ * resolve per-theme at use.
+ */
+:root {
+  --xr-glass-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 78%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 40%, transparent) 100%
+  );
+  --xr-glass-border: color-mix(in srgb, var(--primary) 22%, transparent);
+  --xr-glass-blur: 1.25rem;
+  --xr-elevation: var(--shadow-lg);
+}

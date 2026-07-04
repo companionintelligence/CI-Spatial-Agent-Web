@@ -24,7 +24,7 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
           height: '2rem',
           borderRadius: '50%',
           background: message.isUser
-            ? 'linear-gradient(135deg, #4a90e2, #7b68ee)'
+            ? 'linear-gradient(135deg, var(--primary), var(--ring))'
             : 'linear-gradient(135deg, var(--accent), var(--primary))',
           display: 'flex',
           alignItems: 'center',
@@ -46,12 +46,9 @@ export const ChatBubble = ({ message }: ChatBubbleProps) => {
           padding: '0.5rem 0.75rem',
           borderRadius: '0.75rem',
           background: message.isUser
-            ? 'color-mix(in srgb, var(--primary) 22%, transparent)'
-            : 'color-mix(in srgb, var(--card) 85%, transparent)',
-          border: message.isUser
-            ? '0.0625rem solid var(--xr-glass-border)'
-            : '0.0625rem solid var(--border)',
-          color: 'var(--card-foreground)',
+            ? 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)'
+            : 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+          border: message.isUser ? '0.0625rem solid rgba(255,255,255,0.08)' : '0.0625rem solid rgba(255,255,255,0.06)',
           boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.07)',
           fontSize: '1em',
           lineHeight: '1.4'

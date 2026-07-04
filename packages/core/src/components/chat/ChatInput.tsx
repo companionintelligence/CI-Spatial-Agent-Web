@@ -86,12 +86,12 @@ export const ChatInput = memo(({
                 color: '#FFFFFF',
                 overflow: 'auto',
                 fontFamily:
-                  "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+                  "var(--font-sans, 'Montserrat', system-ui, sans-serif)",
                 fontSize: isXR ? '1.1rem' : '1rem',
                 lineHeight: isXR ? '1.6' : '1.5',
                 boxShadow: '0 0.0625rem 0.125rem rgba(0,0,0,0.03)',
                 boxSizing: 'border-box',
-                ...(vadDetecting && { background: 'rgba(19,196,209,0.15)' }),
+                ...(vadDetecting && { background: 'rgba(15,113,122,0.15)' }),
                 ...(sttListening && !vadDetecting && { background: 'rgba(255,107,53,0.15)' })
               }}
               rows={1}
