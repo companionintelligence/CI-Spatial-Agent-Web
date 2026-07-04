@@ -26,6 +26,9 @@
     "test:agent": "playwright test tests/agent.spec.ts",
     "test:audio": "playwright test tests/audio.spec.ts",
     "test:animation": "playwright test tests/animation.spec.ts",
+    "test:l5": "playwright test -c playwright.config.capture.ts tests/render-matrix.spec.ts",
+    "test:l4": "playwright test -c playwright.config.capture.ts tests/scenarios",
+    "test:capture": "playwright test -c playwright.config.capture.ts",
     "test:report": "playwright show-report playwright-report"
   },
   "devDependencies": {

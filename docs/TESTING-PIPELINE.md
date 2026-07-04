@@ -136,5 +136,14 @@ app ships, a clip is a faithful record of production behavior — not a mock. Ad
 - **L1** — 81 tests green; expanding viseme/emote/blend/integration coverage.
 - **L2** — Storybook up (chat/controls/settings/toggles); adding viseme/emote/blend panels.
 - **L3** — harness + `gen-webp.mjs` live; hero set in `docs/visual-tests/`.
-- **L4** — hospitality/retail/education specs (scaffolding).
-- **L5** — render matrix over 24 avatars (scaffolding).
+- **L4** — hospitality/retail/education specs live (`tests/scenarios/*.spec.ts`, run via
+  `playwright.config.capture.ts`): each boots the real app in offline `script` mode and
+  asserts avatar boot → user turn → visible reply bubble → multi-turn/barge-in. Strict
+  embodiment (specific gesture, lip-sync frames, expression delta, barge-in halt) is
+  parked in documented `test.skip`s — not observable from the real app, which runs
+  `frameloop="demand"` without `preserveDrawingBuffer` and exposes no service state on
+  `window`. The L3/L5 harness is the surface instrumented for rig motion.
+- **L5** — render matrix live (`tests/render-matrix.spec.ts`): all 25 catalog keys
+  (14 GLB incl. HumGen Aria + 10 VRM; 24 unique files) load on the WebGL renderer via the
+  harness — asserts `__avatarLoaded`, no page error, non-zero canvas. Green on headless
+  SwiftShader.
