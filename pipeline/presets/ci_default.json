@@ -1,0 +1,38 @@
+{
+  "description": "Persona seed presets for the CI avatar pipeline. Each entry drives one `blender --background --python generate_avatar.py -- ...` invocation via batch.sh. `seed` makes HumGen randomization reproducible; `height` is metres; `emit` is a comma list of formats. Skin/hair/clothing are advisory hints for the HumGen randomizers once the verified HumGen API wiring lands (see humgen.py TODOs).",
+  "output_dir": "apps/web/public/assets/avatars",
+  "avatars": [
+    {
+      "name": "Aria",
+      "seed": 42,
+      "gender": "female",
+      "height": 1.68,
+      "emit": "glb,vrm",
+      "hints": { "skin": "medium", "hair": "long_brown", "clothing": "casual_hoodie" }
+    },
+    {
+      "name": "Milo",
+      "seed": 7,
+      "gender": "male",
+      "height": 1.80,
+      "emit": "glb,vrm",
+      "hints": { "skin": "light", "hair": "short_black", "clothing": "tshirt" }
+    },
+    {
+      "name": "Sol",
+      "seed": 128,
+      "gender": "female",
+      "height": 1.72,
+      "emit": "glb",
+      "hints": { "skin": "deep", "hair": "afro", "clothing": "jacket" }
+    },
+    {
+      "name": "Ren",
+      "seed": 256,
+      "gender": "male",
+      "height": 1.75,
+      "emit": "glb",
+      "hints": { "skin": "medium", "hair": "buzz", "clothing": "hoodie" }
+    }
+  ]
+}

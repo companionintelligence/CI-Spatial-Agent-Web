@@ -23,6 +23,7 @@
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.20",
     "@ricky0123/vad-web": "^0.0.30",
+    "lucide-react": "^1.23.0",
     "ollama": "^0.6.3",
     "postprocessing": "^6.38.2",
     "react": "^19.1.0",

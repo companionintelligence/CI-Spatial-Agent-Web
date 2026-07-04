@@ -5,18 +5,21 @@ import userEvent from '@testing-library/user-event'
 import { ToggleButton } from './ToggleButton'
 
 describe('ToggleButton', () => {
-  it('shows the label with a collapsed-state chevron when not visible', () => {
+  it('shows the label with a "Show" accessible name when collapsed', () => {
     render(<ToggleButton isVisible={false} onToggle={() => {}} label="Controls" position="left" />)
     const btn = screen.getByRole('button')
     expect(btn).toHaveTextContent('Controls')
-    expect(btn).toHaveTextContent('▶') // left + hidden → points inward
+    expect(btn).toHaveAccessibleName('Show Controls')
+    // Renders a lucide chevron (an inline SVG), not a unicode glyph.
+    expect(btn.querySelector('svg')).not.toBeNull()
   })
 
-  it('hides the label and flips the chevron when visible', () => {
+  it('hides the label and flips to a "Hide" accessible name when visible', () => {
     render(<ToggleButton isVisible onToggle={() => {}} label="Controls" position="left" />)
     const btn = screen.getByRole('button')
     expect(btn).not.toHaveTextContent('Controls')
-    expect(btn).toHaveTextContent('◀')
+    expect(btn).toHaveAccessibleName('Hide Controls')
+    expect(btn.querySelector('svg')).not.toBeNull()
   })
 
   it('invokes onToggle when clicked', async () => {

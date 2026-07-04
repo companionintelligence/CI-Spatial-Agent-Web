@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
+import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal } from 'lucide-react'
 
 import {
   COMMON_OLLAMA_MODELS,
@@ -10,11 +11,78 @@ import {
 import { LLMSettingsState } from '../../config/settingsStore'
 import { clearLocalOverrides, resolveLLMConfig, writeLocalOverrides } from '../../config/appConfigService'
 import { loadRuntimeConfig } from '../../config/runtimeConfig'
+import { AppConfigState } from '../../app/appConfig'
+import { useHasWebGPU } from '../../utils/useHasWebGPU'
 import { useXRLayout } from '../../utils/useXRLayout'
 
 interface SettingsPanelProps {
   isOpen: boolean
   onClose: () => void
+}
+
+/** A labeled on/off switch row, token-styled. */
+function ToggleRow({
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange
+}: {
+  label: string
+  hint?: string
+  checked: boolean
+  disabled?: boolean
+  onChange: (next: boolean) => void
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '0.75rem',
+        padding: '0.5rem 0',
+        opacity: disabled ? 0.5 : 1
+      }}
+    >
+      <div>
+        <div style={{ fontSize: '0.9rem', color: 'var(--card-foreground)' }}>{label}</div>
+        {hint && <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>{hint}</div>}
+      </div>
+      <button
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        disabled={disabled}
+        onClick={() => !disabled && onChange(!checked)}
+        style={{
+          flex: '0 0 auto',
+          width: '2.75rem',
+          height: '1.5rem',
+          borderRadius: '999px',
+          border: '0.0625rem solid var(--border)',
+          background: checked ? 'var(--primary)' : 'var(--muted)',
+          position: 'relative',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          transition: 'background 0.15s ease',
+          padding: 0
+        }}
+      >
+        <span
+          style={{
+            position: 'absolute',
+            top: '0.125rem',
+            left: checked ? '1.375rem' : '0.125rem',
+            width: '1.125rem',
+            height: '1.125rem',
+            borderRadius: '50%',
+            background: checked ? 'var(--primary-foreground)' : 'var(--card-foreground)',
+            transition: 'left 0.15s ease'
+          }}
+        />
+      </button>
+    </div>
+  )
 }
 
 const PROVIDERS: { value: LLMProvider; label: string }[] = [
@@ -37,6 +105,8 @@ const FIELD_MAP: Record<LLMProvider, { urlKey?: keyof LLMConfig; modelKey?: keyo
 export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const { isXR } = useXRLayout()
   const [settings] = useSimpleStore(LLMSettingsState)
+  const [appConfig] = useSimpleStore(AppConfigState)
+  const hasWebGPU = useHasWebGPU()
 
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
   const [url, setUrl] = useState('')
@@ -103,6 +173,26 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     fontSize: isXR ? '1rem' : '0.9rem',
     fontFamily: 'inherit'
   }
+  const sectionHeaderStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    fontSize: '0.72rem',
+    fontWeight: 700,
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: 'var(--muted-foreground)',
+    margin: '0.5rem 0 0.6rem',
+    paddingTop: '0.9rem',
+    borderTop: '0.0625rem solid var(--border)'
+  }
+
+  const SectionHeader = ({ icon, children }: { icon: ReactNode; children: ReactNode }) => (
+    <div style={sectionHeaderStyle}>
+      {icon}
+      <span>{children}</span>
+    </div>
+  )
 
   return (
     <div
@@ -135,8 +225,23 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           color: 'var(--card-foreground)'
         }}
       >
-        <div style={{ fontSize: isXR ? '1.35rem' : '1.15rem', fontWeight: 700, marginBottom: '1rem' }}>
-          Connection settings
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: isXR ? '1.35rem' : '1.15rem',
+            fontWeight: 700,
+            marginBottom: '1rem'
+          }}
+        >
+          <SettingsIcon size={isXR ? 22 : 18} aria-hidden />
+          <span>Settings</span>
+        </div>
+
+        <div style={{ ...sectionHeaderStyle, paddingTop: 0, borderTop: 'none', marginTop: 0 }}>
+          <Server size={13} aria-hidden />
+          <span>Connection</span>
         </div>
 
         <div style={{ marginBottom: '0.9rem' }}>
@@ -195,7 +300,30 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'space-between', alignItems: 'center' }}>
+        <SectionHeader icon={<SlidersHorizontal size={13} aria-hidden />}>Behavior</SectionHeader>
+        <ToggleRow
+          label="Barge-in"
+          hint="Interrupt the avatar when you start speaking"
+          checked={appConfig.bargeInEnabled}
+          onChange={(v) => AppConfigState.set((prev) => ({ ...prev, bargeInEnabled: v }))}
+        />
+        <ToggleRow
+          label="Auto-submit"
+          hint="Send your speech automatically after you pause"
+          checked={appConfig.autoSubmitEnabled}
+          onChange={(v) => AppConfigState.set((prev) => ({ ...prev, autoSubmitEnabled: v }))}
+        />
+
+        <SectionHeader icon={<MonitorCog size={13} aria-hidden />}>Graphics</SectionHeader>
+        <ToggleRow
+          label="WebGPU rendering"
+          hint={hasWebGPU ? 'Faster rendering where supported' : 'Not supported on this device'}
+          checked={appConfig.webGPUEnabled}
+          disabled={!hasWebGPU}
+          onChange={(v) => AppConfigState.set((prev) => ({ ...prev, webGPUEnabled: v }))}
+        />
+
+        <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem' }}>
           <button
             onClick={handleReset}
             style={{

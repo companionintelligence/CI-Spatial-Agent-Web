@@ -1,27 +1,34 @@
-import type { AnimationClip } from '../animationTypes'
+import type { AnimationCategory, AnimationClip } from '../animationTypes'
 import * as THREE from 'three'
 
-export const ANIMATION_CLIPS = {
-  // Idle animations
-  'idle_loop': {
+/**
+ * Animation catalogs, split by skeleton family (see docs/ANIMATION-PIPELINE.md):
+ *   - VRMA_CLIPS  → VRM humanoid avatars (Takeshi, Savi). Retargeted per-VRM at load.
+ *   - GLB_CLIPS   → RPM/Mixamo GLB avatars (all CI models incl. the default 'Liam').
+ *
+ * `getAvatarCatalog(isVRM)` returns the right one; the loader in AvatarModel picks by the
+ * active avatar so GLB avatars finally get real body animation (previously only VRMA were
+ * wired, leaving GLB avatars frozen).
+ */
+
+// ---- VRMA clips (VRM avatars) ----
+export const VRMA_CLIPS = {
+  idle_loop: {
     name: 'idle_loop',
     path: '/assets/animations/vrm/idle_loop.vrma',
-    duration: 5000, // Will be updated from actual animation file
+    duration: 5000,
     weight: 1,
     blendTime: 1000,
     category: 'idle',
     priority: 1,
-    loopCount: Infinity, // Infinite loops
+    loopCount: Infinity,
     blendCurve: 'easeInOut',
     speed: 1
   },
-
-  // Gesture animations
-  
-  'victory_sign': {
+  victory_sign: {
     name: 'victory_sign',
     path: '/assets/animations/vrm/victory_sign.vrma',
-    duration: 2500, // Will be updated from actual animation file
+    duration: 2500,
     weight: 0.5,
     blendTime: 600,
     category: 'action',
@@ -30,10 +37,10 @@ export const ANIMATION_CLIPS = {
     blendCurve: 'easeOut',
     speed: 0.8
   },
-  'surprise_greet': {
+  surprise_greet: {
     name: 'surprise_greet',
     path: '/assets/animations/vrm/surprise_greet.vrma',
-    duration: 3000, // Will be updated from actual animation file
+    duration: 3000,
     weight: 0.6,
     blendTime: 700,
     category: 'gesture',
@@ -42,10 +49,10 @@ export const ANIMATION_CLIPS = {
     blendCurve: 'easeInOut',
     speed: 0.9
   },
-  'pose': {
+  pose: {
     name: 'pose',
     path: '/assets/animations/vrm/pose.vrma',
-    duration: 2000, // Will be updated from actual animation file
+    duration: 2000,
     weight: 0.3,
     blendTime: 500,
     category: 'gesture',
@@ -54,10 +61,10 @@ export const ANIMATION_CLIPS = {
     blendCurve: 'easeInOut',
     speed: 1
   },
-  'finger_gun': {
+  finger_gun: {
     name: 'finger_gun',
     path: '/assets/animations/vrm/finger_gun.vrma',
-    duration: 2000, // Will be updated from actual animation file
+    duration: 2000,
     weight: 0.4,
     blendTime: 500,
     category: 'action',
@@ -66,11 +73,10 @@ export const ANIMATION_CLIPS = {
     blendCurve: 'easeOut',
     speed: 1
   },
-  // Action animations
-  'dance_move': {
+  dance_move: {
     name: 'dance_move',
     path: '/assets/animations/vrm/dance_move.vrma',
-    duration: 3500, // Will be updated from actual animation file
+    duration: 3500,
     weight: 0.7,
     blendTime: 800,
     category: 'action',
@@ -78,45 +84,120 @@ export const ANIMATION_CLIPS = {
     loopCount: 1,
     blendCurve: 'easeInOut',
     speed: 0.9
-  },
+  }
 } as Record<string, AnimationClip>
 
+// Back-compat alias (existing imports of ANIMATION_CLIPS keep working).
+export const ANIMATION_CLIPS = VRMA_CLIPS
+
+// ---- GLB clips (RPM/Mixamo avatars) ----
+// Compact builder: [fileBaseName, category, { loop?, blend?, speed?, priority? }]
+type GlbDef = [string, AnimationCategory, Partial<Pick<AnimationClip, 'loopCount' | 'blendTime' | 'speed' | 'priority' | 'weight'>>?]
+
+const GLB_DEFS: GlbDef[] = [
+  // idle (looping base)
+  ['idle-stable', 'idle', { loopCount: Infinity, blendTime: 1000, priority: 1 }],
+  ['basic-idle', 'idle', { loopCount: Infinity, blendTime: 1000 }],
+  ['standing-idle-watch', 'idle', { loopCount: Infinity, blendTime: 1000 }],
+  // communication (talking)
+  ['Talking', 'communication', { blendTime: 500 }],
+  ['Talking-1', 'communication', { blendTime: 500 }],
+  ['Talking-2', 'communication', { blendTime: 500 }],
+  ['Telling-A-Secret', 'communication', { blendTime: 500 }],
+  // gesture
+  ['Waving', 'gesture', { blendTime: 500, speed: 0.9 }],
+  ['Arm-Gesture', 'gesture', { blendTime: 500 }],
+  ['Head-Gesture', 'gesture', { blendTime: 500 }],
+  ['Happy-Hand-Gesture', 'gesture', { blendTime: 500 }],
+  ['Hands-Forward-Gesture', 'gesture', { blendTime: 500, speed: 0.9 }],
+  ['Whatever-Gesture', 'gesture', { blendTime: 500 }],
+  ['Clapping', 'gesture', { blendTime: 450 }],
+  ['Pointing-Forward', 'gesture', { blendTime: 500 }],
+  ['Salute', 'gesture', { blendTime: 500 }],
+  ['Shoulder-Rubbing', 'gesture', { blendTime: 500 }],
+  ['Agreeing', 'gesture', { blendTime: 500 }],
+  // expression / reactions
+  ['Surprised', 'expression', { blendTime: 400 }],
+  ['Reacting', 'expression', { blendTime: 500 }],
+  ['Thinking', 'expression', { blendTime: 600, speed: 0.9 }],
+  ['Looking', 'expression', { blendTime: 600 }],
+  ['Looking-1', 'expression', { blendTime: 600 }],
+  ['Looking-Behind', 'expression', { blendTime: 600 }],
+  ['Shaking-It-Off', 'expression', { blendTime: 450 }],
+  ['Cocky-Head-Turn', 'expression', { blendTime: 500 }],
+  // action
+  ['dance', 'action', { blendTime: 800, priority: 5 }],
+  ['dance-action', 'action', { blendTime: 800, priority: 5 }],
+  ['bow', 'action', { blendTime: 600 }],
+  ['throw', 'action', { blendTime: 500 }],
+  ['Praying', 'action', { blendTime: 600 }],
+  ['Spin-In-Place', 'action', { blendTime: 600 }],
+  ['Crazy-Gesture', 'action', { blendTime: 500 }],
+  // movement
+  ['walking', 'movement', { loopCount: Infinity, blendTime: 400 }]
+]
+
+export const GLB_CLIPS: Record<string, AnimationClip> = Object.fromEntries(
+  GLB_DEFS.map(([name, category, opts = {}]) => [
+    name,
+    {
+      name,
+      path: `/assets/animations/${name}.glb`,
+      duration: 3000, // updated from the real clip after load
+      weight: opts.weight ?? 1,
+      blendTime: opts.blendTime ?? 500,
+      category,
+      priority: opts.priority ?? (category === 'idle' ? 1 : 3),
+      loopCount: opts.loopCount ?? 1,
+      speed: opts.speed ?? 1
+    }
+  ])
+)
+
+// ---- Catalog selection + named roles ----
+export function getAvatarCatalog(isVRM: boolean): Record<string, AnimationClip> {
+  return isVRM ? VRMA_CLIPS : GLB_CLIPS
+}
+
+/** The looping idle clip for a catalog (the base state). */
+export function getIdleClip(catalog: Record<string, AnimationClip>): AnimationClip {
+  return catalog === VRMA_CLIPS ? VRMA_CLIPS.idle_loop : GLB_CLIPS['idle-stable']
+}
+
+/** The startup greeting clip for a catalog. */
+export function getGreetClip(catalog: Record<string, AnimationClip>): AnimationClip {
+  return catalog === VRMA_CLIPS ? VRMA_CLIPS.surprise_greet : GLB_CLIPS['Waving']
+}
+
 /**
- * Updates animation clip durations from the actual THREE.AnimationClip objects
- * This should be called after animations are loaded to ensure accurate durations
+ * Update clip durations from the actual loaded THREE.AnimationClips (matched by name),
+ * across both catalogs.
  */
 export const updateAnimationDurations = (threeAnimations: THREE.AnimationClip[]): void => {
+  const all = { ...VRMA_CLIPS, ...GLB_CLIPS }
   threeAnimations.forEach((threeClip) => {
-    const clipKey = Object.keys(ANIMATION_CLIPS).find(
-      key => ANIMATION_CLIPS[key].name === threeClip.name
-    ) 
-    if (clipKey && threeClip.duration) {
-      ANIMATION_CLIPS[clipKey].duration = Math.round(threeClip.duration * .6 * 1000) 
+    const key = Object.keys(all).find((k) => all[k].name === threeClip.name)
+    if (key && threeClip.duration) {
+      all[key].duration = Math.round(threeClip.duration * 0.6 * 1000)
     }
   })
 }
 
-export const getAnimationClips = (): AnimationClip[] => {
-  return Object.values(ANIMATION_CLIPS)
-}
+export const getAnimationClips = (catalog: Record<string, AnimationClip> = VRMA_CLIPS): AnimationClip[] =>
+  Object.values(catalog)
 
-export const getClipsByCategory = (category: AnimationClip['category']): AnimationClip[] => {
-  return Object.values(ANIMATION_CLIPS).filter((clip) => clip.category === category)
-}
+export const getClipsByCategory = (
+  category: AnimationClip['category'],
+  catalog: Record<string, AnimationClip> = VRMA_CLIPS
+): AnimationClip[] => Object.values(catalog).filter((clip) => clip.category === category)
 
-export const getRandomClip = (category?: AnimationClip['category']): AnimationClip => {
-  const clips = category ? getClipsByCategory(category) : Object.values(ANIMATION_CLIPS)
+export const getRandomClip = (
+  category?: AnimationClip['category'],
+  catalog: Record<string, AnimationClip> = VRMA_CLIPS
+): AnimationClip => {
+  const clips = category ? getClipsByCategory(category, catalog) : Object.values(catalog)
   return clips[Math.floor(Math.random() * clips.length)]
 }
 
-export const getClipsByPriority = (priority: number): AnimationClip[] => {
-  return Object.values(ANIMATION_CLIPS).filter((clip) => clip.priority <= priority)
-}
-
-// Type for animation keys
-export type AnimationKey = keyof typeof ANIMATION_CLIPS
-
-// Helper function to get animation by key
-export const getAnimationByKey = (key: AnimationKey): AnimationClip => {
-  return ANIMATION_CLIPS[key]
-}
+export type AnimationKey = keyof typeof VRMA_CLIPS
+export const getAnimationByKey = (key: AnimationKey): AnimationClip => VRMA_CLIPS[key]

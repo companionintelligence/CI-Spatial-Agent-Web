@@ -40,8 +40,14 @@ export const useAnimationService = () => {
   }, [])
 
   const setup = useCallback(
-    (actions: Record<string, THREE.AnimationAction>, mixer: THREE.AnimationMixer, avatar?: THREE.Object3D , animation?: AnimationClip) => {
-      setupAnimationState(animationStateRef.current, actions, mixer, avatar)
+    (
+      actions: Record<string, THREE.AnimationAction>,
+      mixer: THREE.AnimationMixer,
+      avatar?: THREE.Object3D,
+      animation?: AnimationClip,
+      catalog?: Record<string, AnimationClip>
+    ) => {
+      setupAnimationState(animationStateRef.current, actions, mixer, avatar, catalog)
 
       // Initialize with a default animation
       const personality = animationStateRef.current.currentPersonality

@@ -65,6 +65,9 @@ export interface AnimationState {
   actions?: Record<string, THREE.AnimationAction>
   avatar?: THREE.Object3D
 
+  // The active avatar's clip catalog (VRMA_CLIPS or GLB_CLIPS), for category-based selection.
+  catalog?: Record<string, AnimationClip>
+
   // Name of the action currently fading out during a native crossfade, so its
   // 'finished' event is ignored and it can be stopped once the fade completes.
   previousClipName?: string
@@ -90,7 +93,10 @@ export interface PersonalityConfiguration {
 
 export interface AnimationPerformanceData {
   personality?: string
-  clip: AnimationClip
+  // Either an explicit clip, or a category to pick a loaded clip from (skeleton-agnostic —
+  // resolves against whichever catalog the active avatar loaded).
+  clip?: AnimationClip
+  category?: AnimationCategory
   immediate?: boolean
   loopCount?: number
   blendTime?: number

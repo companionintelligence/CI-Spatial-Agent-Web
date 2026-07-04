@@ -5,6 +5,7 @@ import { Hono } from 'hono'
 import { resolveConfig } from './config.js'
 import { chatRoutes } from './routes/chat.js'
 import { healthRoutes } from './routes/health.js'
+import { ttsRoutes } from './routes/tts.js'
 
 /**
  * Build the BFF app. Exported so tests can drive the whole pipeline in-process
@@ -14,6 +15,7 @@ export function createApp(): Hono {
   const app = new Hono()
   app.route('/api', healthRoutes)
   app.route('/api', chatRoutes)
+  app.route('/api', ttsRoutes)
   return app
 }
 
