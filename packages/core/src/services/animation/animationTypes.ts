@@ -17,7 +17,12 @@ export interface AnimationClip {
   loopCount: number // Infinity = infinite loops, 1 = once, 2+ = specific count (defaults to Infinity for idle, 1 for others)
 
   // Blending configuration
-  blendCurve?: BlendCurve // Easing function for transitions (defaults to 'linear')
+  blendCurve?: BlendCurve // Advisory easing hint (native crossFadeTo ramps linearly; reserved for future additive layering)
+
+  // Blend mode. 'normal' replaces the base pose; 'additive' layers on top of the current base clip.
+  // Additive requires the action to be created with THREE.AdditiveAnimationBlendMode and an
+  // additive clip (see makeAdditiveClip); defaults to 'normal'.
+  blendMode?: 'normal' | 'additive'
 }
 
 export interface AnimationState {
@@ -59,6 +64,16 @@ export interface AnimationState {
   mixer?: THREE.AnimationMixer
   actions?: Record<string, THREE.AnimationAction>
   avatar?: THREE.Object3D
+
+  // The active avatar's clip catalog (VRMA_CLIPS or GLB_CLIPS), for category-based selection.
+  catalog?: Record<string, AnimationClip>
+
+  // Name of the action currently fading out during a native crossfade, so its
+  // 'finished' event is ignored and it can be stopped once the fade completes.
+  previousClipName?: string
+
+  // Bound mixer 'finished' listener, retained so it can be detached on reset/re-setup.
+  mixerFinishedListener?: THREE.EventListener<THREE.AnimationMixerEventMap['finished'], 'finished', THREE.AnimationMixer>
 }
 
 export interface PersonalityConfiguration {
@@ -78,7 +93,10 @@ export interface PersonalityConfiguration {
 
 export interface AnimationPerformanceData {
   personality?: string
-  clip: AnimationClip
+  // Either an explicit clip, or a category to pick a loaded clip from (skeleton-agnostic —
+  // resolves against whichever catalog the active avatar loaded).
+  clip?: AnimationClip
+  category?: AnimationCategory
   immediate?: boolean
   loopCount?: number
   blendTime?: number

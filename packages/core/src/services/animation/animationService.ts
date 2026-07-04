@@ -4,6 +4,16 @@ import { ANIMATION_CLIPS } from './config/animationClips'
 import type { AnimationCategory, AnimationClip, AnimationPerformanceData, AnimationState } from './animationTypes'
 import { getPersonalityConfiguration } from './config/personalityConfig'
 
+/**
+ * Animation service.
+ *
+ * Blending is delegated to three.js' native `AnimationAction.crossFadeTo` (with
+ * time-warp) instead of the previous hand-rolled per-frame weight lerp, and clip
+ * completion is driven by the mixer's `'finished'` event instead of an
+ * elapsed-time heuristic. The public function surface is unchanged so
+ * `useAnimationService` and `AvatarModel` are unaffected.
+ */
+
 // --------------------- State Management ---------------------
 export function initializeAnimationState(): AnimationState {
   return {
@@ -30,11 +40,14 @@ export function initializeAnimationState(): AnimationState {
 
     mixer: undefined,
     actions: undefined,
-    avatar: undefined
+    avatar: undefined,
+    previousClipName: undefined,
+    mixerFinishedListener: undefined
   }
 }
 
 export function resetAnimationState(state: AnimationState) {
+  detachFinishedListener(state)
   state.currentClip = null
   state.nextClip = null
   state.transitionProgress = 0
@@ -42,6 +55,8 @@ export function resetAnimationState(state: AnimationState) {
   state.lastChangeTime = 0
   state.cyclingState.nextCycleTime = 0
   state.cachedClips = []
+  state.previousClipName = undefined
+  if (state.queue) state.queue.length = 0
 }
 
 // --------------------- Personality ---------------------
@@ -62,11 +77,41 @@ export function setupAnimationState(
   state: AnimationState,
   actions: Record<string, THREE.AnimationAction>,
   mixer: THREE.AnimationMixer,
-  avatar?: THREE.Object3D
+  avatar?: THREE.Object3D,
+  catalog?: Record<string, AnimationClip>
 ) {
+  // Re-attach cleanly if setup runs again (e.g. avatar reload).
+  detachFinishedListener(state)
+
   state.actions = actions
   state.mixer = mixer
   state.avatar = avatar
+  if (catalog) state.catalog = catalog
+
+  const listener: THREE.EventListener<THREE.AnimationMixerEventMap['finished'], 'finished', THREE.AnimationMixer> = (
+    event
+  ) => handleActionFinished(state, event)
+  state.mixerFinishedListener = listener
+  mixer.addEventListener('finished', listener)
+}
+
+function detachFinishedListener(state: AnimationState) {
+  if (state.mixer && state.mixerFinishedListener) {
+    state.mixer.removeEventListener('finished', state.mixerFinishedListener)
+  }
+  state.mixerFinishedListener = undefined
+}
+
+/**
+ * Fired when a LoopOnce/finite action reaches its end. Only the *currently
+ * active* clip advances the queue; a clip that is merely fading out during a
+ * crossfade is ignored.
+ */
+function handleActionFinished(state: AnimationState, event: { action: THREE.AnimationAction }) {
+  if (!state.actions || !state.currentClip) return
+  const currentAction = state.actions[state.currentClip.name]
+  if (event.action !== currentAction) return
+  advanceToNext(state, performance.now())
 }
 
 export function initializeDefaultAnimation(state: AnimationState, personality: string, animation?: AnimationClip) {
@@ -75,7 +120,6 @@ export function initializeDefaultAnimation(state: AnimationState, personality: s
     state.cachedClips = getPersonalityAnimationClips(personality)
   }
   const firstClip = animation ?? pickNextClip(state)
-  //const firstClip = ANIMATION_CLIPS[0]
   if (firstClip) {
     playClip(state, firstClip, 0) // no blend for first clip
     state.lastChangeTime = performance.now()
@@ -91,47 +135,21 @@ export function setAnimationEnabled(state: AnimationState, enabled: boolean) {
 export function startPerformance(state: AnimationState, performanceData: AnimationPerformanceData, _startTime: number) {
   if (!state.actions) return
 
-  // Find the corresponding configured clip
-  const configuredClip = performanceData.clip
-  if (!configuredClip) {
-    // Fallback: if clip is unknown, attempt to play the raw action directly
-    const action = state.actions[performanceData.clip.name]
-    if (!action) return
+  // Resolve an explicit clip, or pick a loaded clip of the requested category.
+  const configuredClip = performanceData.clip ?? pickLoadedClipByCategory(state, performanceData.category)
+  if (!configuredClip) return
 
-    action.reset()
-    action.setLoop(
-      performanceData.loopCount === Infinity ? THREE.LoopRepeat : THREE.LoopOnce,
-      performanceData.loopCount ?? 1
-    )
-    action.clampWhenFinished = true
-    action.timeScale = performanceData.speed ?? 1.0
-
-    const blendMs = performanceData.blendTime ?? 500
-    const blendSeconds = Math.max(0, blendMs) / 1000
-    if (blendSeconds > 0) {
-      action.setEffectiveWeight(0.0)
-      action.fadeIn(blendSeconds)
-      action.play()
-    } else {
-      action.setEffectiveWeight(1.0)
-      action.play()
-    }
-    return
-  }
-
-  // Create a runtime clip instance that respects performance overrides
-  const runtimeClip = {
+  // Runtime clip instance honoring performance overrides.
+  const runtimeClip: AnimationClip = {
     ...configuredClip,
     loopCount: performanceData.loopCount ?? configuredClip.loopCount ?? 1,
     speed: performanceData.speed ?? configuredClip.speed ?? 1
   }
 
-  // Determine blend time (ms). Prefer explicit performance override, then clip default, then personality default
   const personalityBlend = getPersonalityConfiguration(state.currentPersonality).blendTime
   const blendMs = performanceData.blendTime ?? configuredClip.blendTime ?? personalityBlend ?? 500
 
-
-  // If immediate is requested and we are not transitioning, play now; otherwise queue it
+  // Play immediately when idle-ish; otherwise queue so we never stack transitions.
   if (performanceData.immediate && !state.isTransitioning) {
     playClip(state, runtimeClip, blendMs)
     state.lastChangeTime = performance.now()
@@ -145,101 +163,74 @@ export function startPerformance(state: AnimationState, performanceData: Animati
 export function updateAnimation(state: AnimationState, delta: number) {
   if (!state.enabled || !state.mixer) return
 
+  // The mixer drives all weight ramps scheduled by crossFadeTo/fadeIn/fadeOut.
   state.mixer.update(delta)
 
   const now = performance.now()
 
-  // Handle weight-based transitions
-  if (state.isTransitioning && state.nextClip && state.currentClip && state.actions) {
-    state.transitionProgress += delta * 1000 // Convert delta to milliseconds
-    const progress = Math.min(state.transitionProgress / state.transitionDuration, 1.0)
-
-    // Apply easing curve based on blend curve
-    function applyEasing(progress: number, blendCurve?: string): number {
-      switch (blendCurve) {
-        case 'easeIn':
-          return progress * progress
-        case 'easeOut':
-          return progress * (2 - progress)
-        case 'easeInOut':
-          return progress < 0.5 ? 2 * progress * progress : -1 + (4 - 2 * progress) * progress
-        case 'bounce':
-          // Simple bounce approximation
-          if (progress < 1 / 2.75) {
-            return 7.5625 * progress * progress
-          } else if (progress < 2 / 2.75) {
-            return 7.5625 * (progress -= 1.5 / 2.75) * progress + 0.75
-          } else if (progress < 2.5 / 2.75) {
-            return 7.5625 * (progress -= 2.25 / 2.75) * progress + 0.9375
-          } else {
-            return 7.5625 * (progress -= 2.625 / 2.75) * progress + 0.984375
-          }
-        case 'linear':
-        default:
-          return progress
-      }
-    }
-
-    const blendCurve = state.nextClip?.blendCurve || 'linear'
-    const easedProgress = applyEasing(progress, blendCurve)
-
-    const currentAction = state.actions[state.currentClip.name]
-    const nextAction = state.actions[state.nextClip.name]
-
-    if (currentAction && nextAction) {
-      // Blend weights: current fades out, next fades in
-      currentAction.setEffectiveWeight(1.0 - easedProgress)
-      nextAction.setEffectiveWeight(easedProgress)
-    }
-    // Transition complete
-    if (progress >= 1.0) {
+  // Track when the active crossfade has logically completed so we can stop the
+  // faded-out action and re-open the gate for the next transition.
+  if (state.isTransitioning) {
+    state.transitionProgress += delta * 1000
+    if (state.transitionProgress >= state.transitionDuration) {
       state.isTransitioning = false
-      if (currentAction) {
-        currentAction.setEffectiveWeight(0.0)
-      }
-      if (nextAction) {
-        nextAction.setEffectiveWeight(1.0)
-      }
-      state.currentClip = state.nextClip
-      state.nextClip = null
       state.transitionProgress = 0
+      if (state.previousClipName && state.actions) {
+        const prev = state.actions[state.previousClipName]
+        if (prev && (!state.currentClip || state.previousClipName !== state.currentClip.name)) {
+          prev.stop()
+        }
+      }
+      state.previousClipName = undefined
     }
   }
 
-  // Check if current clip finished early (loopCount based) → start next immediately
-  // Early finish: If not transitioning, current clip exists, and its action is active
+  if (!state.currentClip) return
 
-  if (state.isTransitioning || !state.currentClip) return
-
-  const elapsed = (now - state.lastChangeTime)
-  if (Number.isFinite(state.currentClip.loopCount ?? Infinity)) {
-    const loops = state.currentClip.loopCount ?? 1
-    const effectiveDuration = state.currentClip.duration * loops
-    if (elapsed < effectiveDuration * 0.9 ) {
-      return
-    }
-  } else {
-    if (elapsed < state.cyclingState.cycleInterval ) {
-      return
+  // Finite clips advance on the mixer 'finished' event. Infinite/looping clips
+  // (e.g. idle) only rotate when cycling is enabled, on the cycle timer.
+  const isInfinite = !Number.isFinite(state.currentClip.loopCount ?? Infinity)
+  if (isInfinite && state.cyclingState.cyclingEnabled && !state.isTransitioning) {
+    if (now - state.lastChangeTime >= state.cyclingState.cycleInterval) {
+      advanceToNext(state, now)
     }
   }
-  // If there are queued items, consume the next queued clip; otherwise pick via cycling
-  let nextItem: { clip: AnimationClip; blendTime: number } | null = null
+}
+
+/**
+ * Choose and play the next clip: a queued performance first, then a cycled clip
+ * if cycling is on, else fall back to the idle base so finite gestures never
+ * freeze on their last frame.
+ */
+function advanceToNext(state: AnimationState, now: number) {
+  if (!state.actions) return
+
+  let item: { clip: AnimationClip; blendTime?: number } | null = null
+
   if (state.queue && state.queue.length > 0) {
-    nextItem = state.queue.shift() || null
+    item = state.queue.shift() || null
   }
-  const shouldCycle = state.cyclingState.cyclingEnabled;
-  const item = nextItem || (shouldCycle ? { clip: pickNextClip(state) , blendTime: undefined } : null);
 
-  if (item) {
-    const clip = item.clip;
-    const blend =
-      (item.blendTime ?? clip.blendTime) ||
-      getPersonalityConfiguration(state.currentPersonality).blendTime;
-    playClip(state, clip, blend);
-    state.lastChangeTime = now;
-    return;
+  if (!item && state.cyclingState.cyclingEnabled) {
+    item = { clip: pickNextClip(state), blendTime: undefined }
   }
+
+  if (!item) {
+    const cur = state.currentClip
+    const isFiniteNonIdle =
+      cur && Number.isFinite(cur.loopCount ?? Infinity) && cur.name !== ANIMATION_CLIPS.idle_loop.name
+    if (isFiniteNonIdle && state.actions[ANIMATION_CLIPS.idle_loop.name]) {
+      item = { clip: ANIMATION_CLIPS.idle_loop, blendTime: undefined }
+    }
+  }
+
+  if (!item) return
+
+  const clip = item.clip
+  const blend =
+    (item.blendTime ?? clip.blendTime) || getPersonalityConfiguration(state.currentPersonality).blendTime
+  playClip(state, clip, blend)
+  state.lastChangeTime = now
 }
 
 // --------------------- Helpers ---------------------
@@ -258,7 +249,6 @@ function pickNextClip(state: AnimationState): AnimationClip {
   const personalityConfig = getPersonalityConfiguration(state.currentPersonality)
   const allClips = getPersonalityAnimationClips(state.currentPersonality)
 
-  // Find the next category in the sequence
   const categories = personalityConfig.categories
   let nextCategory: AnimationCategory
 
@@ -269,19 +259,15 @@ function pickNextClip(state: AnimationState): AnimationClip {
     nextCategory = categories[0]
   }
 
-  // Apply weighted hybrid: 70% chance to go to next in sequence, 30% fully weighted random
+  // 70% sequential, 30% weighted-random category.
   const useSequence = Math.random() < 0.7
   const categoryToPick = useSequence ? nextCategory : weightedCategoryPick(personalityConfig.weights)
 
-  // Filter clips of chosen category
   const categoryClips = allClips.filter((c) => c.category === categoryToPick)
   if (categoryClips.length === 0) return allClips[Math.floor(Math.random() * allClips.length)]
 
-  // Pick random clip from that category
-  // Pick a clip using weighted random based on clip weights (if available), otherwise uniform random
   let chosenClip: AnimationClip = categoryClips[0]
   if (categoryClips[0] && typeof categoryClips[0].weight === 'number') {
-    // Weighted random pick
     const totalWeight = categoryClips.reduce((sum, c) => sum + (c.weight ?? 1), 0)
     let r = Math.random() * totalWeight
     for (const clip of categoryClips) {
@@ -291,24 +277,30 @@ function pickNextClip(state: AnimationState): AnimationClip {
         break
       }
     }
-    // Fallback in case of rounding errors
     if (!chosenClip) chosenClip = categoryClips[categoryClips.length - 1]
   } else {
-    // Uniform random pick
     chosenClip = categoryClips[Math.floor(Math.random() * categoryClips.length)]
   }
   state.cyclingState.lastCategory = categoryToPick
   return chosenClip
 }
 
-function playClip(state: AnimationState, clip: AnimationClip, blendTime: number, _warp: boolean = true) {
-  if (!state.actions || !state.mixer) return
-  const action = state.actions[clip.name]
+/** Pick a random *loaded* clip of a category from the active avatar's catalog. */
+function pickLoadedClipByCategory(
+  state: AnimationState,
+  category?: AnimationCategory
+): AnimationClip | undefined {
+  if (!category || !state.catalog || !state.actions) return undefined
+  const actions = state.actions
+  const candidates = Object.values(state.catalog).filter(
+    (c) => c.category === category && actions[c.name]
+  )
+  if (!candidates.length) return undefined
+  return candidates[Math.floor(Math.random() * candidates.length)]
+}
 
-  if (!action) return
-
-  action.reset()
-  // Normalize loop configuration: ensure at least one iteration for LoopOnce, support finite repeats and Infinity
+/** Apply loop/clamp/blend-mode config to an action from its clip definition. */
+function configureAction(action: THREE.AnimationAction, clip: AnimationClip) {
   let loopMode: THREE.AnimationActionLoopStyles
   let repetitions: number
   if (clip.loopCount === Infinity) {
@@ -323,48 +315,68 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number,
   }
   action.setLoop(loopMode, repetitions)
   action.clampWhenFinished = true
+  action.blendMode =
+    clip.blendMode === 'additive' ? THREE.AdditiveAnimationBlendMode : THREE.NormalAnimationBlendMode
+}
 
-  // Apply animation speed from clip configuration
-  action.timeScale = clip.speed
-  // If no current clip, start immediately with full weight
+function playClip(state: AnimationState, clip: AnimationClip, blendTime: number) {
+  if (!state.actions || !state.mixer) return
+  const action = state.actions[clip.name]
+  if (!action) return
+
+  configureAction(action, clip)
+  action.timeScale = clip.speed ?? 1
+
+  // First clip: start at full weight, no blend.
   if (!state.currentClip) {
+    action.reset()
     action.setEffectiveWeight(1.0)
     action.play()
     state.currentClip = clip
+    state.isTransitioning = false
     return
   }
 
-  // Set up weight-based transition
+  // Re-triggering the same clip: ensure it's running rather than restarting hard.
+  if (state.currentClip.name === clip.name) {
+    action.paused = false
+    if (!action.isRunning()) {
+      action.reset()
+      action.play()
+    }
+    return
+  }
+
   const currentAction = state.actions[state.currentClip.name]
+  const blendSeconds = Math.max(0, blendTime) / 1000
 
-  if (state.currentClip && state.currentClip.name === clip.name) {
-    currentAction.play()
-    return
-  }
-
-  if (currentAction && blendTime > 0) {
-    // Start transition state
-    state.isTransitioning = true
-    state.nextClip = clip
-    state.transitionProgress = 0
-    state.transitionDuration = blendTime
-    // Start new action with zero weight and correct speed
-    action.setEffectiveWeight(0.0)
+  if (currentAction && blendSeconds > 0) {
+    // Native crossfade with time-warp. crossFadeTo ramps the weights via the mixer.
+    action.reset()
+    action.enabled = true
+    action.setEffectiveTimeScale(clip.speed ?? 1)
+    action.setEffectiveWeight(1.0)
     action.play()
+    currentAction.crossFadeTo(action, blendSeconds, true)
 
-    // Current action starts at full weight
-    currentAction.setEffectiveWeight(1.0)
+    state.previousClipName = state.currentClip.name
+    state.isTransitioning = true
+    state.transitionDuration = blendTime
+    state.transitionProgress = 0
   } else {
-    // Instant transition - stop current and start new
+    // Instant switch.
     if (currentAction) {
-      currentAction.setEffectiveWeight(0.0)
       currentAction.stop()
     }
-
+    action.reset()
     action.setEffectiveWeight(1.0)
     action.play()
-    state.currentClip = clip
+    state.isTransitioning = false
+    state.previousClipName = undefined
   }
+
+  state.currentClip = clip
+  state.nextClip = null
 }
 
 // --------------------- Info ---------------------
@@ -381,7 +393,7 @@ export function getCurrentAnimationInfo(state: AnimationState) {
 export function enqueueAnimation(state: AnimationState, performanceData: AnimationPerformanceData) {
   const configuredClip = performanceData.clip
   if (!configuredClip) return
-  const runtimeClip = {
+  const runtimeClip: AnimationClip = {
     ...configuredClip,
     loopCount: performanceData.loopCount ?? configuredClip.loopCount ?? 1,
     speed: performanceData.speed ?? configuredClip.speed ?? 1
@@ -394,4 +406,17 @@ export function enqueueAnimation(state: AnimationState, performanceData: Animati
 
 export function clearAnimationQueue(state: AnimationState) {
   if (state.queue) state.queue.length = 0
+}
+
+/**
+ * Convert a normal clip into an additive clip relative to a reference pose (frame 0
+ * of the base clip by default), so it can be layered over a base animation with an
+ * action created using THREE.AdditiveAnimationBlendMode. Provided for future additive
+ * layering; the current pipeline (drei useAnimations) plays clips in normal mode.
+ */
+export function makeAdditiveClip(clip: THREE.AnimationClip, referenceFrame = 0): THREE.AnimationClip {
+  const additive = clip.clone()
+  THREE.AnimationUtils.makeClipAdditive(additive, referenceFrame)
+  additive.name = `${clip.name}__additive`
+  return additive
 }

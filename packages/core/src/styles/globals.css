@@ -158,3 +158,20 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
   --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.45);
 }
+
+/*
+ * XR surface extension (local to this repo — not org canon). The overlay chrome
+ * uses a translucent "glass" surface derived from the canonical tokens so it
+ * stays headset-legible over the 3D scene. Mode-independent: the var() refs
+ * resolve per-theme at use.
+ */
+:root {
+  --xr-glass-bg: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--card) 78%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 40%, transparent) 100%
+  );
+  --xr-glass-border: color-mix(in srgb, var(--primary) 22%, transparent);
+  --xr-glass-blur: 1.25rem;
+  --xr-elevation: var(--shadow-lg);
+}

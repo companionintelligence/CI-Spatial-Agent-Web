@@ -75,6 +75,8 @@ export { OnboardingOverlay } from './components/common/OnboardingOverlay'
 // Components - Control
 export { ControlOverlay } from './components/control/ControlOverlay'
 export { ControlPanel } from './components/control/ControlPanel'
+export { XRControlPanel } from './components/control/XRControlPanel'
+export type { XRControlAction } from './components/control/XRControlPanel'
 
 // Theme
 export { ThemeProvider, useTheme } from './theme/ThemeProvider'
@@ -84,6 +86,19 @@ export type { Theme } from './theme/ThemeProvider'
 export { AppConfigState, initialAppConfig } from './app/appConfig'
 export type { AppConfig, AppState } from './app/appConfig'
 export { useResponsiveLayout } from './app/layoutService'
+
+// Runtime configuration
+export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
+export type { RuntimeAppConfig } from './config/runtimeConfig'
+export {
+  resolveLLMConfig,
+  readLocalOverrides,
+  writeLocalOverrides,
+  clearLocalOverrides,
+  LLM_OVERRIDES_KEY
+} from './config/appConfigService'
+export { LLMSettingsState } from './config/settingsStore'
+export { SettingsPanel } from './components/control/SettingsPanel'
 
 // Utils
 export { useHasWebGPU } from './utils/useHasWebGPU'

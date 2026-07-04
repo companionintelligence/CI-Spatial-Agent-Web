@@ -9,20 +9,21 @@
     ".": "./src/index.ts",
     "./services/*": "./src/services/*/index.ts",
     "./components/*": "./src/components/*/index.ts",
-    "./utils": "./src/utils/index.ts",
-    "./styles/*": "./src/styles/*"
+    "./styles/*": "./src/styles/*",
+    "./utils": "./src/utils/index.ts"
   },
   "dependencies": {
     "@hexafield/simple-store": "^1.0.1",
     "@huggingface/transformers": "^3.7.1",
     "@mlc-ai/web-llm": "^0.2.79",
-    "@pixiv/three-vrm": "^3.4.2",
-    "@pixiv/three-vrm-animation": "^3.4.2",
+    "@pixiv/three-vrm": "^3.5.4",
+    "@pixiv/three-vrm-animation": "^3.5.4",
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
     "@react-three/postprocessing": "^3.0.4",
     "@react-three/xr": "^6.6.20",
     "@ricky0123/vad-web": "^0.0.30",
+    "lucide-react": "^1.23.0",
     "ollama": "^0.6.3",
     "postprocessing": "^6.38.2",
     "react": "^19.1.0",
@@ -30,11 +31,13 @@
     "three": "^0.182.0"
   },
   "devDependencies": {
+    "@testing-library/react": "^16.3.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/three": "^0.182.0",
     "typescript": "^5.8.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
     "react": "^19.0.0",

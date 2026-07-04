@@ -17,6 +17,7 @@ import {
   defaultTTSConfig,
   defaultSTTConfig,
   defaultLLMConfig,
+  LLMSettingsState,
   sceneConfig,
   useHasWebGPU,
   type SceneActions
@@ -34,6 +35,7 @@ export const App = () => {
 
   const xrStore = useRef<XRStore | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState)
+  const [llmSettings] = useSimpleStore(LLMSettingsState)
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const setXRStore = useCallback((store: XRStore) => {
@@ -43,6 +45,8 @@ export const App = () => {
   const agentConfig = useMemo(
     () => ({
       ...config,
+      // Live LLM config resolved from runtime /config.json + user overrides.
+      llm: llmSettings,
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
       vad: {
@@ -50,7 +54,7 @@ export const App = () => {
         microphoneEnabled: appState.microphone
       }
     }),
-    [appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone]
+    [appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings]
   )
 
   const agent = useAgent(agentConfig)

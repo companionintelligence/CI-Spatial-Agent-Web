@@ -115,13 +115,13 @@ export const ChatInput = memo(({
               <button
                 onClick={handleSubmit}
                 style={{
-                  background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
-                  border: '0.0625rem solid rgba(255,255,255,0.08)',
+                  background: 'var(--primary)',
+                  border: '0.0625rem solid var(--primary)',
                   borderRadius: '50%',
                   width: isXR ? '2.5rem' : '2rem',
                   height: isXR ? '2.5rem' : '2rem',
                   cursor: 'pointer',
-                  color: 'white',
+                  color: 'var(--primary-foreground)',
                   fontSize: isXR ? '1rem' : '0.875rem',
                   fontWeight: '600',
                   display: 'flex',

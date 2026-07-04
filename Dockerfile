@@ -29,5 +29,10 @@ RUN pnpm --filter @ci-avatar/web build
 # ---- runtime stage ----
 FROM nginx:1.27-alpine
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+# Runtime /config.json generation from env: the stock nginx entrypoint runs
+# /docker-entrypoint.d/*.sh before starting, so the prebuilt image can be pointed
+# at any Ollama/proxy upstream at install time without a rebuild.
+COPY nginx/40-render-config.sh /docker-entrypoint.d/40-render-config.sh
+RUN chmod +x /docker-entrypoint.d/40-render-config.sh
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
 EXPOSE 5173

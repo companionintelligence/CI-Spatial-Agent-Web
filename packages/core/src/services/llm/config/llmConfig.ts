@@ -32,25 +32,33 @@ export const AVAILABLE_LOCAL_MODELS = [
   ]
   
 
+export type LLMProvider = 'script' | 'mlc' | 'ollama' | 'openai' | 'proxy' // | 'flowise' | 'anthropic'
+
 export interface LLMConfig {
-    llm_provider?: 'script' | 'mlc' | 'ollama' | 'openai' // | 'flowise' | 'anthropic'
+    llm_provider?: LLMProvider
     mlc_model?: string
     ollama_url?: string
     ollama_model?: string
     openai_api_url?: string
     openai_api_key?: string
     openai_model?: string
+    // Same-origin backend proxy (BFF). Streams chat from a server-configured upstream
+    // (Ollama / OpenAI-compatible / CI-Server) so the browser never needs CORS/tunnels.
+    proxy_url?: string
+    proxy_model?: string
   }
 
 
 
   export const defaultLLMConfig: LLMConfig = {
-    llm_provider: (import.meta.env.VITE_LLM_PROVIDER || 'script') as 'script' | 'mlc' | 'ollama' | 'openai',
+    llm_provider: (import.meta.env.VITE_LLM_PROVIDER || 'script') as LLMProvider,
     // Default to the smallest local model for broader device compatibility
     mlc_model: import.meta.env.VITE_LLM_LOCAL_MODEL || 'Llama-3.2-3B-Instruct-q4f16_1-MLC',
     ollama_url: import.meta.env.VITE_LLM_OLLAMA_API_URL || '',
     ollama_model: import.meta.env.VITE_LLM_OLLAMA_MODEL || 'gemma3:1b',
     openai_api_key: import.meta.env.VITE_LLM_OPENAI_API_KEY || '',
     openai_api_url: import.meta.env.VITE_LLM_OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions',
-    openai_model: import.meta.env.VITE_LLM_OPENAI_MODEL || 'gpt-3.5-turbo'
+    openai_model: import.meta.env.VITE_LLM_OPENAI_MODEL || 'gpt-3.5-turbo',
+    proxy_url: import.meta.env.VITE_LLM_PROXY_URL || '/api/chat',
+    proxy_model: import.meta.env.VITE_LLM_PROXY_MODEL || ''
   }

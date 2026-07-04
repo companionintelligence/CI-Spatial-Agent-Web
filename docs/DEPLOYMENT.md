@@ -1,5 +1,48 @@
 # Deployment and Ollama Tunneling
 
+## Backend proxy (BFF) — the recommended path for container deploys
+
+The app ships a small same-origin backend proxy (`@ci-avatar/proxy`, `apps/proxy`) that
+brokers chat to a server-configured upstream (Ollama by default, or any OpenAI-compatible
+endpoint / CI-Server). The browser talks only to `/api/chat`, so **no `OLLAMA_ORIGINS` CORS
+config or public cloudflared tunnel is needed** for the marketplace container — and API keys
+never ship in the browser bundle.
+
+**Local dev:**
+
+```bash
+pnpm dev:proxy        # starts the BFF on :8787 (upstream from env, default host Ollama)
+pnpm dev:web          # Vite dev server; /api is proxied to :8787 (see vite.config.ts)
+```
+
+The proxy reads its upstream from env at runtime: `APP_UPSTREAM` (`ollama` | `openai` |
+`ci-server`), `APP_OLLAMA_URL` (default `http://host.docker.internal:11434`), `APP_OLLAMA_MODEL`,
+`APP_OPENAI_URL` / `APP_OPENAI_API_KEY` / `APP_OPENAI_MODEL`, `PORT` (8787).
+
+**Container:** two images — the nginx-served SPA
+(`ghcr.io/companionintelligence/ci-spatial-companion-webxr`) and the proxy
+(`ghcr.io/companionintelligence/ci-spatial-companion-proxy`). nginx reverse-proxies `/api/` →
+`proxy:8787` with buffering off (see `nginx/default.conf`). See `marketplace/` for the
+runtipi manifest wiring both.
+
+## Runtime configuration (no rebuild)
+
+The SPA reads `/config.json` at boot, which the nginx entrypoint (`nginx/40-render-config.sh`)
+generates from container env on start — so a prebuilt image can be pointed at any Ollama/proxy
+URL and model at **install time**:
+
+```bash
+docker run --rm -p 8080:5173 \
+  -e APP_LLM_PROVIDER=proxy \
+  -e APP_OLLAMA_URL=http://host.docker.internal:11434 \
+  -e APP_LLM_MODEL=gemma3:1b \
+  ghcr.io/companionintelligence/ci-spatial-companion-webxr:latest
+```
+
+Users can further override the URL/model in-app via the **Settings (⚙️)** panel; overrides
+persist to `localStorage`. Precedence: `localStorage` > runtime `/config.json` > build-time
+`VITE_LLM_*` defaults.
+
 ## Cloudflare Pages
 
 Production URL:

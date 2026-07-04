@@ -3,3 +3,6 @@ dist/
 .env.local
 *.log
 .tmp/
+storybook-static/
+coverage/
+.claude/worktrees/
