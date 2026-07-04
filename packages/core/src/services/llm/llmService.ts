@@ -39,6 +39,7 @@ import { llmCloud } from './models/llmCloud'
 import { llmDirected } from './models/llmDirected'
 import { llmLocal } from './models/llmLocal'
 import { llmOllama } from './models/llmOllama'
+import { llmProxy } from './models/llmProxy'
 import { defaultLLMConfig, SYSTEM_PROMPT, type LLMConfig, AVAILABLE_LOCAL_MODELS } from './config/llmConfig'
 import type { LLMStatusUpdate, LLMResponse, LLMState, LLMPerformRequest } from './llmTypes'
 
@@ -176,6 +177,9 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
     // Determine which mode to use and set ready state
     if (config.llm_provider === 'script') {
       setState((prev) => ({ ...prev, ready: true }))
+    } else if (config.llm_provider === 'proxy') {
+      // Same-origin BFF; ready immediately (server resolves the upstream).
+      setState((prev) => ({ ...prev, ready: true }))
     } else if (config.llm_provider === 'ollama' && config.ollama_url) {
       setState((prev) => ({ ...prev, ready: true }))
     } else if (config.llm_provider === 'mlc' && config.mlc_model) {
@@ -195,6 +199,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
     config.openai_api_key,
     config.openai_api_url,
     config.openai_model,
+    config.proxy_url,
     load
   ])
 
@@ -312,6 +317,15 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
           if (!result.success && result.error) {
             console.error('LLM: Directed reasoning failed:', result.error)
           }
+        } else if (config.llm_provider === 'proxy') {
+          const result = await llmProxy({
+            ...baseParams,
+            llmUrl: config.proxy_url || '/api/chat',
+            llmModel: config.proxy_model
+          })
+          if (!result.success && result.error) {
+            console.error('LLM: Proxy reasoning failed:', result.error)
+          }
         } else if (config.llm_provider === 'ollama' && config.ollama_model) {
           const result = await llmOllama({
             ...baseParams,
@@ -378,7 +392,9 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       config.openai_api_key,
       config.openai_api_url,
       config.openai_model,
-      config.ollama_url
+      config.ollama_url,
+      config.proxy_url,
+      config.proxy_model
     ]
   )
 

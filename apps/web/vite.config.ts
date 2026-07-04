@@ -9,9 +9,36 @@ export default defineConfig({
   ],
   server: {
     host: true,
-    port: 5173
+    port: process.env.PORT ? Number(process.env.PORT) : 5173,
+    // Same-origin BFF in dev: forward /api to the local proxy (pnpm dev:proxy).
+    proxy: {
+      '/api': {
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:8787',
+        changeOrigin: true
+      }
+    }
   },
   resolve: {
     dedupe: ['react', 'react-dom', 'three']
+  },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // @pixiv/three-vrm's MToonNodeMaterial keeps a runtime-guarded `FnCompat`
+        // helper that calls three's pre-r168 `tslFn` only when REVISION < 168, and
+        // three's r168+ `Fn` otherwise. We ship three 0.182, so the `tslFn` branch is
+        // dead code and works at runtime — but Rollup's static analysis still flags
+        // "tslFn is not exported by three.webgpu.js" (code: MISSING_EXPORT). Suppress
+        // just that one false positive; let every other warning through.
+        if (
+          warning.code === 'MISSING_EXPORT' &&
+          warning.message.includes('tslFn') &&
+          warning.message.includes('three.webgpu')
+        ) {
+          return
+        }
+        warn(warning)
+      }
+    }
   }
 })
