@@ -44,23 +44,25 @@ def generate_human(seed=None, gender='male', height=None):
     if seed is not None:
         random.seed(seed)
 
-    # --- 1. start a human in the creation phase ---
-    # TODO: verify against installed addon. HumGen v4 API is approximately:
-    #   chosen = Human.get_preset_options(gender)      # list of starting presets
-    #   human  = Human.from_preset(chosen[i])          # or Human.from_preset_gender
-    # Fall back to picking the first preset for the requested gender.
+    # --- 1. start a human from a preset ---
+    # VERIFIED against installed HumGen3D v4.0.29:
+    #   chosen = Human.get_preset_options(gender)   # 42 male presets, e.g.
+    #                                               # 'models/male/Hispanic/Luke.json'
+    #   human  = Human.from_preset(chosen[i])       # returns an exportable Human
+    # NB: presets reference hair assets, so the Base_Hair pack MUST be imported or
+    # from_preset raises FileNotFoundError on a missing hair .json.
     try:
-        options = Human.get_preset_options(gender)          # TODO: verify
+        options = Human.get_preset_options(gender)
         if seed is not None and options:
             preset = options[seed % len(options)]
         else:
             preset = options[0]
-        human = Human.from_preset(preset)                   # TODO: verify
+        human = Human.from_preset(preset)
     except AttributeError:
         # Older/newer signature fallback — some builds expose Human.from_preset
         # keyed differently, or a Human() + .create() flow.
         raise RuntimeError(
-            'HumGen Human.from_preset signature mismatch — verify the v4.0.27 API '
+            'HumGen Human.from_preset signature mismatch — verify the v4.0.29 API '
             '(help.humgen3d.com/api) and update humgen.py.'
         )
 

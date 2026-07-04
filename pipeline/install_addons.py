@@ -7,13 +7,17 @@ Usage
 -----
     "/Applications/Blender 4.5.app/Contents/MacOS/Blender" \
         --background --python pipeline/install_addons.py -- \
-        [--humgen-zip /path/HumGen3D_v4_0_27.zip] \
+        [--humgen-zip /path/HumGen3D_v4_0_29.zip] \
         [--vrm-zip /path/VRM_Addon_for_Blender-*.zip] \
-        [--content-path "~/Documents/HumGen"]
+        [--content-path "~/HumGen_content"]
 
 If an addon is already installed you can omit its ``--*-zip`` flag; this script
 will just enable it. Missing addons produce a clear, actionable error rather
 than a silent skip.
+
+This script enables the addon and sets the content path, but does NOT import the
+``.hgpack`` content packs — see ``import_content_packs.py`` (headless pack import
+via the ``hg3d.cpackinstall`` operator) for that.
 """
 
 import argparse
@@ -40,7 +44,7 @@ def _argv_after_ddash():
 
 def parse_args():
     p = argparse.ArgumentParser(description='Install/enable pipeline addons in Blender.')
-    p.add_argument('--humgen-zip', default=None, help='Path to HumGen3D_v4_0_27.zip')
+    p.add_argument('--humgen-zip', default=None, help='Path to HumGen3D_v4_0_29.zip')
     p.add_argument('--vrm-zip', default=None, help='Path to VRM-Addon-for-Blender zip')
     p.add_argument('--content-path', default=None,
                    help='HumGen content library path (where .hgpack packs are installed)')
@@ -83,12 +87,17 @@ def _set_humgen_content_path(content_path):
         return
     content_path = os.path.expanduser(content_path)
     os.makedirs(content_path, exist_ok=True)
+    # HumGen expects a trailing separator; it builds sub-paths as
+    # `filepath + "content_packs/..."` (backend/content/content_packs.py).
+    if not content_path.endswith(os.sep):
+        content_path += os.sep
     prefs = bpy.context.preferences.addons.get(HUMGEN_MODULE)
     if prefs is None:
         raise RuntimeError('HumGen3D not enabled — cannot set content path')
-    # TODO: verify against installed addon. v4 stores the library path in the
-    # addon preferences; the attribute has been named 'filepath' /
-    # 'filepath_' / 'content_path' across versions. Try the known candidates.
+    # VERIFIED against HumGen3D v4.0.29: the library path lives in HG_PREF.filepath
+    # (a property backed by the `filepath_` StringProperty, see
+    # backend/preferences/preference_props.py). Set `filepath`; `filepath_`
+    # updates via the setter. The other candidates are legacy/fallback.
     p = prefs.preferences
     for attr in ('filepath', 'filepath_', 'content_path', 'content_filepath'):
         if hasattr(p, attr):

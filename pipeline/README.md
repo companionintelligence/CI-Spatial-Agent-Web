@@ -36,9 +36,22 @@ Inspecting the installer source resolved the scaffold's flagged TODOs:
 - **ARKit is a built-in operator.** `bpy.ops.hg3d.prepare_for_arkit(suffix='long')` emits the
   standard ARKit blendshape names directly — **no hand-authored HUMGEN→ARKit table needed**
   (`facemorphs.bind_arkit` now calls it).
-- **Export via `human.export().to_glb(path, bake_textures=True)`** (baking is mandatory or
-  textures are empty). Since Strategy D swaps the rig, we export via the raw glTF exporter and
-  **must `bake_textures(human)` first** (`glb_export.bake_textures`).
+- **Export via `human.export.to_glb(path, ...)`** — `export` is a **`@property`** (not a
+  method) returning an `ExportBuilder`, so it's `human.export.to_glb(...)`, **not**
+  `human.export().to_glb(...)` (the latter raises `'ExportBuilder' object is not callable`).
+- **Bake textures BEFORE exporting; do NOT pass `bake_textures=True`.** In v4.0.29
+  `to_glb(..., bake_textures=True)` crashes inside the addon (`HumGen3D.common.os` shadows
+  stdlib `os` and has no `.path`, so `os.path.dirname` throws). Instead call
+  `human.process.baking.bake_all(folder, 4)` first (writes body/eyes/teeth PBR PNGs), then
+  `human.export.to_glb(path, bake_textures=False)`. Baking is mandatory or textures are empty.
+  Since Strategy D swaps the rig, we export via the raw glTF exporter and must bake first
+  (`glb_export.bake_textures`). Verified: a baked GLB is ~14 MB with 11 embedded images,
+  20 morph targets on the body mesh, and a 102-joint skin.
+- **Stock Blender 4.5 glTF exporter offers only `GLB` and `GLTF_SEPARATE`, not
+  `GLTF_EMBEDDED`.** The `GLB` path (`to_glb`) works out of the box, so the patched
+  `io_scene_gltf2.zip` is **not needed** for our GLB pipeline (and that zip only ships
+  3.6/4.0/4.1 builds — none for 4.5). Only install it if you specifically need
+  `to_gltf_embedded`.
 - **Still open:** the 15 Oculus `viseme_*` morphs are NOT part of HumGen's ARKit set — they
   need a separate derivation (viseme-from-ARKit or a dedicated viseme rig). This is the last
   face-morph gap; author it against the installed mesh's shape keys via BlenderMCP.
@@ -84,24 +97,52 @@ Verified runnable headless: `Blender 4.5.6 LTS`. **Do not** target Blender 5.x �
 HumGen 4.0.27 + the VRM addon are validated against 4.5, and glTF/VRM operator
 options drift 4.x→5.x. Override the path if needed via `BLENDER=... pipeline/batch.sh`.
 
-### 2. HumGen3D v4.0.27 + content packs (~4 GB)
+### 2. HumGen3D v4.0.29 + content packs (~4.5 GB) — INSTALLED
 
-Not installed on this machine — fetch from Google Drive (`liam@lifescope.io`,
-under *Tools - PlugIns → Blender Extensions*, see [`DRIVE-ASSETS.md`](../docs/DRIVE-ASSETS.md)):
+Installed on this machine on 2026-07-04 (addon in
+`~/Library/Application Support/Blender/4.5/scripts/addons/HumGen3D`, content in
+`~/HumGen_content`, ~4.5 GB). The installer + packs are on disk under
+`~/Desktop/BlenderTools/`:
 
-| Asset | Drive fileId |
-|---|---|
-| `HumGen3D_v4_0_27.zip` | `1QvR0cPw2QoP9BIWGCbjy79lRGGdYQ9-q` |
-| Base_Humans (705 MB) | `1NGZbuRA8dpFzYkUEbHgXZIcNXm5UHAd2` |
-| Base_Clothes (1.11 GB) | `1johLMr0GWNCbCJJeLEdVPLYsZYcTd_ao` |
-| Base_Hair | `1IoQqRJEf67cVy68d551qSQWLOV2xaZFb` |
-| Base_Poses | `1Q933URQ0enJs7TOmrUkNkDyp0H3cU-dm` |
-| 8K_Textures (2.12 GB) | `1hEYdll0WZJuguCGB9ftJ3w1-pTG-BL71` |
+| Asset | File | Content-pack json |
+|---|---|---|
+| HumGen3D addon | `HumGen3D_v4_0_29.zip` | — |
+| Base_Humans (705 MB) | `Base_Humans_V4_1.hgpack` | `Base_Humans.json` |
+| Base_Poses | `Base_Poses_V4_0.hgpack` | `Base_Poses.json` |
+| Base_Hair (112 MB) | `Base_Hair_V4_1.hgpack` | `Base_Hair.json` |
+| Base_Clothes (1.11 GB) | `Base_Clothes_V4_1.hgpack` | `Base_Clothes.json` |
+| DPL collab | `DPL_HGV4_Collab_V6_01.hgpack` | `DPL_HGV4_Collection.json` |
+| 8K_Textures (2.12 GB, optional) | `8K_Textures_OPTIONAL_V4_0.hgpack` | `8K_Textures.json` |
 
-Install the addon zip, then install each `.hgpack`/content pack into a content
-directory and point HumGen at it (see step 4). HumGen human generation **fails
-without the packs + a content path set** — this is a hard requirement even
-headless.
+> Google Drive fallback copies (`liam@lifescope.io`, *Tools - PlugIns → Blender
+> Extensions*) are older (v4.0.27); prefer the on-disk v4.0.29 assets above. See
+> [`DRIVE-ASSETS.md`](../docs/DRIVE-ASSETS.md) for the Drive fileIds.
+
+HumGen human generation **fails without the packs + a content path set** — this is
+a hard requirement even headless. **`Base_Hair` is effectively required**: the
+shipped human presets reference hair assets, so `Human.from_preset(...)` raises
+`FileNotFoundError` on a missing hair `.json` until the hair pack is imported.
+
+**Headless pack import (the real procedure).** HumGen's GUI installs packs via a
+file-select popup that can't run `--background`. `pipeline/import_content_packs.py`
+replicates it: it fills `context.scene.installpacks_col` (each item's `.name` =
+zip path, `.json_path` = the in-zip `content_packs/*.json`, `.alert = "None"`) and
+runs the stock `hg3d.cpackinstall` operator, which unzips each pack into the content
+`filepath`. Run it after `install_addons.py`:
+
+```bash
+"/Applications/Blender 4.5.app/Contents/MacOS/Blender" \
+  --background --python pipeline/import_content_packs.py -- \
+  ~/Desktop/BlenderTools/Base_Humans_V4_1.hgpack \
+  ~/Desktop/BlenderTools/Base_Poses_V4_0.hgpack \
+  ~/Desktop/BlenderTools/Base_Hair_V4_1.hgpack \
+  ~/Desktop/BlenderTools/Base_Clothes_V4_1.hgpack \
+  ~/Desktop/BlenderTools/DPL_HGV4_Collab_V6_01.hgpack \
+  ~/Desktop/BlenderTools/8K_Textures_OPTIONAL_V4_0.hgpack
+```
+
+(A startup `HumGenException: ... no humans found in path` is expected noise from the
+addon's on-load handler and does not affect the import.)
 
 > Optional web-atlas + rig toolchain (also owned, in Drive): Auto-Rig Pro
 > `1_2JTW6lOB7cWo9Z14A3KvWqRnxfJToqw`, SimpleBake `1jYwh9Q7EZMAcQdFOP5z237rZ7RKFDVd3`,
@@ -131,14 +172,15 @@ are the exact RPM/Mixamo rig, verified bone-for-bone against the app's shipping
 ```bash
 "/Applications/Blender 4.5.app/Contents/MacOS/Blender" \
   --background --python pipeline/install_addons.py -- \
-  --humgen-zip ~/Downloads/HumGen3D_v4_0_27.zip \
+  --humgen-zip ~/Desktop/BlenderTools/HumGen3D_v4_0_29.zip \
   --vrm-zip    ~/Downloads/VRM-Addon-for-Blender-*.zip \
-  --content-path ~/Documents/HumGen
+  --content-path ~/HumGen_content
 ```
 
-This enables both addons, sets the HumGen content path, and saves user prefs.
-Install the content packs into `--content-path` via HumGen's own installer
-(interactive/BlenderMCP) — the packs are too large to script blindly.
+This enables both addons, sets the HumGen content path (`HG_PREF.filepath`), and
+saves user prefs. Then import the `.hgpack` content packs headless with
+`pipeline/import_content_packs.py` (see step 2 above) — the packs **are**
+scriptable via the `hg3d.cpackinstall` operator, no GUI/BlenderMCP needed.
 
 ## Generate one avatar
 
@@ -195,8 +237,12 @@ The scaffold is complete and the **validator + all mapping tables are verified**
 against on-disk assets. What cannot be validated until HumGen3D + the VRM addon
 are installed:
 
-- **HumGen v4 API calls** (`humgen.py`) — `Human.from_preset`, `.randomize()`,
-  `finish_creation_phase()` signatures. Flagged `# TODO: verify against installed addon`.
+- **HumGen v4 API calls** (`humgen.py`) — ✅ VERIFIED against installed v4.0.29:
+  `Human.get_preset_options('male')` returns 42 presets; `Human.from_preset(opts[0])`
+  builds a `Human` with an `HG_Body` mesh (25 286 verts / 25 324 polys, 24 shape
+  keys). No `finish_creation_phase` in v4. Export is `human.export.to_glb(path)`
+  (`export` is a `@property`); bake first via `human.process.baking.bake_all(folder, 4)`
+  and pass `bake_textures=False` (the built-in bake-on-export path is broken in 4.0.29).
 - **HumGen → app morph names** (`mappings.HUMGEN_TO_OCULUS_VISEME` /
   `HUMGEN_TO_ARKIT`) — HumGen ships a FACS set whose names won't 1:1 match; the
   real rename/bind table must be read off the installed mesh
