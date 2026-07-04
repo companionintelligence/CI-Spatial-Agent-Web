@@ -91,6 +91,14 @@ export { ControlPanel } from './components/control/ControlPanel'
 export { XRControlPanel } from './components/control/XRControlPanel'
 export type { XRControlAction } from './components/control/XRControlPanel'
 
+// Components - Debug (presentational, prop-driven visualizers for design review)
+export { VisemeMeter } from './components/debug/VisemeMeter'
+export type { VisemeMeterProps } from './components/debug/VisemeMeter'
+export { EmotePalette, EMOTIONS } from './components/debug/EmotePalette'
+export type { EmotePaletteProps } from './components/debug/EmotePalette'
+export { BlendTimeline } from './components/debug/BlendTimeline'
+export type { BlendTimelineProps } from './components/debug/BlendTimeline'
+
 // Theme
 export { ThemeProvider, useTheme } from './theme/ThemeProvider'
 export type { Theme } from './theme/ThemeProvider'
