@@ -89,9 +89,31 @@ def bind_visemes(mesh):
     return OCULUS_VISEMES
 
 
-def bind_arkit(mesh):
-    """Rename/synthesize the ARKit contract morphs on ``mesh``."""
+def bind_arkit(mesh, human=None):
+    """Generate the ARKit blendshapes on ``mesh``.
+
+    VERIFIED against HumGen3D v4.0.29 source: HumGen ships a built-in operator
+    ``hg3d.prepare_for_arkit`` (human/expression/operators.py) that converts its
+    FACS shape keys into the standard ARKit blendshape set. ``suffix='long'`` =
+    "Left and Right (Default ARKit)", which yields the app's contract names
+    (eyeBlinkLeft/Right, jawOpen, browInnerUp, mouthSmile*, …) directly — so the
+    hand-authored HUMGEN_TO_ARKIT rename table is NOT needed. This is the primary
+    path; the rename+placeholder fallback only runs if the operator is unavailable.
+    """
     _require_bpy()
+    try:
+        bpy.context.view_layer.objects.active = getattr(human, 'body_obj', None) or mesh
+        bpy.ops.hg3d.prepare_for_arkit(suffix='long')  # VERIFIED v4.0.29
+        present = {kb.name for kb in _key_blocks(mesh)}
+        missing = [m for m in ARKIT_CONTRACT_MORPHS if m not in present]
+        for m in missing:
+            _ensure_placeholder(mesh, m)
+        if missing:
+            print(f'[facemorphs] ARKit op ran; placeholdered still-missing: {missing}')
+        return ARKIT_CONTRACT_MORPHS
+    except Exception as e:  # noqa: BLE001 — fall back to the rename table
+        print(f'[facemorphs] hg3d.prepare_for_arkit unavailable ({e}); using rename table')
+
     _rename_present(mesh, HUMGEN_TO_ARKIT)
     added = [m for m in ARKIT_CONTRACT_MORPHS if _ensure_placeholder(mesh, m)]
     if added:
@@ -99,10 +121,10 @@ def bind_arkit(mesh):
     return ARKIT_CONTRACT_MORPHS
 
 
-def bind_all(mesh):
+def bind_all(mesh, human=None):
     """Bind both viseme and ARKit morph families. Returns full name list."""
     _require_bpy()
     print('[facemorphs] shape keys before bind:', dump_shape_keys(mesh))
     visemes = bind_visemes(mesh)
-    arkit = bind_arkit(mesh)
+    arkit = bind_arkit(mesh, human=human)
     return visemes + arkit

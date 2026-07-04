@@ -7,6 +7,42 @@ emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-t
 > [`AVATAR-PIPELINE.md`](../docs/AVATAR-PIPELINE.md) ·
 > [`DRIVE-ASSETS.md`](../docs/DRIVE-ASSETS.md)
 
+## Toolchain (local — `~/Desktop/BlenderTools/`)
+
+The installers + content packs are on disk (newer than the Drive copies), so no
+download is needed to install:
+
+| Tool | Version (desktop) | File |
+|------|-------------------|------|
+| HumGen3D | **v4.0.29** | `HumGen3D_v4_0_29.zip` |
+| HumGen content | Base_Humans/Clothes/Hair/Poses V4_1 + 8K_Textures (optional, 2 GB) | `*.hgpack` |
+| Auto-Rig Pro | **3.78.28** (+ rig_tools 3.78.24) | `auto_rig_pro_3.78.28.zip` |
+| SimpleBake | 2.8.4 | `SimpleBake 2.8.4.zip` |
+| SpeedRetopo | 0.4.1 (Blender 5.1) | `speedretopo_*.zip` |
+| glTF exporter (patched) | — | `io_scene_gltf2.zip` |
+| RPM animation library | v1.0.0 | `animation-library-master.zip` (also unzipped at `~/devel/3d/animation-library-master`) |
+
+> ⚠️ This machine is **arm64 (Apple Silicon)**, but only `AI_macIntel_1.20.zip`
+> (Auto-Rig-Pro AI, Intel) is present — base ARP works; the AI auto-detect feature
+> would need the Apple-Silicon build. Strategy D doesn't use ARP anyway.
+
+## Verified against the real HumGen3D v4.0.29 API
+
+Inspecting the installer source resolved the scaffold's flagged TODOs:
+
+- **Generate:** `Human.from_preset(Human.get_preset_options(gender)[i])` + `.body/.face/.skin.randomize()`. ✅ matches.
+- **No creation phase.** v4 has no `finish_creation_phase` (that was v3) — `from_preset()`
+  returns an exportable mesh directly. The scaffold no longer depends on it.
+- **ARKit is a built-in operator.** `bpy.ops.hg3d.prepare_for_arkit(suffix='long')` emits the
+  standard ARKit blendshape names directly — **no hand-authored HUMGEN→ARKit table needed**
+  (`facemorphs.bind_arkit` now calls it).
+- **Export via `human.export().to_glb(path, bake_textures=True)`** (baking is mandatory or
+  textures are empty). Since Strategy D swaps the rig, we export via the raw glTF exporter and
+  **must `bake_textures(human)` first** (`glb_export.bake_textures`).
+- **Still open:** the 15 Oculus `viseme_*` morphs are NOT part of HumGen's ARKit set — they
+  need a separate derivation (viseme-from-ARKit or a dedicated viseme rig). This is the last
+  face-morph gap; author it against the installed mesh's shape keys via BlenderMCP.
+
 ## What this produces
 
 For each persona: a `.glb` (web/XR, +Z forward, morph targets + RPM skin) and

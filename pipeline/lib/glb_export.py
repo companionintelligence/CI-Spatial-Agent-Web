@@ -19,6 +19,32 @@ def _require_bpy():
         raise RuntimeError('glb_export.py must run inside Blender (bpy unavailable)')
 
 
+def bake_textures(human):
+    """Bake HumGen's procedural skin to image textures BEFORE export.
+
+    VERIFIED against HumGen3D v4.0.29 source: ``ExportBuilder._export_common_gltf``
+    warns "Exporting GLTF without baking textures. This will result in empty
+    textures" and unlinks all skin textures if ``human.process.baking.is_baked()``
+    is False. Since Strategy D re-skins onto the RPM armature (so we export via the
+    raw glTF exporter, not ``human.export()``), we must bake here first. HumGen's
+    baker lives at ``human.process.baking``; SimpleBake (owned, see DRIVE-ASSETS.md)
+    is the fallback for finer control.
+    """
+    _require_bpy()
+    baking = getattr(getattr(human, 'process', None), 'baking', None)
+    if baking is None:
+        print('[glb_export] WARNING: no HumGen baking API found — textures may be empty. '
+              'Bake manually (HumGen or SimpleBake) before export.')
+        return False
+    try:
+        if not baking.is_baked():
+            baking.bake()  # TODO: verify bake() signature / resolution args on v4.0.29
+        return True
+    except Exception as e:  # noqa: BLE001
+        print(f'[glb_export] texture bake failed ({e}); export may have empty textures')
+        return False
+
+
 def export_glb(out_path, armature=None):
     """Export the current scene selection to ``out_path`` (.glb, +Z forward).
 

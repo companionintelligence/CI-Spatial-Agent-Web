@@ -84,9 +84,11 @@ def generate_human(seed=None, gender='male', height=None):
     if height is not None:
         _set_height(human, height)
 
-    # --- 4. finalize (leave creation phase so the mesh is real & exportable) ---
-    # TODO: verify against installed addon. v4: human.finish_creation_phase()
-    # or human.creation_phase.finish(). Try both.
+    # --- 4. finalize ---
+    # VERIFIED against HumGen3D v4.0.29 source: v4 has NO creation/finalize phase
+    # split (that was v3). from_preset() returns a real, exportable mesh directly —
+    # no finish step is needed. _finish_creation() is kept as a harmless no-op guard
+    # for any build that still exposes the old method.
     _finish_creation(human)
 
     print(f'[humgen] generated {gender} human (seed={seed}, height={height})')
@@ -121,17 +123,14 @@ def _set_height(human, height):
 
 
 def _finish_creation(human):
-    for attempt in (
-        lambda: human.finish_creation_phase(),              # TODO: verify
-        lambda: human.creation_phase.finish(),              # TODO: verify
-    ):
+    # v4.0.29 has no creation-phase finalize (verified). Call the legacy method only
+    # if a build still exposes it; otherwise this is a silent no-op.
+    finish = getattr(human, 'finish_creation_phase', None)
+    if callable(finish):
         try:
-            attempt()
-            return
-        except Exception:  # noqa: BLE001
-            continue
-    print('[humgen] WARNING: could not finish creation phase — verify HumGen API. '
-          'Export may still work if the addon auto-finalizes on export.')
+            finish()
+        except Exception as e:  # noqa: BLE001
+            print(f'[humgen] finish_creation_phase() skipped: {e}')
 
 
 def get_body_object(human):
