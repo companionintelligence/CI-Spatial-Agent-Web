@@ -1,3 +1,5 @@
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react'
+
 interface ToggleButtonProps {
   isVisible: boolean
   onToggle: () => void
@@ -47,12 +49,23 @@ export const ToggleButton = ({
     }
   }
 
+  const iconSize = Math.max(14, Math.round(resolvedButtonSize * 0.5))
+
   const getIcon = () => {
     if (position === 'bottom-left') {
-      return isVisible ? '▼' : '▲'
+      return isVisible ? (
+        <ChevronDown size={iconSize} aria-hidden />
+      ) : (
+        <ChevronUp size={iconSize} aria-hidden />
+      )
     }
 
-    return isVisible ? (position === 'left' ? '◀' : '▶') : position === 'left' ? '▶' : '◀'
+    // Collapsed chevrons point toward where the panel would open; expanded
+    // chevrons point back toward the edge it collapses to.
+    const collapse = position === 'left' ? ChevronLeft : ChevronRight
+    const open = position === 'left' ? ChevronRight : ChevronLeft
+    const Icon = isVisible ? collapse : open
+    return <Icon size={iconSize} aria-hidden />
   }
 
   const getTransform = () => {

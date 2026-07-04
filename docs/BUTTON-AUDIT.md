@@ -62,8 +62,46 @@ panel (renamed from "Connection settings"), organized into sections.
 - **Slimmed** the bar to Mic · XR-enter · Settings, with the XR-transform cluster gated to
   in-session.
 
-## Deferred (folds into the WebXR-flexibility work)
+## WebXR-flexibility pass (implemented)
 
-- Replace emoji with **lucide-react** icons + short labels (canon).
-- An **in-world XR control panel** (spatial), separate from the flat DOM bar.
-- Per-surface layouts (mobile vs desktop vs headset) driven by `useXRLayout`.
+- **Emoji → lucide-react** across the control bar, the collapse chevrons
+  (`ToggleButton`), and the Settings panel headers. Mapping:
+  Mic `Mic` / Listening `AudioLines` · Enter VR `Headset` · Enter AR `Smartphone` ·
+  Exit XR `X` · Recenter `Crosshair` · Scale − `Minus` / + `Plus` · Settings `Settings`.
+  `lucide-react` is the only sanctioned icon set (canon).
+- **Short text labels** under each icon on the desktop bar (hidden on the compact
+  mobile bar and in XR, where the glyph plus a larger hit target carries it).
+  Every icon button also gets an `aria-label` so screen readers announce it.
+- **Per-surface layout** driven by `useXRLayout` (`isXR`) + the mobile check:
+  compact 44px targets on mobile, labeled 48px targets on desktop, roomy 56px
+  targets in XR — all token-driven (`var(--xr-*)`, `var(--primary)`, radius scale).
+- **In-world XR control panel scaffold** — `components/control/XRControlPanel.tsx`,
+  a spatial `@react-three/xr` panel (r3f meshes + drei `<Text>`, no new deps) that
+  paints the same primary actions. It returns `null` outside an immersive session,
+  so it is safe to leave permanently mounted.
+
+### Mounting the in-world XR panel
+
+`XRControlPanel` is exported from `@ci-avatar/core` but not yet wired into the
+scene, because mounting it means editing `Viewport3D.tsx` / `Scene3D.tsx` (outside
+this change's file ownership). To mount it:
+
+1. Thread the XR action handlers down into `SceneContent` — `onExitXR` and the mic
+   toggle already live in `ControlOverlay`; `recenter` / `scaleBy` live on
+   `SceneActions`.
+2. Inside the `<XR store={store}>` subtree in `Scene3D.tsx`, render:
+
+   ```tsx
+   <XRControlPanel
+     position={[0, 1.2, -1]}            // ~1m ahead, eye height
+     micActive={config.microphone}
+     onToggleMic={...}
+     onRecenter={sceneActions.recenter}
+     onScaleUp={() => sceneActions.scaleBy(0.1)}
+     onScaleDown={() => sceneActions.scaleBy(-0.1)}
+     onExitXR={...}
+   />
+   ```
+
+   It no-ops when no session is active. See the header comment in
+   `XRControlPanel.tsx` for the full contract.

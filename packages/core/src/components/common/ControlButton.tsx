@@ -10,6 +10,12 @@ interface ControlButtonProps {
   tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
   disabled?: boolean
   size?: number
+  /**
+   * Accessible name for the button. Icon-only controls (lucide glyphs) have no
+   * text node, so this is what screen readers announce. Falls back to the
+   * tooltip content when omitted.
+   */
+  ariaLabel?: string
 }
 
 export const ControlButton = ({
@@ -19,12 +25,15 @@ export const ControlButton = ({
   tooltipContent,
   tooltipPosition = 'top',
   disabled = false,
-  size = 40
+  size = 40,
+  ariaLabel
 }: ControlButtonProps) => {
   const buttonElement = (
     <button
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel ?? tooltipContent}
+      aria-pressed={isActive}
       style={{
         width: `${size}px`,
         height: `${size}px`,

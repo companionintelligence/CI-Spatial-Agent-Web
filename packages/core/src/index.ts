@@ -75,6 +75,8 @@ export { OnboardingOverlay } from './components/common/OnboardingOverlay'
 // Components - Control
 export { ControlOverlay } from './components/control/ControlOverlay'
 export { ControlPanel } from './components/control/ControlPanel'
+export { XRControlPanel } from './components/control/XRControlPanel'
+export type { XRControlAction } from './components/control/XRControlPanel'
 
 // Theme
 export { ThemeProvider, useTheme } from './theme/ThemeProvider'
