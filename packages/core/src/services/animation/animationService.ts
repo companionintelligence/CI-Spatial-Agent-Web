@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-import { ANIMATION_CLIPS } from './config/animationClips'
+import { ANIMATION_CLIPS, getIdleClip } from './config/animationClips'
 import type { AnimationCategory, AnimationClip, AnimationPerformanceData, AnimationState } from './animationTypes'
 import { getPersonalityConfiguration } from './config/personalityConfig'
 
@@ -64,12 +64,21 @@ export function applyPersonality(state: AnimationState, personality: string) {
   state.currentPersonality = personality
   const config = getPersonalityConfiguration(personality)
   state.cyclingState.cycleInterval = config.defaultCycleInterval
-  state.cachedClips = getPersonalityAnimationClips(personality)
+  state.cachedClips = getPersonalityAnimationClips(personality, state.catalog)
 }
 
-export function getPersonalityAnimationClips(personality: string): AnimationClip[] {
+/**
+ * Clips of a personality's categories, drawn from the ACTIVE avatar's catalog when
+ * known. Without this, cycling filtered the hardcoded VRMA `ANIMATION_CLIPS` even for
+ * GLB avatars, so it kept picking VRMA clips that have no loaded action — the avatar
+ * froze on idle and never cycled.
+ */
+export function getPersonalityAnimationClips(
+  personality: string,
+  catalog: Record<string, AnimationClip> = ANIMATION_CLIPS
+): AnimationClip[] {
   const config = getPersonalityConfiguration(personality)
-  return Object.values(ANIMATION_CLIPS).filter((clip) => config.categories.includes(clip.category))
+  return Object.values(catalog).filter((clip) => config.categories.includes(clip.category))
 }
 
 // --------------------- Setup ---------------------
@@ -117,7 +126,7 @@ function handleActionFinished(state: AnimationState, event: { action: THREE.Anim
 export function initializeDefaultAnimation(state: AnimationState, personality: string, animation?: AnimationClip) {
   if (!state.actions) return
   if (!state.cachedClips.length) {
-    state.cachedClips = getPersonalityAnimationClips(personality)
+    state.cachedClips = getPersonalityAnimationClips(personality, state.catalog)
   }
   const firstClip = animation ?? pickNextClip(state)
   if (firstClip) {
@@ -216,11 +225,14 @@ function advanceToNext(state: AnimationState, now: number) {
   }
 
   if (!item) {
+    // Fall back to the ACTIVE avatar's idle (GLB or VRM), not the hardcoded VRMA idle,
+    // so a finished finite gesture always returns to a real, loaded idle action.
+    const idle = state.catalog ? getIdleClip(state.catalog) : ANIMATION_CLIPS.idle_loop
     const cur = state.currentClip
     const isFiniteNonIdle =
-      cur && Number.isFinite(cur.loopCount ?? Infinity) && cur.name !== ANIMATION_CLIPS.idle_loop.name
-    if (isFiniteNonIdle && state.actions[ANIMATION_CLIPS.idle_loop.name]) {
-      item = { clip: ANIMATION_CLIPS.idle_loop, blendTime: undefined }
+      cur && Number.isFinite(cur.loopCount ?? Infinity) && cur.name !== idle.name
+    if (isFiniteNonIdle && state.actions[idle.name]) {
+      item = { clip: idle, blendTime: undefined }
     }
   }
 
@@ -247,7 +259,7 @@ function weightedCategoryPick(weights: Record<AnimationCategory, number>): Anima
 
 function pickNextClip(state: AnimationState): AnimationClip {
   const personalityConfig = getPersonalityConfiguration(state.currentPersonality)
-  const allClips = getPersonalityAnimationClips(state.currentPersonality)
+  const allClips = getPersonalityAnimationClips(state.currentPersonality, state.catalog)
 
   const categories = personalityConfig.categories
   let nextCategory: AnimationCategory

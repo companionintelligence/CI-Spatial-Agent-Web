@@ -5,6 +5,7 @@ import { ANIMATION_CLIPS, GLB_CLIPS, VRMA_CLIPS } from './config/animationClips'
 import {
   applyPersonality,
   getCurrentAnimationInfo,
+  getPersonalityAnimationClips,
   initializeAnimationState,
   initializeDefaultAnimation,
   setupAnimationState,
@@ -269,5 +270,28 @@ describe('personality cycling — category rotation', () => {
     const h = makeHarness(['idle_loop'])
     applyPersonality(h.state, 'energetic') // interval 5000
     expect(h.state.cyclingState.cycleInterval).toBe(5000)
+  })
+})
+
+// Regression: cycling must draw from the ACTIVE avatar's catalog, not the hardcoded
+// VRMA ANIMATION_CLIPS — otherwise a GLB avatar cycles to VRMA clips it never loaded
+// and freezes on idle.
+describe('getPersonalityAnimationClips — catalog-aware', () => {
+  it('defaults to VRMA ANIMATION_CLIPS when no catalog is given', () => {
+    const clips = getPersonalityAnimationClips('professional')
+    const vrmaNames = new Set(Object.values(VRMA_CLIPS).map((c) => c.name))
+    expect(clips.length).toBeGreaterThan(0)
+    expect(clips.every((c) => vrmaNames.has(c.name))).toBe(true)
+  })
+
+  it('draws from a passed GLB catalog instead of VRMA', () => {
+    const glbClips = getPersonalityAnimationClips('professional', GLB_CLIPS)
+    const glbNames = new Set(Object.values(GLB_CLIPS).map((c) => c.name))
+    const vrmaNames = new Set(Object.values(VRMA_CLIPS).map((c) => c.name))
+    expect(glbClips.length).toBeGreaterThan(0)
+    // Every returned clip belongs to the GLB catalog…
+    expect(glbClips.every((c) => glbNames.has(c.name))).toBe(true)
+    // …and none is a VRMA-only clip name absent from the GLB catalog.
+    expect(glbClips.some((c) => vrmaNames.has(c.name) && !glbNames.has(c.name))).toBe(false)
   })
 })
