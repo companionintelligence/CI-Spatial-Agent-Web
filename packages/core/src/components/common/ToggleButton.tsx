@@ -67,13 +67,13 @@ export const ToggleButton = ({
         ...getPosition(),
         transform: getTransform(),
         zIndex: 1000,
-        background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
-        backdropFilter: 'blur(1.25rem)',
-        border: '0.0625rem solid rgba(255,255,255,0.08)',
-        borderRadius: '0.375rem',
+        background: 'var(--xr-glass-bg)',
+        backdropFilter: 'blur(var(--xr-glass-blur))',
+        border: '0.0625rem solid var(--xr-glass-border)',
+        borderRadius: 'var(--radius-md)',
         padding: `${Math.max(6, Math.round(size * 0.25))}px ${Math.max(10, Math.round(size * 0.35))}px`,
         cursor: 'pointer',
-        color: 'white',
+        color: 'var(--card-foreground)',
         fontSize: `${Math.max(12, Math.round(size * 0.35))}px`,
         fontWeight: '600',
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -85,12 +85,12 @@ export const ToggleButton = ({
         boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.background = 'linear-gradient(180deg, rgba(16,25,30,0.8) 0%, rgba(17,43,48,0.8) 100%)'
+        e.currentTarget.style.borderColor = 'var(--primary)'
         e.currentTarget.style.transform = position === 'bottom-left' ? 'scale(1.05)' : 'translateY(-50%) scale(1.05)'
-        e.currentTarget.style.boxShadow = '0 0.25rem 0.5rem rgba(0,0,0,0.2)'
+        e.currentTarget.style.boxShadow = 'var(--xr-elevation)'
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)'
+        e.currentTarget.style.borderColor = 'var(--xr-glass-border)'
         e.currentTarget.style.transform = position === 'bottom-left' ? 'scale(1)' : 'translateY(-50%) scale(1)'
         e.currentTarget.style.boxShadow = '0 0.125rem 0.25rem rgba(0,0,0,0.04)'
       }}

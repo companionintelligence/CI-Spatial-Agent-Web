@@ -1,0 +1,74 @@
+/*
+ * Companion Intelligence — canonical design tokens.
+ *
+ * Part I of CI-Hub/docs/UI-STYLE-GUIDE.md, expressed in hex (the source authors
+ * these in oklch(); the two are equivalent in-gamut). `--primary` is CI teal and
+ * is the single most important token — do not drift it.
+ *
+ * Theme is a `.dark` / `.light` class on <html>. This XR surface ships
+ * dark-by-default (index.html sets class="dark"); `:root` holds the canonical
+ * light values so light mode is a first-class fallback.
+ *
+ * The `--xr-*` block is a documented, surface-local extension (not canon):
+ * headset-legible hit targets and the shared glass surface.
+ */
+
+:root {
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --background: #f3f3f3;
+  --foreground: #010f16;
+  --card: #f7f7f9;
+  --card-foreground: #041620;
+  --popover: #ffffff;
+  --popover-foreground: #041620;
+  --primary: #0f717a; /* CI teal */
+  --primary-foreground: #f8fafc;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0a222e;
+  --muted: #f1f5f9;
+  --muted-foreground: #62748e;
+  --accent: #f1f5f9;
+  --accent-foreground: #0a222e;
+  --destructive: #ee3533;
+  --destructive-foreground: #f8fafc;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #90a1b9;
+
+  --font-sans: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* --- XR surface extensions (local, not canon) --- */
+  --xr-hit-target: 2.75rem; /* min 44px touch/controller target */
+  --xr-hit-target-lg: 3.5rem; /* headset-sized target */
+  --xr-glass-bg: linear-gradient(180deg, color-mix(in srgb, var(--card) 78%, transparent) 0%, color-mix(in srgb, var(--accent) 40%, transparent) 100%);
+  --xr-glass-border: color-mix(in srgb, var(--primary) 22%, transparent);
+  --xr-glass-blur: 1.25rem;
+  --xr-elevation: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.35);
+}
+
+.dark {
+  --background: #041620;
+  --foreground: #88a29e;
+  --card: #0a222e;
+  --card-foreground: #88a29e;
+  --popover: #0a222e;
+  --popover-foreground: #88a29e;
+  --primary: #abd4d8; /* CI teal (dark) */
+  --primary-foreground: #041620;
+  --secondary: #0a222e;
+  --secondary-foreground: #f5f8fa;
+  --muted: #0a222e;
+  --muted-foreground: #8f98a3;
+  --accent: #2c676d;
+  --accent-foreground: #f5f8fa;
+  --destructive: #ef7070;
+  --destructive-foreground: #f5f8fa;
+  --border: #2c676d;
+  --input: #6992a2;
+  --ring: #58ebbf;
+}

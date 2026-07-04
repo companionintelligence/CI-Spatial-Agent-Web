@@ -1,11 +1,16 @@
+/*
+ * Base app styles. Colors/typography come from the canonical token layer
+ * (@ci-avatar/core/styles/tokens.css, imported first in main.tsx). The app shell
+ * is dark-by-default (index.html sets class="dark").
+ */
 :root {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: dark;
-  color: #FFFFFF;
-  background-color: #0F1113;
+  color: var(--foreground);
+  background-color: var(--background);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,11 +20,11 @@
 
 a {
   font-weight: 500;
-  color: #13C4D1;
+  color: var(--primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #00A0AF;
+  color: color-mix(in srgb, var(--primary) 80%, white);
 }
 
 body {
@@ -45,42 +50,29 @@ h1 {
 }
 
 button {
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: rgba(255,255,255,0.06);
-  color: #FFFFFF;
+  background-color: color-mix(in srgb, var(--card) 70%, transparent);
+  color: var(--foreground);
   cursor: pointer;
   transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 button:hover {
-  border-color: #13C4D1;
+  border-color: var(--primary);
 }
 button:focus,
 button:focus-visible {
-  outline: 2px solid #13C4D1;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #FFFFFF;
-    background-color: #0F1113;
-  }
-  a:hover {
-    color: #00A0AF;
-  }
-  button {
-    background-color: rgba(255,255,255,0.06);
-  }
 }
 
 /* Chat input placeholder styling */
 .chat-input::placeholder {
-  color: rgba(255,255,255,0.72);
+  color: var(--muted-foreground);
 }
 
 .app-container {
@@ -99,4 +91,14 @@ button:focus-visible {
   position: relative;
   display: flex;
   flex-direction: column;
+}
+
+/* Shared CI "glass" surface — consistent across the XR overlays. */
+.glass-container {
+  background: var(--xr-glass-bg);
+  backdrop-filter: blur(var(--xr-glass-blur));
+  border: 0.0625rem solid var(--xr-glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--xr-elevation);
+  color: var(--card-foreground);
 }

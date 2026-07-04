@@ -15,11 +15,11 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
       width: isXR ? '28rem' : '22rem',
       maxWidth: '90vw',
       padding: isXR ? '1.5rem' : '1.25rem',
-      borderRadius: '1rem',
-      background: 'linear-gradient(180deg, rgba(16,25,30,0.85) 0%, rgba(17,43,48,0.85) 100%)',
-      border: '0.0625rem solid rgba(255,255,255,0.12)',
-      boxShadow: '0 0.5rem 1.5rem rgba(0,0,0,0.3)',
-      color: '#FFFFFF'
+      borderRadius: 'var(--radius-xl)',
+      background: 'var(--xr-glass-bg)',
+      border: '0.0625rem solid var(--xr-glass-border)',
+      boxShadow: 'var(--xr-elevation)',
+      color: 'var(--card-foreground)'
     }),
     [isXR]
   )
@@ -35,7 +35,7 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'rgba(5,10,12,0.6)',
+        background: 'rgba(4,22,32,0.6)',
         backdropFilter: 'blur(6px)'
       }}
     >
@@ -66,10 +66,10 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
             onClick={onSkip}
             style={{
               background: 'transparent',
-              border: '0.0625rem solid rgba(255,255,255,0.2)',
-              color: '#FFFFFF',
+              border: '0.0625rem solid var(--border)',
+              color: 'var(--card-foreground)',
               padding: isXR ? '0.75rem 1.25rem' : '0.6rem 1rem',
-              borderRadius: '0.75rem',
+              borderRadius: 'var(--radius-md)',
               fontSize: isXR ? '1rem' : '0.9rem',
               cursor: 'pointer'
             }}
@@ -79,12 +79,13 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
           <button
             onClick={onEnableMic}
             style={{
-              background: 'linear-gradient(135deg, rgba(0,131,145,0.6) 0%, rgba(19,196,209,0.6) 100%)',
-              border: '0.0625rem solid rgba(0,131,145,0.4)',
-              color: '#FFFFFF',
+              background: 'var(--primary)',
+              border: '0.0625rem solid var(--primary)',
+              color: 'var(--primary-foreground)',
               padding: isXR ? '0.75rem 1.25rem' : '0.6rem 1rem',
-              borderRadius: '0.75rem',
+              borderRadius: 'var(--radius-md)',
               fontSize: isXR ? '1rem' : '0.9rem',
+              fontWeight: 600,
               cursor: 'pointer',
               boxShadow: '0 0.25rem 0.5rem rgba(0,0,0,0.2)'
             }}
