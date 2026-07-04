@@ -1,0 +1,34 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a222e"/>
+      <stop offset="1" stop-color="#0f717a"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.42" r="0.55">
+      <stop offset="0" stop-color="#abd4d8" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#abd4d8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="head" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e6f6f7"/>
+      <stop offset="1" stop-color="#abd4d8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- app tile -->
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#halo)"/>
+
+  <!-- spatial orbit rings (XR nod) -->
+  <g fill="none" stroke="#58ebbf" stroke-opacity="0.85" stroke-width="7">
+    <ellipse cx="256" cy="262" rx="168" ry="66" transform="rotate(-24 256 262)"/>
+    <ellipse cx="256" cy="262" rx="168" ry="66" transform="rotate(24 256 262)" stroke-opacity="0.45"/>
+  </g>
+
+  <!-- companion avatar: head + shoulders -->
+  <circle cx="256" cy="212" r="70" fill="url(#head)"/>
+  <path d="M150 360 a106 106 0 0 1 212 0 v18 a24 24 0 0 1 -24 24 H174 a24 24 0 0 1 -24 -24 Z" fill="url(#head)"/>
+
+  <!-- voice spark -->
+  <circle cx="256" cy="212" r="16" fill="#0f717a" opacity="0.35"/>
+  <circle cx="372" cy="150" r="14" fill="#58ebbf"/>
+</svg>
