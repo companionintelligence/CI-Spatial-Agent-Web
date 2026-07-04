@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Avatar Visual Tests — WebP capture gallery</title>
+    <style>
+      :root {
+        --bg: #061014;
+        --panel: #0c1e24;
+        --line: #16333b;
+        --primary: #4fd1c5;
+        --ink: #e6f1f2;
+        --muted: #7fa0a6;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: radial-gradient(1200px 600px at 50% -10%, #0b2028, var(--bg));
+        color: var(--ink);
+        font: 15px/1.5 'Montserrat', system-ui, -apple-system, sans-serif;
+        padding: 40px 24px 80px;
+      }
+      header { max-width: 1100px; margin: 0 auto 28px; }
+      h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
+      .sub { color: var(--muted); max-width: 70ch; }
+      .sub code { color: var(--primary); }
+      h2 {
+        max-width: 1100px; margin: 40px auto 14px; font-size: 13px;
+        text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary);
+        border-bottom: 1px solid var(--line); padding-bottom: 8px;
+      }
+      .grid {
+        max-width: 1100px; margin: 0 auto;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+      }
+      .card {
+        background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+        overflow: hidden; display: flex; flex-direction: column;
+      }
+      .card img { width: 100%; display: block; background: #0a1416; aspect-ratio: 3 / 4; object-fit: contain; }
+      .card.face img { aspect-ratio: 1 / 1; }
+      .meta { padding: 10px 12px; }
+      .cap { font-size: 13px; }
+      .tag {
+        display: inline-block; margin-top: 6px; font-size: 11px; color: var(--muted);
+        border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Avatar Visual Tests</h1>
+      <p class="sub">
+        Short animated WebP clips captured from the real avatar rig via the capture harness
+        (<code>apps/web/harness.html</code> → <code>e2e/capture/gen-webp.mjs</code>). Each clip is
+        a faithful record of the shipping viseme / emote / animation services — regenerate with
+        <code>node e2e/capture/gen-webp.mjs</code>. See <code>docs/TESTING-PIPELINE.md</code>.
+      </p>
+    </header>
+
+    <h2>Body animation</h2>
+    <div class="grid">
+      <figure class="card"><img src="greg-idle.webp" alt="idle" /><figcaption class="meta"><div class="cap">Idle loop</div><span class="tag">GLB · Greg</span></figcaption></figure>
+      <figure class="card"><img src="greg-gesture.webp" alt="gesture" /><figcaption class="meta"><div class="cap">Gesture over idle (crossfade)</div><span class="tag">GLB · Greg</span></figcaption></figure>
+      <figure class="card"><img src="greg-action.webp" alt="action" /><figcaption class="meta"><div class="cap">Action clip</div><span class="tag">GLB · Greg</span></figcaption></figure>
+      <figure class="card"><img src="workboy-gesture.webp" alt="vrm gesture" /><figcaption class="meta"><div class="cap">Gesture (VRMA clips)</div><span class="tag">VRM · Work Boy</span></figcaption></figure>
+    </div>
+
+    <h2>Blend UX</h2>
+    <div class="grid">
+      <figure class="card"><img src="greg-blend.webp" alt="blend" /><figcaption class="meta"><div class="cap">idle → gesture → idle native crossfade</div><span class="tag">GLB · Greg</span></figcaption></figure>
+    </div>
+
+    <h2>Visemes / lip-sync</h2>
+    <div class="grid">
+      <figure class="card face"><img src="greg-lipsync.webp" alt="lipsync glb" /><figcaption class="meta"><div class="cap">Lip-sync visemes</div><span class="tag">GLB · Greg</span></figcaption></figure>
+      <figure class="card face"><img src="aria-lipsync.webp" alt="lipsync humgen" /><figcaption class="meta"><div class="cap">Lip-sync visemes</div><span class="tag">HumGen · Aria</span></figcaption></figure>
+      <figure class="card face"><img src="erik-lipsync.webp" alt="lipsync vrm" /><figcaption class="meta"><div class="cap">Lip-sync visemes</div><span class="tag">VRM · Erik</span></figcaption></figure>
+    </div>
+
+    <h2>Emote / mood</h2>
+    <div class="grid">
+      <figure class="card face"><img src="greg-emote-happy.webp" alt="happy" /><figcaption class="meta"><div class="cap">Emote: happy</div><span class="tag">GLB · Greg</span></figcaption></figure>
+      <figure class="card face"><img src="greg-emote-sad.webp" alt="sad" /><figcaption class="meta"><div class="cap">Emote: sad</div><span class="tag">GLB · Greg</span></figcaption></figure>
+      <figure class="card face"><img src="greg-emote-angry.webp" alt="angry" /><figcaption class="meta"><div class="cap">Emote: angry</div><span class="tag">GLB · Greg</span></figcaption></figure>
+    </div>
+  </body>
+</html>
