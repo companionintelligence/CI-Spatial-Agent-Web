@@ -1,0 +1,55 @@
+import react from '@vitejs/plugin-react-swc'
+import { defineConfig } from 'vitest/config'
+
+/**
+ * Root Vitest config using the `projects` API (Vitest 4).
+ *
+ * Environment is selected by filename convention so it stays greppable and
+ * avoids per-file `@vitest-environment` docblocks:
+ *   - `*.node.test.ts`      → pure logic (three.js math runs fine in node)
+ *   - `*.dom.test.{ts,tsx}` → jsdom + @testing-library/react component logic
+ *
+ * A third `proxy` project runs the BFF (apps/proxy) unit + integration tests.
+ *
+ * `resolve.dedupe` mirrors apps/web/vite.config.ts so a single React/three
+ * instance is used under test.
+ */
+export default defineConfig({
+  resolve: {
+    dedupe: ['react', 'react-dom', 'three']
+  },
+  test: {
+    projects: [
+      {
+        // Pure service logic — no DOM.
+        test: {
+          name: 'core-node',
+          environment: 'node',
+          globals: true,
+          include: ['packages/core/src/**/*.node.test.ts']
+        }
+      },
+      {
+        // Component + browser-API logic — jsdom.
+        plugins: [react()],
+        resolve: { dedupe: ['react', 'react-dom', 'three'] },
+        test: {
+          name: 'core-dom',
+          environment: 'jsdom',
+          globals: true,
+          setupFiles: ['./vitest.setup.ts'],
+          include: ['packages/core/src/**/*.dom.test.{ts,tsx}']
+        }
+      },
+      {
+        // Backend proxy (BFF).
+        test: {
+          name: 'proxy',
+          environment: 'node',
+          globals: true,
+          include: ['apps/proxy/test/**/*.test.ts']
+        }
+      }
+    ]
+  }
+})
