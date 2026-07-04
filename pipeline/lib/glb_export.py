@@ -19,16 +19,29 @@ def _require_bpy():
         raise RuntimeError('glb_export.py must run inside Blender (bpy unavailable)')
 
 
-def bake_textures(human):
+def bake_textures(human, folder, samples=4):
     """Bake HumGen's procedural skin to image textures BEFORE export.
 
     VERIFIED against HumGen3D v4.0.29 source: ``ExportBuilder._export_common_gltf``
     warns "Exporting GLTF without baking textures. This will result in empty
     textures" and unlinks all skin textures if ``human.process.baking.is_baked()``
     is False. Since Strategy D re-skins onto the RPM armature (so we export via the
-    raw glTF exporter, not ``human.export()``), we must bake here first. HumGen's
+    raw glTF exporter, not ``human.export``), we must bake here first. HumGen's
     baker lives at ``human.process.baking``; SimpleBake (owned, see DRIVE-ASSETS.md)
     is the fallback for finer control.
+
+    The v4.0.29 API is ``baking.bake_all(folder_path, samples=4, context=None)`` —
+    it writes body/eyes/teeth PBR PNGs (base color, normal, roughness, specular)
+    into ``folder`` and relinks them onto the materials. NB: do NOT use
+    ``human.export.to_glb(..., bake_textures=True)`` — that convenience path is
+    broken in 4.0.29 (``HumGen3D.common.os`` shadows stdlib ``os`` and lacks
+    ``.path``, so the decorator's ``os.path.dirname`` throws). Bake here, then
+    export with the raw glTF exporter (or ``bake_textures=False``).
+
+    Args:
+        human: the HumGen ``Human`` instance.
+        folder: directory to write the baked PNGs into (usually the GLB's dir).
+        samples: bake samples (HumGen default 4).
     """
     _require_bpy()
     baking = getattr(getattr(human, 'process', None), 'baking', None)
@@ -38,7 +51,8 @@ def bake_textures(human):
         return False
     try:
         if not baking.is_baked():
-            baking.bake()  # TODO: verify bake() signature / resolution args on v4.0.29
+            os.makedirs(folder, exist_ok=True)
+            baking.bake_all(folder, samples)  # VERIFIED v4.0.29 signature
         return True
     except Exception as e:  # noqa: BLE001
         print(f'[glb_export] texture bake failed ({e}); export may have empty textures')
