@@ -26,7 +26,10 @@ import type { useEmoteService } from '../../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../../services/visemes/useVisemeService'
 import type { AnimationClip } from '../../../services/animation/animationTypes'
 
-const AVATAR_MODEL = AvatarOptions.Liam
+// Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
+// companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
+// no morph targets — body-animation only — so it's no longer the default.
+const AVATAR_MODEL = AvatarOptions.Greg
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
