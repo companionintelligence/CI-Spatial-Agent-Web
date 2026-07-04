@@ -10,9 +10,11 @@ The app is a full-viewport **3D avatar viewport** with a 2D HUD — logo, chat-l
 panel, chat input, and a floating control dock — composited on top. The shell is
 intentionally **dark-only**: it is an XR HUD, not a light-themable document
 surface, so the canon dark background (`--teal-950` `#041620`) is kept even under a
-light OS preference. It follows the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/style):
-teal `--primary`, Montserrat, and the enriched-palette v0.2.0 tokens adopted in
-`packages/core/src/styles/globals.css`.
+light OS preference. It is on the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/style):
+teal `--primary` (`#0f717a` / hover `#abd4d8`) and Montserrat, sourced from the shared
+`:root` / `.dark` tokens in `packages/core/src/styles/globals.css`. The design system
+ships both light and dark palettes; this XR HUD deliberately renders the **dark**
+tokens only.
 
 All screenshots below are the **real UI rendered headlessly** (WebGL via
 `chrome-headless-shell`/SwiftShader). With no LLM/TTS backend configured the app
@@ -28,7 +30,7 @@ The microphone-permission modal shown on first load (before `ci_avatar_onboarded
 is set in `localStorage`), layered over the live avatar scene. "Skip" drops
 straight into text chat.
 
-![First-run onboarding — dark](docs/ui/webxr-onboarding-dark.png)
+![First-run onboarding — dark](docs/media/webxr-onboarding-dark.png)
 
 ### HUD shell
 
@@ -36,7 +38,7 @@ The default state once onboarding is dismissed: the Companion Intelligence logo,
 VRM avatar, the collapsible **Chat Log** panel (empty), the floating control dock,
 and the live `XR:` status line.
 
-![HUD shell — dark](docs/ui/webxr-shell-dark.png)
+![HUD shell — dark](docs/media/webxr-shell-dark.png)
 
 ### Chat conversation
 
@@ -44,7 +46,7 @@ The **Chat Log** populated by a real exchange with the offline scripted provider
 `You` / `Assistant` bubbles rendered with the canon teal gradient. No LLM backend
 is running; the responses come from the bundled directed-response set.
 
-![Chat conversation — dark](docs/ui/webxr-chat-dark.png)
+![Chat conversation — dark](docs/media/webxr-chat-dark.png)
 
 ### Controls collapsed
 
@@ -52,7 +54,7 @@ With the control dock hidden via its **Controls** toggle (bottom-left), the HUD
 reduces to the logo, Chat Log, and the exposed `Type your message here…` chat
 input — the minimal text-only interaction surface.
 
-![Controls collapsed — dark](docs/ui/webxr-controls-collapsed-dark.png)
+![Controls collapsed — dark](docs/media/webxr-controls-collapsed-dark.png)
 
 > **Backend / native-runtime-gated surfaces (not captured):** entering an immersive
 > **AR/VR session** requires a WebXR-capable headset (the 🥽 / 📱 dock buttons and
