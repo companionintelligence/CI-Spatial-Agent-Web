@@ -12,7 +12,15 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 import { AvatarOptions } from './AvatarOptions'
 import { Vector3 } from 'three'
-import { ANIMATION_CLIPS, getRandomClip, updateAnimationDurations } from '../../../services/animation/config/animationClips'
+import {
+  VRMA_CLIPS,
+  GLB_CLIPS,
+  getAvatarCatalog,
+  getIdleClip,
+  getGreetClip,
+  getRandomClip,
+  updateAnimationDurations
+} from '../../../services/animation/config/animationClips'
 import type { useAnimationService } from '../../../services/animation/useAnimationService'
 import type { useEmoteService } from '../../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../../services/visemes/useVisemeService'
@@ -38,10 +46,10 @@ interface AvatarModelProps {
 
 // Custom hook to load external animation files, including VRMA animations
 export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D>, vrm?: VRMCore) => {
-  // Split clips by type so hooks are deterministic
-  const vrmaClips = Object.values(ANIMATION_CLIPS).filter((c) => c.path.toLowerCase().endsWith('.vrma'))
-
-  const gltfClips = Object.values(ANIMATION_CLIPS).filter((c) => !c.path.toLowerCase().endsWith('.glb'))
+  // Load BOTH catalogs every render (stable hook order); collect only the set that
+  // matches the active avatar's skeleton below. VRMA → VRM avatars, GLB → GLB avatars.
+  const vrmaClips = Object.values(VRMA_CLIPS)
+  const gltfClips = Object.values(GLB_CLIPS)
 
   // Load VRMA animations
   const vrmaGLTFs = vrmaClips.map((clip) =>
@@ -136,6 +144,11 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   const isVRM = selectedModel.toLowerCase().endsWith('.vrm')
 
   const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined
+
+  // Skeleton-appropriate animation catalog + named roles for this avatar.
+  const avatarCatalog = getAvatarCatalog(isVRM)
+  const idleClip = getIdleClip(avatarCatalog)
+  const greetClip = getGreetClip(avatarCatalog)
   const avatarScene = isVRM ? vrm?.scene : gltf.scene
   const avatarRef = useRef<THREE.Object3D>(null)
   
@@ -210,7 +223,7 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
       }
     })
 
-    animationService.actions.setup(validActions, mixer, avatarRef.current || undefined , ANIMATION_CLIPS.idle_loop)
+    animationService.actions.setup(validActions, mixer, avatarRef.current || undefined, idleClip, avatarCatalog)
 
   console.log(`Animation service setup with ${Object.keys(actions).length} animations`)
   // Make avatar visible after idle animation is applied
@@ -331,21 +344,21 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     if (startupPlayedRef.current) return
     if (!isAvatarVisible) return // Wait until avatar is visible
     // Mark startup as played to prevent re-execution
-    const startupTimer = setTimeout(() => { 
-      emoteService.actions.performAction({emotion: 'happy', relaxTime: ANIMATION_CLIPS.surprise_greet.duration})
+    const startupTimer = setTimeout(() => {
+      emoteService.actions.performAction({ emotion: 'happy', relaxTime: greetClip.duration })
 
+      // Greet, then blend to the looping idle — clips chosen for this avatar's skeleton.
       animationService.actions.performAction({
-        clip: ANIMATION_CLIPS.surprise_greet,
+        clip: greetClip,
         immediate: true,
         loopCount: 1,
         blendTime: 300
       })
 
-      // After surprise_greet duration, blend to idle_loop
       animationService.actions.performAction({
-        clip: ANIMATION_CLIPS.idle_loop,
+        clip: idleClip,
         loopCount: Infinity,
-        blendTime: 2000 // 1 second blend
+        blendTime: 2000
       })
       startupPlayedRef.current = true
 
@@ -401,26 +414,26 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   const handleAvatarClick = useCallback((event: any) => {
     event.stopPropagation()
     if (animationService && emoteService) {
-      const randomAction = getRandomClip('action') as AnimationClip
+      const randomAction = getRandomClip('action', avatarCatalog) as AnimationClip
       emoteService.actions.performAction({
-        emotion: randomAction.name == ANIMATION_CLIPS.finger_gun.name ? 'angry' : 'happy' , 
-        relaxTime: randomAction.duration - 1000
+        emotion: 'happy',
+        relaxTime: Math.max(0, randomAction.duration - 1000)
       })
 
       animationService.actions.performAction({
         clip: randomAction,
         immediate: true,
         loopCount: 1,
-        blendTime : 1000
+        blendTime: 1000
       })
 
       animationService.actions.performAction({
-        clip: ANIMATION_CLIPS.idle_loop,
+        clip: idleClip,
         loopCount: Infinity,
-        blendTime : 1000
+        blendTime: 1000
       })
     }
-  }, [animationService])
+  }, [animationService, emoteService, avatarCatalog, idleClip])
 
   
   return (

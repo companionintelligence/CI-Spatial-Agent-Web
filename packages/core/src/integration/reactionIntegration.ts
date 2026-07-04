@@ -1,7 +1,20 @@
-import type { AnimationPerformanceData } from '../services/animation/animationTypes'
+import type { AnimationCategory, AnimationPerformanceData } from '../services/animation/animationTypes'
 import type { ConversationMessage } from '../services/conversation/conversationType'
-import type { PerformanceData } from '../services/emote/emoteTypes'
+import type { EmotionType, PerformanceData } from '../services/emote/emoteTypes'
 import { detectEmotionFromText, getEmotionIntensity } from './emotionIntegration'
+
+const clamp = (x: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, x))
+
+// Emotion → animation category. Resolved against whatever clips the active avatar loaded
+// (GLB or VRMA), so this works for every avatar. Neutral → no gesture (stay idle).
+const EMOTION_TO_CATEGORY: Partial<Record<EmotionType, AnimationCategory>> = {
+  happy: 'gesture',
+  love: 'gesture',
+  angry: 'expression',
+  fear: 'expression',
+  sad: 'expression',
+  disgust: 'expression'
+}
 
 /**
  * Build PerformanceData (facial/emote) and an AnimationPerformanceData (body animation)
@@ -32,56 +45,22 @@ export const createReactionFromMessage = (
  * Map emotion/action → animation clip. Intensity modulates speed/blend.
  */
 export const selectAnimationForPerformance = (
-  _p: PerformanceData,
-  _intensity: number = 0.6
+  p: PerformanceData,
+  intensity: number = 0.6
 ): AnimationPerformanceData | undefined => {
-  // Base mapping to existing ANIMATION_CLIPS names
-  let base: AnimationPerformanceData | undefined = undefined
+  const category = p.emotion ? EMOTION_TO_CATEGORY[p.emotion] : undefined
+  if (!category) return undefined // neutral / unmapped → stay in idle
 
-  /*if (p.action === 'greeting') base = { clip: ANIMATION_CLIPS.wave, loopCount: 1, blendTime: 500, speed: 0.9 }
-  else if (p.action === 'farewell') base = { clip: ANIMATION_CLIPS.bow, loopCount: 1, blendTime: 600, speed: 1.0 }
-  else if (p.action === 'agreement') base = { clip: ANIMATION_CLIPS.agree, loopCount: 1, blendTime: 500, speed: 0.85 }
-  else if (p.action === 'disagreement') base = { clip: ANIMATION_CLIPS.cocky_head_turn, loopCount: 1, blendTime: 500, speed: 0.9 }
-  else {
-    switch (p.emotion) {
-      case 'happy':
-        base = { clip: ANIMATION_CLIPS.happy_hand_gesture, loopCount: 1, blendTime: 500, speed: 1.0 }
-        break
-      case 'sad':
-        base = { clip: ANIMATION_CLIPS.looking, loopCount: 1, blendTime: 600, speed: 0.8 }
-        break
-      case 'angry':
-        base = { clip: ANIMATION_CLIPS.reacting, loopCount: 1, blendTime: 500, speed: 1.0 }
-        break
-      case 'fear':
-        base = { clip: ANIMATION_CLIPS.surprised, loopCount: 1, blendTime: 400, speed: 1.0 }
-        break
-      case 'disgust':
-        base = { clip: ANIMATION_CLIPS.shaking_it_off, loopCount: 1, blendTime: 450, speed: 0.95 }
-        break
-      case 'love':
-        base = { clip: ANIMATION_CLIPS.hands_forward_gesture, loopCount: 1, blendTime: 500, speed: 0.9 }
-        break
-      default:
-        break
-    }
-  }
-
-  if (base === undefined) return
-  // Intensity-based modulation
-  const speedScale = clamp(0.75 + intensity * 0.5, 0.75, 1.25) // 0.75..1.25
-  const blendScale = clamp(1.0 - intensity * 0.3, 0.7, 1.0) // higher intensity → faster blend
-  
-  
+  // Intensity modulates playback speed + blend; the animation service resolves a loaded
+  // clip of `category` for the active avatar (skeleton-agnostic).
+  const speedScale = clamp(0.85 + intensity * 0.3, 0.85, 1.15)
   return {
-    name: base.name,
-    loopCount: base.loopCount,
-    speed: clamp((base.speed ?? 1.0) * speedScale, 0.5, 1.6),
-    blendTime: Math.round((base.blendTime ?? 400) * blendScale),
-    immediate: true
-  } */
-
-  return base
+    category,
+    loopCount: 1,
+    immediate: true,
+    speed: clamp(speedScale, 0.7, 1.4),
+    blendTime: Math.round(clamp(500 - intensity * 150, 350, 500))
+  }
 }
 
 export const reactionIntegrationService = {

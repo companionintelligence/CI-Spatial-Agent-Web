@@ -77,7 +77,8 @@ export function setupAnimationState(
   state: AnimationState,
   actions: Record<string, THREE.AnimationAction>,
   mixer: THREE.AnimationMixer,
-  avatar?: THREE.Object3D
+  avatar?: THREE.Object3D,
+  catalog?: Record<string, AnimationClip>
 ) {
   // Re-attach cleanly if setup runs again (e.g. avatar reload).
   detachFinishedListener(state)
@@ -85,6 +86,7 @@ export function setupAnimationState(
   state.actions = actions
   state.mixer = mixer
   state.avatar = avatar
+  if (catalog) state.catalog = catalog
 
   const listener: THREE.EventListener<THREE.AnimationMixerEventMap['finished'], 'finished', THREE.AnimationMixer> = (
     event
@@ -133,7 +135,8 @@ export function setAnimationEnabled(state: AnimationState, enabled: boolean) {
 export function startPerformance(state: AnimationState, performanceData: AnimationPerformanceData, _startTime: number) {
   if (!state.actions) return
 
-  const configuredClip = performanceData.clip
+  // Resolve an explicit clip, or pick a loaded clip of the requested category.
+  const configuredClip = performanceData.clip ?? pickLoadedClipByCategory(state, performanceData.category)
   if (!configuredClip) return
 
   // Runtime clip instance honoring performance overrides.
@@ -280,6 +283,20 @@ function pickNextClip(state: AnimationState): AnimationClip {
   }
   state.cyclingState.lastCategory = categoryToPick
   return chosenClip
+}
+
+/** Pick a random *loaded* clip of a category from the active avatar's catalog. */
+function pickLoadedClipByCategory(
+  state: AnimationState,
+  category?: AnimationCategory
+): AnimationClip | undefined {
+  if (!category || !state.catalog || !state.actions) return undefined
+  const actions = state.actions
+  const candidates = Object.values(state.catalog).filter(
+    (c) => c.category === category && actions[c.name]
+  )
+  if (!candidates.length) return undefined
+  return candidates[Math.floor(Math.random() * candidates.length)]
 }
 
 /** Apply loop/clamp/blend-mode config to an action from its clip definition. */
