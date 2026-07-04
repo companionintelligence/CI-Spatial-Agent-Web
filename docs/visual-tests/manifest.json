@@ -1,0 +1,138 @@
+{
+  "generatedWith": "gen-webp.mjs",
+  "fps": 9,
+  "clips": [
+    {
+      "name": "greg-idle",
+      "avatar": "Greg",
+      "shot": "body",
+      "ms": 2600,
+      "group": "animation",
+      "caption": "Idle loop (GLB · Greg)",
+      "prep": "h.playCategory('idle',{loopCount:1e9})",
+      "file": "greg-idle.webp",
+      "ok": true,
+      "sizeKb": 50
+    },
+    {
+      "name": "greg-gesture",
+      "avatar": "Greg",
+      "shot": "body",
+      "ms": 2800,
+      "group": "animation",
+      "caption": "Gesture over idle — native crossfade (GLB · Greg)",
+      "prep": "h.playCategory('gesture',{blendTime:400})",
+      "file": "greg-gesture.webp",
+      "ok": true,
+      "sizeKb": 51
+    },
+    {
+      "name": "greg-action",
+      "avatar": "Greg",
+      "shot": "body",
+      "ms": 3200,
+      "group": "animation",
+      "caption": "Action clip (GLB · Greg)",
+      "prep": "h.playCategory('action',{blendTime:400})",
+      "file": "greg-action.webp",
+      "ok": true,
+      "sizeKb": 59
+    },
+    {
+      "name": "greg-blend",
+      "avatar": "Greg",
+      "shot": "body",
+      "ms": 3400,
+      "group": "blend",
+      "caption": "idle → gesture → idle blend (GLB · Greg)",
+      "prep": "setTimeout(()=>h.playCategory('gesture',{blendTime:800}),600);setTimeout(()=>h.playCategory('idle',{loopCount:1e9,blendTime:900}),2200)",
+      "file": "greg-blend.webp",
+      "ok": true,
+      "sizeKb": 68
+    },
+    {
+      "name": "greg-lipsync",
+      "avatar": "Greg",
+      "shot": "face",
+      "ms": 3200,
+      "group": "viseme",
+      "caption": "Lip-sync visemes (GLB · Greg)",
+      "prep": "h.speak(\"Hello, I'm your companion. How can I help you today?\")",
+      "file": "greg-lipsync.webp",
+      "ok": true,
+      "sizeKb": 51
+    },
+    {
+      "name": "aria-lipsync",
+      "avatar": "Aria",
+      "shot": "face",
+      "ms": 3200,
+      "group": "viseme",
+      "caption": "Lip-sync visemes (HumGen pipeline · Aria)",
+      "prep": "h.speak(\"Welcome. I was built by the avatar pipeline.\")",
+      "file": "aria-lipsync.webp",
+      "ok": true,
+      "sizeKb": 22
+    },
+    {
+      "name": "erik-lipsync",
+      "avatar": "Erik",
+      "shot": "face",
+      "ms": 3200,
+      "group": "viseme",
+      "caption": "Lip-sync visemes (VRM · Erik)",
+      "prep": "h.speak(\"Hi there, nice to meet you.\")",
+      "file": "erik-lipsync.webp",
+      "ok": true,
+      "sizeKb": 79
+    },
+    {
+      "name": "greg-emote-happy",
+      "avatar": "Greg",
+      "shot": "face",
+      "ms": 2600,
+      "group": "emote",
+      "caption": "Emote: happy (GLB · Greg)",
+      "prep": "h.setEmote('happy')",
+      "file": "greg-emote-happy.webp",
+      "ok": true,
+      "sizeKb": 49
+    },
+    {
+      "name": "greg-emote-sad",
+      "avatar": "Greg",
+      "shot": "face",
+      "ms": 2600,
+      "group": "emote",
+      "caption": "Emote: sad (GLB · Greg)",
+      "prep": "h.setEmote('sad')",
+      "file": "greg-emote-sad.webp",
+      "ok": true,
+      "sizeKb": 49
+    },
+    {
+      "name": "greg-emote-angry",
+      "avatar": "Greg",
+      "shot": "face",
+      "ms": 2600,
+      "group": "emote",
+      "caption": "Emote: angry (GLB · Greg)",
+      "prep": "h.setEmote('angry')",
+      "file": "greg-emote-angry.webp",
+      "ok": true,
+      "sizeKb": 47
+    },
+    {
+      "name": "workboy-gesture",
+      "avatar": "Work Boy",
+      "shot": "body",
+      "ms": 2800,
+      "group": "animation",
+      "caption": "Gesture (VRM · Work Boy, VRMA clips)",
+      "prep": "h.playCategory('gesture',{blendTime:400})",
+      "file": "workboy-gesture.webp",
+      "ok": true,
+      "sizeKb": 117
+    }
+  ]
+}

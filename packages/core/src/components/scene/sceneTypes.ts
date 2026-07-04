@@ -37,7 +37,7 @@ export const sceneConfig: SceneConfig = {
 
 export const defaultAvatarConfig: AvatarConfig = {
   uuid: 'alexandria',
-  modelUrl: AvatarOptions.Takeshi,
+  modelUrl: AvatarOptions.Greg,
   position: [0, 0, 0],
   animationUrl: ANIMATION_CLIPS['idle_loop'].path,
   visible: true

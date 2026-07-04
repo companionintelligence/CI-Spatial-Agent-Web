@@ -129,7 +129,7 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
 
   const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled } = state
 
-  const gltf = useLoader(GLTFLoader, AVATAR_MODEL, (loader) => {
+  const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
     loader.register((parser: GLTFParser) => {
       const mtoonMaterialPlugin = new MToonMaterialLoaderPlugin(parser, {
 
@@ -448,8 +448,17 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     />
   )}
 
-// Memoize the component to prevent re-renders when services don't change
-export const AvatarModel = memo(AvatarModelComponent)
+// Memoize so unrelated parent re-renders don't churn the (expensive) avatar.
+const AvatarModelMemo = memo(AvatarModelComponent)
+
+// Remount the whole avatar when the selected model changes: a new mesh means new
+// morph targets, a new skeleton family (GLB vs VRM), and a fresh startup greet, so
+// keying by selectedModel re-initializes every ref/effect cleanly instead of trying
+// to mutate a live rig in place.
+export const AvatarModel = (props: AvatarModelProps) => {
+  const [state] = useSimpleStore(AvatarState)
+  return <AvatarModelMemo key={state.selectedModel} {...props} />
+}
 
 useGLTF.preload(AVATAR_MODEL)
 

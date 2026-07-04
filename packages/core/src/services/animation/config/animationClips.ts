@@ -3,8 +3,8 @@ import * as THREE from 'three'
 
 /**
  * Animation catalogs, split by skeleton family (see docs/ANIMATION-PIPELINE.md):
- *   - VRMA_CLIPS  → VRM humanoid avatars (Takeshi, Savi). Retargeted per-VRM at load.
- *   - GLB_CLIPS   → RPM/Mixamo GLB avatars (all CI models incl. the default 'Liam').
+ *   - VRMA_CLIPS  → VRM humanoid avatars (Erik, Yuki, Work Boy, …). Retargeted per-VRM at load.
+ *   - GLB_CLIPS   → RPM/Mixamo GLB avatars (all CI models incl. the default 'Greg').
  *
  * `getAvatarCatalog(isVRM)` returns the right one; the loader in AvatarModel picks by the
  * active avatar so GLB avatars finally get real body animation (previously only VRMA were

@@ -56,8 +56,21 @@ export { Scene3D } from './components/scene/Scene3D'
 export { Viewport3D } from './components/scene/Viewport3D'
 export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
-export { AvatarModel } from './components/scene/avatar/AvatarModel'
+export { AvatarModel, AvatarState } from './components/scene/avatar/AvatarModel'
+export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
 export type { SceneActions } from './components/scene/Scene3D'
+
+// Animation catalogs (skeleton-aware clip lookup for consumers/harness)
+export {
+  ANIMATION_CLIPS,
+  VRMA_CLIPS,
+  GLB_CLIPS,
+  getAvatarCatalog,
+  getIdleClip,
+  getGreetClip,
+  getClipsByCategory,
+  getRandomClip
+} from './services/animation/config/animationClips'
 
 // Components - Chat
 export { ChatOverlay } from './components/chat/ChatOverlay'

@@ -66,18 +66,17 @@ def generate_human(seed=None, gender='male', height=None):
             '(help.humgen3d.com/api) and update humgen.py.'
         )
 
-    # --- 2. randomize body / face / skin / hair to diversify ---
-    # TODO: verify against installed addon. v4 exposes property-group randomizers:
-    #   human.body.randomize(); human.face.randomize()
-    #   human.skin.randomize(); human.hair.regular_hair.randomize()
+    # --- 2. randomize body / face / skin to diversify ---
+    # VERIFIED v4.0.29: human.body / .face / .skin are @property settings objects
+    # each exposing a no-arg .randomize(). NB: do NOT do a truthiness test on these
+    # (e.g. `if obj`) — they are HumGen prop_collection wrappers whose __len__ can
+    # recurse; call .randomize() directly under try/except instead.
     for randomizer in ('body', 'face', 'skin'):
-        obj = getattr(human, randomizer, None)
-        rnd = getattr(obj, 'randomize', None) if obj else None
-        if callable(rnd):
-            try:
-                rnd()                                       # TODO: verify signature
-            except Exception as e:  # noqa: BLE001 — don't abort on one sub-randomizer
-                print(f'[humgen] {randomizer}.randomize() skipped: {e}')
+        try:
+            settings = getattr(human, randomizer)
+            settings.randomize()
+        except Exception as e:  # noqa: BLE001 — don't abort on one sub-randomizer
+            print(f'[humgen] {randomizer}.randomize() skipped: {e}')
 
     # hair is nested differently across versions
     _try_randomize_hair(human)
@@ -98,30 +97,28 @@ def generate_human(seed=None, gender='male', height=None):
 
 
 def _try_randomize_hair(human):
-    hair = getattr(human, 'hair', None)
-    if hair is None:
+    try:
+        hair = human.hair
+    except Exception:  # noqa: BLE001
         return
     for attr in ('regular_hair', 'face_hair', 'eyebrows'):
-        sub = getattr(hair, attr, None)
-        rnd = getattr(sub, 'randomize', None) if sub else None
-        if callable(rnd):
-            try:
-                rnd()                                       # TODO: verify
-            except Exception as e:  # noqa: BLE001
-                print(f'[humgen] hair.{attr}.randomize() skipped: {e}')
+        try:
+            sub = getattr(hair, attr)
+            sub.randomize()
+        except Exception as e:  # noqa: BLE001
+            print(f'[humgen] hair.{attr}.randomize() skipped: {e}')
 
 
 def _set_height(human, height):
-    # TODO: verify against installed addon. v4: human.height.set(height) (metres)
-    height_api = getattr(human, 'height', None)
-    setter = getattr(height_api, 'set', None) if height_api else None
-    if callable(setter):
-        try:
-            setter(height)                                  # TODO: verify units (m vs cm)
-            return
-        except Exception as e:  # noqa: BLE001
-            print(f'[humgen] height.set({height}) failed: {e}')
-    print(f'[humgen] height not applied ({height}) — verify HumGen height API')
+    # v4.0.29: human.height.set(height_cm) — HumGen's height API works in
+    # centimetres. We pass metres in, so convert. Guarded so a signature drift
+    # doesn't abort the whole build.
+    try:
+        human.height.set(height * 100.0)
+        print(f'[humgen] set height to {height} m ({height * 100.0:.0f} cm)')
+        return
+    except Exception as e:  # noqa: BLE001
+        print(f'[humgen] height.set({height}) failed: {e}; leaving default height')
 
 
 def _finish_creation(human):
@@ -136,16 +133,23 @@ def _finish_creation(human):
 
 
 def get_body_object(human):
-    """Return the HumGen body mesh Blender object."""
-    # TODO: verify against installed addon. v4 commonly: human.body_obj
-    for attr in ('body_obj', 'body_object', 'objects'):
-        val = getattr(human, attr, None)
-        if val is None:
-            continue
-        if hasattr(val, 'type') and val.type == 'MESH':
-            return val
-        # 'objects' may be a collection wrapper with .body
-        body = getattr(val, 'body', None)
-        if body is not None:
+    """Return the HumGen body mesh Blender object.
+
+    VERIFIED against v4.0.29: the body mesh is ``human.objects.body`` (the
+    ``HG_Body`` object). Older ``body_obj``/``body_object`` attrs are tried as a
+    fallback, then a name lookup for ``HG_Body``.
+    """
+    objs = getattr(human, 'objects', None)
+    if objs is not None:
+        body = getattr(objs, 'body', None)
+        if body is not None and getattr(body, 'type', None) == 'MESH':
             return body
+    for attr in ('body_obj', 'body_object'):
+        val = getattr(human, attr, None)
+        if val is not None and getattr(val, 'type', None) == 'MESH':
+            return val
+    if bpy is not None:
+        named = bpy.data.objects.get('HG_Body')
+        if named is not None:
+            return named
     raise RuntimeError('could not resolve HumGen body object — verify HumGen API')

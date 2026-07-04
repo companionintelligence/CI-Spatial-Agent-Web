@@ -145,29 +145,79 @@ OCULUS_VISEMES = [
     'viseme_aa', 'viseme_E', 'viseme_I', 'viseme_O', 'viseme_U',
 ]
 
-# HumGen shape-key name  ->  Oculus viseme name.
-# NEEDS VERIFICATION against installed HumGen mesh shape keys. HumGen ships a
-# FACS-oriented set, NOT Oculus visemes, so most of these must be *synthesised*
-# (driven from jaw/lip FACS keys) rather than 1:1 renamed. Best-guess source
-# keys below; confirm real names via BlenderMCP:
-#   >>> [k.name for k in human.body_obj.data.shape_keys.key_blocks]
-HUMGEN_TO_OCULUS_VISEME = {
-    # rest / silence — usually the basis, no source key
-    'viseme_sil': None,                      # NEEDS VERIFICATION: rest pose, synth from neutral
-    'viseme_PP': 'MouthClose',               # NEEDS VERIFICATION: bilabial closure
-    'viseme_FF': 'MouthFunnel',              # NEEDS VERIFICATION: labiodental
-    'viseme_TH': 'JawOpen',                  # NEEDS VERIFICATION: dental (synth: small jaw + tongue)
-    'viseme_DD': 'JawOpen',                  # NEEDS VERIFICATION: alveolar
-    'viseme_kk': 'JawOpen',                  # NEEDS VERIFICATION: velar
-    'viseme_CH': 'MouthPucker',              # NEEDS VERIFICATION: palato-alveolar
-    'viseme_SS': 'MouthStretch',             # NEEDS VERIFICATION: alveolar fricative
-    'viseme_nn': 'MouthClose',               # NEEDS VERIFICATION: nasal
-    'viseme_RR': 'MouthPucker',              # NEEDS VERIFICATION: trill
-    'viseme_aa': 'JawOpen',                  # NEEDS VERIFICATION: open vowel
-    'viseme_E': 'MouthStretch',              # NEEDS VERIFICATION: mid-front vowel
-    'viseme_I': 'MouthStretch',              # NEEDS VERIFICATION: close-front vowel
-    'viseme_O': 'MouthFunnel',               # NEEDS VERIFICATION: mid-back vowel
-    'viseme_U': 'MouthPucker',               # NEEDS VERIFICATION: close-back vowel
+# ---------------------------------------------------------------------------
+# Viseme derivation — build each Oculus viseme from ARKit mouth/jaw morphs
+# ---------------------------------------------------------------------------
+#
+# VERIFIED source of ARKit names: HumGen v4.0.29 ships a FACS shape-key set in
+# `models/face_rig.json` (loaded via `human.expression.load_facial_rig()`), and
+# `bpy.ops.hg3d.prepare_for_arkit(suffix='long')` renames the `_L`/`_R` halves to
+# `Left`/`Right`, yielding the standard ARKit blendshape names on HG_Body:
+#   jawOpen, jawForward, mouthClose, mouthFunnel, mouthPucker,
+#   mouthStretchLeft/Right, mouthSmileLeft/Right, mouthUpperUpLeft/Right,
+#   mouthLowerDownLeft/Right, mouthShrugUpper/Lower, mouthRollUpper/Lower,
+#   mouthLeft/Right, cheekSquintLeft/Right, ...
+#
+# The 15 Oculus visemes are NOT part of the ARKit set — they are *derived* as new
+# shape keys, each a weighted blend of the ARKit shapes above. This is the
+# standard ARKit→Oculus-viseme correspondence (Meta/Oculus LipSync viseme set,
+# the same one Ready Player Me bakes into its exports). facemorphs.derive_visemes
+# reads this table, drives the listed ARKit source keys to their weights, and
+# bakes each blend as its own `viseme_*` shape key (`shape_key_add(from_mix=True)`)
+# so it survives glTF export as a morph target.
+#
+# `viseme_sil` (silence/rest) is the neutral face → an empty blend (Basis copy).
+VISEME_FROM_ARKIT = {
+    # rest / silence — neutral mouth (no source shapes)
+    'viseme_sil': {},
+    # PP — bilabial plosive (p/b/m): lips pressed shut
+    'viseme_PP': {'mouthClose': 0.9, 'mouthPucker': 0.2, 'mouthRollLower': 0.2,
+                  'mouthRollUpper': 0.2},
+    # FF — labiodental fricative (f/v): lower lip to upper teeth
+    'viseme_FF': {'mouthLowerDownLeft': 0.5, 'mouthLowerDownRight': 0.5,
+                  'mouthUpperUpLeft': 0.25, 'mouthUpperUpRight': 0.25,
+                  'jawOpen': 0.1},
+    # TH — dental fricative (th): jaw slightly open, tongue between teeth
+    'viseme_TH': {'jawOpen': 0.25, 'mouthLowerDownLeft': 0.2,
+                  'mouthLowerDownRight': 0.2},
+    # DD — alveolar (d/t/n): jaw a touch open, mouth neutral-open
+    'viseme_DD': {'jawOpen': 0.3, 'mouthShrugUpper': 0.15},
+    # kk — velar (k/g): mid jaw open
+    'viseme_kk': {'jawOpen': 0.35, 'mouthShrugUpper': 0.1},
+    # CH — palato-alveolar (ch/j/sh): rounded, slightly protruded
+    'viseme_CH': {'mouthFunnel': 0.5, 'mouthPucker': 0.4, 'jawOpen': 0.15},
+    # SS — alveolar fricative (s/z): teeth close, lips spread
+    'viseme_SS': {'mouthStretchLeft': 0.4, 'mouthStretchRight': 0.4,
+                  'mouthClose': 0.3},
+    # nn — nasal / lateral (n/l): jaw slightly open, tongue up
+    'viseme_nn': {'jawOpen': 0.25, 'mouthShrugUpper': 0.2},
+    # RR — approximant (r): light rounding + protrusion
+    'viseme_RR': {'mouthFunnel': 0.35, 'mouthPucker': 0.3, 'jawOpen': 0.15},
+    # aa — open vowel (ah): jaw wide open
+    'viseme_aa': {'jawOpen': 0.85},
+    # E — mid-front vowel (eh): jaw part-open + slight spread
+    'viseme_E': {'jawOpen': 0.4, 'mouthStretchLeft': 0.3, 'mouthStretchRight': 0.3},
+    # I — close-front vowel (ih/ee): lips spread wide, jaw barely open
+    'viseme_I': {'mouthStretchLeft': 0.5, 'mouthStretchRight': 0.5,
+                 'mouthSmileLeft': 0.2, 'mouthSmileRight': 0.2, 'jawOpen': 0.15},
+    # O — mid-back rounded vowel (oh): funnel + moderate jaw open
+    'viseme_O': {'mouthFunnel': 0.6, 'mouthPucker': 0.3, 'jawOpen': 0.35},
+    # U — close-back rounded vowel (oo): tight pucker
+    'viseme_U': {'mouthPucker': 0.7, 'mouthFunnel': 0.3, 'jawOpen': 0.1},
+}
+
+# Legacy alias retained for any external importer; the real path is
+# VISEME_FROM_ARKIT above (visemes are synthesised, not 1:1 renamed).
+HUMGEN_TO_OCULUS_VISEME = {v: None for v in OCULUS_VISEMES}
+
+# ARKit contract morphs that HumGen's FACS set only provides as split L/R halves
+# (or not at all) — synthesised as combined shape keys so the whole contract is
+# real deformation, not zero placeholders. Maps target morph -> {source: weight}.
+ARKIT_SYNTHESISED = {
+    # combined eyes-closed = both blink halves
+    'eyesClosed': {'eyeBlinkLeft': 1.0, 'eyeBlinkRight': 1.0},
+    # combined smile = both smile halves
+    'mouthSmile': {'mouthSmileLeft': 1.0, 'mouthSmileRight': 1.0},
 }
 
 

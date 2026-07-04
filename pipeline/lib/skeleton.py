@@ -1,16 +1,29 @@
 """Strategy D — re-skin the HumGen body onto the RPM skeleton.
 
-The HumGen human ships a Rigify-derived rig. The app expects the RPM/Mixamo
-skeleton (bone names ``Hips/Spine/Spine1/Spine2/Neck/Head/LeftEye/RightEye/...``)
-so that the 238 RPM clips + the app's GLB clips play natively and the GLB
-head-finder / gaze service find their bones by name.
+The HumGen human ships a Rigify-derived rig whose deform bones are named
+``spine.001``/``upper_arm.L``/``thigh.L`` … . The app expects the RPM/Mixamo
+skeleton (``Hips/Spine/Spine1/Spine2/Neck/Head/LeftEye/RightEye`` + the standard
+RPM arm/leg/hand chain) so the 34 shared GLB clips play natively and the GLB
+head-finder / gaze service resolve their bones by name.
 
-This module imports the RPM T-pose armature (already the exact rig), transfers
-the HumGen body vertex weights onto it, reparents the mesh, and deletes the
-HumGen rig. Output matches ``rpm-mixamo-t-posed.glb`` bone-for-bone.
+Strategy D (full re-skin):
 
-Runs under ``blender --background``. All API calls that are version-sensitive
-are flagged ``# TODO: verify against installed addon``.
+  1. Import the RPM T-pose GLB — it carries both the RPM armature AND a real
+     skinned reference body (``Wolf3D_Avatar``: 7415 verts, 82 RPM-named vertex
+     groups). VERIFIED against the in-tree ``rpm-mixamo-t-posed.glb`` (Anselm).
+  2. Align the HumGen body to the RPM armature (both are ~1.8 m, metres, standing
+     at the origin; a height/hip match refines it).
+  3. Transfer skin weights from the RPM reference mesh onto the HumGen body with a
+     Data Transfer modifier (VGROUP_WEIGHTS, nearest-face-interpolated), which
+     creates RPM-named vertex groups on the HumGen mesh.
+  4. Parent the HumGen body to the RPM armature via an Armature modifier and drop
+     the RPM reference mesh + the HumGen native rig.
+
+Shape keys (ARKit + visemes) are preserved throughout — Data Transfer of vertex
+weights and the Armature modifier do not touch shape keys, and we never apply a
+geometry-changing modifier.
+
+Runs under ``blender --background``.
 """
 
 import os
@@ -23,9 +36,20 @@ except ImportError:  # allow import outside Blender (docs/lint)
 from mappings import RPM_BONES, RPM_CONTRACT_BONES  # noqa: E402
 
 
-# RPM T-pose GLBs shipped with the animation library (already the exact rig).
+# The in-tree RPM T-pose reference rig (Anselm) — carries the exact RPM armature
+# AND a real skinned reference mesh to transfer weights from. This is the rig the
+# app's shared GLB animation clips target.
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+RPM_REFERENCE_GLB = os.path.join(
+    _REPO_ROOT, 'apps', 'web', 'public', 'assets', 'avatars',
+    'rpm-mixamo-t-posed.glb',
+)
+
+# Fallback: the animation-library T-poses (armature only — their mesh is a
+# placeholder Icosphere, so they can't be a weight-transfer source; kept for the
+# armature if the in-tree reference is unavailable).
 RPM_LIBRARY = '/Users/liam/devel/3d/animation-library-master'
-RPM_TPOSE = {
+RPM_TPOSE_FALLBACK = {
     'male':   os.path.join(RPM_LIBRARY, 'masculine', 'glb', 'Masculine_TPose.glb'),
     'female': os.path.join(RPM_LIBRARY, 'feminine',  'glb', 'Feminine_TPose.glb'),
 }
@@ -36,36 +60,45 @@ def _require_bpy():
         raise RuntimeError('skeleton.py must run inside Blender (bpy unavailable)')
 
 
-def import_rpm_tpose(gender):
-    """Import the RPM T-pose armature for ``gender`` and return the armature obj.
+def import_rpm_reference():
+    """Import the RPM T-pose GLB. Returns (armature, reference_mesh).
 
-    The GLB contains {armature, body mesh, ...}; we keep only the armature.
+    ``reference_mesh`` is the real skinned RPM body (``Wolf3D_Avatar``) used as the
+    weight-transfer source; the placeholder Icosphere is discarded.
     """
     _require_bpy()
-    path = RPM_TPOSE.get(gender)
-    if not path or not os.path.exists(path):
-        raise FileNotFoundError(
-            f'RPM T-pose GLB not found for gender={gender!r}: {path}\n'
-            f'Expected under {RPM_LIBRARY} (see docs/DRIVE-ASSETS.md).'
-        )
+    path = RPM_REFERENCE_GLB
+    if not os.path.exists(path):
+        raise FileNotFoundError(f'RPM reference GLB not found: {path}')
 
     before = set(bpy.data.objects)
-    # glTF importer is bundled with Blender; options are stable on 4.5.
-    bpy.ops.import_scene.gltf(filepath=path)  # TODO: verify import flags on 4.5
+    bpy.ops.import_scene.gltf(filepath=path)
     imported = [o for o in bpy.data.objects if o not in before]
 
     armature = next((o for o in imported if o.type == 'ARMATURE'), None)
     if armature is None:
-        raise RuntimeError(f'no armature found in RPM T-pose GLB: {path}')
+        raise RuntimeError(f'no armature in RPM reference GLB: {path}')
 
-    # Drop the RPM sample body mesh — we only want its skeleton.
-    for o in imported:
-        if o is not armature and o.type == 'MESH':
-            bpy.data.objects.remove(o, do_unlink=True)
+    meshes = [o for o in imported if o.type == 'MESH']
+    # the real skinned body has the most vertices + vertex groups (Icosphere has 0)
+    ref_mesh = None
+    skinned = [m for m in meshes if len(m.vertex_groups) > 0]
+    if skinned:
+        ref_mesh = max(skinned, key=lambda m: len(m.data.vertices))
+    # drop every imported mesh except the chosen reference
+    for m in meshes:
+        if m is not ref_mesh:
+            bpy.data.objects.remove(m, do_unlink=True)
+
+    if ref_mesh is None:
+        raise RuntimeError(
+            f'no skinned reference mesh in {path} — cannot transfer weights. '
+            f'Strategy D needs a real RPM body mesh (Wolf3D_Avatar).'
+        )
 
     _assert_rpm_bones(armature)
     armature.name = 'RPM_Armature'
-    return armature
+    return armature, ref_mesh
 
 
 def _assert_rpm_bones(armature):
@@ -89,75 +122,120 @@ def find_humgen_armature(exclude):
 
 
 def find_body_mesh(humgen_rig):
-    """Return the HumGen body mesh (largest mesh parented to the HG rig)."""
+    """Return the HumGen body mesh (largest mesh skinned to the HG rig)."""
     _require_bpy()
     candidates = [o for o in bpy.data.objects
                   if o.type == 'MESH' and o.find_armature() is humgen_rig]
     if not candidates:
-        # fall back: any mesh whose parent is the HG rig
         candidates = [o for o in bpy.data.objects
                       if o.type == 'MESH' and o.parent is humgen_rig]
     if not candidates:
         raise RuntimeError('could not locate HumGen body mesh')
-    # body = mesh with the most vertices (clothes/hair are separate, smaller)
     return max(candidates, key=lambda m: len(m.data.vertices))
 
 
-def transfer_weights(source_mesh, rpm_armature, humgen_rig):
-    """Transfer HumGen body weights onto the RPM armature and reparent.
+def _align_body_to_rpm(body, rpm_armature):
+    """Match the HumGen body's height + vertical placement to the RPM armature.
 
-    Strategy: rename/remap vertex groups from HG bone names to RPM bone names
-    where a mapping exists, then bind the mesh to the RPM armature via an
-    Armature modifier. Where HG and RPM bone topology differ (fingers, face),
-    use Blender's Data Transfer of vertex weights from the (posed-identical)
-    RPM sample as a fallback.
+    Both are authored standing at the origin in metres and typically already
+    coincide within a couple of cm. We scale uniformly so the body's total height
+    matches the armature's, then translate so the feet sit at the same Z. Nearest-
+    face weight transfer is robust to small residual offset; this just tightens it.
+    """
+    _require_bpy()
+    body_h = body.dimensions.z
+    arm_h = rpm_armature.dimensions.z
+    if body_h > 1e-4 and arm_h > 1e-4:
+        scale = arm_h / body_h
+        # only correct meaningful mismatches (>2%) — HumGen is already ~1.8 m
+        if abs(scale - 1.0) > 0.02:
+            body.scale = tuple(s * scale for s in body.scale)
+            bpy.context.view_layer.update()
+            print(f'[skeleton] scaled body by {scale:.3f} to match RPM height')
+    # align feet (min Z) to the armature's min Z
+    bpy.context.view_layer.update()
+    body_min_z = min((body.matrix_world @ v.co).z for v in body.data.vertices)
+    arm_min_z = rpm_armature.matrix_world.translation.z  # RPM root at floor (z=0)
+    dz = arm_min_z - body_min_z
+    if abs(dz) > 1e-3:
+        body.location.z += dz
+        bpy.context.view_layer.update()
+        print(f'[skeleton] shifted body Z by {dz:.3f} to align feet')
 
-    NOTE: this is the highest-risk step. HumGen's rig is Rigify-derived and its
-    deform bone names are NOT RPM names, so a plain vgroup rename is insufficient
-    for the whole body — clean face/hand weights need Data Transfer or manual
-    reweight. The mesh + reparent plumbing here is correct; the HG->RPM deform
-    bone name table is the piece that must be built against the installed addon.
+
+def transfer_weights(body, rpm_armature, ref_mesh):
+    """Transfer RPM skin weights onto the HumGen body and bind to the RPM rig.
+
+    Uses a Data Transfer modifier (nearest-face-interpolated VGROUP_WEIGHTS) with
+    ``ref_mesh`` (the real RPM body) as source. This creates RPM-named vertex
+    groups on the HumGen body. The modifier is then applied (safe with shape keys
+    — vertex-group transfer changes no geometry), the HG body is parented to the
+    RPM armature with an Armature modifier, and non-RPM groups are pruned.
     """
     _require_bpy()
 
-    # --- 1. clear existing armature modifiers pointing at the HG rig ---
-    for mod in list(source_mesh.modifiers):
-        if mod.type == 'ARMATURE' and mod.object is humgen_rig:
-            source_mesh.modifiers.remove(mod)
+    # 0. clear any armature modifier pointing at the old HG rig
+    for mod in list(body.modifiers):
+        if mod.type == 'ARMATURE':
+            body.modifiers.remove(mod)
 
-    # --- 2. remap vertex groups HG deform bone name -> RPM bone name ---
-    # TODO: verify against installed addon — HumGen v4 deform bones are named
-    # by its Rigify metarig (e.g. 'DEF-spine', 'DEF-upper_arm.L'); build a
-    # HG_DEFORM_TO_RPM table by dumping [b.name for b in hg_rig.data.bones].
-    # Until that table exists, we keep matching-named groups and rely on the
-    # Data Transfer fallback (step 4) for the rest.
-    rpm_bone_set = set(RPM_BONES)
-    _remap_matching_vertex_groups(source_mesh, rpm_bone_set)
+    # 1. the HG body must already own vertex groups named for every RPM bone so
+    #    Data Transfer (layers_select_dst='NAME') has a destination to fill.
+    existing = {vg.name for vg in body.vertex_groups}
+    for bone in (b.name for b in rpm_armature.data.bones):
+        if bone not in existing:
+            body.vertex_groups.new(name=bone)
 
-    # --- 3. bind to RPM armature ---
-    source_mesh.parent = rpm_armature
-    arm_mod = source_mesh.modifiers.new(name='RPM_Armature', type='ARMATURE')
+    # 2. Data Transfer modifier: nearest-face-interpolated vgroup weights.
+    bpy.ops.object.select_all(action='DESELECT')
+    body.select_set(True)
+    bpy.context.view_layer.objects.active = body
+
+    dt = body.modifiers.new(name='RPM_WeightTransfer', type='DATA_TRANSFER')
+    dt.object = ref_mesh
+    dt.use_vert_data = True
+    dt.data_types_verts = {'VGROUP_WEIGHTS'}
+    dt.vert_mapping = 'POLYINTERP_NEAREST'      # nearest-face, interpolated
+    dt.layers_vgroup_select_src = 'ALL'
+    dt.layers_vgroup_select_dst = 'NAME'        # match by group name
+    dt.mix_mode = 'REPLACE'
+
+    # apply — bakes transferred weights into the body's vertex groups. Vertex-
+    # group data transfer changes no geometry, so it applies cleanly even with
+    # shape keys present.
+    try:
+        bpy.ops.object.modifier_apply(modifier=dt.name)
+        print('[skeleton] applied Data Transfer (RPM weights -> HumGen body)')
+    except RuntimeError as e:
+        # Fallback: some builds refuse modifier_apply on shape-keyed meshes.
+        # Use the operator form which writes directly into vertex groups.
+        print(f'[skeleton] modifier_apply refused ({e}); using data_transfer operator')
+        body.modifiers.remove(dt)
+        bpy.ops.object.data_transfer(
+            use_reverse_transfer=False,
+            data_type='VGROUP_WEIGHTS',
+            vert_mapping='POLYINTERP_NEAREST',
+            layers_select_src='ALL',
+            layers_select_dst='NAME',
+            mix_mode='REPLACE',
+        )
+
+    # 3. prune vertex groups that aren't RPM bones (HumGen mask/lip groups etc.)
+    rpm_bone_names = {b.name for b in rpm_armature.data.bones}
+    for vg in list(body.vertex_groups):
+        if vg.name not in rpm_bone_names:
+            body.vertex_groups.remove(vg)
+
+    # 4. bind to the RPM armature
+    body.parent = rpm_armature
+    body.matrix_parent_inverse = rpm_armature.matrix_world.inverted()
+    arm_mod = body.modifiers.new(name='RPM_Armature', type='ARMATURE')
     arm_mod.object = rpm_armature
     arm_mod.use_vertex_groups = True
 
-    # --- 4. fallback: Data Transfer weights from RPM sample where groups are
-    # missing. Left as an explicit hook; the RPM sample body was discarded in
-    # import_rpm_tpose(), so re-import it transiently if this fallback is needed.
-    # TODO: implement Data Transfer fallback once HG_DEFORM_TO_RPM is verified.
-
-    return source_mesh
-
-
-def _remap_matching_vertex_groups(mesh, rpm_bone_set):
-    """Best-effort: keep vertex groups whose names already match RPM bones."""
-    kept = 0
-    for vg in mesh.vertex_groups:
-        if vg.name in rpm_bone_set:
-            kept += 1
-    # Nothing destructive here — HG groups that don't match RPM simply won't
-    # deform any RPM bone. Reported so the operator sees coverage.
-    print(f'[skeleton] vertex groups matching RPM bones: {kept}/{len(mesh.vertex_groups)}')
-    return kept
+    kept = len(body.vertex_groups)
+    print(f'[skeleton] body now bound to RPM_Armature with {kept} RPM vertex groups')
+    return body
 
 
 def drop_humgen_rig(humgen_rig):
@@ -167,18 +245,61 @@ def drop_humgen_rig(humgen_rig):
         bpy.data.objects.remove(humgen_rig, do_unlink=True)
 
 
-def reskin_to_rpm(gender):
-    """Full Strategy-D flow. Returns (rpm_armature, body_mesh).
+def merge_extra_meshes(body, rpm_armature, humgen_rig):
+    """Re-skin the eyes/teeth meshes onto the RPM rig too, so they ride along.
 
-    Assumes a HumGen human already exists in the scene (created by humgen.py).
+    HumGen splits eyes + upper/lower teeth into separate meshes skinned to the HG
+    rig (mostly to Head/jaw). We rebind them to the RPM armature by name-matching
+    their existing HG vertex groups against RPM bones where possible, then parent.
+    Meshes with no usable weights are simply parented to Head so they follow.
     """
     _require_bpy()
-    rpm_arm = import_rpm_tpose(gender)
+    rpm_bone_names = {b.name for b in rpm_armature.data.bones}
+    extras = [o for o in bpy.data.objects
+              if o.type == 'MESH' and o is not body
+              and (o.find_armature() is humgen_rig or o.parent is humgen_rig)]
+    for m in extras:
+        for mod in list(m.modifiers):
+            if mod.type == 'ARMATURE':
+                m.modifiers.remove(mod)
+        # keep any vgroup already named for an RPM bone; if none, weight all to Head
+        has_rpm_group = any(vg.name in rpm_bone_names for vg in m.vertex_groups)
+        if not has_rpm_group:
+            head_vg = m.vertex_groups.get('Head') or m.vertex_groups.new(name='Head')
+            head_vg.add(range(len(m.data.vertices)), 1.0, 'REPLACE')
+        m.parent = rpm_armature
+        m.matrix_parent_inverse = rpm_armature.matrix_world.inverted()
+        am = m.modifiers.new(name='RPM_Armature', type='ARMATURE')
+        am.object = rpm_armature
+    if extras:
+        print(f'[skeleton] rebound {len(extras)} extra meshes '
+              f'({", ".join(m.name for m in extras)}) to RPM_Armature')
+    return extras
+
+
+def reskin_to_rpm(gender, human=None):
+    """Full Strategy-D flow. Returns (rpm_armature, body_mesh).
+
+    Assumes a HumGen human already exists in the scene (created by humgen.py) and
+    its face morphs are already bound (facemorphs.bind_all) so the HG rig can be
+    dropped safely afterward.
+    """
+    _require_bpy()
+    rpm_arm, ref_mesh = import_rpm_reference()
+
     hg_rig = find_humgen_armature(exclude=rpm_arm)
     if hg_rig is None:
         raise RuntimeError('no HumGen armature in scene — generate the human first')
     body = find_body_mesh(hg_rig)
-    transfer_weights(body, rpm_arm, hg_rig)
+
+    _align_body_to_rpm(body, rpm_arm)
+    transfer_weights(body, rpm_arm, ref_mesh)
+    merge_extra_meshes(body, rpm_arm, hg_rig)
+
+    # discard the RPM reference body — we only needed its weights
+    if ref_mesh is not None:
+        bpy.data.objects.remove(ref_mesh, do_unlink=True)
     drop_humgen_rig(hg_rig)
+
     print(f'[skeleton] re-skinned {body.name} onto RPM_Armature ({gender})')
     return rpm_arm, body
