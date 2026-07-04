@@ -1,7 +1,6 @@
 import { memo } from 'react'
 import { type AppConfig } from '../../app/appConfig'
 import { ControlButton } from '../common/ControlButton'
-import { useHasWebGPU } from '../../utils/useHasWebGPU' 
 import { useXRLayout } from '../../utils/useXRLayout'
 
 interface ControlPanelProps {
@@ -41,7 +40,6 @@ export const ControlPanel = memo(({
   isVisible
 }: ControlPanelProps) => {
   const isMobile = window.innerWidth <= 768
-  const hasWebGPU = useHasWebGPU()
   const { isXR } = useXRLayout()
   const controlButtonSize = isXR ? 56 : 40
 
@@ -90,52 +88,6 @@ export const ControlPanel = memo(({
           }
         >
           {vadDetecting ? '🟢' : isRecording ? '🔴' : '🎤'}
-        </ControlButton>
-
-        <ControlButton
-          isActive={config.cloudMode}
-          size={controlButtonSize}
-          onClick={() => handleAppStateChange({ ...config, cloudMode: !config.cloudMode })}
-          tooltipContent={config.cloudMode ? 'Switch to Local Mode' : 'Switch to Cloud Mode'}
-        >
-          ☁️
-        </ControlButton>
-
-        <ControlButton
-          isActive={config.bargeInEnabled}
-          size={controlButtonSize}
-          onClick={() => handleAppStateChange({ ...config, bargeInEnabled: !config.bargeInEnabled })}
-          tooltipContent={config.bargeInEnabled ? 'Disable Barge-in' : 'Enable Barge-in'}
-        >
-          ⚡
-        </ControlButton>
-
-        <ControlButton
-          isActive={config.autoSubmitEnabled}
-          size={controlButtonSize}
-          onClick={() => handleAppStateChange({ ...config, autoSubmitEnabled: !config.autoSubmitEnabled })}
-          tooltipContent={config.autoSubmitEnabled ? 'Disable Auto-submit' : 'Enable Auto-submit'}
-        >
-          🚀
-        </ControlButton>
-
-        <ControlButton
-          isActive={config.agentEnabled}
-          size={controlButtonSize}
-          onClick={() => handleAppStateChange({ ...config, agentEnabled: !config.agentEnabled })}
-          tooltipContent={config.agentEnabled ? 'Disable Agent Mode' : 'Enable Agent Mode'}
-        >
-          {config.agentEnabled ? '🔊' : '🤖'}
-        </ControlButton>
-
-        <ControlButton
-          isActive={config.webGPUEnabled}
-          size={controlButtonSize}
-          onClick={() => handleAppStateChange({ ...config, webGPUEnabled: !config.webGPUEnabled })}
-          disabled={!hasWebGPU}
-          tooltipContent={!hasWebGPU ? 'WebGPU not supported' : config.webGPUEnabled ? 'Disable WebGPU (Use WebGL)' : 'Enable WebGPU'}
-        >
-          {config.webGPUEnabled ? '🎮' : '🕸️'}
         </ControlButton>
 
         {onEnterVRMode && (
