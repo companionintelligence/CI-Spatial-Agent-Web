@@ -34,7 +34,23 @@ export default defineConfig({
       external: [
         '@webspatial/react-sdk/jsx-runtime',
         '@webspatial/react-sdk/web/jsx-runtime'
-      ]
+      ],
+      onwarn(warning, warn) {
+        // @pixiv/three-vrm's MToonNodeMaterial keeps a runtime-guarded `FnCompat`
+        // helper that calls three's pre-r168 `tslFn` only when REVISION < 168, and
+        // three's r168+ `Fn` otherwise. We ship three 0.182, so the `tslFn` branch is
+        // dead code and works at runtime — but Rollup's static analysis still flags
+        // "tslFn is not exported by three.webgpu.js" (code: MISSING_EXPORT). Suppress
+        // just that one false positive; let every other warning through.
+        if (
+          warning.code === 'MISSING_EXPORT' &&
+          warning.message.includes('tslFn') &&
+          warning.message.includes('three.webgpu')
+        ) {
+          return
+        }
+        warn(warning)
+      }
     }
   },
   server: {
