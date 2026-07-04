@@ -149,32 +149,29 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     [getOrCreateWorker, config.voice]
   )
 
-  // Generate audio using remote API
+  // Generate audio via the BFF (`remote` mode → same-origin POST /api/tts).
+  //
+  // The BFF (apps/proxy) forwards this to a runtime-configured TTS upstream
+  // (CosyVoice2 by default) and streams the audio back, so the browser needs no
+  // API key or CORS and everything stays local to the appliance. We drain the
+  // streamed body into an ArrayBuffer here and hand it to the existing queue /
+  // playAudioBuffer path; lip-sync still comes from approximateWhisperDataFromText
+  // (the streamed audio carries no word timings).
   const generateRemoteAudio = useCallback(
     async (message: QueuedMessage) => {
-      if (!config.apiKey) {
-        throw new Error('API key required for remote TTS')
-      }
+      // Same-origin BFF route. `config.url` may override for non-standard mounts,
+      // but the default is the relative /api/tts so no key/host is needed.
+      const url = config.url && config.url.startsWith('/') ? config.url : '/api/tts'
 
-      const url = config.url || 'https://api.openai.com/v1/audio/speech'
-
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${config.apiKey}`
-      }
-
-      // OpenAI TTS API payload format
       const requestBody = {
-        input: message.text,
-        model: config.model || 'tts-1',
-        voice: config.voice || 'shimmer',
-        response_format: 'mp3',
-        speed: config.speed || 1.0
+        text: message.text,
+        voice: config.voice,
+        format: 'mp3'
       }
 
       const response = await fetch(url, {
         method: 'POST',
-        headers,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestBody)
       })
 
@@ -182,9 +179,11 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         throw new Error(`Remote TTS API error: ${response.status} ${response.statusText}`)
       }
 
+      // Consume the streamed audio. arrayBuffer() collects the full chunked
+      // body; the stream still lets the first bytes leave the upstream early.
       message.audio = await response.arrayBuffer()
     },
-    [config.apiKey, config.url, config.model, config.voice, config.speed]
+    [config.url, config.voice]
   )
 
   // Generate audio using Pocket TTS server
