@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
+import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal } from 'lucide-react'
 
 import {
   COMMON_OLLAMA_MODELS,
@@ -173,6 +174,9 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     fontFamily: 'inherit'
   }
   const sectionHeaderStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
     fontSize: '0.72rem',
     fontWeight: 700,
     letterSpacing: '0.12em',
@@ -182,6 +186,13 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     paddingTop: '0.9rem',
     borderTop: '0.0625rem solid var(--border)'
   }
+
+  const SectionHeader = ({ icon, children }: { icon: ReactNode; children: ReactNode }) => (
+    <div style={sectionHeaderStyle}>
+      {icon}
+      <span>{children}</span>
+    </div>
+  )
 
   return (
     <div
@@ -214,8 +225,23 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           color: 'var(--card-foreground)'
         }}
       >
-        <div style={{ fontSize: isXR ? '1.35rem' : '1.15rem', fontWeight: 700, marginBottom: '1rem' }}>
-          Settings
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: isXR ? '1.35rem' : '1.15rem',
+            fontWeight: 700,
+            marginBottom: '1rem'
+          }}
+        >
+          <SettingsIcon size={isXR ? 22 : 18} aria-hidden />
+          <span>Settings</span>
+        </div>
+
+        <div style={{ ...sectionHeaderStyle, paddingTop: 0, borderTop: 'none', marginTop: 0 }}>
+          <Server size={13} aria-hidden />
+          <span>Connection</span>
         </div>
 
         <div style={{ marginBottom: '0.9rem' }}>
@@ -274,7 +300,7 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           </div>
         )}
 
-        <div style={sectionHeaderStyle}>Behavior</div>
+        <SectionHeader icon={<SlidersHorizontal size={13} aria-hidden />}>Behavior</SectionHeader>
         <ToggleRow
           label="Barge-in"
           hint="Interrupt the avatar when you start speaking"
@@ -288,7 +314,7 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           onChange={(v) => AppConfigState.set((prev) => ({ ...prev, autoSubmitEnabled: v }))}
         />
 
-        <div style={sectionHeaderStyle}>Graphics</div>
+        <SectionHeader icon={<MonitorCog size={13} aria-hidden />}>Graphics</SectionHeader>
         <ToggleRow
           label="WebGPU rendering"
           hint={hasWebGPU ? 'Faster rendering where supported' : 'Not supported on this device'}

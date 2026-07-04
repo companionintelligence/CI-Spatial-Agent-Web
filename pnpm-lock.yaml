@@ -178,6 +178,9 @@ importers:
       '@react-three/xr':
         specifier: ^6.6.29
         version: 6.6.29(@react-three/fiber@9.5.0(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.182.0))(@types/react@19.2.10)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(three@0.182.0)
+      lucide-react:
+        specifier: ^1.23.0
+        version: 1.23.0(react@19.2.4)
       react:
         specifier: ^19.1.0
         version: 19.2.4
@@ -269,6 +272,9 @@ importers:
       '@ricky0123/vad-web':
         specifier: ^0.0.30
         version: 0.0.30
+      lucide-react:
+        specifier: ^1.23.0
+        version: 1.23.0(react@19.2.4)
       ollama:
         specifier: ^0.6.3
         version: 0.6.3
@@ -3674,6 +3680,11 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-react@1.23.0:
+    resolution: {integrity: sha512-38BpJcD0JhFosxHApP/BYsBetLpQFRoTRzEzstM/XCc3jsAG7wqaY1lgVwxiUe3xqYE+lNxo2PkCmYwXWrwwIw==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -7963,6 +7974,10 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-react@1.23.0(react@19.2.4):
+    dependencies:
+      react: 19.2.4
 
   lz-string@1.5.0: {}
 
