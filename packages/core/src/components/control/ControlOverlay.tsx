@@ -5,6 +5,7 @@ import type { XRStore } from '@react-three/xr'
 import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import type { AgentService } from '../../services/useAgent'
 import { ControlPanel } from './ControlPanel'
+import { SettingsPanel } from './SettingsPanel'
 import type { SceneActions } from '../scene/Scene3D'
 import { useXRLayout } from '../../utils/useXRLayout'
 
@@ -25,6 +26,7 @@ export const ControlOverlay = memo(({
   sceneActions
 }: ControlOverlayProps) => {
   const [isButtonsVisible, setIsButtonsVisible] = useState(true)
+  const [showSettings, setShowSettings] = useState(false)
   const [xrMode, setXrMode] = useState<XRSessionMode | null>(null)
   const [xrSessionActive, setXrSessionActive] = useState(false)
   const [xrSupport, setXrSupport] = useState({ ar: false, vr: false })
@@ -117,6 +119,7 @@ export const ControlOverlay = memo(({
         onRecenter={handleRecenter}
         onScaleUp={handleScaleUp}
         onScaleDown={handleScaleDown}
+        onOpenSettings={() => setShowSettings(true)}
         xrStatusText={xrStatusText}
         xrCanEnterAR={xrSupport.ar}
         xrCanEnterVR={xrSupport.vr}
@@ -133,6 +136,9 @@ export const ControlOverlay = memo(({
         position="bottom-left"
         size={isXR ? 44 : 32}
       />
+
+      {/* Connection settings */}
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </>
   )
 })

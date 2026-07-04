@@ -81,6 +81,19 @@ export { AppConfigState, initialAppConfig } from './app/appConfig'
 export type { AppConfig, AppState } from './app/appConfig'
 export { useResponsiveLayout } from './app/layoutService'
 
+// Runtime configuration
+export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
+export type { RuntimeAppConfig } from './config/runtimeConfig'
+export {
+  resolveLLMConfig,
+  readLocalOverrides,
+  writeLocalOverrides,
+  clearLocalOverrides,
+  LLM_OVERRIDES_KEY
+} from './config/appConfigService'
+export { LLMSettingsState } from './config/settingsStore'
+export { SettingsPanel } from './components/control/SettingsPanel'
+
 // Utils
 export { useHasWebGPU } from './utils/useHasWebGPU'
 export { useXRLayout } from './utils/useXRLayout'

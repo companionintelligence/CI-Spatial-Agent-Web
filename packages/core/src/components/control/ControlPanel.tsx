@@ -14,6 +14,7 @@ interface ControlPanelProps {
   onRecenter?: () => void
   onScaleUp?: () => void
   onScaleDown?: () => void
+  onOpenSettings?: () => void
   xrStatusText?: string
   xrCanEnterAR?: boolean
   xrCanEnterVR?: boolean
@@ -32,6 +33,7 @@ export const ControlPanel = memo(({
   onRecenter,
   onScaleUp,
   onScaleDown,
+  onOpenSettings,
   xrStatusText,
   xrCanEnterAR = false,
   xrCanEnterVR = false,
@@ -57,12 +59,12 @@ export const ControlPanel = memo(({
     >
       <div
         style={{
-          background: 'linear-gradient(180deg, rgba(16,25,30,0.6) 0%, rgba(17,43,48,0.6) 100%)',
-          backdropFilter: 'blur(1.25rem)',
-          border: '0.0625rem solid rgba(255,255,255,0.08)',
-          color: '#FFFFFF',
-          borderRadius: '1rem',
-          boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.04)',
+          background: 'var(--xr-glass-bg)',
+          backdropFilter: 'blur(var(--xr-glass-blur))',
+          border: '0.0625rem solid var(--xr-glass-border)',
+          color: 'var(--card-foreground)',
+          borderRadius: 'var(--radius-xl)',
+          boxShadow: 'var(--xr-elevation)',
           display: 'flex',
           justifyContent: 'center',
           padding: isXR ? '1rem 1.5rem' : '0.75rem 1.25rem',
@@ -181,6 +183,17 @@ export const ControlPanel = memo(({
             ➕
           </ControlButton>
         )}
+
+        {onOpenSettings && (
+          <ControlButton
+            isActive={false}
+            size={controlButtonSize}
+            onClick={onOpenSettings}
+            tooltipContent="Connection Settings"
+          >
+            ⚙️
+          </ControlButton>
+        )}
       </div>
       {xrStatusText && (
         <div
@@ -188,7 +201,7 @@ export const ControlPanel = memo(({
             marginTop: '0.5rem',
             textAlign: 'center',
             fontSize: '0.75rem',
-            color: 'rgba(255,255,255,0.7)'
+            color: 'var(--muted-foreground)'
           }}
         >
           {xrStatusText}
