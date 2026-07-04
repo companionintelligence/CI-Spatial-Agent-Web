@@ -1,6 +1,7 @@
 export const AvatarOptions = {
   Anselm: '/assets/avatars/rpm-mixamo-t-posed.glb',
   Ash: '/assets/avatars/25-1-3_CI_model_female_Ash.glb',
+  Cara: '/assets/avatars/25-1-3_CI_model_female_Cara.glb',
   Greg: '/assets/avatars/25-1-3_CI_model_male_Greg.glb',
   Brit: '/assets/avatars/25-1-3_CI_model_female_Brit.glb',
   Jack: '/assets/avatars/25-1-3_CI_model_male_Jack.glb',
