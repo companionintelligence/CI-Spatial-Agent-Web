@@ -136,49 +136,39 @@ def build_avatar(args):
     human = humgen.generate_human(seed=args.seed, gender=args.gender, height=args.height)
     body = humgen.get_body_object(human)
 
-    # 2. dress the human — a user-facing companion must wear a presentable outfit,
-    #    not default HumGen underwear. Applied on the HG rig here; re-skinned onto
-    #    the RPM armature in step 4. Must precede baking so clothing materials bake.
-    clothing_meshes = humgen.apply_clothing(human, gender=args.gender, seed=args.seed)
-
-    # 3. bind face morphs (ARKit + visemes) — MUST run before the re-skin, while
+    # 2. bind face morphs (ARKit + visemes) — MUST run before the re-skin, while
     #    the HumGen rig is still present (load_facial_rig / prepare_for_arkit
     #    depend on it). This bakes the viseme_* + ARKit shape keys onto the body.
     facemorphs.bind_all(body, human=human)
 
-    # 4. bake HumGen's procedural skin AND clothing textures before we swap the rig
-    #    (the raw glTF exporter can't run HumGen's on-export bake, and unbaked
-    #    materials export empty). HumGen's bake_all auto-includes clothing/shoe
-    #    meshes (bake.get_baking_list), so dressing in step 2 must come first.
-    #    Strip the body's clothing geometry-masks FIRST so the full body skin bakes
-    #    (masked regions bake black); we then keep the whole body so wide collars
-    #    don't leave a neck gap. Bake into a temp subdir — PNGs embed into the GLB.
-    humgen.unmask_body_for_bake(human)
+    # 3. bake HumGen's procedural skin to textures before we swap the rig (the raw
+    #    glTF exporter can't run HumGen's on-export bake, and unbaked skin exports
+    #    empty). Bake into a temp subdir — the PNGs get embedded into the GLB on
+    #    export, so we don't want the loose files cluttering the assets dir.
     _bake_dir = os.path.join(os.path.abspath(args.out), f'.bake_{args.name}')
     glb_export.bake_textures(human, _bake_dir)
 
-    # 5. Strategy D — re-skin body + clothing onto RPM skeleton, drop HG rig
-    rpm_arm, body = skeleton.reskin_to_rpm(
-        args.gender, human=human, clothing_meshes=clothing_meshes)
+    # 4. Strategy D — re-skin body onto RPM skeleton, drop HG rig
+    rpm_arm, body = skeleton.reskin_to_rpm(args.gender, human=human)
 
-    # 6. sanity-check the rig contract in-Blender before we export
+    # 5. sanity-check the rig contract in-Blender before we export
     _preflight_contract(rpm_arm, body)
 
     written = []
 
-    # 7. GLB export
+    # 6. GLB export
     if 'glb' in emit:
         glb_path = os.path.join(os.path.abspath(args.out), f'{args.name}.glb')
         glb_export.export_glb(glb_path, armature=rpm_arm)
         written.append(glb_path)
 
-    # 8. VRM export
+    # 7. VRM export
     if 'vrm' in emit:
         vrm_path = os.path.join(os.path.abspath(args.out), 'vrm', f'{args.name}.vrm')
         vrm_export.export_vrm(vrm_path, rpm_arm, body)
         written.append(vrm_path)
 
-    # 9. clean up the intermediate baked-texture dir (PNGs are embedded in the GLB)
+    # 8. clean up the intermediate baked-texture dir (PNGs are embedded in the GLB)
     try:
         import shutil
         if os.path.isdir(_bake_dir):

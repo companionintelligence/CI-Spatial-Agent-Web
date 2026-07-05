@@ -25,66 +25,6 @@ def _require_bpy():
         raise RuntimeError('glb_export.py must run inside Blender (bpy unavailable)')
 
 
-def _is_clothing_mesh(mesh):
-    """A clothing/footwear mesh carries HumGen's ``Body Proportions`` fit shape key
-    and no face-contract morphs. The custom-property tags (set by HumGen) are the
-    authoritative signal; the shape-key name is a fallback."""
-    if 'cloth' in mesh or 'shoe' in mesh:  # HumGen tags survive the rig swap
-        return True
-    sk = mesh.data.shape_keys
-    if sk is None:
-        return False
-    names = {kb.name for kb in sk.key_blocks}
-    has_fit = 'Body Proportions' in names
-    has_contract = any(n.startswith('viseme_') for n in names)
-    return has_fit and not has_contract
-
-
-def flatten_clothing_shapekeys(mesh):
-    """Bake a clothing mesh's active shape-key MIX into its geometry, then drop all
-    shape keys.
-
-    HumGen fits each garment to the specific body via a ``Body Proportions`` shape
-    key held at value=1 (plus muted pose correctives). If those shape keys are
-    simply pruned, the garment snaps back to its generic Basis and clips into the
-    body — e.g. the sweater sank into the chest, exposing dark geometry underneath
-    (the black blobs). ``shape_key_remove(all=True, apply_mix=True)`` applies the
-    current mix (the fitted shape) into the vertices before removing the keys, so
-    the exported garment keeps its body-fitted shape and carries no morph targets
-    (clothing needs none).
-    """
-    _require_bpy()
-    sk = mesh.data.shape_keys
-    if sk is None:
-        return 0
-    n = len(sk.key_blocks)
-    bpy.ops.object.select_all(action='DESELECT')
-    mesh.select_set(True)
-    bpy.context.view_layer.objects.active = mesh
-    try:
-        bpy.ops.object.shape_key_remove(all=True, apply_mix=True)
-        # The garment ships with CUSTOM SPLIT NORMALS authored for its ORIGINAL
-        # (un-fitted) geometry. apply_mix moved the vertices to the fitted shape but
-        # left those custom normals stale, so large areas rendered black (normals
-        # pointing the wrong way). Clear them and recompute smooth normals from the
-        # now-correct geometry — the tangent-space normal-map still adds surface
-        # detail on top.
-        if mesh.data.has_custom_normals:
-            bpy.ops.mesh.customdata_custom_splitnormals_clear()
-        _shade_smooth(mesh)
-        print(f'[glb_export] flattened {n} shape keys into {mesh.name} '
-              f'(baked Body-Proportions fit, cleared stale custom normals)')
-    except RuntimeError as e:
-        print(f'[glb_export] could not flatten {mesh.name} shape keys ({e})')
-    return n
-
-
-def _shade_smooth(mesh):
-    """Set smooth shading on all polygons so recomputed normals interpolate."""
-    for poly in mesh.data.polygons:
-        poly.use_smooth = True
-
-
 def prune_noncontract_morphs(mesh):
     """Remove body-corrective / live-key shape keys that aren't face morphs.
 
@@ -167,27 +107,14 @@ def export_glb(out_path, armature=None, prune_morphs=True):
     _require_bpy()
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)
 
-    # 1. Shape-key cleanup FIRST — these ops (flatten uses shape_key_remove) mutate
-    #    the active object + selection, so they must run BEFORE we build the export
-    #    selection or they'd clobber it (which silently dropped body+bones+morphs).
-    if armature is not None:
-        for child in list(armature.children):
-            if child.type != 'MESH':
-                continue
-            # Clothing: bake the Body-Proportions fit into geometry and drop all
-            # shape keys (garments carry no contract morphs). Body/face meshes:
-            # keep only the viseme/ARKit contract morphs.
-            if _is_clothing_mesh(child):
-                flatten_clothing_shapekeys(child)
-            elif prune_morphs:
-                prune_noncontract_morphs(child)
-
-    # 2. NOW build the export selection: the armature + all its skinned meshes.
+    # Select the armature + its skinned meshes so the export scopes to the avatar.
     bpy.ops.object.select_all(action='DESELECT')
     if armature is not None:
         armature.select_set(True)
         for child in armature.children:
             child.select_set(True)
+            if prune_morphs and child.type == 'MESH':
+                prune_noncontract_morphs(child)
         bpy.context.view_layer.objects.active = armature
 
     # TODO: verify export flags on installed 4.5 glTF2 exporter. Key options:
