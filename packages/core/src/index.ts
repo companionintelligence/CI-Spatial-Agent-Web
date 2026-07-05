@@ -117,6 +117,14 @@ export { SettingsPanel } from './components/control/SettingsPanel'
 export { useHasWebGPU } from './utils/useHasWebGPU'
 export { useXRLayout } from './utils/useXRLayout'
 
+// Platform — surface detection + per-surface render presets (multi-platform seam)
+export { detectSurfaceSync, isSpatial, SPATIAL_SURFACES } from './platform/surface'
+export type { Surface } from './platform/surface'
+export { detectCapabilities } from './platform/capabilities'
+export type { Capabilities } from './platform/capabilities'
+export { presetFor } from './platform/presets'
+export type { RenderPreset } from './platform/presets'
+
 // Integration
 export { 
   shouldTriggerBargeIn, 
