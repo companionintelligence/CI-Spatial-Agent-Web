@@ -1,8 +1,8 @@
 export const AvatarOptions = {
   Anselm: '/assets/avatars/rpm-mixamo-t-posed.glb',
-  // First avatar from the automated Blender/HumGen pipeline (pipeline/): a HumGen
-  // body re-skinned onto the RPM skeleton with ARKit-52 + 15 Oculus visemes.
-  Aria: '/assets/avatars/humgen-aria-01.glb',
+  // NB: the HumGen pipeline avatar ("Aria") is temporarily pulled — the RPM re-skin/
+  // retarget produces a broken head (floating teeth, hollow eyes). Being rebuilt as a
+  // native VRM export (see docs/FACIAL-ANIMATION-PLAN.md). Re-add when the .vrm lands.
   Ash: '/assets/avatars/25-1-3_CI_model_female_Ash.glb',
   Cara: '/assets/avatars/25-1-3_CI_model_female_Cara.glb',
   Greg: '/assets/avatars/25-1-3_CI_model_male_Greg.glb',
