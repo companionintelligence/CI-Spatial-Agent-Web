@@ -29,48 +29,88 @@ const only = onlyArg ? new Set(onlyArg.split(',')) : null
 const FPS = 9
 const FRAME_MS = Math.round(1000 / FPS)
 
-// prep runs in the page after the avatar loads; e is the window.__harness alias helper.
+// Direct-morph FACE sweeps (mode 'steps') drive the rig one deterministic pose per
+// frame — the capture script sets a morph pose, screenshots, then advances — using the
+// exact viseme/ARKit morph names on the GLB avatars. This holds each shape clearly
+// (no fast setTimeout flash). VRM avatars expose no raw morphs (they use the expression
+// manager), so they use the real lip-sync path instead.
+const VISEME_STEPS = [
+  { viseme_aa: 1 }, { viseme_E: 1 }, { viseme_I: 1 }, { viseme_O: 1 },
+  { viseme_U: 1 }, { viseme_PP: 1 }, { viseme_FF: 1 }, { viseme_CH: 1 }
+]
+const EXPR_STEPS = [
+  { mouthSmileLeft: 1, mouthSmileRight: 1, cheekSquintLeft: 0.6, cheekSquintRight: 0.6 },
+  { mouthFrownLeft: 1, mouthFrownRight: 1, browInnerUp: 1 },
+  { browDownLeft: 1, browDownRight: 1, noseSneerLeft: 0.5, noseSneerRight: 0.5, mouthPressLeft: 0.6, mouthPressRight: 0.6 },
+  { jawOpen: 0.5, browOuterUpLeft: 1, browOuterUpRight: 1, browInnerUp: 0.6, eyeWideLeft: 1, eyeWideRight: 1 },
+  { eyeBlinkLeft: 1, eyeBlinkRight: 1 }
+]
+const EXPR2_STEPS = [
+  { browInnerUp: 1, eyeWideLeft: 0.85, eyeWideRight: 0.85, jawOpen: 0.35, mouthStretchLeft: 0.6, mouthStretchRight: 0.6 },
+  { noseSneerLeft: 1, noseSneerRight: 1, mouthUpperUpLeft: 0.7, mouthUpperUpRight: 0.7, browDownLeft: 0.6, browDownRight: 0.6 },
+  { mouthPucker: 1, mouthFunnel: 0.5 },
+  { cheekPuff: 1 },
+  { jawLeft: 1 }
+]
+
 const MATRIX = [
-  // --- body animations (GLB default: Greg) ---
-  { name: 'greg-idle', avatar: 'Greg', shot: 'body', ms: 2600, group: 'animation',
+  // ===== FACE — direct morph sweeps (crisp, deterministic, GLB) =====
+  { name: 'greg-viseme-sweep', avatar: 'Greg', shot: 'face', group: 'viseme', mode: 'steps', frameMs: 420, steps: VISEME_STEPS,
+    caption: 'Viseme mouth-shape sweep — aa·E·I·O·U·PP·FF·CH (GLB · Greg)' },
+  { name: 'greg-expression-sweep', avatar: 'Greg', shot: 'face', group: 'emote', mode: 'steps', frameMs: 560, steps: EXPR_STEPS,
+    caption: 'Expression sweep — happy·sad·angry·surprise·blink (GLB · Greg)' },
+  { name: 'greg-expression-sweep-2', avatar: 'Greg', shot: 'face', group: 'emote', mode: 'steps', frameMs: 560, steps: EXPR2_STEPS,
+    caption: 'Expression sweep 2 — fear·disgust·pucker·cheek·jaw (GLB · Greg)' },
+
+  // ===== FACE — real lip-sync path (viseme service; gaze/blink stilled) =====
+  { name: 'greg-lipsync', avatar: 'Greg', shot: 'face', ms: 3200, group: 'viseme', mode: 'lipsync',
+    caption: 'Lip-sync — real viseme service (GLB · Greg)', prep: `h.speak("Hello, I'm your companion. How can I help you today?")` },
+  { name: 'erik-lipsync', avatar: 'Erik', shot: 'face', ms: 3200, group: 'viseme', mode: 'lipsync',
+    caption: 'Lip-sync — VRM expression manager (VRM · Erik)', prep: `h.speak("Hi there, nice to meet you.")` },
+  { name: 'workboy-lipsync', avatar: 'Work Boy', shot: 'face', ms: 3200, group: 'viseme', mode: 'lipsync',
+    caption: 'Lip-sync — VRM expression manager (VRM · Work Boy)', prep: `h.speak("Welcome, let me show you around today.")` },
+
+  // ===== BODY — real animation (idle-settled: no arms-up first frame) =====
+  { name: 'greg-idle', avatar: 'Greg', shot: 'body', ms: 2600, group: 'animation', mode: 'body',
     caption: 'Idle loop (GLB · Greg)', prep: `h.playCategory('idle',{loopCount:1e9})` },
-  { name: 'greg-gesture', avatar: 'Greg', shot: 'body', ms: 2800, group: 'animation',
+  { name: 'greg-gesture', avatar: 'Greg', shot: 'body', ms: 2800, group: 'animation', mode: 'body',
     caption: 'Gesture over idle — native crossfade (GLB · Greg)', prep: `h.playCategory('gesture',{blendTime:400})` },
-  { name: 'greg-action', avatar: 'Greg', shot: 'body', ms: 3200, group: 'animation',
+  { name: 'greg-action', avatar: 'Greg', shot: 'body', ms: 3200, group: 'animation', mode: 'body',
     caption: 'Action clip (GLB · Greg)', prep: `h.playCategory('action',{blendTime:400})` },
-  { name: 'greg-blend', avatar: 'Greg', shot: 'body', ms: 3400, group: 'blend',
+  { name: 'greg-blend', avatar: 'Greg', shot: 'body', ms: 3400, group: 'blend', mode: 'body',
     caption: 'idle → gesture → idle blend (GLB · Greg)',
-    prep: `setTimeout(()=>h.playCategory('gesture',{blendTime:800}),600);setTimeout(()=>h.playCategory('idle',{loopCount:1e9,blendTime:900}),2200)` },
-
-  // --- face: lip-sync / visemes ---
-  { name: 'greg-lipsync', avatar: 'Greg', shot: 'face', ms: 3200, group: 'viseme',
-    caption: 'Lip-sync visemes (GLB · Greg)', prep: `h.speak("Hello, I'm your companion. How can I help you today?")` },
-  { name: 'aria-lipsync', avatar: 'Aria', shot: 'face', ms: 3200, group: 'viseme',
-    caption: 'Lip-sync visemes (HumGen pipeline · Aria)', prep: `h.speak("Welcome. I was built by the avatar pipeline.")` },
-  { name: 'erik-lipsync', avatar: 'Erik', shot: 'face', ms: 3200, group: 'viseme',
-    caption: 'Lip-sync visemes (VRM · Erik)', prep: `h.speak("Hi there, nice to meet you.")` },
-
-  // --- face: emotes ---
-  { name: 'greg-emote-happy', avatar: 'Greg', shot: 'face', ms: 2600, group: 'emote',
-    caption: 'Emote: happy (GLB · Greg)', prep: `h.setEmote('happy')` },
-  { name: 'greg-emote-sad', avatar: 'Greg', shot: 'face', ms: 2600, group: 'emote',
-    caption: 'Emote: sad (GLB · Greg)', prep: `h.setEmote('sad')` },
-  { name: 'greg-emote-angry', avatar: 'Greg', shot: 'face', ms: 2600, group: 'emote',
-    caption: 'Emote: angry (GLB · Greg)', prep: `h.setEmote('angry')` },
-
-  // --- VRM body animation (VRMA path) ---
-  { name: 'workboy-gesture', avatar: 'Work Boy', shot: 'body', ms: 2800, group: 'animation',
+    prep: `setTimeout(()=>h.playCategory('gesture',{blendTime:700}),500);setTimeout(()=>h.playCategory('idle',{loopCount:1e9,blendTime:800}),2200)` },
+  { name: 'workboy-gesture', avatar: 'Work Boy', shot: 'body', ms: 2800, group: 'animation', mode: 'body',
     caption: 'Gesture (VRM · Work Boy, VRMA clips)', prep: `h.playCategory('gesture',{blendTime:400})` }
 ]
 
 const VIEWPORTS = { body: { width: 400, height: 640 }, upper: { width: 480, height: 540 }, face: { width: 420, height: 420 } }
 const DPR = 1
 
-function encodeWebp(frames, outFile) {
+function encodeWebp(frames, outFile, frameMs = FRAME_MS) {
   // -lossy is required: img2webp defaults to LOSSLESS, which balloons 3D renders.
-  const args = ['-loop', '0', '-lossy', '-q', '52', '-m', '6', '-d', String(FRAME_MS), ...frames, '-o', outFile]
+  const args = ['-loop', '0', '-lossy', '-q', '52', '-m', '6', '-d', String(frameMs), ...frames, '-o', outFile]
   const r = spawnSync('img2webp', args, { encoding: 'utf8' })
   if (r.status !== 0) throw new Error(`img2webp failed: ${r.stderr || r.stdout}`)
+}
+
+/** Deterministic FACE capture: one held morph pose per frame (no setTimeout flash). */
+async function captureSteps(page, spec, frameDir) {
+  await page.evaluate(() => window.__harness.setServices({ visemes: false, emotes: false }))
+  await page.waitForTimeout(120)
+  const frames = []
+  for (let i = 0; i < spec.steps.length; i++) {
+    await page.evaluate((pose) => {
+      window.__harness.clearMorphs()
+      window.__harness.setMorph(pose)
+    }, spec.steps[i])
+    await page.waitForTimeout(160) // let the pose render
+    const f = join(frameDir, `f_${String(i).padStart(3, '0')}.png`)
+    await page.screenshot({ path: f })
+    frames.push(f)
+  }
+  await page.evaluate(() => window.__harness.clearMorphs())
+  return frames
 }
 
 async function captureOne(browser, spec) {
@@ -82,14 +122,33 @@ async function captureOne(browser, spec) {
   await page.goto(url, { waitUntil: 'load' })
   await page.waitForFunction(() => window.__harnessReady === true, null, { timeout: 20000 })
   await page.waitForFunction(() => window.__avatarLoaded === true, null, { timeout: 25000 })
-  await page.waitForTimeout(1200) // let the startup greet settle toward idle
 
-  // Face shots frame the head tightly, so any body motion (the startup greet) throws
-  // the face out of frame. Still the body to idle first, then run the face behavior.
-  if (spec.shot === 'face') {
-    await page.evaluate(() => window.__harness.playCategory('idle', { loopCount: 1e9, blendTime: 150 }))
-    await page.waitForTimeout(500)
+  const mode = spec.mode || 'body'
+
+  // Settle to a clean idle rest first, so the first frame has arms DOWN / head FORWARD
+  // (the startup greet raises the arms — capturing too early caught that pose).
+  await page.evaluate(() => window.__harness.playCategory('idle', { loopCount: 1e9, blendTime: 250 }))
+  await page.waitForTimeout(mode === 'steps' ? 1800 : 1400)
+
+  const frameDir = join(TMP, spec.name)
+  rmSync(frameDir, { recursive: true, force: true })
+  mkdirSync(frameDir, { recursive: true })
+  const outFile = join(OUT, `${spec.name}.webp`)
+
+  if (mode === 'steps') {
+    // Deterministic pose-per-frame face capture (idle kept so the head stays framed).
+    const frames = await captureSteps(page, spec, frameDir)
+    encodeWebp(frames, outFile, spec.frameMs || FRAME_MS)
+    rmSync(frameDir, { recursive: true, force: true })
+    await ctx.close()
+    return outFile
   }
+
+  if (mode === 'lipsync') {
+    // Real viseme path, but stop emotes so gaze/blink don't turn the head off the mouth.
+    await page.evaluate(() => window.__harness.setServices({ emotes: false }))
+  }
+  await page.waitForTimeout(150)
 
   if (spec.prep) {
     await page.evaluate((code) => {
@@ -99,9 +158,6 @@ async function captureOne(browser, spec) {
     }, spec.prep)
   }
 
-  const frameDir = join(TMP, spec.name)
-  rmSync(frameDir, { recursive: true, force: true })
-  mkdirSync(frameDir, { recursive: true })
   const frames = []
   const count = Math.round(spec.ms / FRAME_MS)
   for (let i = 0; i < count; i++) {
@@ -113,7 +169,6 @@ async function captureOne(browser, spec) {
     if (elapsed < FRAME_MS) await page.waitForTimeout(FRAME_MS - elapsed)
   }
 
-  const outFile = join(OUT, `${spec.name}.webp`)
   encodeWebp(frames, outFile)
   rmSync(frameDir, { recursive: true, force: true })
   await ctx.close()

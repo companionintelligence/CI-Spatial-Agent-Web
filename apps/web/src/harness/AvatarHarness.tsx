@@ -35,7 +35,7 @@ const initialAvatar = params.get('avatar')
 const transparent = params.get('bg') === 'transparent'
 
 const SHOTS: Record<Shot, { d: number; ty: number; cy: number; fov: number }> = {
-  face: { d: 0.9, ty: -0.12, cy: 0.05, fov: 26 },
+  face: { d: 1.15, ty: -0.02, cy: 0.05, fov: 26 },
   upper: { d: 1.55, ty: -0.4, cy: 0.05, fov: 27 },
   body: { d: 3.4, ty: -0.72, cy: 0.18, fov: 32 }
 }
@@ -90,6 +90,7 @@ function HarnessScene() {
   const visemes = useVisemeService()
   const emotes = useEmoteService()
   const animations = useAnimationService()
+  const three = useThree()
 
   const frameRef = useRef<FrameState>({
     head: new THREE.Vector3(0, 1.5, 0),
@@ -158,6 +159,49 @@ function HarnessScene() {
       speak(text: string) {
         visemes.actions.generateSequence(buildWhisper(text))
         return true
+      },
+
+      // ---- direct rig control (for crisp, deterministic FACE tests) ----
+      // Toggle the per-frame services so direct morph writes aren't overwritten.
+      setServices(flags: { visemes?: boolean; emotes?: boolean; animations?: boolean }) {
+        AvatarState.set((s) => ({
+          ...s,
+          visemesEnabled: flags.visemes ?? s.visemesEnabled,
+          emotesEnabled: flags.emotes ?? s.emotesEnabled,
+          animationsEnabled: flags.animations ?? s.animationsEnabled
+        }))
+      },
+
+      /** Every morph-target name on the avatar (visemes + ARKit) — diagnostic. */
+      faceMorphs() {
+        const names = new Set<string>()
+        three.scene.traverse((o: any) => {
+          if (o.morphTargetDictionary) Object.keys(o.morphTargetDictionary).forEach((n) => names.add(n))
+        })
+        return [...names].sort()
+      },
+
+      /** Directly set GLB morph influences: {morphName: value}. Returns #applied. */
+      setMorph(entries: Record<string, number>) {
+        let n = 0
+        three.scene.traverse((o: any) => {
+          if (!o.morphTargetDictionary || !o.morphTargetInfluences) return
+          for (const [name, val] of Object.entries(entries)) {
+            const idx = o.morphTargetDictionary[name]
+            if (idx !== undefined) {
+              o.morphTargetInfluences[idx] = val
+              n++
+            }
+          }
+        })
+        return n
+      },
+
+      /** Zero all morph influences (reset the face). */
+      clearMorphs() {
+        three.scene.traverse((o: any) => {
+          if (o.morphTargetInfluences) o.morphTargetInfluences.fill(0)
+        })
       }
     }
     w.__harnessReady = true
@@ -165,7 +209,7 @@ function HarnessScene() {
       delete w.__harness
       w.__harnessReady = false
     }
-  }, [visemes, emotes, animations])
+  }, [visemes, emotes, animations, three])
 
   return (
     <>

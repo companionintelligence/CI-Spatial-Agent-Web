@@ -8,7 +8,13 @@ import { defineConfig, devices } from '@playwright/test'
  */
 export default defineConfig({
   testDir: './tests',
-  
+
+  // The L4 (scenarios/) + L5 (render-matrix) suites need a WebGL-capable Chromium
+  // (SwiftShader flags) and the offline `script` provider, both provided by
+  // playwright.config.capture.ts. Keep them out of this legacy config, which targets
+  // 5173 + Ollama for the agent/audio/animation suites.
+  testIgnore: ['**/render-matrix.spec.ts', '**/scenarios/**'],
+
   // Maximum time one test can run for
   timeout: 60 * 1000,
   

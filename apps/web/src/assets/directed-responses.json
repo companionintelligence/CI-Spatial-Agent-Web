@@ -593,17 +593,17 @@
         },
         {
           "id": "default_fallback4",
-          "response": "I didnt quite understand that",
+          "response": "I didnt quite understand that.",
           "emotion": "welcoming"
         },
         {
           "id": "default_fallback5",
-          "response": "let me figure that out, still thinking about it",
+          "response": "Let me figure that out, still thinking about it.",
           "emotion": "informative"
         },
         {
           "id": "default_fallback6",
-          "response": "Yeah my main LLM is loading, it will load shortly please wait, im here to keep you company in the meantime",
+          "response": "Yeah my main LLM is loading, it will load shortly please wait, im here to keep you company in the meantime.",
           "emotion": "supportive"
         }
       ]
