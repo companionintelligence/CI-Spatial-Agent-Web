@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process'
 import { mkdirSync, rmSync, writeFileSync, existsSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
+import { writeGalleryReadme } from './gallery-md.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, '..', '..')
@@ -163,6 +164,7 @@ async function main() {
   await browser.close()
 
   writeFileSync(join(OUT, 'manifest.json'), JSON.stringify({ generatedWith: 'gen-webp.mjs', fps: FPS, clips: results }, null, 2))
+  writeGalleryReadme(OUT) // keep the Markdown gallery (docs/visual-tests/README.md) in sync
   const ok = results.filter((r) => r.ok).length
   const kb = results.filter((r) => r.ok).reduce((n, r) => n + r.sizeKb, 0)
   console.log(`\n${ok}/${results.length} clips captured — ${(kb / 1024).toFixed(1)} MB → docs/visual-tests/`)

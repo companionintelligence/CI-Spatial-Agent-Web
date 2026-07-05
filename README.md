@@ -4,6 +4,29 @@ WebXR and WebSpatial
 
 Embodied AI Avatar framework with WebXR and Vision Pro support.
 
+## Documentation
+
+**Start here — system reference** (how it all works, with mermaid charts):
+
+| Doc | What it covers |
+|---|---|
+| [architecture.md](docs/architecture.md) | The embodied agent end-to-end — pipeline, conversation-turn sequence, `useAgent` service graph, platform/render tiers, deployment |
+| [animation.md](docs/animation.md) | The body **animation mixer**, the full clip/expression library (33 GLB + 6 VRMA), and **how the LLM triggers animations** |
+| [avatar.md](docs/avatar.md) | Avatar **rig contract**, the viseme + emote face systems, facial capability tiers, the 24-avatar catalog, and the HumGen→VRM pipeline |
+| 🎞 [**Animation gallery**](docs/visual-tests/) | **49 animated WebP clips** of every animation, viseme, and emote — rendered inline on GitHub |
+
+**Pipelines & plans:**
+
+| Doc | What it covers |
+|---|---|
+| [ANIMATION-PIPELINE.md](docs/ANIMATION-PIPELINE.md) | The body-animation pipeline + the RPM/Mixamo clip library |
+| [AVATAR-PIPELINE.md](docs/AVATAR-PIPELINE.md) | Avatar pipeline + the rig contract in depth |
+| [VOICE-PIPELINE.md](docs/VOICE-PIPELINE.md) | STT → LLM → TTS voice pipeline + lip-sync (VibeVoice / CosyVoice) |
+| [FACIAL-ANIMATION-PLAN.md](docs/FACIAL-ANIMATION-PLAN.md) | Tiered facial animation (VRM → ARKit → FACS → **MetaHuman** roadmap) |
+| [WEBSPATIAL-PLAN.md](docs/WEBSPATIAL-PLAN.md) | WebSpatial / spatial-platform support (visionOS, Android XR, Pico) |
+| [TESTING-PIPELINE.md](docs/TESTING-PIPELINE.md) | The 5-layer test strategy (unit → visual WebP → E2E) |
+| [ASSET-PIPELINE.md](docs/ASSET-PIPELINE.md) · [DEPLOYMENT.md](docs/DEPLOYMENT.md) · [DRIVE-ASSETS.md](docs/DRIVE-ASSETS.md) · [PRODUCT-PLAN.md](docs/PRODUCT-PLAN.md) · [BUTTON-AUDIT.md](docs/BUTTON-AUDIT.md) | Asset packaging · container deployment · owned-asset inventory · product/launch plan · control-bar audit |
+
 ## Interface
 
 The app is a full-viewport **3D avatar viewport** with a 2D HUD — logo, chat-log
