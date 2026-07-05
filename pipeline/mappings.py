@@ -124,11 +124,85 @@ RPM_CONTRACT_BONES = [
     'Hips', 'Spine', 'Spine1', 'Spine2', 'Neck', 'Head', 'LeftEye', 'RightEye',
 ]
 
-# HumGen's own rig root name — Strategy D deletes this armature after weight
-# transfer. NEEDS VERIFICATION against installed HumGen (v4 names its rig
-# object like 'HG_<name>' with an armature data block); skeleton.py locates it
-# by "armature that is NOT the imported RPM armature" rather than by name.
+# HumGen's own rig root object name prefix — v4 names the armature object
+# ``HG_<FirstName>`` (e.g. ``HG_Florence``) with its armature data block.
+# skeleton.py locates it via ``human.objects.rig``, not by this hint.
 HUMGEN_RIG_HINT = 'HG_'
+
+
+# ---------------------------------------------------------------------------
+# Strategy R (retarget) — HumGen deform-bone  ->  RPM bone name  (VERIFIED)
+# ---------------------------------------------------------------------------
+#
+# VERIFIED by dumping the live armature of a HumGen3D v4.0.29 female
+# (``Human.from_preset`` + clothing). HumGen ships a Rigify-derived rig whose
+# DEFORM bones are named Rigify-style:
+#
+#   spine chain:  spine -> spine.001 -> spine.002 -> spine.003 -> neck -> head
+#                 (``spine`` IS the pelvis/hip root; ``thigh.L/R`` parent to it)
+#   arms:         shoulder.[LR] -> upper_arm.[LR] -> forearm.[LR] -> hand.[LR]
+#   fingers:      thumb.0{1,2,3}.[LR], f_{index,middle,ring,pinky}.0{1,2,3}.[LR]
+#   legs:         thigh.[LR] -> shin.[LR] -> foot.[LR] -> toe.[LR]
+#   eyes:         eyeball.[LR]   (bound to HG_Eyes; drive gaze position)
+#
+# Strategy R keeps HumGen's NATIVE rig (body + head + eyes + teeth + clothing all
+# bound to it, exactly as HumGen authored — coherent, no re-seating). We rename
+# these deform bones to the RPM/Mixamo names so the app's shared GLB clips (whose
+# tracks target RPM node names) resolve by name in three.js's AnimationMixer.
+#
+# The one non-trivial mapping: HumGen's 4-segment spine (spine, spine.001/002/003)
+# maps to RPM's Hips + 3-segment spine (Hips, Spine, Spine1, Spine2). ``spine`` ->
+# ``Hips`` because it is the pelvis root the legs hang off.
+#
+# skeleton.py renames ONLY these bones (and the matching vertex groups on every
+# skinned mesh). Un-mapped HumGen bones (fingers, facs_control + FACS drivers,
+# breast.[LR], jaw/jaw_upper, palm.*, heel.02.[LR], the *_lookat helpers, leaf tips)
+# are left with their HumGen names — they still deform the mesh but no clip track
+# drives them, so they simply hold their retargeted rest pose (a natural relaxed
+# hand).
+#
+# FINGERS ARE DELIBERATELY NOT MAPPED. HumGen's fingers are 3-segment
+# (thumb/f_*.01/02/03) and skinned to HumGen's specific tiny finger-bone geometry;
+# the RPM/mixamo clips key ABSOLUTE per-bone translation authored for RPM's
+# 4-segment finger geometry, so retargeting the fingers stretches them into thin
+# streamers under animation (VERIFIED via real-three.js CPU-skin render). Leaving
+# the fingers on their HumGen names means the clips' finger tracks (LeftHandThumb1
+# …) don't resolve, so the fingers stay in their natural retargeted rest pose and
+# ride the wrist (hand.[LR] -> Left/RightHand IS mapped). The body, arms, legs,
+# head, and all clothing retarget cleanly; only per-finger articulation is dropped —
+# an acceptable trade for a robust, non-exploding avatar.
+HUMGEN_TO_RPM_BONES = {
+    # --- spine / neck / head ---
+    'spine':      'Hips',       # HumGen pelvis root == RPM Hips
+    'spine.001':  'Spine',
+    'spine.002':  'Spine1',
+    'spine.003':  'Spine2',
+    'neck':       'Neck',
+    'head':       'Head',
+    # --- eyes (position drives GLB gaze; orientation irrelevant on the GLB path) ---
+    'eyeball.L':  'LeftEye',
+    'eyeball.R':  'RightEye',
+    # --- left arm (to the wrist; fingers deliberately NOT mapped, see note below) ---
+    'shoulder.L':  'LeftShoulder',
+    'upper_arm.L': 'LeftArm',
+    'forearm.L':   'LeftForeArm',
+    'hand.L':      'LeftHand',
+    # --- right arm ---
+    'shoulder.R':  'RightShoulder',
+    'upper_arm.R': 'RightArm',
+    'forearm.R':   'RightForeArm',
+    'hand.R':      'RightHand',
+    # --- left leg ---
+    'thigh.L': 'LeftUpLeg',
+    'shin.L':  'LeftLeg',
+    'foot.L':  'LeftFoot',
+    'toe.L':   'LeftToeBase',
+    # --- right leg ---
+    'thigh.R': 'RightUpLeg',
+    'shin.R':  'RightLeg',
+    'foot.R':  'RightFoot',
+    'toe.R':   'RightToeBase',
+}
 
 
 # ---------------------------------------------------------------------------

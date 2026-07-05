@@ -1,7 +1,17 @@
 # Avatar Asset Pipeline (Blender)
 
-Headless **HumGen3D → RPM-skeleton re-skin (Strategy D) → GLB/VRM** pipeline that
-emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-the-rig-contract-what-every-avatar-must-expose).
+Headless **clothed HumGen3D → RPM-skeleton RETARGET (Strategy R) → GLB/VRM**
+pipeline that emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-the-rig-contract-what-every-avatar-must-expose).
+
+> **Strategy R (retarget), not Strategy D (re-skin).** The old Strategy D re-skinned
+> the HumGen body onto a separate RPM armature and re-seated the head/eyes/teeth/
+> clothing — which produced a detached head, floating teeth/eyes, and clothing that
+> exploded into sheets when animated (it only ever passed the *name*-based validator).
+> Strategy R keeps HumGen's OWN rig with everything bound to it as authored, aligns
+> its rest to the RPM T-pose, and renames its deform bones to the RPM names so the
+> shared clips drive it. Head stays attached, teeth stay in the mouth, sleeves follow
+> the arms. VERIFIED by rendering the export animated in real three.js (see
+> `skeleton.py` + `mappings.HUMGEN_TO_RPM_BONES`).
 
 > Design docs: [`ASSET-PIPELINE.md`](../docs/ASSET-PIPELINE.md) ·
 > [`AVATAR-PIPELINE.md`](../docs/AVATAR-PIPELINE.md) ·
@@ -87,10 +97,10 @@ pipeline/
   README.md               # this file
   install_addons.py       # enable HumGen3D + VRM addon, set content path, save prefs
   generate_avatar.py      # main entry (args after --)
-  mappings.py             # RPM_TO_VRM_HUMANBONES, viseme/ARKit tables, VRM expression binds
+  mappings.py             # HUMGEN_TO_RPM_BONES, RPM_TO_VRM_HUMANBONES, viseme/ARKit tables
   lib/
-    humgen.py             # generate a HumGen human
-    skeleton.py           # Strategy D: import RPM T-pose, transfer weights, drop HG rig
+    humgen.py             # generate + clothe a HumGen human, convert hair to mesh
+    skeleton.py           # Strategy R: align HumGen rest to RPM T-pose, rename bones -> RPM
     facemorphs.py         # rename/bind HumGen shape keys -> viseme_* + ARKit names
     glb_export.py         # export .glb (morph targets + skin, no baked anims)
     vrm_export.py         # configure VRM1 humanoid + expressions, export .vrm
@@ -268,14 +278,24 @@ What's DONE and verified:
 - **Face morphs** (`facemorphs.py`) — ✅ `load_facial_rig()` → `prepare_for_arkit('long')`
   gives 33/35 ARKit morphs; `eyesClosed`/`mouthSmile` synthesised; all 15 `viseme_*`
   derived from ARKit blends and baked as real morph targets.
-- **Strategy D re-skin** (`skeleton.py`) — ✅ FULL re-skin. Imports the in-tree
-  `rpm-mixamo-t-posed.glb`, which carries both the RPM armature AND a real skinned
-  reference body (`Wolf3D_Avatar`, 82 RPM-named groups). Data Transfer
-  (POLYINTERP_NEAREST VGROUP_WEIGHTS) copies those weights onto the HumGen body,
-  which is then bound to the RPM armature; eyes/teeth are rebound; the HG rig is
-  dropped. Output rides the RPM skeleton bone-for-bone (Hips→…→Head/LeftEye/RightEye).
+- **Clothing + hair** (`humgen.py`) — ✅ `human.clothing.outfit.set()` /
+  `footwear.set()` dress the human on its native rig; `regular_hair.convert_to_haircards()`
+  bakes particle scalp hair to an exportable mesh (glTF can't export particle hair),
+  re-parented + skinned 100 % to the `head` bone so it exports skinned and rides head
+  motion. Body clothing-masks are stripped before the texture bake so nothing bakes
+  black under the clothing.
+- **Strategy R retarget** (`skeleton.py`) — ✅ Imports `rpm-mixamo-t-posed.glb` for its
+  RPM rest transforms only. Poses every mapped HumGen deform bone into the RPM bone's
+  exact rest world matrix (parent-first, bones disconnected) and applies it as the new
+  bind pose (verified dHead = 0, dRot = 0), so HumGen's bind == RPM's rest. Then renames
+  the HumGen deform bones → RPM names (`HUMGEN_TO_RPM_BONES`) and the matching vertex
+  groups on every skinned mesh. Fingers + eye ORIENTATION are deliberately not aligned
+  (fingers would stream under the absolute-translation clips; eye alignment pops the
+  eyeballs) — see the notes in `mappings.py` / `skeleton.py`. Everything stays bound to
+  HumGen's one native rig: head attached, teeth in the mouth, eyes in the sockets,
+  sleeves follow the arms.
 - **GLB export** (`glb_export.py`) — ✅ bakes textures, prunes non-face shape keys,
-  exports position-only morph deltas (≈17 MB for a full female avatar).
+  exports position-only morph deltas (≈28 MB for a full clothed female avatar with hair).
 
 Still scaffold-only (not needed for the GLB rig contract):
 
