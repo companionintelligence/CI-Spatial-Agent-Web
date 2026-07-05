@@ -98,6 +98,15 @@ flowchart LR
 | `facs` | 43 | HumGen native (authoring) |
 | `metahuman` | ~700 | roadmap — license unblocked 2025, ARKit-52 bridge |
 
+> **VRM facial expressiveness is per-avatar, and the tier alone doesn't capture it.** A `vrm-basic`
+> head only *animates* its face if its expression presets carry real morph **binds**. Anime/VRoid VRMs
+> (**Yuki, Kenji**) bind happy/angry/sad/surprised/relaxed + the five visemes and express clearly;
+> some realistic imports (**Erik**) declare the preset names but bind them to nothing (≈7 unnamed
+> morphs) — `expressionManager.setValue('happy', 0.8)` succeeds and `update()` runs, but the mesh
+> doesn't move, so the face reads as neutral. Helmeted VRMs (Maya = Sport Woman) occlude the face
+> entirely. GLB (`arkit`/`oculus-viseme`) heads drive morph influences directly and always express.
+> The [visual-tests faces page](visual-tests/faces.md) uses Yuki/Kenji for VRM faces; Erik is body-only.
+
 ## The avatar catalog
 
 `AvatarOptions` (24 selectable): **14 GLB pro/RPM models** (default `Greg`), **10 legacy

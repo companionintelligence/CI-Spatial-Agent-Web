@@ -1,75 +1,108 @@
 #!/usr/bin/env node
 /**
- * gallery-md.mjs — render docs/visual-tests/manifest.json to a Markdown gallery
- * (README.md) that GitHub shows inline when you open the folder. Animated WebP renders
- * directly in <img> on GitHub, so every clip is viewable without serving the page.
+ * gallery-md.mjs — render docs/visual-tests/manifest.json into a Markdown gallery with
+ * SUB-PAGES that GitHub shows inline (animated WebP renders directly in <img>):
+ *   README.md   — index + links to the sub-pages + a small hero row
+ *   animations.md — body clips per avatar (male + female, GLB + VRM)
+ *   faces.md    — lip-sync + emotes per avatar
+ *   eyes.md     — eye movement (blink + gaze)
+ *   blends.md   — crossfade combinations
  *
- * Called at the end of gen-webp.mjs, and runnable standalone: node e2e/capture/gallery-md.mjs
+ * Called at the end of gen-webp.mjs; runnable standalone: node e2e/capture/gallery-md.mjs
  */
 import { readFileSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
 
 const OUT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'docs', 'visual-tests')
-
-// Section order + labels; face groups render as squares. Anything unlisted falls through.
-const SECTIONS = [
-  ['viseme', 'Visemes / lip-sync', true],
-  ['emote', 'Expression / emote', true],
-  ['idle', 'Body — idle', false],
-  ['communication', 'Body — communication', false],
-  ['gesture', 'Body — gesture', false],
-  ['expression', 'Body — expression / reaction', false],
-  ['action', 'Body — action', false],
-  ['movement', 'Body — movement', false],
-  ['vrma', 'VRM body animation (VRMA)', false],
-  ['blend', 'Blend / crossfade', false]
-]
 const COLS = 3
+
+const PAGES = [
+  { key: 'animations', file: 'animations.md', title: 'Body Animations', groupBy: 'avatar', face: false,
+    blurb: 'The full body-animation catalog played through the real mixer, across male + female avatars on both GLB and VRM rigs.' },
+  { key: 'faces', file: 'faces.md', title: 'Faces — Lip-sync & Emotes', groupBy: 'avatar', face: true,
+    blurb: 'Viseme lip-sync + emotion expressions — GLB avatars (ARKit-52 morphs) and the expressive VRM avatars (Yuki, Kenji). Realistic VRM imports with empty expression binds are body-only.' },
+  { key: 'eyes', file: 'eyes.md', title: 'Eye Movement', groupBy: null, face: true,
+    blurb: 'Deterministic gaze — left, right, up, down, wide — plus blinks, driven one pose per frame through the ARKit eye morphs (eyeLook*, eyeBlink*, eyeWide*).' },
+  { key: 'blends', file: 'blends.md', title: 'Blend Combos', groupBy: null, face: false,
+    blurb: 'Native crossfade transitions between clips (idle → gesture → idle, gesture → action, …).' }
+]
+
+const img = (c, face) =>
+  `<img src="${c.file}" width="${face ? 200 : 190}" alt="${(c.caption || c.name).replace(/"/g, "'")}" /><br /><sub>${c.caption || c.clip || c.name}</sub>`
+
+function grid(items, face) {
+  let md = '<table>\n'
+  for (let i = 0; i < items.length; i += COLS) {
+    md += '  <tr>\n'
+    for (const c of items.slice(i, i + COLS)) md += `    <td align="center">${img(c, face)}</td>\n`
+    md += '  </tr>\n'
+  }
+  return md + '</table>\n'
+}
+
+const CATEGORY_ORDER = ['idle', 'communication', 'gesture', 'expression', 'action', 'movement', 'vrma', 'lipsync', 'emote']
+
+function section(items, groupBy, face) {
+  if (!groupBy) return grid(items, face)
+  // group by avatar, then by category within each avatar
+  const byAvatar = {}
+  for (const c of items) (byAvatar[c.avatar] ||= []).push(c)
+  let md = ''
+  for (const av of Object.keys(byAvatar)) {
+    const sub = byAvatar[av]
+    const rig = sub[0]?.rig ? ` · ${sub[0].sex || ''}·${sub[0].rig}` : ''
+    md += `\n### ${av}${rig} · ${sub.length}\n\n`
+    const byCat = {}
+    for (const c of sub) (byCat[c.group] ||= []).push(c)
+    const cats = Object.keys(byCat).sort((a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b))
+    if (cats.length > 1) {
+      for (const cat of cats) md += `**${cat}**\n\n${grid(byCat[cat], face)}\n`
+    } else {
+      md += grid(sub, face)
+    }
+  }
+  return md
+}
 
 export function writeGalleryReadme(outDir = OUT) {
   const manifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf8'))
   const ok = manifest.clips.filter((c) => c.ok)
-  const byGroup = {}
-  for (const c of ok) (byGroup[c.group] ||= []).push(c)
+  const byPage = {}
+  for (const c of ok) (byPage[c.page || 'other'] ||= []).push(c)
 
-  const w = (c, face) =>
-    `<img src="${c.file}" width="${face ? 200 : 190}" alt="${(c.caption || c.name).replace(/"/g, "'")}" /><br /><sub>${c.caption || c.clip || c.name}</sub>`
-
-  const grid = (items, face) => {
-    let md = '<table>\n'
-    for (let i = 0; i < items.length; i += COLS) {
-      md += '  <tr>\n'
-      for (const c of items.slice(i, i + COLS)) md += `    <td align="center">${w(c, face)}</td>\n`
-      md += '  </tr>\n'
-    }
-    return md + '</table>\n'
+  // --- sub-pages ---
+  for (const p of PAGES) {
+    const items = byPage[p.key] || []
+    if (!items.length) continue
+    const body = `# ${p.title} · ${items.length}\n\n${p.blurb}\n\n← [back to gallery index](README.md)\n${section(items, p.groupBy, p.face)}\n---\n_Generated from \`manifest.json\` by \`e2e/capture/gallery-md.mjs\` at ${manifest.fps} fps._\n`
+    writeFileSync(join(outDir, p.file), body)
   }
 
-  let body = ''
-  const seen = new Set()
-  for (const [g, label, face] of SECTIONS) {
-    const items = byGroup[g]
-    if (!items?.length) continue
-    seen.add(g)
-    body += `\n## ${label} · ${items.length}\n\n${grid(items, face)}`
-  }
-  for (const g of Object.keys(byGroup)) {
-    if (seen.has(g)) continue
-    body += `\n## ${g} · ${byGroup[g].length}\n\n${grid(byGroup[g], false)}`
-  }
+  // --- index README ---
+  const rows = PAGES.filter((p) => (byPage[p.key] || []).length).map(
+    (p) => `| 🎞 [**${p.title}**](${p.file}) | ${(byPage[p.key] || []).length} | ${p.blurb} |`
+  )
+  const hero = ['greg-waving', 'cara-dance', 'greg-lipsync', 'greg-emote-happy', 'erik-dance-move', 'greg-eyes']
+    .map((n) => ok.find((c) => c.name === n))
+    .filter(Boolean)
 
   const md = `# Avatar Visual Tests — WebP Gallery
 
-**${ok.length} animated WebP clips** captured from the real avatar rig via the capture
-harness (\`apps/web/harness.html\` → \`e2e/capture/gen-webp.mjs\`) at ${manifest.fps} fps — a
-faithful record of the shipping animation / viseme / emote services across the full mixer
-catalog. GitHub renders these inline; regenerate with \`node e2e/capture/gen-webp.mjs\`.
+**${ok.length} animated WebP clips** captured from the real avatar rig via the harness
+(\`apps/web/harness.html\` → \`e2e/capture/gen-webp.mjs\`) at ${manifest.fps} fps — a faithful
+record of the shipping animation / viseme / emote services across **male + female avatars on
+GLB and VRM rigs**. GitHub renders these inline. Regenerate: \`node e2e/capture/gen-webp.mjs\`.
 
-See [\`../animation.md\`](../animation.md) for the clip catalog + how the LLM triggers
-animations, and [\`../TESTING-PIPELINE.md\`](../TESTING-PIPELINE.md) (layer L3) for how these
-are produced.
-${body}
+See [\`../animation.md\`](../animation.md) (mixer + clip catalog) and
+[\`../avatar.md\`](../avatar.md) (rigs + faces).
+
+## Sub-pages
+
+| Page | Clips | What |
+|---|---|---|
+${rows.join('\n')}
+${hero.length ? `\n## Highlights\n\n${grid(hero, false)}` : ''}
 ---
 _Generated from \`manifest.json\` by \`e2e/capture/gallery-md.mjs\`._
 `
@@ -77,8 +110,7 @@ _Generated from \`manifest.json\` by \`e2e/capture/gallery-md.mjs\`._
   return ok.length
 }
 
-// Run standalone
 if (import.meta.url === `file://${process.argv[1]}`) {
   const n = writeGalleryReadme()
-  console.log(`wrote docs/visual-tests/README.md (${n} clips)`)
+  console.log(`wrote gallery sub-pages (${n} clips)`)
 }

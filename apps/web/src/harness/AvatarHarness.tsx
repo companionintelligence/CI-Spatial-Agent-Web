@@ -137,6 +137,32 @@ function HarnessScene() {
         return true
       },
 
+      /**
+       * Isolated capture: stop everything and play ONLY this clip, cleanly looping from
+       * t=0 at full weight, bypassing the idle/greet/queue interplay. Returns the clip
+       * duration in ms so the capture window can be exactly one seam-free pass.
+       */
+      captureClip(clip: string) {
+        const catalog = getAvatarCatalog(isVRMSelected())
+        const found = catalog[clip] ?? Object.values(catalog).find((c) => c.name === clip)
+        const st: any = animations.state
+        const action = found && st.actions?.[found.name]
+        if (!action) return 0
+        Object.values<any>(st.actions).forEach((a) => a && a.stop())
+        action.reset()
+        action.setLoop(THREE.LoopRepeat, Infinity)
+        action.clampWhenFinished = false
+        action.setEffectiveTimeScale(1)
+        action.setEffectiveWeight(1)
+        action.play()
+        // Pin service state so the per-frame update() doesn't advance/queue over it.
+        st.currentClip = found
+        st.isTransitioning = false
+        if (st.queue) st.queue.length = 0
+        st.cyclingState.cyclingEnabled = false
+        return Math.round((action.getClip?.()?.duration ?? found.duration / 1000) * 1000)
+      },
+
       /** Play a random clip of a category (idle|gesture|expression|action|...). */
       playCategory(category: string, opts?: { loopCount?: number; blendTime?: number }) {
         const clip = getRandomClip(category as any, getAvatarCatalog(isVRMSelected()))
@@ -222,6 +248,21 @@ function HarnessScene() {
         three.scene.traverse((o: any) => {
           if (o.morphTargetInfluences) o.morphTargetInfluences.fill(0)
         })
+      },
+
+      /** VRM expression names + current values (diagnose VRM face driving). */
+      vrmExpressions() {
+        const vrm: any = (visemes as any).state?.viseme?.vrm
+        const em = vrm?.expressionManager
+        if (!em) return { vrm: false, note: 'no VRM expressionManager on this avatar' }
+        const names = Object.keys(em.expressionMap || {})
+        const values: Record<string, number> = {}
+        for (const n of names) {
+          try {
+            values[n] = Number((em.getValue(n) ?? 0).toFixed(2))
+          } catch {}
+        }
+        return { vrm: true, names, values }
       }
     }
     w.__harnessReady = true

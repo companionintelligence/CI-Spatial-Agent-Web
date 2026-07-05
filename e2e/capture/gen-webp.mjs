@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 /**
- * gen-webp.mjs — capture animated WebP visual tests spanning the full animation mixer.
+ * gen-webp.mjs — capture animated WebP visual tests across avatars, rigs, faces, eyes,
+ * and blends via the harness (window.__harness). Uses isolated single-clip playback
+ * (captureClip) so there's no crossfade/loop-seam glitch, trims the first frames, and
+ * organizes output into sub-pages via gallery-md.mjs.
  *
- * Drives /harness.html (window.__harness) with Playwright, plays each clip in the
- * catalog, screenshots a sequence of frames, and encodes them to an animated WebP with
- * img2webp. Reuses one page per (avatar, shot) so the whole GLB catalog captures fast.
- * Output: docs/visual-tests/*.webp + manifest.json (the gallery in index.html reads it).
- *
- * Usage:
- *   BASE=http://localhost:5199 node e2e/capture/gen-webp.mjs [--only=greg-body,faces]
- *   groups: greg-body | vrm-body | faces | blends
+ * Usage: BASE=http://localhost:5199 node e2e/capture/gen-webp.mjs [--only=page,page]
+ *   pages: animations | faces | eyes | blends
  */
 import { chromium } from 'playwright'
 import { spawnSync } from 'node:child_process'
@@ -26,28 +23,47 @@ const TMP = join(repoRoot, '.tmp', 'webp-frames')
 const onlyArg = (process.argv.find((a) => a.startsWith('--only=')) || '').slice('--only='.length)
 const only = onlyArg ? new Set(onlyArg.split(',')) : null
 
-const FPS = 9
+const FPS = 10
 const FRAME_MS = Math.round(1000 / FPS)
+const TRIM = 2 // discard the first N frames (settle past the t=0 pose)
 const VP = { body: { width: 400, height: 640 }, face: { width: 420, height: 420 } }
 
-// The full GLB animation catalog, by category (33 clips that ride the RPM skeleton).
-const GLB_CATALOG = {
-  idle: ['idle-stable', 'basic-idle', 'standing-idle-watch'],
+// Avatars under test — male + female, GLB + VRM.
+const GREG = { name: 'Greg', sex: 'M', rig: 'GLB' } // default male GLB
+const CARA = { name: 'Cara', sex: 'F', rig: 'GLB' } // female GLB
+const BRAD = { name: 'Brad', sex: 'M', rig: 'GLB' } // male GLB
+const ERIK = { name: 'Erik', sex: 'M', rig: 'VRM' } // male VRM
+const YUKI = { name: 'Yuki', sex: 'F', rig: 'VRM' } // female VRM (expressive face)
+const KENJI = { name: 'Kenji', sex: 'M', rig: 'VRM' } // male VRM (expressive face)
+
+// Full GLB catalog (Greg = reference); a representative subset for the other avatars.
+// `idle-stable` (the sub-perceptible default idle) and `walking` (root motion walks the
+// avatar out of the fixed frame) are intentionally excluded from the fixed-camera gallery.
+const GLB_FULL = {
+  idle: ['basic-idle'],
   communication: ['Talking', 'Talking-1', 'Talking-2', 'Telling-A-Secret'],
   gesture: ['Waving', 'Arm-Gesture', 'Head-Gesture', 'Happy-Hand-Gesture', 'Hands-Forward-Gesture',
     'Whatever-Gesture', 'Clapping', 'Pointing-Forward', 'Salute', 'Shoulder-Rubbing', 'Agreeing'],
   expression: ['Surprised', 'Reacting', 'Thinking', 'Looking', 'Looking-1', 'Looking-Behind',
     'Shaking-It-Off', 'Cocky-Head-Turn'],
-  action: ['dance', 'dance-action', 'bow', 'throw', 'Praying', 'Spin-In-Place', 'Crazy-Gesture'],
-  movement: ['walking']
+  action: ['dance', 'dance-action', 'bow', 'throw', 'Praying', 'Spin-In-Place', 'Crazy-Gesture']
 }
-// VRMA clips (VRM avatars, retargeted via the humanoid map).
-const VRMA_CATALOG = ['idle_loop', 'victory_sign', 'surprise_greet', 'pose', 'finger_gun', 'dance_move']
+const GLB_SUBSET = {
+  idle: ['basic-idle'],
+  communication: ['Talking'],
+  gesture: ['Waving', 'Clapping', 'Pointing-Forward', 'Agreeing'],
+  expression: ['Thinking', 'Surprised'],
+  action: ['dance', 'bow']
+}
+const VRMA = { vrma: ['idle_loop', 'surprise_greet', 'pose', 'victory_sign', 'finger_gun', 'dance_move'] }
+// Emotions with distinct VRM expression presets (happy/angry/sad/surprised/relaxed via mapEmotionToVRM).
+const GLB_EMOS = ['happy', 'sad', 'angry', 'fear', 'love']
+const VRM_EMOS = ['happy', 'sad', 'angry', 'fear', 'sleep']
 
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-')
 
 function encodeWebp(frames, outFile) {
-  const args = ['-loop', '0', '-lossy', '-q', '50', '-m', '6', '-d', String(FRAME_MS), ...frames, '-o', outFile]
+  const args = ['-loop', '0', '-lossy', '-q', '52', '-m', '6', '-d', String(FRAME_MS), ...frames, '-o', outFile]
   const r = spawnSync('img2webp', args, { encoding: 'utf8' })
   if (r.status !== 0) throw new Error(`img2webp failed: ${r.stderr || r.stdout}`)
 }
@@ -59,23 +75,33 @@ async function loadAvatar(browser, avatar, shot) {
   await page.goto(`${BASE}/harness.html?avatar=${encodeURIComponent(avatar)}&shot=${shot}&bg=dark`, { waitUntil: 'load' })
   await page.waitForFunction(() => window.__harnessReady === true, null, { timeout: 20000 })
   await page.waitForFunction(() => window.__avatarLoaded === true, null, { timeout: 25000 })
-  await page.waitForTimeout(2600) // let the startup greet settle to idle
+  await page.waitForTimeout(3800) // let the startup greet fully finish
   return { ctx, page }
 }
 
-async function grab(page, name, ms) {
+/**
+ * Capture frames → animated WebP. Two modes:
+ *  - free-run (default): sample at ~FPS for `ms`, letting the live scene animate.
+ *  - driven (opts.onFrame + opts.frameCount): call onFrame(i) to set a deliberate pose
+ *    per frame, then grab exactly that many — one pose per encoded frame (no page-timer
+ *    front-loading, no duplicate-frame merge collapsing the motion).
+ */
+async function grab(page, name, ms, { trim = TRIM, onFrame = null, frameCount = null } = {}) {
   const dir = join(TMP, name)
   rmSync(dir, { recursive: true, force: true })
   mkdirSync(dir, { recursive: true })
   const frames = []
-  const count = Math.round(ms / FRAME_MS)
+  const count = frameCount ?? Math.round(ms / FRAME_MS) + trim
   for (let i = 0; i < count; i++) {
+    if (onFrame) await onFrame(i)
     const t0 = Date.now()
     const f = join(dir, `f_${String(i).padStart(3, '0')}.png`)
     await page.screenshot({ path: f })
-    frames.push(f)
-    const el = Date.now() - t0
-    if (el < FRAME_MS) await page.waitForTimeout(FRAME_MS - el)
+    if (i >= trim) frames.push(f) // discard the first `trim` frames (t=0 settle)
+    if (!onFrame) {
+      const el = Date.now() - t0
+      if (el < FRAME_MS) await page.waitForTimeout(FRAME_MS - el)
+    }
   }
   const out = join(OUT, `${name}.webp`)
   encodeWebp(frames, out)
@@ -83,71 +109,113 @@ async function grab(page, name, ms) {
   return { out, sizeKb: existsSync(out) ? Math.round(statSync(out).size / 1024) : 0 }
 }
 
-async function captureAnimCatalog(browser, avatar, catalog, prefix, results) {
-  const { ctx, page } = await loadAvatar(browser, avatar, 'body')
+function record(results, o) {
+  results.push(o)
+  console.log(o.ok ? `ok (${o.sizeKb} KB)` : `FAIL — ${o.error}`)
+}
+
+// ---- Body animations: isolated single-clip playback, no seam ----
+async function captureBody(browser, av, catalog, results) {
+  const { ctx, page } = await loadAvatar(browser, av.name, 'body')
   for (const [group, clips] of Object.entries(catalog)) {
     for (const clip of clips) {
-      const name = `${prefix}-${slug(clip)}`
+      const name = `${slug(av.name)}-${slug(clip)}`
       process.stdout.write(`▶ ${name} … `)
       try {
-        await page.evaluate((c) => window.__harness.playAnimation(c, { loopCount: 1e9, blendTime: 350 }), clip)
-        await page.waitForTimeout(600) // establish the clip
-        const { sizeKb } = await grab(page, name, group === 'action' ? 3200 : 2600)
-        console.log(`ok (${sizeKb} KB)`)
-        results.push({ name, file: `${name}.webp`, avatar, clip, group, ok: true, sizeKb, caption: `${clip} (${group})` })
+        const dur = await page.evaluate((c) => window.__harness.captureClip(c), clip)
+        if (!dur) throw new Error('no loaded action')
+        await page.waitForTimeout(350) // move past the t=0 pose
+        const windowMs = Math.min(Math.max(dur - 500, 700), 2600)
+        const { sizeKb } = await grab(page, name, windowMs)
+        record(results, { name, file: `${name}.webp`, page: 'animations', avatar: av.name, sex: av.sex, rig: av.rig, group, clip, ok: true, sizeKb, caption: `${clip} — ${av.name} (${av.sex}·${av.rig})` })
       } catch (e) {
-        console.log(`FAIL — ${e.message}`)
-        results.push({ name, file: `${name}.webp`, avatar, clip, group, ok: false, error: String(e.message) })
+        record(results, { name, file: `${name}.webp`, page: 'animations', avatar: av.name, group, clip, ok: false, error: String(e.message) })
       }
     }
   }
   await ctx.close()
 }
 
-async function captureFaces(browser, results) {
-  const emotes = ['happy', 'sad', 'angry', 'fear', 'love', 'neutral']
+// ---- Faces: lip-sync + emotes over a stable idle. GLB rigs use ARKit morphs; VRM rigs
+// use the expressionManager (only VRMs with real expression binds — e.g. Yuki, Kenji — show
+// clearly; Erik-style imports with empty binds stay in the body page only). ----
+async function captureFaces(browser, av, results, emos = GLB_EMOS) {
   const specs = [
-    { avatar: 'Greg', name: 'greg-lipsync', group: 'viseme', prepStr: `window.__harness.speak("Hello, I'm your companion. How can I help you today?")`, ms: 3200, caption: 'Lip-sync visemes (GLB · Greg)' },
-    { avatar: 'Erik', name: 'erik-lipsync', group: 'viseme', prepStr: `window.__harness.speak('Hi there, nice to meet you.')`, ms: 3200, caption: 'Lip-sync visemes (VRM · Erik)' },
-    ...emotes.map((emo) => ({
-      avatar: 'Greg', name: `greg-emote-${emo}`, group: 'emote',
-      prepStr: `window.__harness.setEmote('${emo}')`, ms: 2600, caption: `Emote: ${emo} (GLB · Greg)`
-    }))
+    { suffix: 'lipsync', group: 'lipsync', prep: `window.__harness.speak("Hello, I'm your companion. How can I help you today?")`, ms: 3000, cap: 'Lip-sync' },
+    ...emos.map((e) => ({ suffix: `emote-${e}`, group: 'emote', prep: `window.__harness.setEmote('${e}')`, ms: 2400, cap: `Emote: ${e}` }))
   ]
+  const { ctx, page } = await loadAvatar(browser, av.name, 'face')
   for (const s of specs) {
-    process.stdout.write(`▶ ${s.name} … `)
+    const name = `${slug(av.name)}-${s.suffix}`
+    process.stdout.write(`▶ ${name} … `)
     try {
-      const { ctx, page } = await loadAvatar(browser, s.avatar, 'face')
-      await page.evaluate(() => window.__harness.playCategory('idle', { loopCount: 1e9, blendTime: 150 }))
-      await page.waitForTimeout(500)
-      await page.evaluate((code) => { new Function(code)() }, s.prepStr)
-      const { sizeKb } = await grab(page, s.name, s.ms)
-      console.log(`ok (${sizeKb} KB)`)
-      results.push({ name: s.name, file: `${s.name}.webp`, avatar: s.avatar, group: s.group, caption: s.caption, ok: true, sizeKb })
-      await ctx.close()
+      await page.evaluate(() => window.__harness.captureClip('basic-idle') || window.__harness.captureClip('idle_loop'))
+      await page.waitForTimeout(400)
+      await page.evaluate((code) => new Function(code)(), s.prep)
+      const { sizeKb } = await grab(page, name, s.ms, { trim: 0 })
+      record(results, { name, file: `${name}.webp`, page: 'faces', avatar: av.name, sex: av.sex, rig: av.rig, group: s.group, ok: true, sizeKb, caption: `${s.cap} — ${av.name} (${av.sex}·${av.rig})` })
     } catch (e) {
-      console.log(`FAIL — ${e.message}`)
-      results.push({ name: s.name, file: `${s.name}.webp`, avatar: s.avatar, group: s.group, ok: false, error: String(e.message) })
+      record(results, { name, file: `${name}.webp`, page: 'faces', avatar: av.name, group: s.group, ok: false, error: String(e.message) })
     }
+  }
+  await ctx.close()
+}
+
+// ---- Eyes: deterministic gaze + blink over a still idle (ARKit eye morphs, services off
+// so the auto blink/gaze loop can't overwrite the scripted poses). ----
+async function captureEyes(browser, av, results) {
+  const name = `${slug(av.name)}-eyes`
+  process.stdout.write(`▶ ${name} … `)
+  try {
+    const { ctx, page } = await loadAvatar(browser, av.name, 'face')
+    await page.evaluate(() => window.__harness.captureClip('basic-idle') || window.__harness.captureClip('idle_loop'))
+    await page.evaluate(() => window.__harness.setServices({ emotes: false, visemes: false }))
+    await page.waitForTimeout(200)
+    // One deliberate eye pose per encoded frame (2-frame holds; 3-frame smooth blinks).
+    const C = {}
+    const L = { eyeLookOutLeft: 1, eyeLookInRight: 1 }
+    const R = { eyeLookInLeft: 1, eyeLookOutRight: 1 }
+    const U = { eyeLookUpLeft: 1, eyeLookUpRight: 1 }
+    const D = { eyeLookDownLeft: 1, eyeLookDownRight: 1 }
+    const W = { eyeWideLeft: 1, eyeWideRight: 1 }
+    const B = { eyeBlinkLeft: 1, eyeBlinkRight: 1 }
+    const H = { eyeBlinkLeft: 0.5, eyeBlinkRight: 0.5 }
+    const seq = [C, C, L, L, L, H, B, H, R, R, R, U, U, H, B, H, D, D, W, W, H, B, H, C, C, C]
+    const { sizeKb } = await grab(page, name, 0, {
+      trim: 0,
+      frameCount: seq.length,
+      onFrame: async (i) =>
+        page.evaluate((m) => {
+          const h = window.__harness
+          h.clearMorphs()
+          if (Object.keys(m).length) h.setMorph(m)
+        }, seq[i])
+    })
+    record(results, { name, file: `${name}.webp`, page: 'eyes', avatar: av.name, sex: av.sex, rig: av.rig, group: 'eyes', ok: true, sizeKb, caption: `Eye movement — gaze L/R/up/down + blink (${av.name})` })
+    await ctx.close()
+  } catch (e) {
+    record(results, { name, file: `${name}.webp`, page: 'eyes', avatar: av.name, group: 'eyes', ok: false, error: String(e.message) })
   }
 }
 
+// ---- Blends: crossfade combinations driven through the real mixer ----
 async function captureBlends(browser, results) {
+  const combos = [
+    { name: 'blend-idle-wave-idle', clips: `h.playCategory('idle',{loopCount:1e9,blendTime:150});setTimeout(()=>h.playAnimation('Waving',{loopCount:1,blendTime:700}),600);setTimeout(()=>h.playCategory('idle',{loopCount:1e9,blendTime:800}),2400)`, ms: 4000, cap: 'idle → wave → idle' },
+    { name: 'blend-gesture-to-action', clips: `h.playAnimation('Clapping',{loopCount:1,blendTime:300});setTimeout(()=>h.playAnimation('bow',{loopCount:1,blendTime:600}),1400)`, ms: 3600, cap: 'clap → bow (gesture→action)' },
+    { name: 'blend-idle-think-talk', clips: `h.playAnimation('Thinking',{loopCount:1,blendTime:400});setTimeout(()=>h.playAnimation('Talking',{loopCount:1,blendTime:500}),1600)`, ms: 3600, cap: 'think → talk' },
+    { name: 'blend-dance-to-idle', clips: `h.playAnimation('dance',{loopCount:1,blendTime:400});setTimeout(()=>h.playCategory('idle',{loopCount:1e9,blendTime:900}),1800)`, ms: 3600, cap: 'dance → idle' }
+  ]
   const { ctx, page } = await loadAvatar(browser, 'Greg', 'body')
-  const name = 'greg-blend'
-  process.stdout.write(`▶ ${name} … `)
-  try {
-    await page.evaluate(() => {
-      window.__harness.playCategory('idle', { loopCount: 1e9, blendTime: 150 })
-      setTimeout(() => window.__harness.playAnimation('Waving', { loopCount: 1, blendTime: 800 }), 700)
-      setTimeout(() => window.__harness.playCategory('idle', { loopCount: 1e9, blendTime: 900 }), 2600)
-    })
-    const { sizeKb } = await grab(page, name, 4000)
-    console.log(`ok (${sizeKb} KB)`)
-    results.push({ name, file: `${name}.webp`, group: 'blend', avatar: 'Greg', ok: true, sizeKb, caption: 'idle → wave → idle crossfade (GLB · Greg)' })
-  } catch (e) {
-    console.log(`FAIL — ${e.message}`)
-    results.push({ name, file: `${name}.webp`, group: 'blend', ok: false, error: String(e.message) })
+  for (const c of combos) {
+    process.stdout.write(`▶ greg-${c.name} … `)
+    try {
+      await page.evaluate((code) => { const h = window.__harness; new Function('h', code)(h) }, c.clips)
+      const { sizeKb } = await grab(page, `greg-${c.name}`, c.ms, { trim: 1 })
+      record(results, { name: `greg-${c.name}`, file: `greg-${c.name}.webp`, page: 'blends', avatar: 'Greg', group: 'blend', ok: true, sizeKb, caption: `${c.cap} (Greg)` })
+    } catch (e) {
+      record(results, { name: `greg-${c.name}`, file: `greg-${c.name}.webp`, page: 'blends', ok: false, error: String(e.message) })
+    }
   }
   await ctx.close()
 }
@@ -157,17 +225,33 @@ async function main() {
   mkdirSync(TMP, { recursive: true })
   const browser = await chromium.launch()
   const results = []
-  if (!only || only.has('greg-body')) await captureAnimCatalog(browser, 'Greg', GLB_CATALOG, 'greg', results)
-  if (!only || only.has('vrm-body')) await captureAnimCatalog(browser, 'Erik', { vrma: VRMA_CATALOG }, 'erik', results)
-  if (!only || only.has('faces')) await captureFaces(browser, results)
-  if (!only || only.has('blends')) await captureBlends(browser, results)
+  const want = (p) => !only || only.has(p)
+
+  if (want('animations')) {
+    await captureBody(browser, GREG, GLB_FULL, results) // full reference catalog (male GLB)
+    await captureBody(browser, CARA, GLB_SUBSET, results) // female GLB
+    await captureBody(browser, BRAD, GLB_SUBSET, results) // male GLB
+    await captureBody(browser, ERIK, VRMA, results) // male VRM (VRMA)
+    await captureBody(browser, YUKI, VRMA, results) // female VRM (VRMA)
+  }
+  if (want('faces')) {
+    await captureFaces(browser, GREG, results, GLB_EMOS) // male GLB (ARKit morphs)
+    await captureFaces(browser, CARA, results, GLB_EMOS) // female GLB
+    await captureFaces(browser, YUKI, results, VRM_EMOS) // female VRM (expressive binds)
+    await captureFaces(browser, KENJI, results, VRM_EMOS) // male VRM (expressive binds)
+  }
+  if (want('eyes')) {
+    await captureEyes(browser, GREG, results)
+    await captureEyes(browser, CARA, results)
+  }
+  if (want('blends')) await captureBlends(browser, results)
   await browser.close()
 
   writeFileSync(join(OUT, 'manifest.json'), JSON.stringify({ generatedWith: 'gen-webp.mjs', fps: FPS, clips: results }, null, 2))
-  writeGalleryReadme(OUT) // keep the Markdown gallery (docs/visual-tests/README.md) in sync
+  writeGalleryReadme(OUT)
   const ok = results.filter((r) => r.ok).length
   const kb = results.filter((r) => r.ok).reduce((n, r) => n + r.sizeKb, 0)
-  console.log(`\n${ok}/${results.length} clips captured — ${(kb / 1024).toFixed(1)} MB → docs/visual-tests/`)
+  console.log(`\n${ok}/${results.length} clips — ${(kb / 1024).toFixed(1)} MB → docs/visual-tests/ (sub-pages generated)`)
   if (ok < results.length) process.exitCode = 1
 }
 
