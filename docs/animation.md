@@ -167,7 +167,19 @@ Omit `immediate` to queue; the mixer drains the queue when the current transitio
 ## QA — the visual gallery
 
 Every clip is captured as a short animated **WebP** via the harness
-(`apps/web/harness.html` → `e2e/capture/gen-webp.mjs`) into `docs/visual-tests/`
-(**49 clips**: the full GLB catalog on Greg + the VRMA clips on a VRM avatar + lip-sync +
-emotes + a blend). The gallery `index.html` is manifest-driven. Regenerate with
-`node e2e/capture/gen-webp.mjs`. See [`TESTING-PIPELINE.md`](TESTING-PIPELINE.md) (layer L3).
+(`apps/web/harness.html` → `e2e/capture/gen-webp.mjs`) into
+[`docs/visual-tests/`](visual-tests/) — **93 clips across 6 avatars** (male + female · GLB + VRM),
+organized into manifest-driven sub-pages: [body animations](visual-tests/animations.md) (63 — full
+GLB catalog on Greg + a subset on Cara/Brad + the VRMA clips on Erik/Yuki),
+[faces](visual-tests/faces.md) (24 — lip-sync + emotes on Greg/Cara plus the expressive VRMs
+Yuki/Kenji), [eye movement](visual-tests/eyes.md) (2 — deterministic gaze + blink), and
+[blend combos](visual-tests/blends.md) (4). Captures use isolated single-clip playback
+(`__harness.captureClip`) with a first-frame trim so there's no crossfade/loop-seam glitch.
+
+> Two clips are intentionally **excluded** from the fixed-camera gallery: `idle-stable` (the default
+> idle's motion is below the WebP-lossy threshold — `basic-idle` is shown instead) and `walking`
+> (root motion walks the avatar out of frame). VRM **facial** expressiveness is per-avatar: anime/VRoid
+> VRMs (Yuki, Kenji) express fully; realistic imports (Erik) have empty expression binds and appear in
+> the body pages only. See [`avatar.md`](avatar.md).
+
+Regenerate with `node e2e/capture/gen-webp.mjs`. See [`TESTING-PIPELINE.md`](TESTING-PIPELINE.md) (layer L3).
