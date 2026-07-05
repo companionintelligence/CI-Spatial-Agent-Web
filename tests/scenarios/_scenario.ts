@@ -6,7 +6,8 @@ import { expect, type Page } from '@playwright/test'
  * Every scenario drives the REAL app (`/`) in offline `directed-responses` mode:
  * the app defaults to llm_provider:'script' when no /config.json and no
  * VITE_LLM_PROVIDER are present (see resolveLLMConfig + defaultLLMConfig), so replies
- * come from apps/web/src/assets/directed-responses.json — deterministic, no LLM.
+ * come from apps/web/public/assets/directed-responses.json (fetched at runtime via
+ * DIRECTED_RESPONSES_URL) — deterministic, no LLM.
  *
  * We force script mode defensively via window.__APP_CONFIG__ (honored synchronously by
  * loadRuntimeConfig before first render) and clear any persisted LLM override, so the
