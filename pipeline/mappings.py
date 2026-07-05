@@ -116,6 +116,118 @@ RPM_TO_VRM_HUMANBONES = {
 # Full RPM bone inventory (superset of both rigs), in hierarchy order.
 RPM_BONES = list(RPM_TO_VRM_HUMANBONES.keys())
 
+
+# ---------------------------------------------------------------------------
+# HumGen (Rigify) deform bone  ->  VRM 1.0 humanoid slot  (VERIFIED)
+# ---------------------------------------------------------------------------
+#
+# For the *native VRM export* path (docs/FACIAL-ANIMATION-PLAN.md §"VRM-first
+# HumGen") we DO NOT re-skin onto the RPM rig. The HumGen character stays on its
+# own Rigify-derived rig (head/eyes/teeth/hair/clothing all bound to it), and we
+# map that rig's deform bones onto the VRM humanoid slots so @pixiv/three-vrm can
+# retarget the shared VRMA clips by humanoid bone. This keeps the head coherent
+# (teeth inside the mouth, eyes in the sockets) because nothing is re-seated.
+#
+# VERIFIED by dumping the armature of a `Human.from_preset(...)` in HumGen 4.0.28
+# headlessly (102 bones). The VRM slot attr names are snake_case as exposed by the
+# io_scene_vrm addon's `humanoid.human_bones.<slot>.node.bone_name`.
+#
+# NB: HumGen has NO dedicated `hips`/`pelvis` bone — its spine root is `spine`.
+# VRM *requires* `hips`, so `spine` maps to VRM `hips` (the root of the humanoid
+# chain), and the remaining spine bones shift up one: spine.001->spine,
+# spine.002->chest, spine.003->upperChest. VRMA retargeting is by humanoid role,
+# so this preserves upright posture and shared-clip compatibility.
+HUMGEN_TO_VRM_HUMANBONES = {
+    # --- spine / head (required core) ---
+    'spine':      'hips',        # HumGen has no separate hips bone; spine is the root
+    'spine.001':  'spine',
+    'spine.002':  'chest',
+    'spine.003':  'upper_chest',
+    'neck':       'neck',
+    'head':       'head',
+    # NB: the eyes and lower/upper teeth are SEPARATE meshes skinned to
+    # ``eyeball.L/R`` and ``jaw``/``jaw_upper``. HumGen's Rigify authors those bones
+    # with a ~90° rest rotation. @pixiv/three-vrm NORMALIZES every mapped humanoid
+    # bone to the VRM canonical rest — which breaks the inverse-bind of a mesh
+    # skinned to a 90°-rotated eye/jaw bone and FLINGS the eyes+teeth down to the
+    # chest (the 'floating teeth/eyes' break, VERIFIED by render). So we DELIBERATELY
+    # leave ``eyeball.L/R`` and ``jaw`` UNMAPPED: three-vrm then leaves those bones
+    # un-normalized and the eyes/teeth ride the head coherently. VRM eye + jaw bones
+    # are optional; gaze is driven by the app's head/lookAt path, mouth-open by the
+    # ``aa`` viseme morph on the body — neither needs the eye/jaw humanoid bones.
+    # 'eyeball.L': 'left_eye',   # intentionally unmapped (see note above)
+    # 'eyeball.R': 'right_eye',  # intentionally unmapped
+    # 'jaw':       'jaw',        # intentionally unmapped
+
+    # --- left arm ---
+    'shoulder.L': 'left_shoulder',
+    'upper_arm.L':'left_upper_arm',
+    'forearm.L':  'left_lower_arm',
+    'hand.L':     'left_hand',
+
+    # --- right arm ---
+    'shoulder.R': 'right_shoulder',
+    'upper_arm.R':'right_upper_arm',
+    'forearm.R':  'right_lower_arm',
+    'hand.R':     'right_hand',
+
+    # --- left leg ---
+    'thigh.L':    'left_upper_leg',
+    'shin.L':     'left_lower_leg',
+    'foot.L':     'left_foot',
+    'toe.L':      'left_toes',
+
+    # --- right leg ---
+    'thigh.R':    'right_upper_leg',
+    'shin.R':     'right_lower_leg',
+    'foot.R':     'right_foot',
+    'toe.R':      'right_toes',
+
+    # --- left hand fingers (Rigify: thumb.0N.L, f_<name>.0N.L) ---
+    'thumb.01.L':   'left_thumb_metacarpal',
+    'thumb.02.L':   'left_thumb_proximal',
+    'thumb.03.L':   'left_thumb_distal',
+    'f_index.01.L': 'left_index_proximal',
+    'f_index.02.L': 'left_index_intermediate',
+    'f_index.03.L': 'left_index_distal',
+    'f_middle.01.L':'left_middle_proximal',
+    'f_middle.02.L':'left_middle_intermediate',
+    'f_middle.03.L':'left_middle_distal',
+    'f_ring.01.L':  'left_ring_proximal',
+    'f_ring.02.L':  'left_ring_intermediate',
+    'f_ring.03.L':  'left_ring_distal',
+    'f_pinky.01.L': 'left_little_proximal',
+    'f_pinky.02.L': 'left_little_intermediate',
+    'f_pinky.03.L': 'left_little_distal',
+
+    # --- right hand fingers ---
+    'thumb.01.R':   'right_thumb_metacarpal',
+    'thumb.02.R':   'right_thumb_proximal',
+    'thumb.03.R':   'right_thumb_distal',
+    'f_index.01.R': 'right_index_proximal',
+    'f_index.02.R': 'right_index_intermediate',
+    'f_index.03.R': 'right_index_distal',
+    'f_middle.01.R':'right_middle_proximal',
+    'f_middle.02.R':'right_middle_intermediate',
+    'f_middle.03.R':'right_middle_distal',
+    'f_ring.01.R':  'right_ring_proximal',
+    'f_ring.02.R':  'right_ring_intermediate',
+    'f_ring.03.R':  'right_ring_distal',
+    'f_pinky.01.R': 'right_little_proximal',
+    'f_pinky.02.R': 'right_little_intermediate',
+    'f_pinky.03.R': 'right_little_distal',
+}
+
+# The VRM humanoid slots that are REQUIRED by the spec (export fails without
+# them). Used by vrm_export.py as a preflight assertion.
+VRM_REQUIRED_HUMANBONES = [
+    'hips', 'spine', 'head', 'neck',
+    'left_upper_arm', 'left_lower_arm', 'left_hand',
+    'right_upper_arm', 'right_lower_arm', 'right_hand',
+    'left_upper_leg', 'left_lower_leg', 'left_foot',
+    'right_upper_leg', 'right_lower_leg', 'right_foot',
+]
+
 # The subset the app's GLB gaze/emote/head-finder services look up BY NAME.
 # validate_avatar.mjs asserts every one of these is present in an export.
 # (AvatarModel.tsx head-finder: first bone whose name includes 'head';

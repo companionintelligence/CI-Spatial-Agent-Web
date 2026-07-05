@@ -132,6 +132,89 @@ def _finish_creation(human):
             print(f'[humgen] finish_creation_phase() skipped: {e}')
 
 
+# ---------------------------------------------------------------------------
+# clothing + hair  (VERIFIED against HumGen3D v4.0.29)
+# ---------------------------------------------------------------------------
+
+# Short, close-to-scalp cuts that DON'T drape long cards over the face (which
+# render as a shard-mass over the eyes). Keyed by gender; falls back to random.
+_SHORT_HAIR = {
+    'male':   'hair/head/male/Short/Short Combed.json',
+    'female': 'hair/head/female/Short/Short Combed.json',
+}
+
+
+def add_clothing(human, gender='female', outfit=None, footwear=None, seed=None):
+    """Dress the human — outfit + footwear. VERIFIED v4.0.29:
+    ``human.clothing.outfit.set(preset)`` / ``.set_random()`` (23 male / N female
+    outfits); same for ``.footwear``. Each adds skinned garment meshes parented to
+    the HumGen rig (they ride the body under animation).
+    """
+    _require_humgen()
+    import bpy as _bpy
+    ctx = _bpy.context
+    cl = getattr(human, 'clothing', None)
+    if cl is None:
+        print('[humgen] no clothing API — skipping outfit/footwear')
+        return
+    try:
+        if outfit:
+            cl.outfit.set(outfit, context=ctx)
+        else:
+            cl.outfit.set_random(context=ctx)
+        print('[humgen] outfit set')
+    except Exception as e:  # noqa: BLE001
+        print(f'[humgen] outfit failed: {e}')
+    try:
+        if footwear:
+            cl.footwear.set(footwear, context=ctx)
+        else:
+            cl.footwear.set_random(context=ctx)
+        print('[humgen] footwear set')
+    except Exception as e:  # noqa: BLE001
+        print(f'[humgen] footwear failed: {e}')
+
+
+def add_hair_haircards(human, gender='female', style=None):
+    """Give the human short hair and convert the particle systems to HAIRCARD
+    meshes so the hair survives glTF/VRM export (particle hair does not).
+
+    VERIFIED v4.0.29: ``human.hair.regular_hair.set(preset)`` then
+    ``.convert_to_haircards(quality='high', context=...)`` per system
+    (regular_hair, eyebrows, eyelashes). We pick a SHORT scalp cut so cards don't
+    drape over the face. vrm_export then binds + alpha-fixes the resulting cards.
+    """
+    _require_humgen()
+    import bpy as _bpy
+    ctx = _bpy.context
+    hair = getattr(human, 'hair', None)
+    if hair is None:
+        print('[humgen] no hair API — skipping')
+        return
+    style = style or _SHORT_HAIR.get(gender)
+    try:
+        if style:
+            hair.regular_hair.set(style, context=ctx)
+        else:
+            hair.regular_hair.set_random(context=ctx)
+        print(f'[humgen] hair set ({style or "random"})')
+    except Exception as e:  # noqa: BLE001
+        print(f'[humgen] hair set failed ({e}); trying random')
+        try:
+            hair.regular_hair.set_random(context=ctx)
+        except Exception as e2:  # noqa: BLE001
+            print(f'[humgen] hair random also failed: {e2}')
+    for sysname in ('regular_hair', 'eyebrows', 'eyelashes'):
+        sub = getattr(hair, sysname, None)
+        if sub is None:
+            continue
+        try:
+            obj = sub.convert_to_haircards(quality='high', context=ctx)
+            print(f'[humgen] haircards {sysname}: {obj.name if obj else None}')
+        except Exception as e:  # noqa: BLE001
+            print(f'[humgen] haircard {sysname} failed: {e}')
+
+
 def get_body_object(human):
     """Return the HumGen body mesh Blender object.
 

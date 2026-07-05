@@ -86,17 +86,18 @@ bone-for-bone.
 pipeline/
   README.md               # this file
   install_addons.py       # enable HumGen3D + VRM addon, set content path, save prefs
-  generate_avatar.py      # main entry (args after --)
-  mappings.py             # RPM_TO_VRM_HUMANBONES, viseme/ARKit tables, VRM expression binds
+  generate_vrm.py         # NATIVE VRM 1.0 entry (recommended — no RPM re-skin)
+  generate_avatar.py      # legacy GLB entry (RPM re-skin, Strategy D)
+  mappings.py             # HUMGEN_TO_VRM_HUMANBONES + RPM map, viseme/ARKit tables, VRM binds
   lib/
-    humgen.py             # generate a HumGen human
-    skeleton.py           # Strategy D: import RPM T-pose, transfer weights, drop HG rig
+    humgen.py             # generate a HumGen human (+ clothing/footwear/hair-haircards)
+    skeleton.py           # Strategy D: import RPM T-pose, transfer weights, drop HG rig (GLB path)
     facemorphs.py         # rename/bind HumGen shape keys -> viseme_* + ARKit names
     glb_export.py         # export .glb (morph targets + skin, no baked anims)
-    vrm_export.py         # configure VRM1 humanoid + expressions, export .vrm
+    vrm_export.py         # VRM1 humanoid + expressions + head-part/hair/material fixes, export .vrm
   presets/ci_default.json # persona seed presets
   batch.sh                # loop presets -> blender --background per avatar -> validate
-  validate_avatar.mjs     # CI gate: assert viseme_* + ARKit morphs + RPM bones
+  validate_avatar.mjs     # CI gate: assert viseme_* + ARKit morphs + (RPM) bones
 ```
 
 ## Prerequisites
@@ -277,9 +278,84 @@ What's DONE and verified:
 - **GLB export** (`glb_export.py`) — ✅ bakes textures, prunes non-face shape keys,
   exports position-only morph deltas (≈17 MB for a full female avatar).
 
-Still scaffold-only (not needed for the GLB rig contract):
-
-- **VRM export** (`vrm_export.py`) — the `saturday06/VRM-Addon-for-Blender` addon
-  (`io_scene_vrm`) is not installed on this machine, so `--emit vrm` is skipped
-  gracefully. Its `vrm_addon_extension.vrm1.*` data paths are still flagged `# TODO`.
 ```
+
+## Native VRM 1.0 path (`generate_vrm.py`) — the recommended avatar export
+
+**This supersedes the RPM re-skin for HumGen avatars** (see
+[`docs/FACIAL-ANIMATION-PLAN.md`](../docs/FACIAL-ANIMATION-PLAN.md) §"VRM-first
+HumGen"). The RPM re-skin/retarget forced the HumGen body onto the RPM skeleton
+and **broke the head** (teeth/eyes floated to the chest, procedural skin baked to
+blotches). The native VRM path keeps the HumGen character exactly as HumGen
+authors it — head, eyes, teeth, hair, clothing all on HumGen's own Rigify rig,
+NO re-skin, NO bone-rename — and exports `.vrm` by mapping that rig onto the VRM
+humanoid. `@pixiv/three-vrm-animation` then retargets the shared VRMA clips by
+humanoid bone, so the head stays coherent.
+
+```bash
+"/Applications/Blender 4.5.app/Contents/MacOS/Blender" \
+  --background --python pipeline/generate_vrm.py -- \
+  --gender female --name humgen-aria-01 --seed 6 \
+  --content-path ~/HumGen_content \
+  --out assets/avatars/humgen-aria-01.vrm
+```
+
+Requires the **VRM addon** installed as module `io_scene_vrm` (v4.3.1 verified) —
+extract `VRM_Addon_for_Blender-*.zip`'s inner folder to
+`~/Library/Application Support/Blender/4.5/scripts/addons/io_scene_vrm/`.
+
+### Verified io_scene_vrm 4.3.1 API + the hard-won gotchas
+
+- **Humanoid map** (`mappings.HUMGEN_TO_VRM_HUMANBONES`): HumGen Rigify deform
+  bones → VRM humanoid slots via
+  `armature.data.vrm_addon_extension.vrm1.humanoid.human_bones.<slot>.node.bone_name`.
+  Slot attrs are **snake_case** (`left_upper_arm`). HumGen has no `hips` bone —
+  `spine`→`hips`, `spine.001..003`→`spine/chest/upperChest`.
+- **`eyeball.L/R` and `jaw` are DELIBERATELY left unmapped.** three-vrm normalizes
+  every *mapped* humanoid bone to a canonical rest; HumGen's eye/jaw bones carry a
+  ~90° rest rotation, so mapping them breaks the eye/teeth bind. Unmapped, those
+  bones stay put. Gaze comes from the app's lookAt path, mouth-open from the `aa`
+  viseme morph.
+- **THE 'floating teeth/eyes' fix** (`vrm_export.boneparent_head_parts`): even
+  unmapped, the eyes/teeth (separate meshes skinned to eyeball/jaw) float to the
+  chest once the humanoid animates. The fix is to strip their skinning and
+  **object-bone-parent** them rigidly to the `head` bone (the exporter turns this
+  into a single-`head`-joint skin that three-vrm normalizes consistently with the
+  body's head verts). Re-weighting or merging into the body both still float.
+- **Do NOT set a target height.** `human.height.set(cm)` deforms the body via
+  shape keys *after* the eyes/teeth are authored, which re-floats the bone-parented
+  head parts. `generate_vrm.py` skips it; the preset default (~1.7 m) is used.
+- **Clean skin/clothing textures** (`vrm_export.simplify_humgen_materials`): the
+  HumGen skin/eye materials wire Base Color through a procedural node chain
+  (freckles × aged-layer × cavity × makeup) the glTF exporter can't flatten — it
+  exports **red/black skin**. We rebuild those materials as a plain Principled fed
+  by the raw sRGB color map (+ normal/rough), which exports clean. Clothing already
+  uses direct maps, so it exports clean (no bake needed — sidesteps the blotch bug).
+- **Haircards** (`vrm_export.prepare_extras` + `simplify_hair_material`): HumGen's
+  `convert_to_haircards` output is only *parented* (no skin) and its node-group
+  alpha renders as a dark shard-soup. We weight it to `head` + rebuild the material
+  as **MToon `alphaMode=MASK`** with a baked RGBA (RGB = hair tint, A = the strand
+  mask from the `*_ALPHA` PNG's RGB) so cards cut out per-pixel. A **short** scalp
+  cut is picked so cards don't drape over the face.
+- **Expressions** (`vrm_export.configure_expressions`): VRM1 presets at
+  `ext.vrm1.expressions.preset.<aa|ee|ih|oh|ou|happy|angry|sad|relaxed|surprised|blink|neutral>`;
+  each `.morph_target_binds.add()` bind uses `.node.mesh_object_name` (str),
+  `.index` (the morph **name** string in 4.3.1, not an int), `.weight`. The 5 mouth
+  visemes bind the collapsed Oculus `viseme_*` morphs; emotion presets bind ARKit
+  morphs (`mappings.VRM_VISEME_PRESETS` / `VRM_EXPRESSION_BINDS`). The full ARKit-52
+  is additionally attached as VRM **custom** expressions (`expressions.custom.add()`)
+  so the app can drive the `arkit` facial tier.
+- **Textures embedded** downscaled to ≤1024 px + sparse shape keys
+  (`export_try_sparse_sk`), landing a fully-clothed female avatar at ~39 MB.
+
+### Verified visually (three-vrm + headless Chromium)
+
+Loaded `assets/avatars/humgen-aria-01.vrm` the way the app does (`VRMLoaderPlugin`
++ a shared VRMA via `createVRMAnimationClip`, dropping the clip's neck/head tracks
+exactly like `AvatarModel.tsx`) and rendered shaded. Confirmed in an animated
+arms-up gesture and a mouth-open (`aa`) close-up: **head attached to the neck,
+teeth INSIDE the mouth (dY ≈ -0.002 m from the head, not at the chest), eyes in the
+sockets with visible irises, clothing follows the arms with no explosion, no
+blotched skin/clothing.** three-vrm resolves 16/16 required humanoid bones and 53
+expressions (aa/ee/ih/oh/ou + happy/angry/sad/relaxed/surprised/neutral/blink +
+35 ARKit customs); no NaN geometry.
