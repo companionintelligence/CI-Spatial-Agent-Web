@@ -141,3 +141,16 @@ export {
   emotionIntegrationService 
 } from './integration/emotionIntegration'
 export { reactionIntegrationService } from './integration/reactionIntegration'
+
+// Face — capability-tiered facial-animation model (VRM-standard → ARKit-52 → FACS → MetaHuman)
+export {
+  detectFacialTier,
+  describeFacialTier,
+  FACIAL_TIERS,
+  ARKIT_52,
+  OCULUS_VISEMES,
+  VRM_STANDARD_EXPRESSIONS
+} from './services/face/facialTiers'
+export type { FacialTier, FacialTierId } from './services/face/facialTiers'
+export { inspectFacialRig, facialNamesFromVRM, facialNamesFromScene } from './services/face/facialCapabilities'
+export type { FacialRigInfo } from './services/face/facialCapabilities'
