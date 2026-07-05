@@ -3,231 +3,485 @@
   "fps": 9,
   "clips": [
     {
-      "name": "greg-viseme-sweep",
+      "name": "greg-idle-stable",
+      "file": "greg-idle-stable.webp",
       "avatar": "Greg",
-      "shot": "face",
-      "group": "viseme",
-      "mode": "steps",
-      "frameMs": 420,
-      "steps": [
-        {
-          "viseme_aa": 1
-        },
-        {
-          "viseme_E": 1
-        },
-        {
-          "viseme_I": 1
-        },
-        {
-          "viseme_O": 1
-        },
-        {
-          "viseme_U": 1
-        },
-        {
-          "viseme_PP": 1
-        },
-        {
-          "viseme_FF": 1
-        },
-        {
-          "viseme_CH": 1
-        }
-      ],
-      "caption": "Viseme mouth-shape sweep — aa·E·I·O·U·PP·FF·CH (GLB · Greg)",
-      "file": "greg-viseme-sweep.webp",
+      "clip": "idle-stable",
+      "group": "idle",
       "ok": true,
-      "sizeKb": 14
+      "sizeKb": 25,
+      "caption": "idle-stable (idle)"
     },
     {
-      "name": "greg-expression-sweep",
+      "name": "greg-basic-idle",
+      "file": "greg-basic-idle.webp",
       "avatar": "Greg",
-      "shot": "face",
-      "group": "emote",
-      "mode": "steps",
-      "frameMs": 560,
-      "steps": [
-        {
-          "mouthSmileLeft": 1,
-          "mouthSmileRight": 1,
-          "cheekSquintLeft": 0.6,
-          "cheekSquintRight": 0.6
-        },
-        {
-          "mouthFrownLeft": 1,
-          "mouthFrownRight": 1,
-          "browInnerUp": 1
-        },
-        {
-          "browDownLeft": 1,
-          "browDownRight": 1,
-          "noseSneerLeft": 0.5,
-          "noseSneerRight": 0.5,
-          "mouthPressLeft": 0.6,
-          "mouthPressRight": 0.6
-        },
-        {
-          "jawOpen": 0.5,
-          "browOuterUpLeft": 1,
-          "browOuterUpRight": 1,
-          "browInnerUp": 0.6,
-          "eyeWideLeft": 1,
-          "eyeWideRight": 1
-        },
-        {
-          "eyeBlinkLeft": 1,
-          "eyeBlinkRight": 1
-        }
-      ],
-      "caption": "Expression sweep — happy·sad·angry·surprise·blink (GLB · Greg)",
-      "file": "greg-expression-sweep.webp",
+      "clip": "basic-idle",
+      "group": "idle",
       "ok": true,
-      "sizeKb": 15
+      "sizeKb": 167,
+      "caption": "basic-idle (idle)"
     },
     {
-      "name": "greg-expression-sweep-2",
+      "name": "greg-standing-idle-watch",
+      "file": "greg-standing-idle-watch.webp",
       "avatar": "Greg",
-      "shot": "face",
-      "group": "emote",
-      "mode": "steps",
-      "frameMs": 560,
-      "steps": [
-        {
-          "browInnerUp": 1,
-          "eyeWideLeft": 0.85,
-          "eyeWideRight": 0.85,
-          "jawOpen": 0.35,
-          "mouthStretchLeft": 0.6,
-          "mouthStretchRight": 0.6
-        },
-        {
-          "noseSneerLeft": 1,
-          "noseSneerRight": 1,
-          "mouthUpperUpLeft": 0.7,
-          "mouthUpperUpRight": 0.7,
-          "browDownLeft": 0.6,
-          "browDownRight": 0.6
-        },
-        {
-          "mouthPucker": 1,
-          "mouthFunnel": 0.5
-        },
-        {
-          "cheekPuff": 1
-        },
-        {
-          "jawLeft": 1
-        }
-      ],
-      "caption": "Expression sweep 2 — fear·disgust·pucker·cheek·jaw (GLB · Greg)",
-      "file": "greg-expression-sweep-2.webp",
+      "clip": "standing-idle-watch",
+      "group": "idle",
       "ok": true,
-      "sizeKb": 13
+      "sizeKb": 8,
+      "caption": "standing-idle-watch (idle)"
+    },
+    {
+      "name": "greg-talking",
+      "file": "greg-talking.webp",
+      "avatar": "Greg",
+      "clip": "Talking",
+      "group": "communication",
+      "ok": true,
+      "sizeKb": 175,
+      "caption": "Talking (communication)"
+    },
+    {
+      "name": "greg-talking-1",
+      "file": "greg-talking-1.webp",
+      "avatar": "Greg",
+      "clip": "Talking-1",
+      "group": "communication",
+      "ok": true,
+      "sizeKb": 170,
+      "caption": "Talking-1 (communication)"
+    },
+    {
+      "name": "greg-talking-2",
+      "file": "greg-talking-2.webp",
+      "avatar": "Greg",
+      "clip": "Talking-2",
+      "group": "communication",
+      "ok": true,
+      "sizeKb": 188,
+      "caption": "Talking-2 (communication)"
+    },
+    {
+      "name": "greg-telling-a-secret",
+      "file": "greg-telling-a-secret.webp",
+      "avatar": "Greg",
+      "clip": "Telling-A-Secret",
+      "group": "communication",
+      "ok": true,
+      "sizeKb": 177,
+      "caption": "Telling-A-Secret (communication)"
+    },
+    {
+      "name": "greg-waving",
+      "file": "greg-waving.webp",
+      "avatar": "Greg",
+      "clip": "Waving",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 191,
+      "caption": "Waving (gesture)"
+    },
+    {
+      "name": "greg-arm-gesture",
+      "file": "greg-arm-gesture.webp",
+      "avatar": "Greg",
+      "clip": "Arm-Gesture",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 180,
+      "caption": "Arm-Gesture (gesture)"
+    },
+    {
+      "name": "greg-head-gesture",
+      "file": "greg-head-gesture.webp",
+      "avatar": "Greg",
+      "clip": "Head-Gesture",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 179,
+      "caption": "Head-Gesture (gesture)"
+    },
+    {
+      "name": "greg-happy-hand-gesture",
+      "file": "greg-happy-hand-gesture.webp",
+      "avatar": "Greg",
+      "clip": "Happy-Hand-Gesture",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 179,
+      "caption": "Happy-Hand-Gesture (gesture)"
+    },
+    {
+      "name": "greg-hands-forward-gesture",
+      "file": "greg-hands-forward-gesture.webp",
+      "avatar": "Greg",
+      "clip": "Hands-Forward-Gesture",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 182,
+      "caption": "Hands-Forward-Gesture (gesture)"
+    },
+    {
+      "name": "greg-whatever-gesture",
+      "file": "greg-whatever-gesture.webp",
+      "avatar": "Greg",
+      "clip": "Whatever-Gesture",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 189,
+      "caption": "Whatever-Gesture (gesture)"
+    },
+    {
+      "name": "greg-clapping",
+      "file": "greg-clapping.webp",
+      "avatar": "Greg",
+      "clip": "Clapping",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 166,
+      "caption": "Clapping (gesture)"
+    },
+    {
+      "name": "greg-pointing-forward",
+      "file": "greg-pointing-forward.webp",
+      "avatar": "Greg",
+      "clip": "Pointing-Forward",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 178,
+      "caption": "Pointing-Forward (gesture)"
+    },
+    {
+      "name": "greg-salute",
+      "file": "greg-salute.webp",
+      "avatar": "Greg",
+      "clip": "Salute",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 162,
+      "caption": "Salute (gesture)"
+    },
+    {
+      "name": "greg-shoulder-rubbing",
+      "file": "greg-shoulder-rubbing.webp",
+      "avatar": "Greg",
+      "clip": "Shoulder-Rubbing",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 182,
+      "caption": "Shoulder-Rubbing (gesture)"
+    },
+    {
+      "name": "greg-agreeing",
+      "file": "greg-agreeing.webp",
+      "avatar": "Greg",
+      "clip": "Agreeing",
+      "group": "gesture",
+      "ok": true,
+      "sizeKb": 180,
+      "caption": "Agreeing (gesture)"
+    },
+    {
+      "name": "greg-surprised",
+      "file": "greg-surprised.webp",
+      "avatar": "Greg",
+      "clip": "Surprised",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 182,
+      "caption": "Surprised (expression)"
+    },
+    {
+      "name": "greg-reacting",
+      "file": "greg-reacting.webp",
+      "avatar": "Greg",
+      "clip": "Reacting",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 177,
+      "caption": "Reacting (expression)"
+    },
+    {
+      "name": "greg-thinking",
+      "file": "greg-thinking.webp",
+      "avatar": "Greg",
+      "clip": "Thinking",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 170,
+      "caption": "Thinking (expression)"
+    },
+    {
+      "name": "greg-looking",
+      "file": "greg-looking.webp",
+      "avatar": "Greg",
+      "clip": "Looking",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 167,
+      "caption": "Looking (expression)"
+    },
+    {
+      "name": "greg-looking-1",
+      "file": "greg-looking-1.webp",
+      "avatar": "Greg",
+      "clip": "Looking-1",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 165,
+      "caption": "Looking-1 (expression)"
+    },
+    {
+      "name": "greg-looking-behind",
+      "file": "greg-looking-behind.webp",
+      "avatar": "Greg",
+      "clip": "Looking-Behind",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 173,
+      "caption": "Looking-Behind (expression)"
+    },
+    {
+      "name": "greg-shaking-it-off",
+      "file": "greg-shaking-it-off.webp",
+      "avatar": "Greg",
+      "clip": "Shaking-It-Off",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 158,
+      "caption": "Shaking-It-Off (expression)"
+    },
+    {
+      "name": "greg-cocky-head-turn",
+      "file": "greg-cocky-head-turn.webp",
+      "avatar": "Greg",
+      "clip": "Cocky-Head-Turn",
+      "group": "expression",
+      "ok": true,
+      "sizeKb": 179,
+      "caption": "Cocky-Head-Turn (expression)"
+    },
+    {
+      "name": "greg-dance",
+      "file": "greg-dance.webp",
+      "avatar": "Greg",
+      "clip": "dance",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 221,
+      "caption": "dance (action)"
+    },
+    {
+      "name": "greg-dance-action",
+      "file": "greg-dance-action.webp",
+      "avatar": "Greg",
+      "clip": "dance-action",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 229,
+      "caption": "dance-action (action)"
+    },
+    {
+      "name": "greg-bow",
+      "file": "greg-bow.webp",
+      "avatar": "Greg",
+      "clip": "bow",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 215,
+      "caption": "bow (action)"
+    },
+    {
+      "name": "greg-throw",
+      "file": "greg-throw.webp",
+      "avatar": "Greg",
+      "clip": "throw",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 237,
+      "caption": "throw (action)"
+    },
+    {
+      "name": "greg-praying",
+      "file": "greg-praying.webp",
+      "avatar": "Greg",
+      "clip": "Praying",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 201,
+      "caption": "Praying (action)"
+    },
+    {
+      "name": "greg-spin-in-place",
+      "file": "greg-spin-in-place.webp",
+      "avatar": "Greg",
+      "clip": "Spin-In-Place",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 213,
+      "caption": "Spin-In-Place (action)"
+    },
+    {
+      "name": "greg-crazy-gesture",
+      "file": "greg-crazy-gesture.webp",
+      "avatar": "Greg",
+      "clip": "Crazy-Gesture",
+      "group": "action",
+      "ok": true,
+      "sizeKb": 233,
+      "caption": "Crazy-Gesture (action)"
+    },
+    {
+      "name": "greg-walking",
+      "file": "greg-walking.webp",
+      "avatar": "Greg",
+      "clip": "walking",
+      "group": "movement",
+      "ok": true,
+      "sizeKb": 5,
+      "caption": "walking (movement)"
+    },
+    {
+      "name": "erik-idle-loop",
+      "file": "erik-idle-loop.webp",
+      "avatar": "Erik",
+      "clip": "idle_loop",
+      "group": "vrma",
+      "ok": true,
+      "sizeKb": 136,
+      "caption": "idle_loop (vrma)"
+    },
+    {
+      "name": "erik-victory-sign",
+      "file": "erik-victory-sign.webp",
+      "avatar": "Erik",
+      "clip": "victory_sign",
+      "group": "vrma",
+      "ok": true,
+      "sizeKb": 138,
+      "caption": "victory_sign (vrma)"
+    },
+    {
+      "name": "erik-surprise-greet",
+      "file": "erik-surprise-greet.webp",
+      "avatar": "Erik",
+      "clip": "surprise_greet",
+      "group": "vrma",
+      "ok": true,
+      "sizeKb": 141,
+      "caption": "surprise_greet (vrma)"
+    },
+    {
+      "name": "erik-pose",
+      "file": "erik-pose.webp",
+      "avatar": "Erik",
+      "clip": "pose",
+      "group": "vrma",
+      "ok": true,
+      "sizeKb": 136,
+      "caption": "pose (vrma)"
+    },
+    {
+      "name": "erik-finger-gun",
+      "file": "erik-finger-gun.webp",
+      "avatar": "Erik",
+      "clip": "finger_gun",
+      "group": "vrma",
+      "ok": true,
+      "sizeKb": 125,
+      "caption": "finger_gun (vrma)"
+    },
+    {
+      "name": "erik-dance-move",
+      "file": "erik-dance-move.webp",
+      "avatar": "Erik",
+      "clip": "dance_move",
+      "group": "vrma",
+      "ok": true,
+      "sizeKb": 137,
+      "caption": "dance_move (vrma)"
     },
     {
       "name": "greg-lipsync",
-      "avatar": "Greg",
-      "shot": "face",
-      "ms": 3200,
-      "group": "viseme",
-      "mode": "lipsync",
-      "caption": "Lip-sync — real viseme service (GLB · Greg)",
-      "prep": "h.speak(\"Hello, I'm your companion. How can I help you today?\")",
       "file": "greg-lipsync.webp",
+      "avatar": "Greg",
+      "group": "viseme",
+      "caption": "Lip-sync visemes (GLB · Greg)",
       "ok": true,
-      "sizeKb": 19
+      "sizeKb": 42
     },
     {
       "name": "erik-lipsync",
-      "avatar": "Erik",
-      "shot": "face",
-      "ms": 3200,
-      "group": "viseme",
-      "mode": "lipsync",
-      "caption": "Lip-sync — VRM expression manager (VRM · Erik)",
-      "prep": "h.speak(\"Hi there, nice to meet you.\")",
       "file": "erik-lipsync.webp",
-      "ok": true,
-      "sizeKb": 181
-    },
-    {
-      "name": "workboy-lipsync",
-      "avatar": "Work Boy",
-      "shot": "face",
-      "ms": 3200,
+      "avatar": "Erik",
       "group": "viseme",
-      "mode": "lipsync",
-      "caption": "Lip-sync — VRM expression manager (VRM · Work Boy)",
-      "prep": "h.speak(\"Welcome, let me show you around today.\")",
-      "file": "workboy-lipsync.webp",
+      "caption": "Lip-sync visemes (VRM · Erik)",
       "ok": true,
-      "sizeKb": 78
+      "sizeKb": 177
     },
     {
-      "name": "greg-idle",
+      "name": "greg-emote-happy",
+      "file": "greg-emote-happy.webp",
       "avatar": "Greg",
-      "shot": "body",
-      "ms": 2600,
-      "group": "animation",
-      "mode": "body",
-      "caption": "Idle loop (GLB · Greg)",
-      "prep": "h.playCategory('idle',{loopCount:1e9})",
-      "file": "greg-idle.webp",
+      "group": "emote",
+      "caption": "Emote: happy (GLB · Greg)",
       "ok": true,
-      "sizeKb": 69
+      "sizeKb": 27
     },
     {
-      "name": "greg-gesture",
+      "name": "greg-emote-sad",
+      "file": "greg-emote-sad.webp",
       "avatar": "Greg",
-      "shot": "body",
-      "ms": 2800,
-      "group": "animation",
-      "mode": "body",
-      "caption": "Gesture over idle — native crossfade (GLB · Greg)",
-      "prep": "h.playCategory('gesture',{blendTime:400})",
-      "file": "greg-gesture.webp",
+      "group": "emote",
+      "caption": "Emote: sad (GLB · Greg)",
       "ok": true,
-      "sizeKb": 47
+      "sizeKb": 31
     },
     {
-      "name": "greg-action",
+      "name": "greg-emote-angry",
+      "file": "greg-emote-angry.webp",
       "avatar": "Greg",
-      "shot": "body",
-      "ms": 3200,
-      "group": "animation",
-      "mode": "body",
-      "caption": "Action clip (GLB · Greg)",
-      "prep": "h.playCategory('action',{blendTime:400})",
-      "file": "greg-action.webp",
+      "group": "emote",
+      "caption": "Emote: angry (GLB · Greg)",
       "ok": true,
-      "sizeKb": 43
+      "sizeKb": 33
+    },
+    {
+      "name": "greg-emote-fear",
+      "file": "greg-emote-fear.webp",
+      "avatar": "Greg",
+      "group": "emote",
+      "caption": "Emote: fear (GLB · Greg)",
+      "ok": true,
+      "sizeKb": 36
+    },
+    {
+      "name": "greg-emote-love",
+      "file": "greg-emote-love.webp",
+      "avatar": "Greg",
+      "group": "emote",
+      "caption": "Emote: love (GLB · Greg)",
+      "ok": true,
+      "sizeKb": 32
+    },
+    {
+      "name": "greg-emote-neutral",
+      "file": "greg-emote-neutral.webp",
+      "avatar": "Greg",
+      "group": "emote",
+      "caption": "Emote: neutral (GLB · Greg)",
+      "ok": true,
+      "sizeKb": 37
     },
     {
       "name": "greg-blend",
-      "avatar": "Greg",
-      "shot": "body",
-      "ms": 3400,
-      "group": "blend",
-      "mode": "body",
-      "caption": "idle → gesture → idle blend (GLB · Greg)",
-      "prep": "setTimeout(()=>h.playCategory('gesture',{blendTime:700}),500);setTimeout(()=>h.playCategory('idle',{loopCount:1e9,blendTime:800}),2200)",
       "file": "greg-blend.webp",
+      "group": "blend",
+      "avatar": "Greg",
       "ok": true,
-      "sizeKb": 50
-    },
-    {
-      "name": "workboy-gesture",
-      "avatar": "Work Boy",
-      "shot": "body",
-      "ms": 2800,
-      "group": "animation",
-      "mode": "body",
-      "caption": "Gesture (VRM · Work Boy, VRMA clips)",
-      "prep": "h.playCategory('gesture',{blendTime:400})",
-      "file": "workboy-gesture.webp",
-      "ok": true,
-      "sizeKb": 115
+      "sizeKb": 66,
+      "caption": "idle → wave → idle crossfade (GLB · Greg)"
     }
   ]
 }

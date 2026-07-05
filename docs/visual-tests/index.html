@@ -21,18 +21,19 @@
         font: 15px/1.5 'Montserrat', system-ui, -apple-system, sans-serif;
         padding: 40px 24px 80px;
       }
-      header { max-width: 1100px; margin: 0 auto 28px; }
+      header { max-width: 1180px; margin: 0 auto 28px; }
       h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
-      .sub { color: var(--muted); max-width: 72ch; }
+      .sub { color: var(--muted); max-width: 74ch; }
       .sub code { color: var(--primary); }
+      .count { color: var(--primary); font-weight: 600; }
       h2 {
-        max-width: 1100px; margin: 40px auto 14px; font-size: 13px;
+        max-width: 1180px; margin: 40px auto 14px; font-size: 13px;
         text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary);
         border-bottom: 1px solid var(--line); padding-bottom: 8px;
       }
       .grid {
-        max-width: 1100px; margin: 0 auto;
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;
+        max-width: 1180px; margin: 0 auto;
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px;
       }
       .card {
         background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
@@ -40,50 +41,74 @@
       }
       .card img { width: 100%; display: block; background: #0a1416; aspect-ratio: 3 / 4; object-fit: contain; }
       .card.face img { aspect-ratio: 1 / 1; }
-      .meta { padding: 10px 12px; }
+      .meta { padding: 9px 12px; }
       .cap { font-size: 13px; }
       .tag {
         display: inline-block; margin-top: 6px; font-size: 11px; color: var(--muted);
         border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px;
       }
+      .err { color: #f3b0b0; max-width: 1180px; margin: 20px auto; }
     </style>
   </head>
   <body>
     <header>
-      <h1>Avatar Visual Tests</h1>
+      <h1>Avatar Visual Tests <span class="count" id="count"></span></h1>
       <p class="sub">
-        Short animated WebP clips captured from the real avatar rig via the capture harness
-        (<code>apps/web/harness.html</code> → <code>e2e/capture/gen-webp.mjs</code>). Each clip is
-        a faithful record of the shipping viseme / emote / animation services — regenerate with
-        <code>node e2e/capture/gen-webp.mjs</code>. See <code>docs/TESTING-PIPELINE.md</code>.
+        Animated WebP clips captured from the real avatar rig via the capture harness
+        (<code>apps/web/harness.html</code> → <code>e2e/capture/gen-webp.mjs</code>) — a faithful
+        record of the shipping animation / viseme / emote services across the full mixer catalog.
+        Regenerate with <code>node e2e/capture/gen-webp.mjs</code>. See <code>docs/TESTING-PIPELINE.md</code>.
       </p>
     </header>
+    <div id="app"></div>
 
-    <h2>Visemes / lip-sync</h2>
-    <div class="grid">
-      <figure class="card face"><img src="greg-viseme-sweep.webp" alt="viseme sweep" /><figcaption class="meta"><div class="cap">Viseme mouth-shape sweep (aa·E·I·O·U·PP·FF·CH)</div><span class="tag">GLB · Greg</span></figcaption></figure>
-      <figure class="card face"><img src="greg-lipsync.webp" alt="lipsync glb" /><figcaption class="meta"><div class="cap">Lip-sync — real viseme service</div><span class="tag">GLB · Greg</span></figcaption></figure>
-      <figure class="card face"><img src="erik-lipsync.webp" alt="lipsync vrm" /><figcaption class="meta"><div class="cap">Lip-sync — VRM expression manager</div><span class="tag">VRM · Erik</span></figcaption></figure>
-      <figure class="card face"><img src="workboy-lipsync.webp" alt="lipsync vrm 2" /><figcaption class="meta"><div class="cap">Lip-sync — VRM expression manager</div><span class="tag">VRM · Work Boy</span></figcaption></figure>
-    </div>
-
-    <h2>Expression / emote</h2>
-    <div class="grid">
-      <figure class="card face"><img src="greg-expression-sweep.webp" alt="expressions" /><figcaption class="meta"><div class="cap">happy · sad · angry · surprise · blink</div><span class="tag">GLB · Greg</span></figcaption></figure>
-      <figure class="card face"><img src="greg-expression-sweep-2.webp" alt="expressions 2" /><figcaption class="meta"><div class="cap">fear · disgust · pucker · cheek · jaw</div><span class="tag">GLB · Greg</span></figcaption></figure>
-    </div>
-
-    <h2>Body animation</h2>
-    <div class="grid">
-      <figure class="card"><img src="greg-idle.webp" alt="idle" /><figcaption class="meta"><div class="cap">Idle loop</div><span class="tag">GLB · Greg</span></figcaption></figure>
-      <figure class="card"><img src="greg-gesture.webp" alt="gesture" /><figcaption class="meta"><div class="cap">Gesture over idle (crossfade)</div><span class="tag">GLB · Greg</span></figcaption></figure>
-      <figure class="card"><img src="greg-action.webp" alt="action" /><figcaption class="meta"><div class="cap">Action clip</div><span class="tag">GLB · Greg</span></figcaption></figure>
-      <figure class="card"><img src="workboy-gesture.webp" alt="vrm gesture" /><figcaption class="meta"><div class="cap">Gesture (VRMA clips)</div><span class="tag">VRM · Work Boy</span></figcaption></figure>
-    </div>
-
-    <h2>Blend UX</h2>
-    <div class="grid">
-      <figure class="card"><img src="greg-blend.webp" alt="blend" /><figcaption class="meta"><div class="cap">idle → gesture → idle native crossfade</div><span class="tag">GLB · Greg</span></figcaption></figure>
-    </div>
+    <script>
+      // Section order + human labels; anything else falls through to its raw group name.
+      const SECTIONS = [
+        ['viseme', 'Visemes / lip-sync', true],
+        ['emote', 'Expression / emote', true],
+        ['idle', 'Body — idle', false],
+        ['communication', 'Body — communication', false],
+        ['gesture', 'Body — gesture', false],
+        ['expression', 'Body — expression / reaction', false],
+        ['action', 'Body — action', false],
+        ['movement', 'Body — movement', false],
+        ['vrma', 'VRM body animation (VRMA)', false],
+        ['blend', 'Blend / crossfade UX', false]
+      ]
+      const tag = (c) => (c.avatar ? `${c.avatar}${c.clip ? '' : ''}` : '')
+      function card(c, face) {
+        return `<figure class="card${face ? ' face' : ''}">
+          <img loading="lazy" src="${c.file}" alt="${c.caption || c.name}" />
+          <figcaption class="meta"><div class="cap">${c.caption || c.clip || c.name}</div>
+          ${c.avatar ? `<span class="tag">${c.avatar}</span>` : ''}</figcaption></figure>`
+      }
+      fetch('manifest.json')
+        .then((r) => r.json())
+        .then((m) => {
+          const ok = m.clips.filter((c) => c.ok)
+          document.getElementById('count').textContent = `· ${ok.length} clips @ ${m.fps} fps`
+          const byGroup = {}
+          for (const c of ok) (byGroup[c.group] ||= []).push(c)
+          const seen = new Set()
+          let html = ''
+          for (const [g, label, face] of SECTIONS) {
+            const items = byGroup[g]
+            if (!items || !items.length) continue
+            seen.add(g)
+            html += `<h2>${label} · ${items.length}</h2><div class="grid">${items.map((c) => card(c, face)).join('')}</div>`
+          }
+          for (const g of Object.keys(byGroup)) {
+            if (seen.has(g)) continue
+            html += `<h2>${g} · ${byGroup[g].length}</h2><div class="grid">${byGroup[g].map((c) => card(c, false)).join('')}</div>`
+          }
+          document.getElementById('app').innerHTML = html
+        })
+        .catch((e) => {
+          document.getElementById('app').innerHTML =
+            `<p class="err">Could not load manifest.json (${e}). Serve this folder over HTTP
+             (e.g. <code>npx serve docs/visual-tests</code>) — file:// blocks fetch.</p>`
+        })
+    </script>
   </body>
 </html>
