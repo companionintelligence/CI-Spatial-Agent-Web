@@ -158,8 +158,9 @@ export function startPerformance(state: AnimationState, performanceData: Animati
   const personalityBlend = getPersonalityConfiguration(state.currentPersonality).blendTime
   const blendMs = performanceData.blendTime ?? configuredClip.blendTime ?? personalityBlend ?? 500
 
-  // Play immediately when idle-ish; otherwise queue so we never stack transitions.
-  if (performanceData.immediate && !state.isTransitioning) {
+  // Immediate performances play now — crossFadeTo cleanly interrupts an in-flight
+  // transition, so gating on !isTransitioning only made gestures queue-and-stall.
+  if (performanceData.immediate) {
     playClip(state, runtimeClip, blendMs)
     state.lastChangeTime = performance.now()
   } else {
@@ -195,6 +196,14 @@ export function updateAnimation(state: AnimationState, delta: number) {
   }
 
   if (!state.currentClip) return
+
+  // Drain a queued performance as soon as the current transition settles. Without this,
+  // anything queued behind an INFINITE clip (idle/walking never fire the mixer 'finished'
+  // event) would sit in the queue forever — the core "mixing not working" bug.
+  if (!state.isTransitioning && state.queue && state.queue.length > 0) {
+    advanceToNext(state, now)
+    return
+  }
 
   // Finite clips advance on the mixer 'finished' event. Infinite/looping clips
   // (e.g. idle) only rotate when cycling is enabled, on the cycle timer.
@@ -349,12 +358,19 @@ function playClip(state: AnimationState, clip: AnimationClip, blendTime: number)
     return
   }
 
-  // Re-triggering the same clip: ensure it's running rather than restarting hard.
+  // Re-triggering the current clip: a finite gesture should REPLAY (a re-request means
+  // "do it again"); an infinite idle should just keep running (don't restart the loop).
   if (state.currentClip.name === clip.name) {
-    action.paused = false
-    if (!action.isRunning()) {
+    if (Number.isFinite(clip.loopCount ?? Infinity)) {
       action.reset()
+      action.setEffectiveWeight(1.0)
       action.play()
+    } else {
+      action.paused = false
+      if (!action.isRunning()) {
+        action.reset()
+        action.play()
+      }
     }
     return
   }

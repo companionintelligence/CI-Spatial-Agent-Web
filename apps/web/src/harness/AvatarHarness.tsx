@@ -161,6 +161,26 @@ function HarnessScene() {
         return true
       },
 
+      /** Introspect the live animation mixer (for mixing/crossfade QA). */
+      debugActions() {
+        const s: any = animations.state
+        const acts: Record<string, any> = s.actions || {}
+        const live = Object.entries(acts)
+          .map(([name, a]) => ({
+            name,
+            w: Number((a.getEffectiveWeight?.() ?? a.weight ?? 0).toFixed(3)),
+            t: Number((a.time ?? 0).toFixed(2)),
+            run: !!a.isRunning?.()
+          }))
+          .filter((x) => x.w > 0.001 || x.run)
+        return {
+          current: s.currentClip?.name ?? null,
+          transitioning: !!s.isTransitioning,
+          queue: s.queue?.length ?? 0,
+          live
+        }
+      },
+
       // ---- direct rig control (for crisp, deterministic FACE tests) ----
       // Toggle the per-frame services so direct morph writes aren't overwritten.
       setServices(flags: { visemes?: boolean; emotes?: boolean; animations?: boolean }) {

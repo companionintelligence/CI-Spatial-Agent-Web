@@ -131,14 +131,36 @@ describe('crossfade on immediate performance', () => {
     expect(h.actions.surprise_greet.play).toHaveBeenCalled()
   })
 
-  it('queues a performance requested while a transition is in flight', () => {
+  it('an immediate performance interrupts an in-flight transition (never stalls in the queue)', () => {
     const h = makeHarness(['idle_loop', 'surprise_greet'])
     initializeDefaultAnimation(h.state, 'professional', ANIMATION_CLIPS.idle_loop)
     startPerformance(h.state, { clip: ANIMATION_CLIPS.surprise_greet, immediate: true, blendTime: 300 }, 0)
 
-    // isTransitioning is now true → a second immediate request is queued, not played.
+    // A second immediate request while transitioning now plays through — crossFadeTo
+    // interrupts the in-flight fade rather than queueing (and stalling behind idle).
     startPerformance(h.state, { clip: ANIMATION_CLIPS.idle_loop, immediate: true, blendTime: 500 }, 0)
+    expect(getCurrentAnimationInfo(h.state).queueLength).toBe(0)
+    expect(h.state.currentClip?.name).toBe('idle_loop')
+  })
+
+  it('a NON-immediate performance is queued', () => {
+    const h = makeHarness(['idle_loop', 'surprise_greet'])
+    initializeDefaultAnimation(h.state, 'professional', ANIMATION_CLIPS.idle_loop)
+    startPerformance(h.state, { clip: ANIMATION_CLIPS.surprise_greet, immediate: false, blendTime: 300 }, 0)
     expect(getCurrentAnimationInfo(h.state).queueLength).toBe(1)
+    expect(h.state.currentClip?.name).toBe('idle_loop')
+  })
+
+  it('drains a queued performance behind an INFINITE idle on the next tick (regression: mixing not working)', () => {
+    const h = makeHarness(['idle_loop', 'surprise_greet'])
+    initializeDefaultAnimation(h.state, 'professional', ANIMATION_CLIPS.idle_loop) // infinite idle, no 'finished'
+    startPerformance(h.state, { clip: ANIMATION_CLIPS.surprise_greet, immediate: false, blendTime: 300 }, 0)
+    expect(getCurrentAnimationInfo(h.state).queueLength).toBe(1)
+    expect(h.state.isTransitioning).toBe(false)
+
+    // A mixer tick must drain the queue even though idle never fires 'finished'.
+    updateAnimation(h.state, 0.016)
+    expect(getCurrentAnimationInfo(h.state).queueLength).toBe(0)
     expect(h.state.currentClip?.name).toBe('surprise_greet')
   })
 })
