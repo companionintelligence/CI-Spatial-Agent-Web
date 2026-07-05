@@ -18,11 +18,16 @@ import {
   defaultLLMConfig,
   sceneConfig,
   useHasWebGPU,
+  detectSurfaceSync,
+  presetFor,
   type SceneActions
 } from '@ci-avatar/core'
 
-// Vision Pro specific: WebSpatial integration would go here
-// import { ... } from '@webspatial/react-sdk'
+// Surface-aware render budget: on the WebSpatial Vision Pro container the UA matches
+// `visionOS|WebSpatial`, so this resolves to the vision-pro preset (DPR 1, foveation,
+// WebGPU MToon). The same build falls back to desktop/mobile presets elsewhere.
+const surface = detectSurfaceSync()
+const renderPreset = presetFor(surface)
 
 export const config = {
   vad: defaultVadConfig,
@@ -62,7 +67,9 @@ export const App = () => {
   }, [setAppState])
 
   const hasWebGPU = useHasWebGPU()
-  const webGPUEnabled = appState.webGPUEnabled && hasWebGPU
+  // Honor the platform preset: some surfaces (e.g. Quest browser) have immature WebGPU,
+  // so preferWebGPU gates the user toggle rather than forcing it everywhere.
+  const webGPUEnabled = appState.webGPUEnabled && hasWebGPU && renderPreset.preferWebGPU
 
   useEffect(() => {
     const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
