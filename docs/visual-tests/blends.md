@@ -1,4 +1,4 @@
-# Blend Combos · 4
+# Blend Combos · 5
 
 Native crossfade transitions between clips (idle → gesture → idle, gesture → action, …).
 
@@ -11,6 +11,7 @@ Native crossfade transitions between clips (idle → gesture → idle, gesture �
   </tr>
   <tr>
     <td align="center"><img src="greg-blend-dance-to-idle.webp" width="190" alt="dance → idle (Greg)" /><br /><sub>dance → idle (Greg)</sub></td>
+    <td align="center"><img src="cara-blend-fem-idle-dance-idle.webp" width="190" alt="feminine idle → dance → idle (Cara)" /><br /><sub>feminine idle → dance → idle (Cara)</sub></td>
   </tr>
 </table>
 

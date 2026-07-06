@@ -98,6 +98,24 @@ Durations are read from the real clip at load; `∞` = looping (`loopCount: Infi
 | `Praying` · `Spin-In-Place` · `Crazy-Gesture` | action | 1 | 500–600 | 1 | |
 | `walking` | movement | ∞ | 400 | 1 | locomotion base |
 
+### Feminine motion set (7) — `FEMININE_CLIPS`
+
+Female GLB avatars (detected from the model filename: `female`/`woman`) get **female-actor
+mocap** for the motion-defining categories — masculine and feminine avatars move differently.
+Clips come from the RPM animation library (same Mixamo skeleton, no retargeting; head/neck
+tracks are dropped at load so the gaze service owns the head, mirroring the VRMA path).
+
+| Clip | Category | Loop | Replaces |
+|---|---|---|---|
+| `F_Standing_Idle_001` *(default idle)* · `F_Standing_Idle_Variations_002` | idle | ∞ | `idle-stable` · `basic-idle` · `standing-idle-watch` |
+| `F_Talking_Variations_001` · `F_Talking_Variations_002` | communication | 1 | `Talking` · `Talking-1` · `Talking-2` |
+| `F_Dances_001` · `F_Dances_005` · `F_Dances_006` | action | 1 | `dance` · `dance-action` |
+
+Unisex gestures/expressions/actions (`Waving`, `Clapping`, `bow`, …) are shared by both sets.
+`getAvatarCatalog(isVRM, feminine)` picks the catalog; `FEMININE_GLB_CLIPS` is the merged
+female catalog, so category-based selection (LLM reactions, cycling) automatically picks
+feminine clips for female avatars. Assets: `assets/animations/rpm/feminine/` (~1.6 MB).
+
 ### VRMA clips (6) — `VRMA_CLIPS`
 
 | Clip | Category | Loop |
