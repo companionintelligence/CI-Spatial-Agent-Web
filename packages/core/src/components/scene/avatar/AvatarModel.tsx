@@ -14,7 +14,7 @@ import { AvatarOptions } from './AvatarOptions'
 import { Vector3 } from 'three'
 import {
   VRMA_CLIPS,
-  GLB_CLIPS,
+  GLB_ALL_CLIPS,
   getAvatarCatalog,
   getIdleClip,
   getGreetClip,
@@ -51,8 +51,9 @@ interface AvatarModelProps {
 export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D>, vrm?: VRMCore) => {
   // Load BOTH catalogs every render (stable hook order); collect only the set that
   // matches the active avatar's skeleton below. VRMA → VRM avatars, GLB → GLB avatars.
+  // GLB_ALL_CLIPS includes the feminine (F_*) set so female avatars can use it.
   const vrmaClips = Object.values(VRMA_CLIPS)
-  const gltfClips = Object.values(GLB_CLIPS)
+  const gltfClips = Object.values(GLB_ALL_CLIPS)
 
   // Load VRMA animations
   const vrmaGLTFs = vrmaClips.map((clip) =>
@@ -99,7 +100,13 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D>
         if (gltf.animations && gltf.animations.length > 0) {
           gltf.animations.forEach((animation) => {
             animation.name = gltfClips[index].name
-
+            // RPM-library clips (F_*/M_*) are authored against RPM's stock rest pose,
+            // whose head orientation differs slightly from the CI models — drop their
+            // head/neck tracks (as the VRMA path does) and let the gaze service own
+            // the head.
+            if (/^[FM]_/.test(animation.name)) {
+              animation.tracks = animation.tracks.filter((t) => !/head|neck/i.test(t.name))
+            }
             animations.push(animation)
           })
         }
@@ -148,8 +155,11 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
 
   const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined
 
-  // Skeleton-appropriate animation catalog + named roles for this avatar.
-  const avatarCatalog = getAvatarCatalog(isVRM)
+  // Skeleton-appropriate animation catalog + named roles for this avatar. Female GLB
+  // avatars (filename carries the gender) get the feminine motion set — feminine
+  // idle/talking/dance instead of the unisex male-mocap ones.
+  const isFeminine = /female|woman/i.test(selectedModel)
+  const avatarCatalog = getAvatarCatalog(isVRM, isFeminine)
   const idleClip = getIdleClip(avatarCatalog)
   const greetClip = getGreetClip(avatarCatalog)
   const avatarScene = isVRM ? vrm?.scene : gltf.scene

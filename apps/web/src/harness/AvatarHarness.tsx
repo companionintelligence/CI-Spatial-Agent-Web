@@ -37,7 +37,18 @@ const transparent = params.get('bg') === 'transparent'
 const SHOTS: Record<Shot, { d: number; ty: number; cy: number; fov: number }> = {
   face: { d: 1.15, ty: -0.02, cy: 0.05, fov: 26 },
   upper: { d: 1.55, ty: -0.4, cy: 0.05, fov: 27 },
-  body: { d: 3.4, ty: -0.72, cy: 0.18, fov: 32 }
+  // Body: camera pulled back with breathing room and held near-level with the look
+  // target (mid-torso) — a high camera looking down foreshortens the neck and makes
+  // shoulders read as hunched/raised.
+  body: { d: 4.5, ty: -0.85, cy: 0.02, fov: 30 }
+}
+
+// Optional per-run tuning of the active shot: ?d=4.2&ty=-0.8&cy=0&fov=30
+for (const k of ['d', 'ty', 'cy', 'fov'] as const) {
+  const v = params.get(k)
+  if (v !== null && !Number.isNaN(Number(v))) {
+    SHOTS[(params.get('shot') as Shot) || 'body'][k] = Number(v)
+  }
 }
 
 /** Shared frame state written by onHeadLocated / setShot, read by the camera rig. */
@@ -50,6 +61,12 @@ interface FrameState {
 
 function isVRMSelected() {
   return AvatarState.get().selectedModel.toLowerCase().endsWith('.vrm')
+}
+
+/** Catalog for the active avatar — feminine-aware, mirroring AvatarModel. */
+function activeCatalog() {
+  const model = AvatarState.get().selectedModel
+  return getAvatarCatalog(isVRMSelected(), /female|woman/i.test(model))
 }
 
 /** Build evenly-timed whisper data from text so lip-sync plays without a real TTS. */
@@ -107,7 +124,7 @@ function HarnessScene() {
     const w = window as any
     w.__harness = {
       listAvatars: () => Object.keys(AvatarOptions),
-      listClips: () => Object.keys(getAvatarCatalog(isVRMSelected())),
+      listClips: () => Object.keys(activeCatalog()),
       currentAvatar: () => AvatarState.get().selectedModel,
 
       selectAvatar(name: string) {
@@ -124,7 +141,7 @@ function HarnessScene() {
 
       /** Play a named clip (catalog key or clip.name) as a one-shot over idle. */
       playAnimation(clip: string, opts?: { loopCount?: number; blendTime?: number; speed?: number }) {
-        const catalog = getAvatarCatalog(isVRMSelected())
+        const catalog = activeCatalog()
         const found = catalog[clip] ?? Object.values(catalog).find((c) => c.name === clip)
         if (!found) return false
         animations.actions.performAction({
@@ -143,7 +160,7 @@ function HarnessScene() {
        * duration in ms so the capture window can be exactly one seam-free pass.
        */
       captureClip(clip: string) {
-        const catalog = getAvatarCatalog(isVRMSelected())
+        const catalog = activeCatalog()
         const found = catalog[clip] ?? Object.values(catalog).find((c) => c.name === clip)
         const st: any = animations.state
         const action = found && st.actions?.[found.name]
@@ -165,7 +182,7 @@ function HarnessScene() {
 
       /** Play a random clip of a category (idle|gesture|expression|action|...). */
       playCategory(category: string, opts?: { loopCount?: number; blendTime?: number }) {
-        const clip = getRandomClip(category as any, getAvatarCatalog(isVRMSelected()))
+        const clip = getRandomClip(category as any, activeCatalog())
         if (!clip) return false
         animations.actions.performAction({
           clip,

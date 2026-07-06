@@ -12,7 +12,7 @@
       "group": "idle",
       "clip": "basic-idle",
       "ok": true,
-      "sizeKb": 196,
+      "sizeKb": 142,
       "caption": "basic-idle — Greg (M·GLB)"
     },
     {
@@ -25,7 +25,7 @@
       "group": "communication",
       "clip": "Talking",
       "ok": true,
-      "sizeKb": 201,
+      "sizeKb": 146,
       "caption": "Talking — Greg (M·GLB)"
     },
     {
@@ -38,7 +38,7 @@
       "group": "communication",
       "clip": "Talking-1",
       "ok": true,
-      "sizeKb": 192,
+      "sizeKb": 147,
       "caption": "Talking-1 — Greg (M·GLB)"
     },
     {
@@ -51,7 +51,7 @@
       "group": "communication",
       "clip": "Talking-2",
       "ok": true,
-      "sizeKb": 219,
+      "sizeKb": 153,
       "caption": "Talking-2 — Greg (M·GLB)"
     },
     {
@@ -64,7 +64,7 @@
       "group": "communication",
       "clip": "Telling-A-Secret",
       "ok": true,
-      "sizeKb": 205,
+      "sizeKb": 153,
       "caption": "Telling-A-Secret — Greg (M·GLB)"
     },
     {
@@ -77,7 +77,7 @@
       "group": "gesture",
       "clip": "Waving",
       "ok": true,
-      "sizeKb": 219,
+      "sizeKb": 169,
       "caption": "Waving — Greg (M·GLB)"
     },
     {
@@ -90,7 +90,7 @@
       "group": "gesture",
       "clip": "Arm-Gesture",
       "ok": true,
-      "sizeKb": 206,
+      "sizeKb": 155,
       "caption": "Arm-Gesture — Greg (M·GLB)"
     },
     {
@@ -103,7 +103,7 @@
       "group": "gesture",
       "clip": "Head-Gesture",
       "ok": true,
-      "sizeKb": 185,
+      "sizeKb": 128,
       "caption": "Head-Gesture — Greg (M·GLB)"
     },
     {
@@ -116,7 +116,7 @@
       "group": "gesture",
       "clip": "Happy-Hand-Gesture",
       "ok": true,
-      "sizeKb": 200,
+      "sizeKb": 142,
       "caption": "Happy-Hand-Gesture — Greg (M·GLB)"
     },
     {
@@ -129,7 +129,7 @@
       "group": "gesture",
       "clip": "Hands-Forward-Gesture",
       "ok": true,
-      "sizeKb": 210,
+      "sizeKb": 151,
       "caption": "Hands-Forward-Gesture — Greg (M·GLB)"
     },
     {
@@ -142,7 +142,7 @@
       "group": "gesture",
       "clip": "Whatever-Gesture",
       "ok": true,
-      "sizeKb": 72,
+      "sizeKb": 54,
       "caption": "Whatever-Gesture — Greg (M·GLB)"
     },
     {
@@ -155,7 +155,7 @@
       "group": "gesture",
       "clip": "Clapping",
       "ok": true,
-      "sizeKb": 52,
+      "sizeKb": 37,
       "caption": "Clapping — Greg (M·GLB)"
     },
     {
@@ -168,7 +168,7 @@
       "group": "gesture",
       "clip": "Pointing-Forward",
       "ok": true,
-      "sizeKb": 207,
+      "sizeKb": 147,
       "caption": "Pointing-Forward — Greg (M·GLB)"
     },
     {
@@ -181,7 +181,7 @@
       "group": "gesture",
       "clip": "Salute",
       "ok": true,
-      "sizeKb": 171,
+      "sizeKb": 124,
       "caption": "Salute — Greg (M·GLB)"
     },
     {
@@ -194,7 +194,7 @@
       "group": "gesture",
       "clip": "Shoulder-Rubbing",
       "ok": true,
-      "sizeKb": 210,
+      "sizeKb": 155,
       "caption": "Shoulder-Rubbing — Greg (M·GLB)"
     },
     {
@@ -207,7 +207,7 @@
       "group": "gesture",
       "clip": "Agreeing",
       "ok": true,
-      "sizeKb": 208,
+      "sizeKb": 150,
       "caption": "Agreeing — Greg (M·GLB)"
     },
     {
@@ -220,7 +220,7 @@
       "group": "expression",
       "clip": "Surprised",
       "ok": true,
-      "sizeKb": 208,
+      "sizeKb": 153,
       "caption": "Surprised — Greg (M·GLB)"
     },
     {
@@ -233,7 +233,7 @@
       "group": "expression",
       "clip": "Reacting",
       "ok": true,
-      "sizeKb": 204,
+      "sizeKb": 149,
       "caption": "Reacting — Greg (M·GLB)"
     },
     {
@@ -246,7 +246,7 @@
       "group": "expression",
       "clip": "Thinking",
       "ok": true,
-      "sizeKb": 198,
+      "sizeKb": 145,
       "caption": "Thinking — Greg (M·GLB)"
     },
     {
@@ -259,7 +259,7 @@
       "group": "expression",
       "clip": "Looking",
       "ok": true,
-      "sizeKb": 194,
+      "sizeKb": 139,
       "caption": "Looking — Greg (M·GLB)"
     },
     {
@@ -272,7 +272,7 @@
       "group": "expression",
       "clip": "Looking-1",
       "ok": true,
-      "sizeKb": 191,
+      "sizeKb": 138,
       "caption": "Looking-1 — Greg (M·GLB)"
     },
     {
@@ -285,7 +285,7 @@
       "group": "expression",
       "clip": "Looking-Behind",
       "ok": true,
-      "sizeKb": 199,
+      "sizeKb": 144,
       "caption": "Looking-Behind — Greg (M·GLB)"
     },
     {
@@ -298,7 +298,7 @@
       "group": "expression",
       "clip": "Shaking-It-Off",
       "ok": true,
-      "sizeKb": 186,
+      "sizeKb": 138,
       "caption": "Shaking-It-Off — Greg (M·GLB)"
     },
     {
@@ -311,7 +311,7 @@
       "group": "expression",
       "clip": "Cocky-Head-Turn",
       "ok": true,
-      "sizeKb": 168,
+      "sizeKb": 121,
       "caption": "Cocky-Head-Turn — Greg (M·GLB)"
     },
     {
@@ -324,7 +324,7 @@
       "group": "action",
       "clip": "dance",
       "ok": true,
-      "sizeKb": 209,
+      "sizeKb": 152,
       "caption": "dance — Greg (M·GLB)"
     },
     {
@@ -337,7 +337,7 @@
       "group": "action",
       "clip": "dance-action",
       "ok": true,
-      "sizeKb": 209,
+      "sizeKb": 151,
       "caption": "dance-action — Greg (M·GLB)"
     },
     {
@@ -350,7 +350,7 @@
       "group": "action",
       "clip": "bow",
       "ok": true,
-      "sizeKb": 175,
+      "sizeKb": 123,
       "caption": "bow — Greg (M·GLB)"
     },
     {
@@ -363,7 +363,7 @@
       "group": "action",
       "clip": "throw",
       "ok": true,
-      "sizeKb": 140,
+      "sizeKb": 104,
       "caption": "throw — Greg (M·GLB)"
     },
     {
@@ -376,7 +376,7 @@
       "group": "action",
       "clip": "Praying",
       "ok": true,
-      "sizeKb": 187,
+      "sizeKb": 133,
       "caption": "Praying — Greg (M·GLB)"
     },
     {
@@ -389,7 +389,7 @@
       "group": "action",
       "clip": "Spin-In-Place",
       "ok": true,
-      "sizeKb": 194,
+      "sizeKb": 143,
       "caption": "Spin-In-Place — Greg (M·GLB)"
     },
     {
@@ -402,34 +402,99 @@
       "group": "action",
       "clip": "Crazy-Gesture",
       "ok": true,
-      "sizeKb": 211,
+      "sizeKb": 159,
       "caption": "Crazy-Gesture — Greg (M·GLB)"
     },
     {
-      "name": "cara-basic-idle",
-      "file": "cara-basic-idle.webp",
+      "name": "cara-f-standing-idle-001",
+      "file": "cara-f-standing-idle-001.webp",
       "page": "animations",
       "avatar": "Cara",
       "sex": "F",
       "rig": "GLB",
-      "group": "idle",
-      "clip": "basic-idle",
+      "group": "feminine",
+      "clip": "F_Standing_Idle_001",
       "ok": true,
-      "sizeKb": 165,
-      "caption": "basic-idle — Cara (F·GLB)"
+      "sizeKb": 132,
+      "caption": "F_Standing_Idle_001 — Cara (F·GLB)"
     },
     {
-      "name": "cara-talking",
-      "file": "cara-talking.webp",
+      "name": "cara-f-standing-idle-variations-002",
+      "file": "cara-f-standing-idle-variations-002.webp",
       "page": "animations",
       "avatar": "Cara",
       "sex": "F",
       "rig": "GLB",
-      "group": "communication",
-      "clip": "Talking",
+      "group": "feminine",
+      "clip": "F_Standing_Idle_Variations_002",
       "ok": true,
-      "sizeKb": 166,
-      "caption": "Talking — Cara (F·GLB)"
+      "sizeKb": 134,
+      "caption": "F_Standing_Idle_Variations_002 — Cara (F·GLB)"
+    },
+    {
+      "name": "cara-f-talking-variations-001",
+      "file": "cara-f-talking-variations-001.webp",
+      "page": "animations",
+      "avatar": "Cara",
+      "sex": "F",
+      "rig": "GLB",
+      "group": "feminine",
+      "clip": "F_Talking_Variations_001",
+      "ok": true,
+      "sizeKb": 125,
+      "caption": "F_Talking_Variations_001 — Cara (F·GLB)"
+    },
+    {
+      "name": "cara-f-talking-variations-002",
+      "file": "cara-f-talking-variations-002.webp",
+      "page": "animations",
+      "avatar": "Cara",
+      "sex": "F",
+      "rig": "GLB",
+      "group": "feminine",
+      "clip": "F_Talking_Variations_002",
+      "ok": true,
+      "sizeKb": 136,
+      "caption": "F_Talking_Variations_002 — Cara (F·GLB)"
+    },
+    {
+      "name": "cara-f-dances-001",
+      "file": "cara-f-dances-001.webp",
+      "page": "animations",
+      "avatar": "Cara",
+      "sex": "F",
+      "rig": "GLB",
+      "group": "feminine",
+      "clip": "F_Dances_001",
+      "ok": true,
+      "sizeKb": 126,
+      "caption": "F_Dances_001 — Cara (F·GLB)"
+    },
+    {
+      "name": "cara-f-dances-005",
+      "file": "cara-f-dances-005.webp",
+      "page": "animations",
+      "avatar": "Cara",
+      "sex": "F",
+      "rig": "GLB",
+      "group": "feminine",
+      "clip": "F_Dances_005",
+      "ok": true,
+      "sizeKb": 126,
+      "caption": "F_Dances_005 — Cara (F·GLB)"
+    },
+    {
+      "name": "cara-f-dances-006",
+      "file": "cara-f-dances-006.webp",
+      "page": "animations",
+      "avatar": "Cara",
+      "sex": "F",
+      "rig": "GLB",
+      "group": "feminine",
+      "clip": "F_Dances_006",
+      "ok": true,
+      "sizeKb": 130,
+      "caption": "F_Dances_006 — Cara (F·GLB)"
     },
     {
       "name": "cara-waving",
@@ -441,7 +506,7 @@
       "group": "gesture",
       "clip": "Waving",
       "ok": true,
-      "sizeKb": 178,
+      "sizeKb": 136,
       "caption": "Waving — Cara (F·GLB)"
     },
     {
@@ -454,7 +519,7 @@
       "group": "gesture",
       "clip": "Clapping",
       "ok": true,
-      "sizeKb": 43,
+      "sizeKb": 29,
       "caption": "Clapping — Cara (F·GLB)"
     },
     {
@@ -467,7 +532,7 @@
       "group": "gesture",
       "clip": "Pointing-Forward",
       "ok": true,
-      "sizeKb": 166,
+      "sizeKb": 126,
       "caption": "Pointing-Forward — Cara (F·GLB)"
     },
     {
@@ -480,7 +545,7 @@
       "group": "gesture",
       "clip": "Agreeing",
       "ok": true,
-      "sizeKb": 166,
+      "sizeKb": 126,
       "caption": "Agreeing — Cara (F·GLB)"
     },
     {
@@ -493,7 +558,7 @@
       "group": "expression",
       "clip": "Thinking",
       "ok": true,
-      "sizeKb": 169,
+      "sizeKb": 124,
       "caption": "Thinking — Cara (F·GLB)"
     },
     {
@@ -506,21 +571,8 @@
       "group": "expression",
       "clip": "Surprised",
       "ok": true,
-      "sizeKb": 178,
+      "sizeKb": 129,
       "caption": "Surprised — Cara (F·GLB)"
-    },
-    {
-      "name": "cara-dance",
-      "file": "cara-dance.webp",
-      "page": "animations",
-      "avatar": "Cara",
-      "sex": "F",
-      "rig": "GLB",
-      "group": "action",
-      "clip": "dance",
-      "ok": true,
-      "sizeKb": 179,
-      "caption": "dance — Cara (F·GLB)"
     },
     {
       "name": "cara-bow",
@@ -532,7 +584,7 @@
       "group": "action",
       "clip": "bow",
       "ok": true,
-      "sizeKb": 140,
+      "sizeKb": 103,
       "caption": "bow — Cara (F·GLB)"
     },
     {
@@ -545,7 +597,7 @@
       "group": "idle",
       "clip": "basic-idle",
       "ok": true,
-      "sizeKb": 153,
+      "sizeKb": 108,
       "caption": "basic-idle — Brad (M·GLB)"
     },
     {
@@ -558,7 +610,7 @@
       "group": "communication",
       "clip": "Talking",
       "ok": true,
-      "sizeKb": 162,
+      "sizeKb": 118,
       "caption": "Talking — Brad (M·GLB)"
     },
     {
@@ -571,7 +623,7 @@
       "group": "gesture",
       "clip": "Waving",
       "ok": true,
-      "sizeKb": 185,
+      "sizeKb": 147,
       "caption": "Waving — Brad (M·GLB)"
     },
     {
@@ -584,7 +636,7 @@
       "group": "gesture",
       "clip": "Clapping",
       "ok": true,
-      "sizeKb": 44,
+      "sizeKb": 32,
       "caption": "Clapping — Brad (M·GLB)"
     },
     {
@@ -597,7 +649,7 @@
       "group": "gesture",
       "clip": "Pointing-Forward",
       "ok": true,
-      "sizeKb": 165,
+      "sizeKb": 125,
       "caption": "Pointing-Forward — Brad (M·GLB)"
     },
     {
@@ -610,7 +662,7 @@
       "group": "gesture",
       "clip": "Agreeing",
       "ok": true,
-      "sizeKb": 164,
+      "sizeKb": 127,
       "caption": "Agreeing — Brad (M·GLB)"
     },
     {
@@ -623,7 +675,7 @@
       "group": "expression",
       "clip": "Thinking",
       "ok": true,
-      "sizeKb": 170,
+      "sizeKb": 128,
       "caption": "Thinking — Brad (M·GLB)"
     },
     {
@@ -636,7 +688,7 @@
       "group": "expression",
       "clip": "Surprised",
       "ok": true,
-      "sizeKb": 172,
+      "sizeKb": 129,
       "caption": "Surprised — Brad (M·GLB)"
     },
     {
@@ -649,7 +701,7 @@
       "group": "action",
       "clip": "dance",
       "ok": true,
-      "sizeKb": 173,
+      "sizeKb": 135,
       "caption": "dance — Brad (M·GLB)"
     },
     {
@@ -662,7 +714,7 @@
       "group": "action",
       "clip": "bow",
       "ok": true,
-      "sizeKb": 134,
+      "sizeKb": 102,
       "caption": "bow — Brad (M·GLB)"
     },
     {
@@ -675,7 +727,7 @@
       "group": "vrma",
       "clip": "idle_loop",
       "ok": true,
-      "sizeKb": 158,
+      "sizeKb": 124,
       "caption": "idle_loop — Erik (M·VRM)"
     },
     {
@@ -688,7 +740,7 @@
       "group": "vrma",
       "clip": "surprise_greet",
       "ok": true,
-      "sizeKb": 170,
+      "sizeKb": 132,
       "caption": "surprise_greet — Erik (M·VRM)"
     },
     {
@@ -701,7 +753,7 @@
       "group": "vrma",
       "clip": "pose",
       "ok": true,
-      "sizeKb": 156,
+      "sizeKb": 119,
       "caption": "pose — Erik (M·VRM)"
     },
     {
@@ -714,7 +766,7 @@
       "group": "vrma",
       "clip": "victory_sign",
       "ok": true,
-      "sizeKb": 159,
+      "sizeKb": 122,
       "caption": "victory_sign — Erik (M·VRM)"
     },
     {
@@ -727,7 +779,7 @@
       "group": "vrma",
       "clip": "finger_gun",
       "ok": true,
-      "sizeKb": 146,
+      "sizeKb": 114,
       "caption": "finger_gun — Erik (M·VRM)"
     },
     {
@@ -740,7 +792,7 @@
       "group": "vrma",
       "clip": "dance_move",
       "ok": true,
-      "sizeKb": 158,
+      "sizeKb": 121,
       "caption": "dance_move — Erik (M·VRM)"
     },
     {
@@ -753,7 +805,7 @@
       "group": "vrma",
       "clip": "idle_loop",
       "ok": true,
-      "sizeKb": 154,
+      "sizeKb": 116,
       "caption": "idle_loop — Yuki (F·VRM)"
     },
     {
@@ -766,7 +818,7 @@
       "group": "vrma",
       "clip": "surprise_greet",
       "ok": true,
-      "sizeKb": 168,
+      "sizeKb": 120,
       "caption": "surprise_greet — Yuki (F·VRM)"
     },
     {
@@ -779,7 +831,7 @@
       "group": "vrma",
       "clip": "pose",
       "ok": true,
-      "sizeKb": 154,
+      "sizeKb": 114,
       "caption": "pose — Yuki (F·VRM)"
     },
     {
@@ -792,7 +844,7 @@
       "group": "vrma",
       "clip": "victory_sign",
       "ok": true,
-      "sizeKb": 171,
+      "sizeKb": 130,
       "caption": "victory_sign — Yuki (F·VRM)"
     },
     {
@@ -805,7 +857,7 @@
       "group": "vrma",
       "clip": "finger_gun",
       "ok": true,
-      "sizeKb": 154,
+      "sizeKb": 115,
       "caption": "finger_gun — Yuki (F·VRM)"
     },
     {
@@ -818,7 +870,7 @@
       "group": "vrma",
       "clip": "dance_move",
       "ok": true,
-      "sizeKb": 162,
+      "sizeKb": 123,
       "caption": "dance_move — Yuki (F·VRM)"
     },
     {
@@ -830,7 +882,7 @@
       "rig": "GLB",
       "group": "lipsync",
       "ok": true,
-      "sizeKb": 163,
+      "sizeKb": 166,
       "caption": "Lip-sync — Greg (M·GLB)"
     },
     {
@@ -866,7 +918,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 131,
+      "sizeKb": 133,
       "caption": "Emote: angry — Greg (M·GLB)"
     },
     {
@@ -878,7 +930,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 131,
+      "sizeKb": 133,
       "caption": "Emote: fear — Greg (M·GLB)"
     },
     {
@@ -890,7 +942,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 131,
+      "sizeKb": 133,
       "caption": "Emote: love — Greg (M·GLB)"
     },
     {
@@ -902,7 +954,7 @@
       "rig": "GLB",
       "group": "lipsync",
       "ok": true,
-      "sizeKb": 169,
+      "sizeKb": 210,
       "caption": "Lip-sync — Cara (F·GLB)"
     },
     {
@@ -914,7 +966,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 134,
+      "sizeKb": 165,
       "caption": "Emote: happy — Cara (F·GLB)"
     },
     {
@@ -926,7 +978,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 134,
+      "sizeKb": 166,
       "caption": "Emote: sad — Cara (F·GLB)"
     },
     {
@@ -938,7 +990,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 133,
+      "sizeKb": 166,
       "caption": "Emote: angry — Cara (F·GLB)"
     },
     {
@@ -950,7 +1002,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 134,
+      "sizeKb": 166,
       "caption": "Emote: fear — Cara (F·GLB)"
     },
     {
@@ -962,7 +1014,7 @@
       "rig": "GLB",
       "group": "emote",
       "ok": true,
-      "sizeKb": 134,
+      "sizeKb": 166,
       "caption": "Emote: love — Cara (F·GLB)"
     },
     {
@@ -974,7 +1026,7 @@
       "rig": "VRM",
       "group": "lipsync",
       "ok": true,
-      "sizeKb": 107,
+      "sizeKb": 106,
       "caption": "Lip-sync — Yuki (F·VRM)"
     },
     {
@@ -986,7 +1038,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 84,
+      "sizeKb": 83,
       "caption": "Emote: happy — Yuki (F·VRM)"
     },
     {
@@ -998,7 +1050,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 87,
+      "sizeKb": 86,
       "caption": "Emote: sad — Yuki (F·VRM)"
     },
     {
@@ -1022,7 +1074,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 86,
+      "sizeKb": 83,
       "caption": "Emote: fear — Yuki (F·VRM)"
     },
     {
@@ -1046,7 +1098,7 @@
       "rig": "VRM",
       "group": "lipsync",
       "ok": true,
-      "sizeKb": 192,
+      "sizeKb": 193,
       "caption": "Lip-sync — Kenji (M·VRM)"
     },
     {
@@ -1070,7 +1122,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 152,
+      "sizeKb": 153,
       "caption": "Emote: sad — Kenji (M·VRM)"
     },
     {
@@ -1082,7 +1134,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 154,
+      "sizeKb": 157,
       "caption": "Emote: angry — Kenji (M·VRM)"
     },
     {
@@ -1094,7 +1146,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 153,
+      "sizeKb": 156,
       "caption": "Emote: fear — Kenji (M·VRM)"
     },
     {
@@ -1106,7 +1158,7 @@
       "rig": "VRM",
       "group": "emote",
       "ok": true,
-      "sizeKb": 153,
+      "sizeKb": 155,
       "caption": "Emote: sleep — Kenji (M·VRM)"
     },
     {
@@ -1130,7 +1182,7 @@
       "rig": "GLB",
       "group": "eyes",
       "ok": true,
-      "sizeKb": 14,
+      "sizeKb": 180,
       "caption": "Eye movement — gaze L/R/up/down + blink (Cara)"
     },
     {
@@ -1140,7 +1192,7 @@
       "avatar": "Greg",
       "group": "blend",
       "ok": true,
-      "sizeKb": 59,
+      "sizeKb": 235,
       "caption": "idle → wave → idle (Greg)"
     },
     {
@@ -1150,7 +1202,7 @@
       "avatar": "Greg",
       "group": "blend",
       "ok": true,
-      "sizeKb": 65,
+      "sizeKb": 120,
       "caption": "clap → bow (gesture→action) (Greg)"
     },
     {
@@ -1160,7 +1212,7 @@
       "avatar": "Greg",
       "group": "blend",
       "ok": true,
-      "sizeKb": 73,
+      "sizeKb": 105,
       "caption": "think → talk (Greg)"
     },
     {
@@ -1170,8 +1222,18 @@
       "avatar": "Greg",
       "group": "blend",
       "ok": true,
-      "sizeKb": 274,
+      "sizeKb": 73,
       "caption": "dance → idle (Greg)"
+    },
+    {
+      "name": "cara-blend-fem-idle-dance-idle",
+      "file": "cara-blend-fem-idle-dance-idle.webp",
+      "page": "blends",
+      "avatar": "Cara",
+      "group": "blend",
+      "ok": true,
+      "sizeKb": 210,
+      "caption": "feminine idle → dance → idle (Cara)"
     }
   ]
 }

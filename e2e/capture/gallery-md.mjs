@@ -19,7 +19,7 @@ const COLS = 3
 
 const PAGES = [
   { key: 'animations', file: 'animations.md', title: 'Body Animations', groupBy: 'avatar', face: false,
-    blurb: 'The full body-animation catalog played through the real mixer, across male + female avatars on both GLB and VRM rigs.' },
+    blurb: 'The full body-animation catalog played through the real mixer, across male + female avatars on both GLB and VRM rigs. Female GLB avatars use the **feminine motion set** (female-actor mocap: F_ idle/talking/dance from the RPM animation library) — masculine and feminine avatars move differently.' },
   { key: 'faces', file: 'faces.md', title: 'Faces — Lip-sync & Emotes', groupBy: 'avatar', face: true,
     blurb: 'Viseme lip-sync + emotion expressions — GLB avatars (ARKit-52 morphs) and the expressive VRM avatars (Yuki, Kenji). Realistic VRM imports with empty expression binds are body-only.' },
   { key: 'eyes', file: 'eyes.md', title: 'Eye Movement', groupBy: null, face: true,
@@ -41,7 +41,7 @@ function grid(items, face) {
   return md + '</table>\n'
 }
 
-const CATEGORY_ORDER = ['idle', 'communication', 'gesture', 'expression', 'action', 'movement', 'vrma', 'lipsync', 'emote']
+const CATEGORY_ORDER = ['feminine', 'idle', 'communication', 'gesture', 'expression', 'action', 'movement', 'vrma', 'lipsync', 'emote']
 
 function section(items, groupBy, face) {
   if (!groupBy) return grid(items, face)
@@ -83,7 +83,7 @@ export function writeGalleryReadme(outDir = OUT) {
   const rows = PAGES.filter((p) => (byPage[p.key] || []).length).map(
     (p) => `| 🎞 [**${p.title}**](${p.file}) | ${(byPage[p.key] || []).length} | ${p.blurb} |`
   )
-  const hero = ['greg-waving', 'cara-dance', 'greg-lipsync', 'greg-emote-happy', 'erik-dance-move', 'greg-eyes']
+  const hero = ['greg-waving', 'cara-f-dances-001', 'greg-lipsync', 'yuki-emote-happy', 'erik-dance-move', 'greg-eyes']
     .map((n) => ok.find((c) => c.name === n))
     .filter(Boolean)
 

@@ -137,31 +137,69 @@ const GLB_DEFS: GlbDef[] = [
   ['walking', 'movement', { loopCount: Infinity, blendTime: 400 }]
 ]
 
-export const GLB_CLIPS: Record<string, AnimationClip> = Object.fromEntries(
-  GLB_DEFS.map(([name, category, opts = {}]) => [
-    name,
-    {
+const buildGlbClips = (defs: GlbDef[], dir = ''): Record<string, AnimationClip> =>
+  Object.fromEntries(
+    defs.map(([name, category, opts = {}]) => [
       name,
-      path: `/assets/animations/${name}.glb`,
-      duration: 3000, // updated from the real clip after load
-      weight: opts.weight ?? 1,
-      blendTime: opts.blendTime ?? 500,
-      category,
-      priority: opts.priority ?? (category === 'idle' ? 1 : 3),
-      loopCount: opts.loopCount ?? 1,
-      speed: opts.speed ?? 1
-    }
-  ])
-)
+      {
+        name,
+        path: `/assets/animations/${dir}${name}.glb`,
+        duration: 3000, // updated from the real clip after load
+        weight: opts.weight ?? 1,
+        blendTime: opts.blendTime ?? 500,
+        category,
+        priority: opts.priority ?? (category === 'idle' ? 1 : 3),
+        loopCount: opts.loopCount ?? 1,
+        speed: opts.speed ?? 1
+      }
+    ])
+  )
+
+export const GLB_CLIPS: Record<string, AnimationClip> = buildGlbClips(GLB_DEFS)
+
+// ---- Feminine motion set (RPM animation library, female-actor mocap) ----
+// Female GLB avatars get feminine idle/talking/dance in place of the unisex ones, so
+// masculine and feminine avatars move differently (see docs/ANIMATION-PIPELINE.md).
+// The RPM library shares the Mixamo skeleton — no retargeting needed.
+const FEM_DEFS: GlbDef[] = [
+  ['F_Standing_Idle_001', 'idle', { loopCount: Infinity, blendTime: 1000, priority: 1 }],
+  ['F_Standing_Idle_Variations_002', 'idle', { loopCount: Infinity, blendTime: 1000 }],
+  ['F_Talking_Variations_001', 'communication', { blendTime: 500 }],
+  ['F_Talking_Variations_002', 'communication', { blendTime: 500 }],
+  ['F_Dances_001', 'action', { blendTime: 800, priority: 5 }],
+  ['F_Dances_005', 'action', { blendTime: 800, priority: 5 }],
+  ['F_Dances_006', 'action', { blendTime: 800, priority: 5 }]
+]
+
+export const FEMININE_CLIPS: Record<string, AnimationClip> = buildGlbClips(FEM_DEFS, 'rpm/feminine/')
+
+/** Union of every GLB-skeleton clip — what the loader fetches for GLB avatars. */
+export const GLB_ALL_CLIPS: Record<string, AnimationClip> = { ...GLB_CLIPS, ...FEMININE_CLIPS }
+
+// Feminine catalog: feminine idle/talking/dance REPLACE the male-mocap ones; unisex
+// gestures/expressions/actions are shared. (Category swaps keep pickLoadedClipByCategory
+// and LLM reactions picking feminine motion for female avatars.)
+const FEM_REPLACED = new Set([
+  'idle-stable', 'basic-idle', 'standing-idle-watch', // idle → F_Standing_Idle_*
+  'Talking', 'Talking-1', 'Talking-2', // talking beats → F_Talking_Variations_*
+  'dance', 'dance-action' // dance → F_Dances_*
+])
+export const FEMININE_GLB_CLIPS: Record<string, AnimationClip> = {
+  ...Object.fromEntries(Object.entries(GLB_CLIPS).filter(([k]) => !FEM_REPLACED.has(k))),
+  ...FEMININE_CLIPS
+}
 
 // ---- Catalog selection + named roles ----
-export function getAvatarCatalog(isVRM: boolean): Record<string, AnimationClip> {
-  return isVRM ? VRMA_CLIPS : GLB_CLIPS
+export function getAvatarCatalog(isVRM: boolean, feminine = false): Record<string, AnimationClip> {
+  if (isVRM) return VRMA_CLIPS
+  return feminine ? FEMININE_GLB_CLIPS : GLB_CLIPS
 }
 
 /** The looping idle clip for a catalog (the base state). */
 export function getIdleClip(catalog: Record<string, AnimationClip>): AnimationClip {
-  return catalog === VRMA_CLIPS ? VRMA_CLIPS.idle_loop : GLB_CLIPS['idle-stable']
+  if (catalog === VRMA_CLIPS) return VRMA_CLIPS.idle_loop
+  if (catalog === FEMININE_GLB_CLIPS) return FEMININE_CLIPS['F_Standing_Idle_001']
+  return GLB_CLIPS['idle-stable']
 }
 
 /** The startup greeting clip for a catalog. */
@@ -174,7 +212,7 @@ export function getGreetClip(catalog: Record<string, AnimationClip>): AnimationC
  * across both catalogs.
  */
 export const updateAnimationDurations = (threeAnimations: THREE.AnimationClip[]): void => {
-  const all = { ...VRMA_CLIPS, ...GLB_CLIPS }
+  const all = { ...VRMA_CLIPS, ...GLB_ALL_CLIPS }
   threeAnimations.forEach((threeClip) => {
     const key = Object.keys(all).find((k) => all[k].name === threeClip.name)
     if (key && threeClip.duration) {

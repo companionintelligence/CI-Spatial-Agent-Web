@@ -11,9 +11,9 @@ Embodied AI Avatar framework with WebXR and Vision Pro support.
 | Doc | What it covers |
 |---|---|
 | [architecture.md](docs/architecture.md) | The embodied agent end-to-end — pipeline, conversation-turn sequence, `useAgent` service graph, platform/render tiers, deployment |
-| [animation.md](docs/animation.md) | The body **animation mixer**, the full clip/expression library (33 GLB + 6 VRMA), and **how the LLM triggers animations** |
+| [animation.md](docs/animation.md) | The body **animation mixer**, the full clip/expression library (33 GLB + 7 feminine + 6 VRMA), and **how the LLM triggers animations** |
 | [avatar.md](docs/avatar.md) | Avatar **rig contract**, the viseme + emote face systems, facial capability tiers, the 24-avatar catalog, and the HumGen→VRM pipeline |
-| 🎞 [**Visual-test gallery**](docs/visual-tests/) | **93 animated WebP clips** across 6 avatars (male + female · GLB + VRM) in sub-pages — [body animations](docs/visual-tests/animations.md), [faces](docs/visual-tests/faces.md) (lip-sync + emotes), [eye movement](docs/visual-tests/eyes.md), [blend combos](docs/visual-tests/blends.md) — rendered inline on GitHub |
+| 🎞 [**Visual-test gallery**](docs/visual-tests/) | **98 animated WebP clips** across 6 avatars (male + female · GLB + VRM, incl. the **feminine motion set** on female avatars) in sub-pages — [body animations](docs/visual-tests/animations.md), [faces](docs/visual-tests/faces.md) (lip-sync + emotes), [eye movement](docs/visual-tests/eyes.md), [blend combos](docs/visual-tests/blends.md) — rendered inline on GitHub |
 
 **Pipelines & plans:**
 

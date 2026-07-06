@@ -1,6 +1,6 @@
-# Body Animations · 63
+# Body Animations · 67
 
-The full body-animation catalog played through the real mixer, across male + female avatars on both GLB and VRM rigs.
+The full body-animation catalog played through the real mixer, across male + female avatars on both GLB and VRM rigs. Female GLB avatars use the **feminine motion set** (female-actor mocap: F_ idle/talking/dance from the RPM animation library) — masculine and feminine avatars move differently.
 
 ← [back to gallery index](README.md)
 
@@ -89,21 +89,23 @@ The full body-animation catalog played through the real mixer, across male + fem
 </table>
 
 
-### Cara · F·GLB · 10
+### Cara · F·GLB · 14
 
-**idle**
+**feminine**
 
 <table>
   <tr>
-    <td align="center"><img src="cara-basic-idle.webp" width="190" alt="basic-idle — Cara (F·GLB)" /><br /><sub>basic-idle — Cara (F·GLB)</sub></td>
+    <td align="center"><img src="cara-f-standing-idle-001.webp" width="190" alt="F_Standing_Idle_001 — Cara (F·GLB)" /><br /><sub>F_Standing_Idle_001 — Cara (F·GLB)</sub></td>
+    <td align="center"><img src="cara-f-standing-idle-variations-002.webp" width="190" alt="F_Standing_Idle_Variations_002 — Cara (F·GLB)" /><br /><sub>F_Standing_Idle_Variations_002 — Cara (F·GLB)</sub></td>
+    <td align="center"><img src="cara-f-talking-variations-001.webp" width="190" alt="F_Talking_Variations_001 — Cara (F·GLB)" /><br /><sub>F_Talking_Variations_001 — Cara (F·GLB)</sub></td>
   </tr>
-</table>
-
-**communication**
-
-<table>
   <tr>
-    <td align="center"><img src="cara-talking.webp" width="190" alt="Talking — Cara (F·GLB)" /><br /><sub>Talking — Cara (F·GLB)</sub></td>
+    <td align="center"><img src="cara-f-talking-variations-002.webp" width="190" alt="F_Talking_Variations_002 — Cara (F·GLB)" /><br /><sub>F_Talking_Variations_002 — Cara (F·GLB)</sub></td>
+    <td align="center"><img src="cara-f-dances-001.webp" width="190" alt="F_Dances_001 — Cara (F·GLB)" /><br /><sub>F_Dances_001 — Cara (F·GLB)</sub></td>
+    <td align="center"><img src="cara-f-dances-005.webp" width="190" alt="F_Dances_005 — Cara (F·GLB)" /><br /><sub>F_Dances_005 — Cara (F·GLB)</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="cara-f-dances-006.webp" width="190" alt="F_Dances_006 — Cara (F·GLB)" /><br /><sub>F_Dances_006 — Cara (F·GLB)</sub></td>
   </tr>
 </table>
 
@@ -133,7 +135,6 @@ The full body-animation catalog played through the real mixer, across male + fem
 
 <table>
   <tr>
-    <td align="center"><img src="cara-dance.webp" width="190" alt="dance — Cara (F·GLB)" /><br /><sub>dance — Cara (F·GLB)</sub></td>
     <td align="center"><img src="cara-bow.webp" width="190" alt="bow — Cara (F·GLB)" /><br /><sub>bow — Cara (F·GLB)</sub></td>
   </tr>
 </table>
