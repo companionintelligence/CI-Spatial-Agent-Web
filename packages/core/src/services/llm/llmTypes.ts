@@ -1,5 +1,7 @@
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 
+import type { LatestInterrupt } from './llmInterrupt'
+
 export interface LLMMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
@@ -77,7 +79,9 @@ export interface LLMParams {
   userMessage: string
   interrupt: number
   messages: LLMMessage[]
-  latestInterrupt: number
+  // Either a fixed timestamp or a live getter for the newest turn's interrupt.
+  // The getter form lets an in-flight stream from an older turn self-cancel.
+  latestInterrupt: LatestInterrupt
   responseCallback?: (response: LLMResponse) => void
   updateMessages?: (userMessage: string, assistantMessage: string) => void
   setThinking?: (thinking: boolean) => void

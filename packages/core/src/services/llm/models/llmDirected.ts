@@ -1,4 +1,5 @@
 import { DIRECTED_RESPONSES_URL } from '../config/llmConfig'
+import { readLatestInterrupt } from '../llmInterrupt'
 import type { LLMParams, LLMResult } from '../llmTypes'
 
 export interface DirectedResponse {
@@ -88,7 +89,10 @@ function getDefaultResponse(config: DirectedConfig): DirectedResponse | null {
 export async function llmDirected(params: LLMParams): Promise<LLMResult> {
   const { userMessage, interrupt, latestInterrupt, responseCallback, updateMessages, setThinking } = params
 
-  if (interrupt < latestInterrupt) {
+  // Re-read on every guard so a newer user turn cancels this stream mid-flight.
+  const latest = () => readLatestInterrupt(latestInterrupt)
+
+  if (interrupt < latest()) {
     console.log('LLM: Directed request outdated, stopping')
     return { success: false, error: new Error('Request outdated') }
   }
@@ -113,7 +117,7 @@ export async function llmDirected(params: LLMParams): Promise<LLMResult> {
     let bcounter = 0
 
     for (let i = 0; i < sentences.length; i++) {
-      if (interrupt < latestInterrupt) {
+      if (interrupt < latest()) {
         console.log('LLM: Directed request interrupted')
         break
       }

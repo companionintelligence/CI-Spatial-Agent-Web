@@ -7,6 +7,7 @@
 
 import * as webllm from '@mlc-ai/web-llm'
 
+import { readLatestInterrupt } from '../llmInterrupt'
 import type { LLMParams, LLMResult, WebLLMStreamChunk } from '../llmTypes'
 
 const MIN_BREATH_LENGTH = 20
@@ -14,6 +15,9 @@ const MIN_BREATH_LENGTH = 20
 export async function llmLocal(params: LLMParams): Promise<LLMResult> {
   const { userMessage, interrupt, messages, engine, latestInterrupt, responseCallback, updateMessages, setThinking } =
     params
+
+  // Re-read on every guard so a newer user turn cancels this stream mid-flight.
+  const latest = () => readLatestInterrupt(latestInterrupt)
 
   if (!engine) {
     console.error('LLM: Engine not ready')
@@ -27,7 +31,7 @@ export async function llmLocal(params: LLMParams): Promise<LLMResult> {
   let breath = ''
 
   const breathHelper = (fragment: string | null = null, finished = false) => {
-    if (latestInterrupt > interrupt) {
+    if (latest() > interrupt) {
       console.log('LLM: skipping - work is old', interrupt)
       return
     }

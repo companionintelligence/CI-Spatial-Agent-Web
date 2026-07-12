@@ -5,6 +5,7 @@
  * Supports both standard chat completions and Flowise integration.
  */
 
+import { readLatestInterrupt } from '../llmInterrupt'
 import type { LLMParams, LLMResult } from '../llmTypes'
 
 function defaultProcessThinkBlocks(input: string) {
@@ -33,6 +34,9 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
     processThinkBlocks = defaultProcessThinkBlocks,
     statusCallback
   } = params
+
+  // Re-read on every guard so a newer user turn cancels this stream mid-flight.
+  const latest = () => readLatestInterrupt(latestInterrupt)
 
   if (!llmUrl) {
     return { success: false, error: new Error('LLM URL is required') }
@@ -66,7 +70,7 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
       return { success: false, error: new Error(`HTTP ${response.status}: ${response.statusText}`) }
     }
 
-    if (interrupt < latestInterrupt) {
+    if (interrupt < latest()) {
       console.log('LLM: Cloud request outdated, stopping')
       return { success: false, error: new Error('Request outdated') }
     }

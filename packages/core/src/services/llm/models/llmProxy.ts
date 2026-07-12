@@ -11,6 +11,7 @@
  * AbortController so a barge-in actually cancels the upstream generation.
  */
 
+import { readLatestInterrupt } from '../llmInterrupt'
 import type { LLMParams, LLMResult } from '../llmTypes'
 
 const MIN_BREATH_LENGTH = 20
@@ -28,6 +29,9 @@ export async function llmProxy(params: LLMParams): Promise<LLMResult> {
     setThinking
   } = params
 
+  // Re-read on every guard so a newer user turn cancels this stream mid-flight.
+  const latest = () => readLatestInterrupt(latestInterrupt)
+
   setThinking?.(true)
 
   const rcounter = 1000
@@ -36,7 +40,7 @@ export async function llmProxy(params: LLMParams): Promise<LLMResult> {
   let breath = ''
 
   const breathHelper = (fragment: string | null = null, finished = false) => {
-    if (latestInterrupt > interrupt) {
+    if (latest() > interrupt) {
       return
     }
 
@@ -104,7 +108,7 @@ export async function llmProxy(params: LLMParams): Promise<LLMResult> {
 
     // eslint-disable-next-line no-constant-condition
     while (true) {
-      if (latestInterrupt > interrupt) {
+      if (latest() > interrupt) {
         controller.abort()
         aborted = true
         break
