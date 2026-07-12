@@ -313,6 +313,11 @@ export function initializeVisemeState(forVRM: boolean = false): VisemeState {
  */
 export function setupVisemeStateForVRM(state: VisemeState, vrm: VRM): void {
   state.vrm = vrm
+  // Clear GLB morph bindings left over from a previously-selected GLB avatar so the
+  // rig-apply path can't read stale morph refs after a GLB→VRM switch.
+  state.morphs = undefined
+  state.dictionary = undefined
+  state.dirty = {}
 
   // Auto-detect if this VRM supports only 5 mouth expressions
   try {
@@ -347,7 +352,15 @@ export function setupVisemeStateForMorphTargets(
   morphs: { morphTargetInfluences: number[] }[],
   dictionary: Record<string, number[]>
 ): void {
+  // Clear any VRM binding from a previously-selected VRM avatar. Without this,
+  // visemesToRig sees a stale state.vrm, takes the VRM branch, and `return`s before
+  // ever writing the new GLB's morph targets — lip-sync silently dies on the GLB.
+  state.vrm = undefined
   state.morphs = morphs
   state.dictionary = dictionary
   state.isVRMMode = false // GLB mode
+  // Reset targets/dirty to the GLB (14-viseme) shape; a prior VRM left the 5-key VRM
+  // target shape + dirty cache, which would mismatch the GLB morph dictionary.
+  state.targets = createEmptyVisemeTarget()
+  state.dirty = {}
 }
