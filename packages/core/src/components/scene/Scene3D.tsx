@@ -237,7 +237,10 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
           }
         }}
         fallback={<GraphicsFallback />}
-        frameloop="demand" // Optimize rendering - only render when needed
+        // NOTE: frameloop must stay "always" (the default). The avatar pipeline animates every
+        // frame — mixer, blink, gaze, lip-sync, spring bones — none of which call invalidate().
+        // Under frameloop="demand" the whole avatar froze at rest and only ticked while the
+        // camera was being dragged. (Review: docs/ANIMATION-SYSTEM-REVIEW.md, C2.)
         performance={{
           min: capabilities.isMobile ? 0.5 : 0.75, // Lower threshold on mobile
           max: 1,

@@ -173,8 +173,11 @@ export function startPerformance(state: AnimationState, performanceData: Animati
 export function updateAnimation(state: AnimationState, delta: number) {
   if (!state.enabled || !state.mixer) return
 
-  // The mixer drives all weight ramps scheduled by crossFadeTo/fadeIn/fadeOut.
-  state.mixer.update(delta)
+  // NOTE: do NOT call state.mixer.update(delta) here. drei's useAnimations (which created this
+  // mixer) already ticks it in its own useFrame, so calling it again double-advanced mixer time
+  // and every clip played at 2x speed with crossfades completing in half their blendTime.
+  // (Review: docs/ANIMATION-SYSTEM-REVIEW.md, H12/H13.) This function only runs the
+  // service-level transition/queue/cycling bookkeeping below.
 
   const now = performance.now()
 
