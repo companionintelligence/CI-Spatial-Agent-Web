@@ -268,6 +268,23 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     }
   })
 
+  // One coherent "stop everything from the previous turn" for a barge-in, shared by
+  // the STT stop-word path and the explicit triggerBargein() action. Previously each
+  // site only stopped TTS + relaxed emotes, so the avatar kept mouthing visemes (H5)
+  // and any queued gesture kept playing (M20).
+  const performBargeIn = useCallback(() => {
+    // Stop speech: clears the queue AND the currently-playing audio (C1/H4).
+    if (tts.state.isSpeaking) {
+      tts.actions.stopSpeaking()
+    }
+    // Relax facial emotes back toward neutral.
+    emotes.actions.onBargeIn()
+    // Stop the avatar silently mouthing the rest of the interrupted sentence (H5).
+    visemes.actions.reset()
+    // Drop any queued gesture performances from the interrupted turn (M20).
+    animations.actions.clearQueue()
+  }, [tts.state.isSpeaking, tts.actions, emotes.actions, visemes.actions, animations.actions])
+
   // Initialize VAD service
   const vad = useVADService({
     config: vadConfig,
@@ -286,8 +303,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
         const interrupt = Date.now()
         // Handle barge-in if detected
         if (shouldTriggerBargeIn({ text: result.text, isUser: true, id: '', timestamp: interrupt })) {
-          if(tts.state.isSpeaking){tts.actions.stopSpeaking()}
-          emotes.actions.onBargeIn()
+          performBargeIn()
           console.log('STT: Stop command detected - barge-in activated')
         }
 
@@ -369,12 +385,8 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     const interrupt = Date.now()
     interruptCounterRef.current = interrupt
 
-    if (tts.state.isSpeaking) {
-      tts.actions.stopSpeaking()
-    }
-
-    emotes.actions.onBargeIn()
-  }, [tts.state.isSpeaking, tts.actions, emotes])
+    performBargeIn()
+  }, [performBargeIn])
 
   // Memoize the services object to prevent unnecessary re-renders
   const services = useMemo(
