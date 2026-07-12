@@ -7,6 +7,8 @@ import {
   emoteUpdate,
   handleBargeIn,
   initializeEmoteState,
+  setupEmoteStateForMorphTargets,
+  setupEmoteStateForVRM,
   startPerformance
 } from './emoteService'
 import type { EmotionType } from './emoteTypes'
@@ -167,5 +169,33 @@ describe('emoteUpdate', () => {
   it('is safe to call on a fresh (non-performing) state', () => {
     const s = initializeEmoteState()
     expect(() => emoteUpdate(s, 0.016, defaultEmoteConfig)).not.toThrow()
+  })
+})
+
+describe('avatar switch VRM → GLB (regression: emote state leak)', () => {
+  const makeVrm = () => ({ lookAt: undefined }) as never
+
+  it('setupEmoteStateForMorphTargets clears the stale VRM binding', () => {
+    const s = initializeEmoteState()
+    setupEmoteStateForVRM(s, makeVrm())
+    expect(s.vrm).toBeDefined()
+
+    const morphs = [{ morphTargetInfluences: [0, 0] }]
+    setupEmoteStateForMorphTargets(s, morphs, { mouthSmile: [1] })
+
+    expect(s.vrm).toBeUndefined() // the leak fix — updateVRMSystems/applyToVRM now no-op on GLB
+    expect(s.morphs).toBe(morphs)
+  })
+
+  it('setupEmoteStateForVRM clears stale GLB morph bindings', () => {
+    const s = initializeEmoteState()
+    setupEmoteStateForMorphTargets(s, [{ morphTargetInfluences: [0] }], { mouthSmile: [0] })
+    expect(s.morphs).toBeDefined()
+
+    setupEmoteStateForVRM(s, makeVrm())
+
+    expect(s.morphs).toBeUndefined()
+    expect(s.dictionary).toBeUndefined()
+    expect(s.vrm).toBeDefined()
   })
 })

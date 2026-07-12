@@ -4,6 +4,8 @@ import {
   convertToVRMTarget,
   initializeVisemeState,
   setupVisemeStateForMorphTargets,
+  setupVisemeStateForVRM,
+  visemesToRig,
   visemesSequence
 } from './visemesService'
 import { createEmptyVisemeTarget, createEmptyVRMVisemeTarget } from './visemeTypes'
@@ -135,5 +137,44 @@ describe('setupVisemeStateForMorphTargets', () => {
     expect(s.morphs).toBe(morphs)
     expect(s.dictionary).toBe(dictionary)
     expect(s.isVRMMode).toBe(false) // …forced back to GLB.
+  })
+})
+
+describe('avatar switch VRM → GLB (regression: viseme state leak)', () => {
+  // A VRM exposing the 5 mouth expressions → setupVisemeStateForVRM enters VRM mode.
+  const makeVrm = () =>
+    ({
+      expressionManager: {
+        expressionMap: { aa: {}, ee: {}, ih: {}, oh: {}, ou: {} },
+        setValue: vi.fn()
+      }
+    }) as never
+
+  it('setupVisemeStateForMorphTargets clears the stale VRM and resets GLB targets', () => {
+    const s = initializeVisemeState()
+    setupVisemeStateForVRM(s, makeVrm())
+    expect(s.vrm).toBeDefined()
+    expect(s.isVRMMode).toBe(true)
+
+    setupVisemeStateForMorphTargets(s, [{ morphTargetInfluences: [0, 0] }], { viseme_aa: [1] })
+
+    expect(s.vrm).toBeUndefined() // the leak fix — no stale VRM binding
+    expect(s.isVRMMode).toBe(false)
+    expect(s.targets).toEqual(createEmptyVisemeTarget()) // reset to 14-viseme GLB shape
+  })
+
+  it('visemesToRig drives the new GLB morphs, not the disposed VRM, after the switch', () => {
+    const s = initializeVisemeState()
+    const vrm = makeVrm()
+    setupVisemeStateForVRM(s, vrm)
+
+    const morphs = [{ morphTargetInfluences: [0, 0, 0] }]
+    setupVisemeStateForMorphTargets(s, morphs, { viseme_aa: [1] })
+    ;(s.targets as Record<string, number>).viseme_aa = 0.8
+
+    visemesToRig(s, 0)
+
+    expect(morphs[0].morphTargetInfluences[1]).toBeCloseTo(0.8) // GLB morph written
+    expect((vrm as { expressionManager: { setValue: ReturnType<typeof vi.fn> } }).expressionManager.setValue).not.toHaveBeenCalled() // old VRM untouched
   })
 })
