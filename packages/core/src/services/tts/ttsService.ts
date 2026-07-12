@@ -56,6 +56,15 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   const messageQueue = useRef<QueuedMessage[]>([])
   const nextExpectedId = useRef(0)
   const workerRef = useRef<Worker | null>(null)
+  // Barge-in support. `activeSourceRef`/`activeContextRef` track the audio that is
+  // actually playing right now so stopSpeaking can cut it off mid-utterance (H4);
+  // clearing the queue alone never interrupted the current sound. `generationRef`
+  // is bumped on every stop so a stale queue loop that resumes after its audio is
+  // cut can't clobber the freshly-reset cursor/queue and silently drop all future
+  // speech (C1).
+  const activeSourceRef = useRef<AudioBufferSourceNode | null>(null)
+  const activeContextRef = useRef<AudioContext | null>(null)
+  const generationRef = useRef(0)
   // Once the Pocket TTS server proves unreachable (network-level failure), stop
   // hammering it for every message — degrade to silent text chat with one warning.
   const pocketUnreachable = useRef(false)
@@ -86,7 +95,16 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           source.connect(gainNode)
           gainNode.connect(audioContext.destination)
 
+          // Register as the active source so a barge-in (stopSpeaking) can stop it
+          // mid-playback (H4). Cleared on natural end below.
+          activeSourceRef.current = source
+          activeContextRef.current = audioContext
+
           source.onended = () => {
+            if (activeSourceRef.current === source) {
+              activeSourceRef.current = null
+              activeContextRef.current = null
+            }
             resolve()
           }
 
@@ -269,8 +287,16 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     if (isProcessing.current) return
     isProcessing.current = true
 
+    // Snapshot the barge-in generation this loop belongs to. If a stop happens
+    // while we're awaiting generation/playback below, `generationRef` moves on and
+    // every guard makes this stale loop bail without mutating the (now newer) queue
+    // state — the root of the "all future speech silently dropped" bug (C1).
+    const myGeneration = generationRef.current
+
     try {
       while (true) {
+        if (generationRef.current !== myGeneration) break
+
         const nextMessage = messageQueue.current.find((msg) => msg.id === nextExpectedId.current)
 
         if (!nextMessage) {
@@ -281,6 +307,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         // If message is pending, generate audio
         if (nextMessage.status === 'pending') {
           await generateAudioForMessage(nextMessage)
+          // A barge-in during (possibly slow) generation invalidates this loop.
+          if (generationRef.current !== myGeneration) break
         }
 
         // If message is not ready after generation, skip for now
@@ -369,23 +397,34 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           console.error(`Error playing message ${nextMessage.id}:`, playbackError)
         }
 
+        // If a barge-in cut in during playback (stopSpeaking stops the active
+        // source, which resolves the await above), abandon this loop WITHOUT
+        // advancing the cursor or mutating the queue — the newer generation owns
+        // that state now. Advancing here is exactly what desynced `nextExpectedId`
+        // from newly-enqueued ids and silently dropped all later speech (C1).
+        if (generationRef.current !== myGeneration) break
+
         // Mark as completed and remove from queue
         nextMessage.status = 'completed'
         messageQueue.current = messageQueue.current.filter((msg) => msg.id !== nextMessage.id)
         nextExpectedId.current = nextMessage.id + 1
       }
 
-      // Call onSpeechEnd only when queue is empty
-      if (onSpeechEnd && messageQueue.current.length === 0) {
+      // Call onSpeechEnd only when queue is empty (and this loop is still current).
+      if (generationRef.current === myGeneration && onSpeechEnd && messageQueue.current.length === 0) {
         onSpeechEnd()
       }
     } catch (error) {
       console.error('Queue processing error:', error)
-      if (onSpeechEnd) {
+      if (generationRef.current === myGeneration && onSpeechEnd) {
         onSpeechEnd()
       }
     } finally {
-      isProcessing.current = false
+      // Only the current generation owns the processing flag; a stale loop must not
+      // clear it out from under the loop a post-barge-in speak() just started.
+      if (generationRef.current === myGeneration) {
+        isProcessing.current = false
+      }
     }
   }, [
     generateAudioForMessage,
@@ -436,8 +475,32 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   )
 
   const stopSpeaking = useCallback(() => {
+    // Invalidate any in-flight queue loop first: its post-await bookkeeping must not
+    // run against the queue state we're about to reset (C1).
+    generationRef.current++
+
     if ('speechSynthesis' in window) {
       speechSynthesis.cancel()
+    }
+
+    // Actually stop the audio playing right now (pocket/local/remote modes).
+    // Clear the ref BEFORE stop() so the source's onended (whether it fires
+    // synchronously or later) sees it's no longer active and only resolves its
+    // promise — letting the stale queue loop resume and bail cleanly (H4/C1).
+    const active = activeSourceRef.current
+    activeSourceRef.current = null
+    activeContextRef.current = null
+    if (active) {
+      try {
+        active.stop()
+      } catch {
+        // Not started yet / already stopped — safe to ignore.
+      }
+      try {
+        active.disconnect()
+      } catch {
+        // ignore
+      }
     }
 
     // Terminate worker if it exists
@@ -446,7 +509,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       workerRef.current = null
     }
 
-    // Clear the queue
+    // Clear the queue and resync the expected-id cursor to the next id that will be
+    // assigned, so a fresh speak() right after a barge-in still matches and plays (C1).
     messageQueue.current = []
     nextExpectedId.current = globalId
     isProcessing.current = false
