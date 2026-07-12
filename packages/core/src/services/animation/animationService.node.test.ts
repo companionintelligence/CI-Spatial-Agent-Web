@@ -201,7 +201,10 @@ describe('updateAnimation transition bookkeeping', () => {
     expect(h.state.isTransitioning).toBe(true)
     updateAnimation(h.state, 0.2)
 
-    expect(h.mixer.update).toHaveBeenCalled()
+    // Regression guard: updateAnimation must NOT tick the mixer — drei's useAnimations already
+    // does that in its own useFrame. Calling it here too double-advanced mixer time and made
+    // every clip play at 2x. The transition bookkeeping below still runs from wall-time delta.
+    expect(h.mixer.update).not.toHaveBeenCalled()
     expect(h.state.isTransitioning).toBe(false)
     expect(h.actions.idle_loop.stop).toHaveBeenCalled()
     expect(h.state.previousClipName).toBeUndefined()

@@ -216,7 +216,10 @@ export const updateAnimationDurations = (threeAnimations: THREE.AnimationClip[])
   threeAnimations.forEach((threeClip) => {
     const key = Object.keys(all).find((k) => all[k].name === threeClip.name)
     if (key && threeClip.duration) {
-      all[key].duration = Math.round(threeClip.duration * 0.6 * 1000)
+      // Real clip length in ms. The former `* 0.6` fudge compensated for the double-mixer-update
+      // 2x-speed bug (now fixed); with a single mixer tick the true duration is correct and
+      // keeps duration-derived timing (e.g. emote relaxTime synced to a clip) honest.
+      all[key].duration = Math.round(threeClip.duration * 1000)
     }
   })
 }
