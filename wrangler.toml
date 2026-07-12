@@ -1,0 +1,11 @@
+# Cloudflare Pages deployment config (project "avatars" → avatars-zbe.pages.dev).
+#
+# This is a pnpm monorepo; the web SPA builds to apps/web/dist. Without this file the
+# Pages build system finished the build but had no output directory to deploy ("deploy —"),
+# so every deploy silently no-op'd. `pages_build_output_dir` points it at the web app's dist.
+#
+# Set the Pages project **build command** to `pnpm install && pnpm --filter @ci-avatar/web build`
+# in the dashboard (mirrors the Dockerfile — build only the web app, not proxy/vision-pro).
+name = "avatars"
+pages_build_output_dir = "apps/web/dist"
+compatibility_date = "2026-07-01"
