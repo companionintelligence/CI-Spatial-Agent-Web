@@ -81,6 +81,13 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
 
   const initializedRef = useRef(false)
 
+  // Live "newest turn" marker. Adapters receive a getter over this ref (not a copy),
+  // so an in-flight stream from a previous turn observes the latest interrupt and
+  // self-cancels. Passing request.interrupt by value made the guard compare a number
+  // to itself, so a new user turn never stopped the previous turn's network stream.
+  const latestInterruptRef = useRef(0)
+  const getLatestInterrupt = useCallback(() => latestInterruptRef.current, [])
+
   const processThinkBlocks = useCallback((input: string) => {
     const thinkBlocks: string[] = []
 
@@ -220,6 +227,11 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       const text = request.text?.trim()
       if (!text || !text.length) return
 
+      // Publish this turn as the newest interrupt BEFORE dispatching, so any stream
+      // still running from a previous turn (which holds getLatestInterrupt) sees a
+      // newer value and self-cancels.
+      latestInterruptRef.current = request.interrupt
+
       // If model is loading or not ready, use directed responses as fallback
       if (state.loading || !state.ready) {
         console.log('LLM: Model not ready, using directed responses as fallback')
@@ -237,7 +249,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
           userMessage: text,
           interrupt: request.interrupt,
           messages: state.messages,
-          latestInterrupt: request.interrupt,
+          latestInterrupt: getLatestInterrupt,
           responseCallback: onResponse,
           updateMessages: (userMsg: string, assistantMsg: string) => {
             setState((prev) => ({
@@ -291,7 +303,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         userMessage: text,
         interrupt: request.interrupt,
         messages: state.messages,
-        latestInterrupt: request.interrupt,
+        latestInterrupt: getLatestInterrupt,
         responseCallback: onResponse,
         updateMessages: (userMsg: string, assistantMsg: string) => {
           setState((prev) => ({
@@ -400,6 +412,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       state.engine,
       state.messages,
       state._latest_interrupt,
+      getLatestInterrupt,
       onResponse,
       onStatus,
       processThinkBlocks,

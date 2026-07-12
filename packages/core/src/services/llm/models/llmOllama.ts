@@ -7,6 +7,7 @@
 
 import { Ollama } from 'ollama/browser'
 
+import { readLatestInterrupt } from '../llmInterrupt'
 import type { LLMParams, LLMResult } from '../llmTypes'
 
 const MIN_BREATH_LENGTH = 20
@@ -24,6 +25,9 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
     setThinking
   } = params
 
+  // Re-read on every guard so a newer user turn cancels this stream mid-flight.
+  const latest = () => readLatestInterrupt(latestInterrupt)
+
   if (!llmUrl) {
     return { success: false, error: new Error('Ollama URL is required') }
   }
@@ -36,7 +40,7 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
   let breath = ''
 
   const breathHelper = (fragment: string | null = null, finished = false) => {
-    if (latestInterrupt > interrupt) {
+    if (latest() > interrupt) {
       console.log('LLM: skipping - work is old', interrupt)
       return
     }
@@ -99,7 +103,7 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
     })
 
     for await (const chunk of response) {
-      if (latestInterrupt > interrupt) {
+      if (latest() > interrupt) {
         console.log('LLM: Ollama request outdated, stopping')
         break
       }

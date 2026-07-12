@@ -3,13 +3,14 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import {
   convertToVRMTarget,
   initializeVisemeState,
+  resetVisemeState,
   setupVisemeStateForMorphTargets,
   setupVisemeStateForVRM,
   visemesToRig,
   visemesSequence
 } from './visemesService'
 import { createEmptyVisemeTarget, createEmptyVRMVisemeTarget } from './visemeTypes'
-import type { WhisperData } from './visemeTypes'
+import type { VisemeSequenceItem, WhisperData } from './visemeTypes'
 
 // Silence the service's informational console noise so a failing assertion is easy to spot.
 beforeEach(() => {
@@ -137,6 +138,52 @@ describe('setupVisemeStateForMorphTargets', () => {
     expect(s.morphs).toBe(morphs)
     expect(s.dictionary).toBe(dictionary)
     expect(s.isVRMMode).toBe(false) // …forced back to GLB.
+  })
+})
+
+describe('resetVisemeState (barge-in)', () => {
+  const item = (): VisemeSequenceItem =>
+    ({ ts: [0, 1, 2], vs: { viseme_aa: [null, 0.8, 0.8] }, template: { name: 'x' } }) as VisemeSequenceItem
+
+  it('zeroes the GLB morph influences the mouth was frozen at, not just the sequence', () => {
+    const state = initializeVisemeState(false)
+    const morphs = [{ morphTargetInfluences: [0, 0, 0, 0] }]
+    const dictionary = { viseme_aa: [0, 1], viseme_O: [2, 3] }
+    setupVisemeStateForMorphTargets(state, morphs, dictionary)
+
+    // Simulate being mid-sentence: mouth is open and a sequence is still queued.
+    morphs[0].morphTargetInfluences[0] = 0.8
+    morphs[0].morphTargetInfluences[1] = 0.6
+    morphs[0].morphTargetInfluences[2] = 0.5
+    state.sequence = [item()]
+
+    resetVisemeState(state)
+
+    // Mouth actually closes (all mapped morphs zeroed) and nothing is left scheduled.
+    expect(morphs[0].morphTargetInfluences).toEqual([0, 0, 0, 0])
+    expect(state.sequence).toEqual([])
+    // Bindings survive so the next utterance still animates the same avatar.
+    expect(state.morphs).toBe(morphs)
+    expect(state.dictionary).toBe(dictionary)
+    expect(state.isVRMMode).toBe(false)
+  })
+
+  it('zeroes VRM mouth expressions and keeps the vrm binding', () => {
+    const setValue = vi.fn()
+    const state = initializeVisemeState(true)
+    // Minimal VRM stand-in exposing the expressionManager surface reset() uses.
+    state.vrm = { expressionManager: { setValue } } as never
+    state.sequence = [item()]
+
+    resetVisemeState(state)
+
+    expect(state.sequence).toEqual([])
+    for (const key of ['aa', 'ee', 'ih', 'oh', 'ou']) {
+      expect(setValue).toHaveBeenCalledWith(key, 0)
+    }
+    // The vrm binding is preserved (a full state swap used to drop it).
+    expect(state.vrm).toBeTruthy()
+    expect(state.isVRMMode).toBe(true)
   })
 })
 
