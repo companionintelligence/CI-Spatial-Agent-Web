@@ -65,6 +65,29 @@ interface WindowWithSpeech extends Window {
   webkitSpeechRecognition?: { new (): BaseSpeechRecognition }
 }
 
+export interface RecognitionResult {
+  text: string
+  final: boolean
+  confidence: number
+}
+
+/**
+ * Collect every recognition result from `event.resultIndex` onward as trimmed
+ * {text, final, confidence}. Pulled out of the onresult handler as a pure function so the
+ * continuous-recognition contract — process ALL new results in each event, not just the first —
+ * is unit-testable without a DOM or a live SpeechRecognition. (A prior `i < 1` loop bound
+ * processed only index 0, silently dropping every finalized segment after the first in a
+ * continuous session.)
+ */
+export function collectRecognitionResults(event: SpeechRecognitionEventType): RecognitionResult[] {
+  const out: RecognitionResult[] = []
+  for (let i = event.resultIndex; i < event.results.length; ++i) {
+    const data = event.results[i]
+    out.push({ text: data[0].transcript.trim(), final: data.isFinal, confidence: data[0].confidence || 1 })
+  }
+  return out
+}
+
 export const useSTTService = ({
   config: configPartial = {},
   onPerform,
@@ -214,15 +237,11 @@ export const useSTTService = ({
     }
 
     recognition.onresult = (event: SpeechRecognitionEventType) => {
-      for (let i = event.resultIndex; i < 1 && i < event.results.length; ++i) {
-        const data = event.results[i]
-        const text = data[0].transcript
-        const confidence = data[0].confidence || 1
-        const final = data.isFinal
+      for (const { text, final, confidence } of collectRecognitionResults(event)) {
         const comment = `User vocalization ${bcounterRef.current} final ${final}`
 
         const performResult: STTPerformResult = {
-          text: text.trim(),
+          text,
           interrupt: performance.now(),
           confidence,
           spoken: true,
@@ -237,7 +256,7 @@ export const useSTTService = ({
         onPerform?.(performResult)
 
         if (!final) {
-          onInterimTranscript?.(text.trim())
+          onInterimTranscript?.(text)
           bcounterRef.current++
         } else {
           onInterimTranscript?.('')
