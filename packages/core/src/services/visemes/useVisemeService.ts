@@ -5,6 +5,7 @@ import { defaultVisemeConfig, type VisemeConfig } from './config/visemeConfig'
 import { visemePerformanceMonitor } from './debug/visemePerformance'
 import {
   initializeVisemeState,
+  resetVisemeState,
   setupVisemeStateForMorphTargets,
   setupVisemeStateForVRM,
   visemesSequence,
@@ -52,7 +53,11 @@ export const useVisemeService = (initialConfig?: Partial<VisemeConfig>) => {
   )
 
   const reset = useCallback(() => {
-    visemeStateRef.current = initializeVisemeState()
+    // Clear the sequence AND zero the live rig while keeping avatar bindings, so a
+    // barge-in actually closes the mouth instead of leaving it mouthing the rest of
+    // the sentence (H5). Replacing the state object dropped the vrm/morph bindings
+    // and never zeroed the rig.
+    resetVisemeState(visemeStateRef.current)
   }, [])
 
   const updateConfig = useCallback((newConfig: Partial<VisemeConfig>) => {

@@ -249,6 +249,54 @@ export function visemesToRig(volume: VisemeState, _delta: number, amplify: numbe
 }
 
 /**
+ * Reset a viseme state on barge-in.
+ *
+ * This does three things the previous `initializeVisemeState()`-swap did NOT:
+ *  1. clears the pending sequence so no further mouth shapes are scheduled;
+ *  2. zeroes the *actual avatar rig* (VRM expressions / GLB morph influences) so
+ *     the mouth closes instead of freezing on the last shape it was mid-way through;
+ *  3. keeps the avatar bindings (`vrm`/`morphs`/`dictionary`/`isVRMMode`) intact so
+ *     the very next utterance still drives lip-sync.
+ *
+ * Wiping the sequence pointer alone (or replacing the whole state object) left the
+ * avatar silently mouthing the rest of the interrupted sentence. (H5)
+ */
+export function resetVisemeState(state: VisemeState): void {
+  // 1. Drop any scheduled visemes.
+  state.sequence = []
+
+  // 2. Zero the in-memory targets, preserving the current system (VRM vs GLB).
+  state.targets = state.isVRMMode ? createEmptyVRMVisemeTarget() : createEmptyVisemeTarget()
+
+  // 3. Push zeros to the real rig so the mouth actually closes.
+  if (state.vrm?.expressionManager) {
+    const vrmVisemeKeys: (keyof VRMVisemeTarget)[] = ['aa', 'ee', 'ih', 'oh', 'ou']
+    for (const key of vrmVisemeKeys) {
+      try {
+        state.vrm.expressionManager.setValue(key, 0)
+      } catch (error) {
+        console.error('resetVisemeState: Error zeroing VRM expression', key, error)
+      }
+    }
+  }
+
+  if (state.morphs && state.dictionary) {
+    for (const group of Object.values(state.dictionary)) {
+      for (const part of state.morphs) {
+        for (const index of group) {
+          if (part.morphTargetInfluences && part.morphTargetInfluences[index] !== undefined) {
+            part.morphTargetInfluences[index] = 0
+          }
+        }
+      }
+    }
+  }
+
+  // Reset dirty tracking so the next real viseme is re-applied cleanly.
+  state.dirty = {}
+}
+
+/**
  * Initialize viseme state for an avatar
  */
 export function initializeVisemeState(forVRM: boolean = false): VisemeState {
