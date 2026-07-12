@@ -321,6 +321,9 @@ export const setupEmoteStateForVRM = (state: EmoteState, vrm: VRM): EmoteResult 
     if (!vrm) throw new Error('VRM is required')
 
     state.vrm = vrm
+    // Clear GLB morph bindings from a previously-selected GLB avatar (GLB→VRM switch).
+    state.morphs = undefined
+    state.dictionary = undefined
 
     // Initialize VRM systems
     if (vrm.lookAt) {
@@ -344,6 +347,10 @@ export const setupEmoteStateForMorphTargets = (
       throw new Error('Dictionary is required')
     }
 
+    // Clear any VRM binding from a previously-selected VRM avatar so the per-frame
+    // updateVRMSystems / applyEmoteStateToVRM path can't drive the disposed VRM
+    // (blink + emotes would otherwise be dead on the new GLB after a VRM→GLB switch).
+    state.vrm = undefined
     state.morphs = morphs
     state.dictionary = dictionary
 
