@@ -1,7 +1,17 @@
 # Avatar Asset Pipeline (Blender)
 
-Headless **HumGen3D → RPM-skeleton re-skin (Strategy D) → GLB/VRM** pipeline that
-emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-the-rig-contract-what-every-avatar-must-expose).
+Headless **clothed HumGen3D → RPM-skeleton RETARGET (Strategy R) → GLB/VRM**
+pipeline that emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-the-rig-contract-what-every-avatar-must-expose).
+
+> **Strategy R (retarget), not Strategy D (re-skin).** The old Strategy D re-skinned
+> the HumGen body onto a separate RPM armature and re-seated the head/eyes/teeth/
+> clothing — which produced a detached head, floating teeth/eyes, and clothing that
+> exploded into sheets when animated (it only ever passed the *name*-based validator).
+> Strategy R keeps HumGen's OWN rig with everything bound to it as authored, aligns
+> its rest to the RPM T-pose, and renames its deform bones to the RPM names so the
+> shared clips drive it. Head stays attached, teeth stay in the mouth, sleeves follow
+> the arms. VERIFIED by rendering the export animated in real three.js (see
+> `skeleton.py` + `mappings.HUMGEN_TO_RPM_BONES`).
 
 > Design docs: [`ASSET-PIPELINE.md`](../docs/ASSET-PIPELINE.md) ·
 > [`AVATAR-PIPELINE.md`](../docs/AVATAR-PIPELINE.md) ·
@@ -86,12 +96,11 @@ bone-for-bone.
 pipeline/
   README.md               # this file
   install_addons.py       # enable HumGen3D + VRM addon, set content path, save prefs
-  generate_vrm.py         # NATIVE VRM 1.0 entry (recommended — no RPM re-skin)
-  generate_avatar.py      # legacy GLB entry (RPM re-skin, Strategy D)
-  mappings.py             # HUMGEN_TO_VRM_HUMANBONES + RPM map, viseme/ARKit tables, VRM binds
+  generate_avatar.py      # main entry (args after --)
+  mappings.py             # HUMGEN_TO_RPM_BONES, RPM_TO_VRM_HUMANBONES, viseme/ARKit tables
   lib/
-    humgen.py             # generate a HumGen human (+ clothing/footwear/hair-haircards)
-    skeleton.py           # Strategy D: import RPM T-pose, transfer weights, drop HG rig (GLB path)
+    humgen.py             # generate + clothe a HumGen human, convert hair to mesh
+    skeleton.py           # Strategy R: align HumGen rest to RPM T-pose, rename bones -> RPM
     facemorphs.py         # rename/bind HumGen shape keys -> viseme_* + ARKit names
     glb_export.py         # export .glb (morph targets + skin, no baked anims)
     vrm_export.py         # VRM1 humanoid + expressions + head-part/hair/material fixes, export .vrm
@@ -284,29 +293,24 @@ What's DONE and verified:
 - **Face morphs** (`facemorphs.py`) — ✅ `load_facial_rig()` → `prepare_for_arkit('long')`
   gives 33/35 ARKit morphs; `eyesClosed`/`mouthSmile` synthesised; all 15 `viseme_*`
   derived from ARKit blends and baked as real morph targets.
-- **Strategy D re-skin** (`skeleton.py`) — ✅ FULL re-skin. Imports the in-tree
-  `rpm-mixamo-t-posed.glb` (resolved from the canonical `assets/avatars/`, with the
-  legacy `apps/web/public/...` path as fallback), which carries both the RPM armature
-  AND a real skinned reference body (`Wolf3D_Avatar`, 82 RPM-named groups). Data
-  Transfer (POLYINTERP_NEAREST VGROUP_WEIGHTS) copies those weights onto the HumGen
-  body + every clothing mesh, which are then bound to the RPM armature; the HG rig is
-  dropped. Output rides the RPM skeleton bone-for-bone (Hips→…→Head/LeftEye/RightEye).
-- **Head-bone framing fix** (`skeleton.py` `_align_body_to_rpm`) — ✅ the body (and all
-  clothing/eyes/teeth) is scaled about the WORLD ORIGIN so its crown-to-floor height,
-  measured from real world-space vertices, matches the RPM reference **body mesh**
-  (~1.82 m). The earlier code scaled to the RPM *armature* `dimensions.z` (1.867 m,
-  inflated by leaf bones like `HeadTop_End` at z≈1.966) using the unreliable
-  `body.dimensions.z`, so the body came out ~1.94 m tall while the Head/eye BONES
-  stayed at RPM height — the face floated ~0.2 m above the eye bones and a head-relative
-  camera framed the neck. Now the exported crown lands at 1.821 m (matching RPM
-  exactly) and Head (1.557) / LeftEye+RightEye (1.634) bones coincide with the RPM
-  reference bone-for-bone, so the head-relative gaze camera frames the face like the
-  RPM avatars. Eyes/teeth are re-seated into the RPM-deformed sockets/mouth (they were
-  authored to HumGen face proportions, which sit below the RPM sockets) and rigidly
-  Head-bound.
-- **GLB export** (`glb_export.py`) — ✅ bakes textures (body + clothing), flattens
-  clothing fit shape keys, prunes non-face body shape keys, exports position-only
-  morph deltas. ≈25 MB for a clothed female avatar (8 meshes, 23 embedded textures).
+- **Clothing + hair** (`humgen.py`) — ✅ `human.clothing.outfit.set()` /
+  `footwear.set()` dress the human on its native rig; `regular_hair.convert_to_haircards()`
+  bakes particle scalp hair to an exportable mesh (glTF can't export particle hair),
+  re-parented + skinned 100 % to the `head` bone so it exports skinned and rides head
+  motion. Body clothing-masks are stripped before the texture bake so nothing bakes
+  black under the clothing.
+- **Strategy R retarget** (`skeleton.py`) — ✅ Imports `rpm-mixamo-t-posed.glb` for its
+  RPM rest transforms only. Poses every mapped HumGen deform bone into the RPM bone's
+  exact rest world matrix (parent-first, bones disconnected) and applies it as the new
+  bind pose (verified dHead = 0, dRot = 0), so HumGen's bind == RPM's rest. Then renames
+  the HumGen deform bones → RPM names (`HUMGEN_TO_RPM_BONES`) and the matching vertex
+  groups on every skinned mesh. Fingers + eye ORIENTATION are deliberately not aligned
+  (fingers would stream under the absolute-translation clips; eye alignment pops the
+  eyeballs) — see the notes in `mappings.py` / `skeleton.py`. Everything stays bound to
+  HumGen's one native rig: head attached, teeth in the mouth, eyes in the sockets,
+  sleeves follow the arms.
+- **GLB export** (`glb_export.py`) — ✅ bakes textures, prunes non-face shape keys,
+  exports position-only morph deltas (≈28 MB for a full clothed female avatar with hair).
 
 ```
 
