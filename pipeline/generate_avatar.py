@@ -1,16 +1,9 @@
 """Main entry — generate one avatar (GLB and/or VRM) headlessly.
 
-Orchestrates the full Strategy-R (retarget) flow:
+Orchestrates the full Strategy-D flow:
 
-    clothed HumGen human  ->  bind face morphs  ->  bake skin textures
-                          ->  RETARGET native rig to RPM clip skeleton
-                          ->  GLB export  (+  VRM export)
-
-Strategy R keeps HumGen's native rig intact (body + head + eyes + teeth + clothing
-all bound to it as HumGen authored) and makes the app's shared RPM clips drive it by
-aligning its rest to the RPM T-pose and renaming its bones to the RPM names. No
-re-skin, no head/teeth/eye re-seating — so the head stays attached, teeth stay in
-the mouth, and sleeves follow the arms without exploding. See lib/skeleton.py.
+    HumGen human  ->  re-skin onto RPM skeleton  ->  rename/bind face morphs
+                  ->  GLB export  (+  VRM export)
 
 Invocation (per ASSET-PIPELINE.md §4)::
 
@@ -153,7 +146,7 @@ def build_avatar(args):
     #    empty). Bake into a temp subdir — the PNGs get embedded into the GLB on
     #    export, so we don't want the loose files cluttering the assets dir.
     _bake_dir = os.path.join(os.path.abspath(args.out), f'.bake_{args.name}')
-    glb_export.bake_textures(human, _bake_dir, samples=16)
+    glb_export.bake_textures(human, _bake_dir)
 
     # 4. Strategy D — re-skin body onto RPM skeleton, drop HG rig
     rpm_arm, body = skeleton.reskin_to_rpm(args.gender, human=human)

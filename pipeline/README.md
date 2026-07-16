@@ -1,17 +1,7 @@
 # Avatar Asset Pipeline (Blender)
 
-Headless **clothed HumGen3D → RPM-skeleton RETARGET (Strategy R) → GLB/VRM**
-pipeline that emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-the-rig-contract-what-every-avatar-must-expose).
-
-> **Strategy R (retarget), not Strategy D (re-skin).** The old Strategy D re-skinned
-> the HumGen body onto a separate RPM armature and re-seated the head/eyes/teeth/
-> clothing — which produced a detached head, floating teeth/eyes, and clothing that
-> exploded into sheets when animated (it only ever passed the *name*-based validator).
-> Strategy R keeps HumGen's OWN rig with everything bound to it as authored, aligns
-> its rest to the RPM T-pose, and renames its deform bones to the RPM names so the
-> shared clips drive it. Head stays attached, teeth stay in the mouth, sleeves follow
-> the arms. VERIFIED by rendering the export animated in real three.js (see
-> `skeleton.py` + `mappings.HUMGEN_TO_RPM_BONES`).
+Headless **HumGen3D → RPM-skeleton re-skin (Strategy D) → GLB/VRM** pipeline that
+emits avatars satisfying the app's [rig contract](../docs/AVATAR-PIPELINE.md#2-the-rig-contract-what-every-avatar-must-expose).
 
 > Design docs: [`ASSET-PIPELINE.md`](../docs/ASSET-PIPELINE.md) ·
 > [`AVATAR-PIPELINE.md`](../docs/AVATAR-PIPELINE.md) ·

@@ -1,38 +1,27 @@
-"""Strategy R — RETARGET HumGen's native rig to the RPM clip skeleton.
+"""Strategy D — re-skin the HumGen body onto the RPM skeleton.
 
-The previous Strategy D re-skinned the HumGen *body* onto a separate RPM armature
-via Data Transfer and re-seated the head/eyes/teeth/clothing onto RPM bones. That
-produced a detached head, floating teeth/eyes, and clothing that exploded into
-sheets when animated. It only ever passed the *name*-based validator.
+The HumGen human ships a Rigify-derived rig whose deform bones are named
+``spine.001``/``upper_arm.L``/``thigh.L`` … . The app expects the RPM/Mixamo
+skeleton (``Hips/Spine/Spine1/Spine2/Neck/Head/LeftEye/RightEye`` + the standard
+RPM arm/leg/hand chain) so the 34 shared GLB clips play natively and the GLB
+head-finder / gaze service resolve their bones by name.
 
-Strategy R keeps HumGen's OWN character fully intact — its native armature, with
-body + head + eyes + teeth + clothing all bound to it exactly as HumGen authored
-them (one coherent skin, no re-seating). We make the app's shared RPM animation
-clips drive it by:
+Strategy D (full re-skin):
 
-  1. **Rest-pose alignment (the crux).** The RPM clips are authored against the RPM
-     reference rest pose (``assets/avatars/rpm-mixamo-t-posed.glb``). three.js's
-     AnimationMixer sets each bone's LOCAL transform absolutely per frame, and the
-     mixamo clips bake translation on every bone — so at runtime the skeleton's
-     per-bone WORLD pose becomes RPM's. For the skin to deform correctly, the
-     exported avatar's inverse-bind matrices (baked from its rest) must equal the
-     RPM rest world matrices. So we pose every HumGen deform bone that maps to an
-     RPM bone into the RPM bone's exact rest world transform, then APPLY that as the
-     new rest/bind pose (Blender rebinds the meshes so nothing moves visually). After
-     this, HumGen's bind pose == RPM's rest pose, bone-for-bone.
+  1. Import the RPM T-pose GLB — it carries both the RPM armature AND a real
+     skinned reference body (``Wolf3D_Avatar``: 7415 verts, 82 RPM-named vertex
+     groups). VERIFIED against the in-tree ``rpm-mixamo-t-posed.glb`` (Anselm).
+  2. Align the HumGen body to the RPM armature (both are ~1.8 m, metres, standing
+     at the origin; a height/hip match refines it).
+  3. Transfer skin weights from the RPM reference mesh onto the HumGen body with a
+     Data Transfer modifier (VGROUP_WEIGHTS, nearest-face-interpolated), which
+     creates RPM-named vertex groups on the HumGen mesh.
+  4. Parent the HumGen body to the RPM armature via an Armature modifier and drop
+     the RPM reference mesh + the HumGen native rig.
 
-  2. **Bone rename.** Rename the aligned HumGen deform bones to the RPM names
-     (``mappings.HUMGEN_TO_RPM_BONES``) AND rename the matching vertex group on every
-     skinned mesh, so the clips' name-addressed tracks resolve and the skin stays
-     bound.
-
-No Data Transfer, no re-parenting, no head/teeth/eye re-seating. The head stays on
-the neck, teeth stay in the mouth, eyes stay in the sockets, and sleeves follow the
-arms — because none of that binding is ever touched; only the rest pose is aligned
-and the bones are renamed.
-
-Shape keys (ARKit + visemes) are rig-independent — a pose→apply-rest and a bone
-rename never touch shape-key data — so they survive unchanged.
+Shape keys (ARKit + visemes) are preserved throughout — Data Transfer of vertex
+weights and the Armature modifier do not touch shape keys, and we never apply a
+geometry-changing modifier.
 
 Runs under ``blender --background``.
 """
@@ -44,15 +33,7 @@ try:
 except ImportError:  # allow import outside Blender (docs/lint)
     bpy = None
 
-from mappings import RPM_CONTRACT_BONES, HUMGEN_TO_RPM_BONES  # noqa: E402
-
-# Eye bones are renamed (so LeftEye/RightEye satisfy the contract + gaze position
-# lookup) but NOT rest-aligned: HumGen's eye bones point back into the head, so
-# posing them to RPM's forward-pointing eye rest rotates the eyeball meshes ~108°
-# and pops them out of the sockets. The GLB gaze path only reads eye WORLD POSITION
-# (which HumGen already places correctly in the sockets), never the eye bone
-# orientation — so we leave the eye rest as HumGen authored it.
-_EYE_BONES = {'eyeball.L', 'eyeball.R'}
+from mappings import RPM_BONES, RPM_CONTRACT_BONES  # noqa: E402
 
 
 # The in-tree RPM T-pose reference rig (Anselm) — carries the exact RPM armature
@@ -79,22 +60,17 @@ def _require_bpy():
         raise RuntimeError('skeleton.py must run inside Blender (bpy unavailable)')
 
 
-def _rpm_reference_path():
-    for p in _RPM_REF_CANDIDATES:
-        if os.path.exists(p):
-            return p
-    raise FileNotFoundError(
-        'RPM reference GLB not found; looked in: ' + ', '.join(_RPM_REF_CANDIDATES))
-
-
 def import_rpm_reference():
-    """Import the RPM T-pose reference GLB. Returns (armature, [imported_objs]).
+    """Import the RPM T-pose GLB. Returns (armature, reference_mesh).
 
-    The armature carries the RPM rest pose we align HumGen to. We assert it exposes
-    the RPM contract bones so a wrong/renamed reference fails fast.
+    ``reference_mesh`` is the real skinned RPM body (``Wolf3D_Avatar``) used as the
+    weight-transfer source; the placeholder Icosphere is discarded.
     """
     _require_bpy()
-    path = _rpm_reference_path()
+    path = RPM_REFERENCE_GLB
+    if not os.path.exists(path):
+        raise FileNotFoundError(f'RPM reference GLB not found: {path}')
+
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     imported = [o for o in bpy.data.objects if o not in before]
@@ -103,13 +79,37 @@ def import_rpm_reference():
     if armature is None:
         raise RuntimeError(f'no armature in RPM reference GLB: {path}')
 
+    meshes = [o for o in imported if o.type == 'MESH']
+    # the real skinned body has the most vertices + vertex groups (Icosphere has 0)
+    ref_mesh = None
+    skinned = [m for m in meshes if len(m.vertex_groups) > 0]
+    if skinned:
+        ref_mesh = max(skinned, key=lambda m: len(m.data.vertices))
+    # drop every imported mesh except the chosen reference
+    for m in meshes:
+        if m is not ref_mesh:
+            bpy.data.objects.remove(m, do_unlink=True)
+
+    if ref_mesh is None:
+        raise RuntimeError(
+            f'no skinned reference mesh in {path} — cannot transfer weights. '
+            f'Strategy D needs a real RPM body mesh (Wolf3D_Avatar).'
+        )
+
+    _assert_rpm_bones(armature)
+    armature.name = 'RPM_Armature'
+    return armature, ref_mesh
+
+
+def _assert_rpm_bones(armature):
+    """Fail fast if the imported armature isn't the expected RPM rig."""
     names = {b.name for b in armature.data.bones}
     missing = [b for b in RPM_CONTRACT_BONES if b not in names]
     if missing:
         raise RuntimeError(
-            f'RPM reference {path} missing contract bones {missing}; '
-            f'got {sorted(names)[:12]}...')
-    return armature, imported
+            f'imported armature is missing RPM contract bones {missing}; '
+            f'got {sorted(names)[:12]}...'
+        )
 
 
 def find_humgen_armature(exclude):
@@ -121,11 +121,18 @@ def find_humgen_armature(exclude):
     return None
 
 
-def align_rest_to_rpm(hg_rig, rpm_arm):
-    """Pose every mapped HumGen deform bone into its RPM bone's exact rest world
-    transform, then apply the pose as the new rest — so HumGen's bind pose == RPM's.
+def find_body_mesh(humgen_rig):
+    """Return the HumGen body mesh (largest mesh skinned to the HG rig)."""
+    _require_bpy()
+    candidates = [o for o in bpy.data.objects
+                  if o.type == 'MESH' and o.find_armature() is humgen_rig]
+    if not candidates:
+        candidates = [o for o in bpy.data.objects
+                      if o.type == 'MESH' and o.parent is humgen_rig]
+    if not candidates:
+        raise RuntimeError('could not locate HumGen body mesh')
+    return max(candidates, key=lambda m: len(m.data.vertices))
 
-    Method (deterministic, exact — no constraint-chain drift):
 
 def _align_body_to_rpm(body, rpm_armature):
     """Match the HumGen body's height + vertical placement to the RPM armature.
@@ -278,39 +285,12 @@ def reskin_to_rpm(gender, human=None):
     dropped safely afterward.
     """
     _require_bpy()
-    # bones
-    for hg_name, rpm_name in HUMGEN_TO_RPM_BONES.items():
-        b = hg_rig.data.bones.get(hg_name)
-        if b is not None:
-            b.name = rpm_name
-    # vertex groups on every mesh skinned to this rig
-    for o in bpy.data.objects:
-        if o.type != 'MESH':
-            continue
-        for hg_name, rpm_name in HUMGEN_TO_RPM_BONES.items():
-            vg = o.vertex_groups.get(hg_name)
-            if vg is not None:
-                vg.name = rpm_name
-    hg_rig.name = 'RPM_Armature'
-    hg_rig.data.name = 'RPM_Armature'
-    print('[skeleton] renamed HumGen deform bones + vertex groups to RPM names')
-
-
-def retarget_to_rpm(gender, human=None):
-    """Full Strategy-R flow. Returns (armature, body_mesh).
-
-    Assumes a clothed HumGen human already exists in the scene (created by humgen.py)
-    and its face morphs are already bound (facemorphs.bind_all). Keeps the HumGen
-    native rig; aligns its rest to RPM and renames its bones. The SAME armature that
-    HumGen skinned everything to is what we export — head/eyes/teeth/clothing stay
-    coherently bound.
-    """
-    _require_bpy()
-    rpm_arm, rpm_objs = import_rpm_reference()
+    rpm_arm, ref_mesh = import_rpm_reference()
 
     hg_rig = find_humgen_armature(exclude=rpm_arm)
     if hg_rig is None:
         raise RuntimeError('no HumGen armature in scene — generate the human first')
+    body = find_body_mesh(hg_rig)
 
     _align_body_to_rpm(body, rpm_arm)
     transfer_weights(body, rpm_arm, ref_mesh)
