@@ -276,42 +276,17 @@ What's DONE and verified:
 - **HumGen v4 API** (`humgen.py`) — ✅ `Human.get_preset_options` / `from_preset`;
   `.body/.face/.skin.randomize()` (call directly, never truthiness-test the prop
   collections — they recurse); `human.height.set(cm)`; body = `human.objects.body`.
-- **Clothing** (`humgen.py` `apply_clothing`) — ✅ VERIFIED v4.0.29 clothing API.
-  `human.clothing.outfit` / `human.clothing.footwear` are `@property` accessors
-  returning `OutfitSettings` / `FootwearSettings`; `.get_options()` lists relative
-  preset paths (e.g. `outfits/female/Office/Pantsuit.blend`) and `.set(preset)`
-  imports + fits the garment, tags each mesh `obj['cloth']`/`obj['shoe']`, and skins
-  it to the HG rig. We apply a curated Office/Casual **outfit + footwear** BEFORE the
-  bake + re-skin, so `bake_all` (which auto-includes `cloth`/`shoe` children) bakes
-  the garment textures too. The garments are then Data-Transfer re-skinned onto the
-  RPM armature exactly like the body, so they ride the shared RPM animation clips
-  (verified: sweater→Arm/Spine, jeans→Leg, shoes→Foot bones). Their
-  `Body Proportions` fit shape key is baked into the mesh on export (with stale
-  custom split-normals cleared) so the fitted shape survives with no morph bloat.
-  HumGen's clothing geometry-masks are stripped BEFORE baking (so the full body skin
-  bakes, not black), then the clothing-covered body verts are deleted (edit-mode,
-  preserving face shape keys) so the body can't clip through the garments.
 - **Face morphs** (`facemorphs.py`) — ✅ `load_facial_rig()` → `prepare_for_arkit('long')`
   gives 33/35 ARKit morphs; `eyesClosed`/`mouthSmile` synthesised; all 15 `viseme_*`
   derived from ARKit blends and baked as real morph targets.
-- **Clothing + hair** (`humgen.py`) — ✅ `human.clothing.outfit.set()` /
-  `footwear.set()` dress the human on its native rig; `regular_hair.convert_to_haircards()`
-  bakes particle scalp hair to an exportable mesh (glTF can't export particle hair),
-  re-parented + skinned 100 % to the `head` bone so it exports skinned and rides head
-  motion. Body clothing-masks are stripped before the texture bake so nothing bakes
-  black under the clothing.
-- **Strategy R retarget** (`skeleton.py`) — ✅ Imports `rpm-mixamo-t-posed.glb` for its
-  RPM rest transforms only. Poses every mapped HumGen deform bone into the RPM bone's
-  exact rest world matrix (parent-first, bones disconnected) and applies it as the new
-  bind pose (verified dHead = 0, dRot = 0), so HumGen's bind == RPM's rest. Then renames
-  the HumGen deform bones → RPM names (`HUMGEN_TO_RPM_BONES`) and the matching vertex
-  groups on every skinned mesh. Fingers + eye ORIENTATION are deliberately not aligned
-  (fingers would stream under the absolute-translation clips; eye alignment pops the
-  eyeballs) — see the notes in `mappings.py` / `skeleton.py`. Everything stays bound to
-  HumGen's one native rig: head attached, teeth in the mouth, eyes in the sockets,
-  sleeves follow the arms.
+- **Strategy D re-skin** (`skeleton.py`) — ✅ FULL re-skin. Imports the in-tree
+  `rpm-mixamo-t-posed.glb`, which carries both the RPM armature AND a real skinned
+  reference body (`Wolf3D_Avatar`, 82 RPM-named groups). Data Transfer
+  (POLYINTERP_NEAREST VGROUP_WEIGHTS) copies those weights onto the HumGen body,
+  which is then bound to the RPM armature; eyes/teeth are rebound; the HG rig is
+  dropped. Output rides the RPM skeleton bone-for-bone (Hips→…→Head/LeftEye/RightEye).
 - **GLB export** (`glb_export.py`) — ✅ bakes textures, prunes non-face shape keys,
-  exports position-only morph deltas (≈28 MB for a full clothed female avatar with hair).
+  exports position-only morph deltas (≈17 MB for a full female avatar).
 
 ```
 
@@ -381,7 +356,50 @@ extract `VRM_Addon_for_Blender-*.zip`'s inner folder to
   is additionally attached as VRM **custom** expressions (`expressions.custom.add()`)
   so the app can drive the `arkit` facial tier.
 - **Textures embedded** downscaled to ≤1024 px + sparse shape keys
-  (`export_try_sparse_sk`), landing a fully-clothed female avatar at ~39 MB.
+  (`export_try_sparse_sk`), landing a fully-clothed female avatar at ~38 MB.
+
+### v2 fixes (`feat/aria-vrm-v2`) — eyes, leg-fold, framing
+
+Three defects that survived the first native-VRM pass, each verified in a three-vrm
+harness that reproduces the app's exact isVRM path (`VRMLoaderPlugin` +
+`createVRMAnimationClip`, strip `Normalized_` / drop neck+head tracks, mixer on
+`vrm.scene`, and — critically — **no** `vrm.update()` per frame, so the mixer drives
+the RAW bones directly):
+
+- **Blank white eyes → iris** (`vrm_export.simplify_eye_materials`): the earlier
+  material-simplification dropped the iris. HumGen's eyes mesh has 3 material slots —
+  an inner iris (`.HG_Eyes_Inner`, base colour = `.HG_Eye_Color.png` behind a Mix)
+  and two outer cornea shells (`.HG_Eyes_Outer_*`, Glass/Mix shaders the glTF
+  exporter flattens to **opaque white**, hiding the iris). Fix: rebuild the inner
+  material as an opaque Principled fed by the iris colour map, and rebuild the outer
+  shells as **transparent MToon** (`alphaMode=BLEND`, α≈0) so the iris shows through.
+  Verified: exported eyes show a visible iris + pupil.
+- **Legs fold up over the head under ANY clip** (`vrm_export.canonicalize_humanoid_rest`):
+  the ROOT CAUSE is the exported rest pose, not the clip. HumGen's Rigify rig ships
+  an A-pose whose deform bones carry large non-canonical rolls (upper_arm ≈ ±196°,
+  thigh ≈ ±17°, foot ≈ −117°). The app strips the `Normalized_` prefix off the VRMA
+  tracks and drives the RAW bones with values authored in three-vrm's NORMALIZED
+  (world-axis-aligned) space; on a rig whose raw rest ≈ world axes (Erik / Work Boy)
+  they map 1:1, but on HumGen's rolled rest they compose into a limb explosion — the
+  legs fold up. Fix, weight-preservingly: (1) pose the deform chains into a true
+  VRM-canonical **T-pose** (arms out ±X, legs straight down) and `pose.armature_apply`
+  to bake it as the new rest (Blender re-binds the mesh); (2) **spine + legs** get an
+  EDIT-mode reroll to a shared world-aligned frame → **identity** export node
+  rotations + straight-down child offsets, matching Work Boy; (3) the **arms** get a
+  weight-safe **pose-roll about their own axis + bake** (`_roll_correct_arms_via_pose`)
+  — an EDIT-mode reroll of the arm bones detaches the forearm/hand skin, so they get
+  the pose-roll instead. Verified: legs stay straight DOWN through idle / squat /
+  crouch / dance clips (previously folded over the head).
+- **Scale / head framing** — the export is already at natural human scale (head bone
+  world Y ≈ 1.62 m, hips ≈ 0.87 m, ~1.8 m tall), matching the other VRMs, so the
+  app's head-bone-relative camera (`AvatarModel.onHeadLocated`) frames it correctly.
+  The earlier mis-framing was a *symptom* of the leg-fold collapsing the mesh; with
+  the rest pose fixed, framing is correct.
+
+> **Known residual:** raised-arm gesture clips that reach the forearm far overhead
+> (e.g. `victory_sign`, `surprise_greet` at their peak) still shear the HumGen
+> forearm/hand skin — a deep HumGen arm-skinning fragility through this
+> `Normalized_`-stripped path. Standing, idle and gentle gestures render clean.
 
 ### Verified visually (three-vrm + headless Chromium)
 

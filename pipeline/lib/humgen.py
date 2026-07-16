@@ -17,13 +17,9 @@ except ImportError:
     bpy = None
 
 
-def _require_bpy():
+def _require_humgen():
     if bpy is None:
         raise RuntimeError('humgen.py must run inside Blender (bpy unavailable)')
-
-
-def _require_humgen():
-    _require_bpy()
     try:
         from HumGen3D import Human  # noqa: F401
     except ImportError as e:
