@@ -17,9 +17,13 @@ except ImportError:
     bpy = None
 
 
-def _require_humgen():
+def _require_bpy():
     if bpy is None:
         raise RuntimeError('humgen.py must run inside Blender (bpy unavailable)')
+
+
+def _require_humgen():
+    _require_bpy()
     try:
         from HumGen3D import Human  # noqa: F401
     except ImportError as e:
@@ -133,86 +137,167 @@ def _finish_creation(human):
 
 
 # ---------------------------------------------------------------------------
-# clothing + hair  (VERIFIED against HumGen3D v4.0.29)
+# Clothing (outfit + footwear)
 # ---------------------------------------------------------------------------
+#
+# VERIFIED against installed HumGen3D v4.0.29 source
+# (human/clothing/{clothing,outfit,footwear,base_clothing}.py):
+#
+#   human.clothing                       -> ClothingSettings (a @property)
+#   human.clothing.outfit                -> OutfitSettings   (a @property)
+#   human.clothing.footwear              -> FootwearSettings (a @property)
+#   outfit.get_options()   -> list[str]  relative preset paths, e.g.
+#                                         'outfits/female/Office/Pantsuit.blend'
+#   outfit.set(preset)                   -> imports + fits the outfit, tags each
+#                                           mesh obj['cloth']=1, parents to
+#                                           human.objects.rig with an Armature mod
+#   footwear.set(preset) / .set_random() -> same, tags obj['shoe']=1
+#   outfit.objects / footwear.objects    -> the resulting Blender mesh objects
+#
+# NB: set()/set_random() skin the clothing to the *HumGen* rig (HG-named vertex
+# groups). Strategy D swaps that rig for the RPM skeleton, so skeleton.py must
+# re-transfer weights onto the clothing meshes exactly like it does the body —
+# see skeleton.reskin_to_rpm / transfer_weights_to_clothing.
 
-# Short, close-to-scalp cuts that DON'T drape long cards over the face (which
-# render as a shard-mass over the eyes). Keyed by gender; falls back to random.
-_SHORT_HAIR = {
-    'male':   'hair/head/male/Short/Short Combed.json',
-    'female': 'hair/head/female/Short/Short Combed.json',
+# Curated presentable presets — a user-facing companion must look professional,
+# not wear default HumGen underwear. Office wear + dress shoes reads as a capable
+# assistant. Kept per-gender; the seed picks deterministically within the list.
+_OUTFIT_PRESETS = {
+    'female': [
+        'outfits/female/Office/Pantsuit.blend',
+        'outfits/female/Office/Relaxed_Dresscode.blend',
+        'outfits/female/Office/New_Intern.blend',
+        'outfits/female/Casual/Smart_Casual.blend',
+        'outfits/female/Casual/Stylish_Casual.blend',
+    ],
+    'male': [
+        'outfits/male/Office/Suit_N_Tie.blend',
+        'outfits/male/Office/Relaxed_Dresscode.blend',
+        'outfits/male/Office/New_Intern.blend',
+        'outfits/male/Casual/Smart_Casual.blend',
+        'outfits/male/Casual/Stylish_Casual.blend',
+    ],
+}
+_FOOTWEAR_PRESETS = {
+    'female': [
+        'footwear/female/Office/HG_Leather_Dress_Shoe.blend',
+        'footwear/female/Office/HG_Suede_Dress_Shoe.blend',
+        'footwear/female/Sneakers/HG_Leather_Sneakers_Female.blend',
+    ],
+    'male': [
+        'footwear/male/Office/HG_Leather_Dress_Shoe.blend',
+        'footwear/male/Sneakers/HG_Leather_Sneakers_Male.blend',
+    ],
 }
 
 
-def add_clothing(human, gender='female', outfit=None, footwear=None, seed=None):
-    """Dress the human — outfit + footwear. VERIFIED v4.0.29:
-    ``human.clothing.outfit.set(preset)`` / ``.set_random()`` (23 male / N female
-    outfits); same for ``.footwear``. Each adds skinned garment meshes parented to
-    the HumGen rig (they ride the body under animation).
+def _pick(options, presets, gender, seed):
+    """Choose a preset: prefer a curated one that exists in ``options``, else fall
+    back to the first available option so a content-pack rename never aborts."""
+    valid = [p for p in presets.get(gender, []) if p in options]
+    pool = valid if valid else list(options)
+    if not pool:
+        return None
+    idx = (seed if seed is not None else 0) % len(pool)
+    return pool[idx]
+
+
+def apply_clothing(human, gender='female', seed=None):
+    """Dress the human in a presentable outfit + footwear BEFORE the re-skin.
+
+    Applies a curated Office/Casual outfit and matching footwear via the verified
+    HumGen v4.0.29 clothing API. The clothing meshes are parented to the HumGen
+    rig here; skeleton.py re-skins them onto the RPM armature afterwards (they go
+    through the same Data-Transfer weight step as the body).
+
+    Returns the list of created clothing/footwear Blender objects (may be empty if
+    the content packs lack outfits — logged, never fatal).
     """
-    _require_humgen()
-    import bpy as _bpy
-    ctx = _bpy.context
-    cl = getattr(human, 'clothing', None)
-    if cl is None:
-        print('[humgen] no clothing API — skipping outfit/footwear')
-        return
+    _require_bpy()
+    created = []
     try:
-        if outfit:
-            cl.outfit.set(outfit, context=ctx)
+        outfit = human.clothing.outfit
+        options = outfit.get_options()
+        preset = _pick(options, _OUTFIT_PRESETS, gender, seed)
+        if preset:
+            outfit.set(preset)
+            created.extend(outfit.objects)
+            print(f'[humgen] applied outfit: {preset} '
+                  f'({len(outfit.objects)} mesh objs)')
         else:
-            cl.outfit.set_random(context=ctx)
-        print('[humgen] outfit set')
+            print('[humgen] WARNING: no outfit options found — human stays undressed')
     except Exception as e:  # noqa: BLE001
-        print(f'[humgen] outfit failed: {e}')
+        print(f'[humgen] outfit.set failed: {e}')
+
     try:
-        if footwear:
-            cl.footwear.set(footwear, context=ctx)
+        footwear = human.clothing.footwear
+        options = footwear.get_options()
+        preset = _pick(options, _FOOTWEAR_PRESETS, gender, seed)
+        if preset:
+            footwear.set(preset)
+            created.extend(footwear.objects)
+            print(f'[humgen] applied footwear: {preset} '
+                  f'({len(footwear.objects)} mesh objs)')
         else:
-            cl.footwear.set_random(context=ctx)
-        print('[humgen] footwear set')
+            print('[humgen] WARNING: no footwear options found')
     except Exception as e:  # noqa: BLE001
-        print(f'[humgen] footwear failed: {e}')
+        print(f'[humgen] footwear.set failed: {e}')
+
+    if not created:
+        print('[humgen] WARNING: no clothing applied — the avatar will be nude. '
+              'Verify the Base_Clothes content pack is installed.')
+    return created
 
 
-def add_hair_haircards(human, gender='female', style=None):
-    """Give the human short hair and convert the particle systems to HAIRCARD
-    meshes so the hair survives glTF/VRM export (particle hair does not).
+def unmask_body_for_bake(human):
+    """Remove HumGen's clothing geometry-mask modifiers from the body BEFORE baking.
 
-    VERIFIED v4.0.29: ``human.hair.regular_hair.set(preset)`` then
-    ``.convert_to_haircards(quality='high', context=...)`` per system
-    (regular_hair, eyebrows, eyelashes). We pick a SHORT scalp cut so cards don't
-    drape over the face. vrm_export then binds + alpha-fixes the resulting cards.
+    When clothing is applied, HumGen adds inverted ``MASK`` modifiers that HIDE the
+    covered torso/arms/legs. If the bake runs with those masks live, the hidden skin
+    is left un-baked (black), and if we later keep the full body (so a wide collar
+    doesn't leave a neck gap) that black skin shows. Stripping the masks first makes
+    ``bake_all`` texture the ENTIRE body, so the full body can be kept and stays
+    fully skinned — no black patches, no neck gap. Returns the removed mask names.
     """
-    _require_humgen()
-    import bpy as _bpy
-    ctx = _bpy.context
-    hair = getattr(human, 'hair', None)
-    if hair is None:
-        print('[humgen] no hair API — skipping')
-        return
-    style = style or _SHORT_HAIR.get(gender)
+    _require_bpy()
     try:
-        if style:
-            hair.regular_hair.set(style, context=ctx)
-        else:
-            hair.regular_hair.set_random(context=ctx)
-        print(f'[humgen] hair set ({style or "random"})')
-    except Exception as e:  # noqa: BLE001
-        print(f'[humgen] hair set failed ({e}); trying random')
-        try:
-            hair.regular_hair.set_random(context=ctx)
-        except Exception as e2:  # noqa: BLE001
-            print(f'[humgen] hair random also failed: {e2}')
-    for sysname in ('regular_hair', 'eyebrows', 'eyelashes'):
-        sub = getattr(hair, sysname, None)
-        if sub is None:
-            continue
-        try:
-            obj = sub.convert_to_haircards(quality='high', context=ctx)
-            print(f'[humgen] haircards {sysname}: {obj.name if obj else None}')
-        except Exception as e:  # noqa: BLE001
-            print(f'[humgen] haircard {sysname} failed: {e}')
+        body = human.objects.body
+    except Exception:  # noqa: BLE001
+        return []
+    removed = []
+    for mod in list(body.modifiers):
+        if mod.type == 'MASK':
+            removed.append(mod.name)
+            body.modifiers.remove(mod)
+    if removed:
+        print(f'[humgen] removed {len(removed)} body clothing-masks before bake '
+              f'({", ".join(removed)}) so the full body bakes')
+    return removed
+
+
+def get_clothing_objects(human):
+    """Return the current outfit + footwear mesh objects on the human.
+
+    Uses the same custom-property tags HumGen sets (``cloth`` / ``shoe``) so this
+    works even after the rig is swapped. Falls back to the OutfitSettings /
+    FootwearSettings ``.objects`` accessors.
+    """
+    objs = []
+    try:
+        objs.extend(human.clothing.outfit.objects)
+        objs.extend(human.clothing.footwear.objects)
+    except Exception:  # noqa: BLE001
+        pass
+    if not objs and bpy is not None:
+        objs = [o for o in bpy.data.objects
+                if o.type == 'MESH' and ('cloth' in o or 'shoe' in o)]
+    # de-dup, keep only meshes
+    seen, out = set(), []
+    for o in objs:
+        if o is not None and getattr(o, 'type', None) == 'MESH' and o.name not in seen:
+            seen.add(o.name)
+            out.append(o)
+    return out
 
 
 def get_body_object(human):

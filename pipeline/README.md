@@ -266,17 +266,47 @@ What's DONE and verified:
 - **HumGen v4 API** (`humgen.py`) — ✅ `Human.get_preset_options` / `from_preset`;
   `.body/.face/.skin.randomize()` (call directly, never truthiness-test the prop
   collections — they recurse); `human.height.set(cm)`; body = `human.objects.body`.
+- **Clothing** (`humgen.py` `apply_clothing`) — ✅ VERIFIED v4.0.29 clothing API.
+  `human.clothing.outfit` / `human.clothing.footwear` are `@property` accessors
+  returning `OutfitSettings` / `FootwearSettings`; `.get_options()` lists relative
+  preset paths (e.g. `outfits/female/Office/Pantsuit.blend`) and `.set(preset)`
+  imports + fits the garment, tags each mesh `obj['cloth']`/`obj['shoe']`, and skins
+  it to the HG rig. We apply a curated Office/Casual **outfit + footwear** BEFORE the
+  bake + re-skin, so `bake_all` (which auto-includes `cloth`/`shoe` children) bakes
+  the garment textures too. The garments are then Data-Transfer re-skinned onto the
+  RPM armature exactly like the body, so they ride the shared RPM animation clips
+  (verified: sweater→Arm/Spine, jeans→Leg, shoes→Foot bones). Their
+  `Body Proportions` fit shape key is baked into the mesh on export (with stale
+  custom split-normals cleared) so the fitted shape survives with no morph bloat.
+  HumGen's clothing geometry-masks are stripped BEFORE baking (so the full body skin
+  bakes, not black), then the clothing-covered body verts are deleted (edit-mode,
+  preserving face shape keys) so the body can't clip through the garments.
 - **Face morphs** (`facemorphs.py`) — ✅ `load_facial_rig()` → `prepare_for_arkit('long')`
   gives 33/35 ARKit morphs; `eyesClosed`/`mouthSmile` synthesised; all 15 `viseme_*`
   derived from ARKit blends and baked as real morph targets.
 - **Strategy D re-skin** (`skeleton.py`) — ✅ FULL re-skin. Imports the in-tree
-  `rpm-mixamo-t-posed.glb`, which carries both the RPM armature AND a real skinned
-  reference body (`Wolf3D_Avatar`, 82 RPM-named groups). Data Transfer
-  (POLYINTERP_NEAREST VGROUP_WEIGHTS) copies those weights onto the HumGen body,
-  which is then bound to the RPM armature; eyes/teeth are rebound; the HG rig is
+  `rpm-mixamo-t-posed.glb` (resolved from the canonical `assets/avatars/`, with the
+  legacy `apps/web/public/...` path as fallback), which carries both the RPM armature
+  AND a real skinned reference body (`Wolf3D_Avatar`, 82 RPM-named groups). Data
+  Transfer (POLYINTERP_NEAREST VGROUP_WEIGHTS) copies those weights onto the HumGen
+  body + every clothing mesh, which are then bound to the RPM armature; the HG rig is
   dropped. Output rides the RPM skeleton bone-for-bone (Hips→…→Head/LeftEye/RightEye).
-- **GLB export** (`glb_export.py`) — ✅ bakes textures, prunes non-face shape keys,
-  exports position-only morph deltas (≈17 MB for a full female avatar).
+- **Head-bone framing fix** (`skeleton.py` `_align_body_to_rpm`) — ✅ the body (and all
+  clothing/eyes/teeth) is scaled about the WORLD ORIGIN so its crown-to-floor height,
+  measured from real world-space vertices, matches the RPM reference **body mesh**
+  (~1.82 m). The earlier code scaled to the RPM *armature* `dimensions.z` (1.867 m,
+  inflated by leaf bones like `HeadTop_End` at z≈1.966) using the unreliable
+  `body.dimensions.z`, so the body came out ~1.94 m tall while the Head/eye BONES
+  stayed at RPM height — the face floated ~0.2 m above the eye bones and a head-relative
+  camera framed the neck. Now the exported crown lands at 1.821 m (matching RPM
+  exactly) and Head (1.557) / LeftEye+RightEye (1.634) bones coincide with the RPM
+  reference bone-for-bone, so the head-relative gaze camera frames the face like the
+  RPM avatars. Eyes/teeth are re-seated into the RPM-deformed sockets/mouth (they were
+  authored to HumGen face proportions, which sit below the RPM sockets) and rigidly
+  Head-bound.
+- **GLB export** (`glb_export.py`) — ✅ bakes textures (body + clothing), flattens
+  clothing fit shape keys, prunes non-face body shape keys, exports position-only
+  morph deltas. ≈25 MB for a clothed female avatar (8 meshes, 23 embedded textures).
 
 ```
 
