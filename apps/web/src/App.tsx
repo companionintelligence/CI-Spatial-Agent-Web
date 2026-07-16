@@ -20,7 +20,8 @@ import {
   LLMSettingsState,
   sceneConfig,
   useHasWebGPU,
-  type SceneActions
+  type SceneActions,
+  type EnvironmentPreset
 } from '@ci-avatar/core'
 
 export const config = {
@@ -30,8 +31,22 @@ export const config = {
   llm: defaultLLMConfig
 }
 
+// ?env=datacenter-1970s opts into the 1970s research-datacenter environment around the
+// avatar (see @ci-avatar/core's DatacenterDiorama). Default stays the plain studio view.
+function resolveEnvironmentOverride(): EnvironmentPreset | undefined {
+  const raw = new URLSearchParams(location.search).get('env')
+  if (raw === 'datacenter-1970s' || raw === 'datacenter1970s') return 'datacenter-1970s'
+  if (raw === 'none') return 'none'
+  return undefined
+}
+
 export const App = () => {
   useResponsiveLayout()
+
+  const activeSceneConfig = useMemo(() => {
+    const environment = resolveEnvironmentOverride()
+    return environment ? { ...sceneConfig, environment } : sceneConfig
+  }, [])
 
   const xrStore = useRef<XRStore | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState)
@@ -88,7 +103,7 @@ export const App = () => {
     <div className="app-container">
       <div className="viewport-container">
         <Viewport3D
-          sceneConfig={sceneConfig}
+          sceneConfig={activeSceneConfig}
           visemeService={agent.services.visemes}
           emoteService={agent.services.emotes}
           animationService={agent.services.animations}

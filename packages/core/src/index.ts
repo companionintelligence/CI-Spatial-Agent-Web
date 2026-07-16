@@ -59,6 +59,11 @@ export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel, AvatarState } from './components/scene/avatar/AvatarModel'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
 export type { SceneActions } from './components/scene/Scene3D'
+export { DatacenterDiorama } from './components/scene/environment/DatacenterDiorama'
+export { DioramaProps } from './components/scene/environment/DioramaProps'
+export type { DioramaPropName } from './components/scene/environment/DioramaProps'
+export { ENVIRONMENT_PRESETS } from './components/scene/environment/environmentTypes'
+export type { EnvironmentPreset } from './components/scene/environment/environmentTypes'
 
 // Animation catalogs (skeleton-aware clip lookup for consumers/harness)
 export {

@@ -8,6 +8,7 @@ import type { useAnimationService } from '../../services/animation/useAnimationS
 import type { useEmoteService } from '../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../services/visemes/useVisemeService'
 import { AvatarModel } from './avatar/AvatarModel'
+import { DatacenterDiorama } from './environment/DatacenterDiorama'
 import { GraphicsFallback } from './GraphicsFallback'
 import { useRendererConfig } from './rendering/useRendererConfig'
 import { configureRenderer, createWebGLContext } from './rendering/RendererConfig'
@@ -152,6 +153,7 @@ const SceneContent = ({
       <XREnhancements enabled={true} showGrid={false} />
 
       <group ref={worldGroupRef} scale={worldScale}>
+        {sceneConfig.environment === 'datacenter-1970s' && <DatacenterDiorama />}
         <AvatarModel
           visemeService={visemeService}
           emoteService={emoteService}
