@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * pack-assets.mjs — package the shared avatar media into an app's public dir.
+ * pack-assets.mjs — package the shared avatar/environment media into an app's public dir.
  *
- * Single source of truth: /assets/{avatars,animations} at the repo root. Each app
+ * Single source of truth: /assets/{avatars,animations,props} at the repo root. Each app
  * (apps/web, apps/vision-pro) keeps NO committed copy — its public/assets/{avatars,
- * animations} are gitignored and regenerated here on `predev` / `prebuild`, so the
+ * animations,props} are gitignored and regenerated here on `predev` / `prebuild`, so the
  * marketplace container build (`pnpm --filter @ci-avatar/web build`) always ships the
- * full, current avatar set with zero duplication or drift across apps.
+ * full, current media set with zero duplication or drift across apps.
  *
- * It is also the packaging GATE: every avatar referenced by AvatarOptions.ts must
- * resolve to a real file under /assets/avatars, or the build fails here (before Vite)
- * rather than shipping an image whose catalog 404s at runtime.
+ * It is also the packaging GATE: every file referenced by AvatarOptions.ts or
+ * DioramaProps.ts must resolve to a real file under /assets/<subtree>, or the build
+ * fails here (before Vite) rather than shipping an image whose catalog 404s at runtime.
  *
  * Usage:
  *   node scripts/pack-assets.mjs [web] [vision-pro] ...   # default: all apps
@@ -24,9 +24,24 @@ const repoRoot = resolve(scriptDir, '..')
 const canonical = join(repoRoot, 'assets')
 
 // Media subtrees that live in the shared source and get packed into each app.
-const MEDIA = ['avatars', 'animations']
-// URL-path prefix -> canonical subdir (AvatarOptions paths are absolute URLs).
+const MEDIA = ['avatars', 'animations', 'props']
+// URL-path prefix -> canonical subdir (AvatarOptions/DioramaProps paths are absolute URLs).
 const URL_PREFIX = '/assets/'
+
+// Catalogs gated against a media subtree: every URL a catalog references must resolve to
+// a real file under assets/<subtree>/, or the build fails here (before Vite).
+const CATALOGS = [
+  {
+    subtree: 'avatars',
+    path: 'packages/core/src/components/scene/avatar/AvatarOptions.ts',
+    label: 'AvatarOptions'
+  },
+  {
+    subtree: 'props',
+    path: 'packages/core/src/components/scene/environment/DioramaProps.ts',
+    label: 'DioramaProps'
+  }
+]
 
 // App public dirs. Accept app names on argv; default to every app with a public/.
 const APP_DIRS = { web: 'apps/web', 'vision-pro': 'apps/vision-pro' }
@@ -46,42 +61,47 @@ for (const m of MEDIA) {
   if (!existsSync(join(canonical, m))) fail(`missing canonical source: assets/${m}/`)
 }
 
-// --- 1. GATE: every AvatarOptions.ts avatar must exist in the canonical source ---
-const avatarOptionsPath = join(
-  repoRoot,
-  'packages/core/src/components/scene/avatar/AvatarOptions.ts'
-)
-const src = readFileSync(avatarOptionsPath, 'utf8')
-// Pull every '/assets/avatars/...' string literal (single or double quoted).
-const referenced = [...src.matchAll(/['"](\/assets\/avatars\/[^'"]+)['"]/g)].map((m) => m[1])
-const uniqueRefs = [...new Set(referenced)]
-
-const missing = uniqueRefs.filter((url) => !existsSync(join(canonical, url.slice(URL_PREFIX.length))))
-if (missing.length) {
-  fail(
-    `AvatarOptions references ${missing.length} avatar(s) with no file under assets/avatars:\n` +
-      missing.map((u) => `    - ${u}`).join('\n') +
-      `\n  Add the file to assets/avatars/ or remove the AvatarOptions entry.`
-  )
-}
-
+// --- 1. GATE: every catalog (AvatarOptions, DioramaProps, ...) entry must exist on disk ---
 // --- 2. orphan report (present in source but never referenced) — warn only ---
-function listFiles(dir, base = dir) {
+function listFiles(dir, subtree, base = dir) {
   const out = []
   for (const e of readdirSync(dir, { withFileTypes: true })) {
     const p = join(dir, e.name)
-    if (e.isDirectory()) out.push(...listFiles(p, base))
-    else out.push('/assets/avatars/' + relative(base, p).split('\\').join('/'))
+    if (e.isDirectory()) out.push(...listFiles(p, subtree, base))
+    else out.push(`/assets/${subtree}/` + relative(base, p).split('\\').join('/'))
   }
   return out
 }
-const onDisk = listFiles(join(canonical, 'avatars'))
-const orphans = onDisk.filter((u) => !uniqueRefs.includes(u))
-if (orphans.length) {
-  console.warn(
-    `[pack-assets] note: ${orphans.length} avatar file(s) in assets/avatars not referenced by ` +
-      `AvatarOptions (shipped but unselectable): ${orphans.map((o) => o.split('/').pop()).join(', ')}`
+
+let totalCatalogRefs = 0
+for (const { subtree, path, label } of CATALOGS) {
+  if (!existsSync(join(canonical, subtree))) continue // gated separately below (step 0)
+  const catalogPath = join(repoRoot, path)
+  const src = readFileSync(catalogPath, 'utf8')
+  const prefix = `/assets/${subtree}/`
+  const referenced = [...src.matchAll(new RegExp(`['"](${prefix.replace(/\//g, '\\/')}[^'"]+)['"]`, 'g'))].map(
+    (m) => m[1]
   )
+  const uniqueRefs = [...new Set(referenced)]
+  totalCatalogRefs += uniqueRefs.length
+
+  const missing = uniqueRefs.filter((url) => !existsSync(join(canonical, url.slice(URL_PREFIX.length))))
+  if (missing.length) {
+    fail(
+      `${label} references ${missing.length} file(s) with no match under assets/${subtree}:\n` +
+        missing.map((u) => `    - ${u}`).join('\n') +
+        `\n  Add the file to assets/${subtree}/ or remove the ${label} entry.`
+    )
+  }
+
+  const onDisk = listFiles(join(canonical, subtree), subtree)
+  const orphans = onDisk.filter((u) => !uniqueRefs.includes(u))
+  if (orphans.length) {
+    console.warn(
+      `[pack-assets] note: ${orphans.length} file(s) in assets/${subtree} not referenced by ` +
+        `${label} (shipped but unselectable): ${orphans.map((o) => o.split('/').pop()).join(', ')}`
+    )
+  }
 }
 
 // --- 3. sync canonical -> each app public (clean replace, no drift) ---
@@ -111,6 +131,6 @@ bytes = perApp
 
 const mb = (bytes / 1024 / 1024).toFixed(0)
 console.log(
-  `[pack-assets] packed ${uniqueRefs.length} catalog avatars (+ animations) into ` +
+  `[pack-assets] packed ${totalCatalogRefs} catalog entries (avatars + props, + animations) into ` +
     `${apps.map((a) => a.name).join(', ')} — ${mb} MB/app, single source: assets/`
 )

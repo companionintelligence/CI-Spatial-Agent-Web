@@ -1,5 +1,6 @@
 import { ANIMATION_CLIPS } from "../../services/animation/config/animationClips"
 import { AvatarOptions } from "./avatar/AvatarOptions"
+import type { EnvironmentPreset } from "./environment/environmentTypes"
 
 export interface SceneConfig {
   near: number
@@ -9,6 +10,9 @@ export interface SceneConfig {
   background?: number
   enableAxes?: boolean
   roomLighting?: boolean
+  /** Which built environment (if any) surrounds the avatar. Defaults to 'none' — the
+   *  plain studio viewport — so existing callers are unaffected. */
+  environment?: EnvironmentPreset
 }
 
 export interface AvatarConfig {
