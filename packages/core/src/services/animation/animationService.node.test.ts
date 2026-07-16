@@ -8,6 +8,7 @@ import {
   getCurrentAnimationInfo,
   initializeAnimationState,
   initializeDefaultAnimation,
+  pickLoadedClipByCategory,
   resetAnimationState,
   setupAnimationState,
   startPerformance,
@@ -229,5 +230,41 @@ describe('blend mode constant wiring', () => {
   it('exposes three additive/normal constants for layered playback', () => {
     expect(THREE.AdditiveAnimationBlendMode).toBeTypeOf('number')
     expect(THREE.NormalAnimationBlendMode).toBeTypeOf('number')
+  })
+})
+
+describe('pickLoadedClipByCategory — category fallback (VRM expression no-op fix)', () => {
+  // Minimal state: a VRMA-like catalog with gesture+action loaded but NO 'expression' clips —
+  // exactly the case where angry/fear/sad/disgust (→ 'expression') used to silently no-op.
+  const makeState = (loaded: string[]) =>
+    ({
+      catalog: {
+        idle_loop: { name: 'idle_loop', category: 'idle' },
+        wave: { name: 'wave', category: 'gesture' },
+        dance: { name: 'dance', category: 'action' }
+      },
+      actions: Object.fromEntries(loaded.map((n) => [n, {}]))
+    }) as unknown as AnimationState
+
+  it('falls back from an empty category (expression) to a loaded one (gesture)', () => {
+    const s = makeState(['idle_loop', 'wave', 'dance'])
+    const clip = pickLoadedClipByCategory(s, 'expression')
+    expect(clip).toBeDefined()
+    expect(['gesture', 'action', 'idle']).toContain(clip!.category) // not a silent no-op anymore
+  })
+
+  it('returns a clip of the exact category when it IS loaded', () => {
+    const s = makeState(['idle_loop', 'wave', 'dance'])
+    expect(pickLoadedClipByCategory(s, 'gesture')!.name).toBe('wave')
+  })
+
+  it('only considers clips whose action is actually loaded (expression → idle when only idle loaded)', () => {
+    const s = makeState(['idle_loop']) // wave/dance present in catalog but NOT loaded
+    // expression → [gesture, action, idle]; gesture/action unloaded → resolves the loaded idle
+    expect(pickLoadedClipByCategory(s, 'expression')!.category).toBe('idle')
+  })
+
+  it('returns undefined when nothing at all is loaded', () => {
+    expect(pickLoadedClipByCategory(makeState([]), 'expression')).toBeUndefined()
   })
 })

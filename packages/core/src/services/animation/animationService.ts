@@ -309,18 +309,37 @@ function pickNextClip(state: AnimationState): AnimationClip {
   return chosenClip
 }
 
+// When the mapped category has no loaded clips for the active avatar, fall back to a
+// related expressive category that IS loaded. This is what makes chat reactions work on
+// VRM avatars: the VRMA catalog has no 'expression'/'communication'/'movement' clips, so
+// angry/fear/sad/disgust (→ 'expression') were silent no-ops on every VRM avatar.
+const CATEGORY_FALLBACKS: Partial<Record<AnimationCategory, AnimationCategory[]>> = {
+  expression: ['gesture', 'action', 'idle'],
+  communication: ['gesture', 'idle'],
+  gesture: ['action', 'expression'],
+  action: ['gesture', 'expression'],
+  movement: ['idle']
+}
+
 /** Pick a random *loaded* clip of a category from the active avatar's catalog. */
-function pickLoadedClipByCategory(
+export function pickLoadedClipByCategory(
   state: AnimationState,
   category?: AnimationCategory
 ): AnimationClip | undefined {
   if (!category || !state.catalog || !state.actions) return undefined
   const actions = state.actions
-  const candidates = Object.values(state.catalog).filter(
-    (c) => c.category === category && actions[c.name]
-  )
-  if (!candidates.length) return undefined
-  return candidates[Math.floor(Math.random() * candidates.length)]
+  const pick = (cat: AnimationCategory): AnimationClip | undefined => {
+    const candidates = Object.values(state.catalog!).filter((c) => c.category === cat && actions[c.name])
+    return candidates.length ? candidates[Math.floor(Math.random() * candidates.length)] : undefined
+  }
+  let chosen = pick(category)
+  if (!chosen) {
+    for (const alt of CATEGORY_FALLBACKS[category] ?? []) {
+      chosen = pick(alt)
+      if (chosen) break
+    }
+  }
+  return chosen
 }
 
 /** Apply loop/clamp/blend-mode config to an action from its clip definition. */
