@@ -342,6 +342,32 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
 
       // Provide avatar references for gaze and head control
     }
+
+    // Register canonical gaze-bone aliases. The gaze service looks up lowercase logical names
+    // ('neck','spine2','spine','leftEye','rightEye') + capital 'Head'. VRM humanoid supplies
+    // lowercase names, but GLB/Mixamo/RPM rigs register raw names ('Neck','Spine2','Head'), so
+    // neck/eye gaze was DEAD on every GLB avatar (incl. the default, Greg). Alias both ways.
+    const findBone = (...names: string[]): THREE.Bone | undefined => {
+      for (const n of names) {
+        if (bones[n]) return bones[n]
+        const lc = n.toLowerCase()
+        const hit = Object.keys(bones).find((k) => k.toLowerCase() === lc || k.toLowerCase() === 'mixamorig' + lc)
+        if (hit) return bones[hit]
+      }
+      return undefined
+    }
+    const alias = (canonical: string, ...cands: string[]) => {
+      const b = findBone(canonical, ...cands)
+      if (b) bones[canonical] = b
+    }
+    alias('neck', 'Neck')
+    alias('spine2', 'Spine2', 'chest', 'upperChest', 'Chest', 'UpperChest')
+    alias('spine', 'Spine')
+    alias('head', 'Head')
+    alias('leftEye', 'LeftEye', 'eye_L')
+    alias('rightEye', 'RightEye', 'eye_R')
+    if (bones.head && !bones.Head) bones.Head = bones.head // gaze eye-fallback reads capital 'Head'
+
     emoteService.actions.setAvatarReferences({
       bones,
       node: avatarRef.current ?? undefined,
@@ -422,6 +448,13 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
         }
       }
     }
+
+    // Advance VRM spring bones (hair / cloth / accessory secondary motion) AFTER the body
+    // pose is applied this frame. This is the cheapest "alive" cue and was previously never
+    // ticked (nothing called vrm.update / springBoneManager.update). We drive springBoneManager
+    // directly rather than vrm.update(delta) so humanoid.update() can't overwrite the gaze
+    // service's direct neck-bone control on VRM avatars.
+    if (isVRM && vrm) vrm.springBoneManager?.update(delta)
   })
 
   const handleAvatarClick = useCallback((event: any) => {
