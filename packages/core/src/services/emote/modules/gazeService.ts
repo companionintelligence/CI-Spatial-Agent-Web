@@ -41,9 +41,14 @@ const updateGazeInternal = (state: EmoteState, delta: number , config : EmoteCon
   // 3. Pick gaze target
   const target = calculateGazeTarget(state, camera, visibilityState, currentTime, isActiveFocus)
 
-  // 4. Smooth target
-  gazeState.target = target
-  gazeState.target = smoothVector(gazeState.target as Vector3, target, delta, config.gaze.interpolationFactor)
+  // 4. Smooth toward the new target from the PREVIOUS smoothed target. (Previously this
+  //    assigned `target` to gazeState.target first, so smoothVector lerped the target toward
+  //    itself — a no-op, making the eyes snap instantly.)
+  if (!gazeState.target) {
+    gazeState.target = target.clone()
+  } else {
+    gazeState.target = smoothVector(gazeState.target as Vector3, target, delta, config.gaze.interpolationFactor)
+  }
 
   // 5. Apply gaze based on visibility state
   applyGazeBehavior(state, visibilityState, delta , config)

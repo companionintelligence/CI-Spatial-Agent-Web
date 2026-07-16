@@ -215,6 +215,11 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   // Internal state
   const [currentInterimTranscript, setCurrentInterimTranscript] = useState('')
   const interruptCounterRef = useRef(performance.now())
+  // Debounce body gestures: a reaction fires per LLM *breath* chunk (every ~1-3s), which
+  // otherwise spams the mixer and makes each gesture interrupt the last. Facial emotes still
+  // update per breath (they should track the emotion); only the body gesture is rate-limited.
+  const lastBodyGestureAtRef = useRef(0)
+  const MIN_BODY_GESTURE_INTERVAL_MS = 2600
 
   // Initialize conversation service
   const conversation = useConversationService()
@@ -243,11 +248,21 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           timestamp: Date.now()
         }
 
-        const { performance, animation } = createReactionFromMessage(message, conversation.state.messages.length)
+        const { performance: emotePerf, animation } = createReactionFromMessage(
+          message,
+          conversation.state.messages.length
+        )
 
-        // Trigger emote performance based on the response
-        emotes.actions.performAction(performance)
-        if (animation) animations.actions.performAction(animation)
+        // Facial emote tracks every breath; body gesture is rate-limited so gestures don't
+        // stomp each other every breath and instead read as deliberate co-speech beats.
+        emotes.actions.performAction(emotePerf)
+        if (animation) {
+          const now = Date.now()
+          if (now - lastBodyGestureAtRef.current >= MIN_BODY_GESTURE_INTERVAL_MS) {
+            lastBodyGestureAtRef.current = now
+            animations.actions.performAction(animation)
+          }
+        }
       }
 
       conversation.actions.streamMessage(breath, response.final)
