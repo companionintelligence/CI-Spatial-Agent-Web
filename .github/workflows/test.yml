@@ -3,11 +3,15 @@ name: Test
 # Unit/component tests (vitest) + Storybook build smoke + typecheck.
 # Separate from the container-publish workflow; that one remains the deploy gate.
 
+# >>> ci-local:gated original triggers below, restore with `ci-local restore`
+# on:
+#   push:
+#     branches: [main]
+#   pull_request:
+#     branches: [main]
+#   workflow_dispatch:
+# <<< ci-local:gated
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
