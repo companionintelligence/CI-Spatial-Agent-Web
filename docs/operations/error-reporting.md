@@ -1,13 +1,28 @@
 # Error reporting (Sentry)
 
-Spatial Companion can report crashes to [Sentry](https://sentry.io). It is
-**opt-in and off by default**: with no DSN configured, no Sentry code
-initialises, the SDK is not even in the browser bundle, and neither container
-makes an outbound connection.
+Spatial Companion reports crashes to [Sentry](https://sentry.io). It is
+**opt-out**: on any build configured with a DSN, reporting is **on by default**,
+and the user turns it off with the **Share crash reports** toggle in the app
+store (or `CI_TELEMETRY=off` directly). See [Turning it off](#turning-it-off).
 
-This follows the fleet contract set by CI-Server (`docs/operations/error-reporting.md`
-there is the reference); CI-Import-Tools and Companion-Planning ship the same
-env contract.
+Two statements are both true here and easy to conflate:
+
+- **Configured with a DSN → reporting is on** unless the user turns it off. That
+  is the shipped appliance: release images carry a DSN.
+- **No DSN → nothing initialises**, the SDK is not even in the browser bundle,
+  and neither container makes an outbound connection. That is a source checkout,
+  a local `pnpm dev`, or any image built without a DSN. It is the absence of
+  configuration, not a privacy setting.
+
+So "opt-out" describes what a user of the appliance experiences. It does not
+mean a DSN-less build quietly reports — it cannot, and
+[Bundle shape](#bundle-shape) measures it.
+
+Each of the two components has its own DSN and can be in either state
+independently: the SPA's is baked in at build time, the proxy's is read at
+runtime. This follows the fleet contract set by CI-Server
+(`docs/operations/error-reporting.md` there is the reference); CI-Import-Tools
+and Companion-Planning ship the same env contract.
 
 ## Privacy posture
 
@@ -70,12 +85,14 @@ operator can turn it off without a rebuild:
 | `CI_LOCAL_ONLY=true` | Local-only mode means zero phone-home (also `1`, `yes`, `on`). |
 
 `CI_LOCAL_ONLY` takes precedence over `CI_TELEMETRY`, which takes precedence
-over the DSN. The resolved reason is exposed as `disabledReason`
-(`local-only` | `opt-out` | `no-dsn`) and logged at proxy start.
+over the DSN. Leaving `CI_TELEMETRY` unset is not "off" — it means the DSN
+decides, which on a release image means on. The resolved reason is exposed as
+`disabledReason` (`local-only` | `opt-out` | `no-dsn`) and logged at proxy start.
 
 The marketplace manifest ships these as a user-facing **"Share crash reports"**
-toggle (`marketplace/ci-spatial-companion-webxr/config.json`), default **off**,
-wired to `CI_TELEMETRY` on *both* services in `docker-compose.json`.
+toggle (`marketplace/ci-spatial-companion-webxr/config.json`), default **on**,
+wired to `CI_TELEMETRY` on *both* services in `docker-compose.json` — so one
+switch covers the SPA and the sidecar together.
 
 ## What gets scrubbed
 
@@ -149,8 +166,9 @@ malformed. In the container nginx proxies `/api/` to the sidecar from the same
 origin (`nginx/default.conf`); in dev the Vite server proxies it to
 `pnpm dev:proxy` on `:8787`.
 
-This is what makes the marketplace "Share crash reports" toggle actually apply
-to the browser.
+This is what makes the app-store "Share crash reports" toggle actually apply to
+the browser. With reporting on by default, it is also the only channel through
+which a user's "off" reaches a bundle whose DSN is already baked in.
 
 > **One deliberate difference from CI-Server's `TelemetryConfigController`.**
 > There the API and the bundle ship in one container, so the endpoint resolves
@@ -159,9 +177,17 @@ to the browser.
 > own. Resolving the DSN half in the sidecar would mean a web image built *with*
 > a DSN never reports unless an unrelated DSN was also set on the proxy — a
 > silent, undiagnosable failure. So this endpoint answers only the question it
-> can answer for the browser — *is reporting permitted right now?* — from the
-> two kill switches. The DSN half of the gate stays at the browser's build time,
-> where it also decides whether the SDK is bundled at all.
+> can answer for the browser, from the two kill switches. The DSN half of the
+> gate stays at the browser's build time, where it also decides whether the SDK
+> is bundled at all. That reasoning is unchanged by the opt-out flip.
+
+**Read `{"enabled": true}` precisely.** It means *the user has not turned
+reporting off* — nothing more. It is not a statement that reporting is happening,
+because this endpoint cannot see the browser's build-time DSN: a bundle built
+without one gets `enabled: true` here and still initialises nothing, having
+shipped no SDK to initialise. The two halves are ANDed in the browser, and only
+the browser knows both. Conversely `{"enabled": false, "reason": …}` *is*
+conclusive — an operator kill switch stops the SPA regardless of its DSN.
 
 The endpoint never returns the DSN, and is deliberately unauthenticated (there
 is no auth on this proxy at all).
@@ -174,7 +200,7 @@ is tree-shaken out entirely. Measured on this repo (total `dist/**/*.js` bytes,
 
 | Build | Total JS | `captureException` occurrences |
 |---|---|---|
-| `origin/main`, before this change | 12,965,440 B | 0 |
+| before telemetry existed (pre-#119) | 12,965,440 B | 0 |
 | no DSN | **12,965,468 B** | **0** |
 | `VITE_SENTRY_DSN` set | **13,058,289 B** | 3 |
 
@@ -225,7 +251,10 @@ sentry issue list companion-intelligence/ci-spatial-companion-webxr --query "com
 as a marketplace container, and it has no BFF of its own to ask for consent, so
 it would fail closed on every launch.
 
-## Enabling it
+## Configuring the DSNs
+
+Supplying a DSN is what puts a component into the opt-out posture described at
+the top of this document. Each component has its own.
 
 Proxy (runtime env — no rebuild):
 
@@ -246,12 +275,37 @@ docker build \
   -t ci-spatial-companion-webxr .
 ```
 
-Turning it off again, without a rebuild:
+## Turning it off
+
+Reporting is on wherever a DSN is configured, so this is the part that matters.
+Two switches, in precedence order — the first that applies wins:
+
+| # | Switch | Effect |
+|---|---|---|
+| 1 | `CI_LOCAL_ONLY=true` | Local-only mode: zero phone-home, telemetry included. Beats everything. |
+| 2 | `CI_TELEMETRY=off` | Explicit opt-out (also `false`, `0`, `no`, `disabled`). This is what the app-store **Share crash reports** toggle sets. |
+
+Both are runtime env and need no rebuild, even for the SPA whose DSN is baked
+in — that is what the consent endpoint is for.
 
 ```bash
 CI_TELEMETRY=off    # on the proxy container: stops the BFF, and the browser too
 CI_LOCAL_ONLY=true  # beats everything
 ```
+
+Two things worth being precise about:
+
+- **Set it on the proxy.** The SPA has no env of its own at runtime; it learns
+  the operator's decision only by asking the sidecar. The marketplace
+  `docker-compose.json` wires `CI_TELEMETRY` to *both* services, so the toggle
+  covers both, but a hand-rolled deployment that sets it only on the web
+  container silences nothing.
+- **Unsetting `CI_TELEMETRY` is not a way to turn reporting off.** It hands the
+  decision back to each component's DSN, which on a release image means on.
+
+The other way to have no reporting is to build without a DSN, which is not a
+switch but the absence of configuration: no DSN, no SDK in the bundle, nothing
+to turn off.
 
 ## Verifying
 
@@ -273,7 +327,7 @@ grep -rl captureException apps/web/dist   # must print nothing without a DSN
 | Path | Role |
 |---|---|
 | `apps/proxy/src/instrument.ts` | `Sentry.init`; must stay the first import in `server.ts`. Also owns the crash/shutdown handlers |
-| `apps/proxy/src/telemetry/settings.ts` | Resolves the opt-in gate from env |
+| `apps/proxy/src/telemetry/settings.ts` | Resolves the gate from env |
 | `apps/proxy/src/telemetry/scrubEvent.ts` | `beforeSend` scrubber |
 | `apps/proxy/src/routes/config.ts` | `GET /api/config/telemetry` — the browser consent endpoint |
 | `apps/proxy/src/server.ts` | `app.onError` captures unexpected route failures |
@@ -305,6 +359,14 @@ grep -rl captureException apps/web/dist   # must print nothing without a DSN
   browser stack traces would be minified. CI-Hub's `desktop-release.yml` has the
   pattern to copy.
 - **The Sentry project itself.** See above — an org owner has to create
-  `ci-spatial-companion-webxr` and issue the DSNs.
-- **In-app consent UI.** Reporting is an install-time toggle
-  (marketplace form field), not a setting in the app's own ⚙️ panel.
+  `ci-spatial-companion-webxr` and issue the DSNs. Until then no build carries
+  one, so every deployment is in the second case at the top of this document —
+  no DSN, nothing initialised — regardless of the opt-out posture above.
+- **In-app consent UI.** Reporting is an install-time toggle (marketplace form
+  field), not a setting in the app's own ⚙️ panel. That matters more now that
+  the default is on: a user who wants to opt out after installing has to change
+  the app's configuration in the Hub rather than flip a switch in the app.
+- **The catalog copy of the toggle.** The manifest in this repo is the source of
+  truth for the field; the published `CI-Marketplace` entry for
+  `ci-spatial-companion-webxr` does not carry a "Share crash reports" field at
+  all yet, so the toggle is not user-visible until that lands.

@@ -47,9 +47,9 @@
       "type": "boolean",
       "label": "Share crash reports",
       "env_variable": "CI_TELEMETRY",
-      "default": false,
+      "default": true,
       "required": false,
-      "hint": "Send crash reports to Companion Intelligence to help fix bugs. Off by default. Your conversations, prompts and the model's replies are never included. Turning this off stops reporting from both the app and its proxy immediately, with no reinstall."
+      "hint": "Send crash reports to Companion Intelligence to help fix bugs. On by default. Your conversations, prompts and the model's replies are never included. Turning this off stops reporting from both the app and its proxy immediately, with no reinstall."
     }
   ]
 }

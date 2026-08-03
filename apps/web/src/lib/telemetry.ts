@@ -1,10 +1,14 @@
 /**
  * Browser error reporting for the Spatial Companion SPA.
  *
- * Opt-in and off by default: without `VITE_SENTRY_DSN` baked in at build time
- * nothing initialises, the SDK is tree-shaken out of the bundle entirely, and
- * the app makes no request to Sentry. `initTelemetry` is safe to call more than
- * once and safe to call when reporting is disabled.
+ * **Opt-out.** With `VITE_SENTRY_DSN` baked in at build time, reporting is on
+ * unless the user turns it off — the app-store "Share crash reports" toggle sets
+ * `CI_TELEMETRY` on the containers, which reaches this bundle through the BFF
+ * consent check in `initTelemetry`. Without a DSN nothing initialises, the SDK
+ * is tree-shaken out of the bundle entirely, and the app makes no request to
+ * Sentry — the absence of configuration, not a privacy setting: a DSN-less
+ * bundle cannot report. `initTelemetry` is safe to call more than once and safe
+ * to call when reporting is disabled.
  *
  * This app is a conversation: the user speaks to an avatar and a local model
  * answers. Prompts and model output are user content and must never leave the

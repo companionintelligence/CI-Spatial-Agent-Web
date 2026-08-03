@@ -1,14 +1,16 @@
 /**
  * Telemetry (Sentry) settings resolution for the BFF.
  *
- * Error reporting is **opt-in and off by default**: with no `SENTRY_DSN` nothing
- * is initialised and the process makes no outbound call. Two kill switches
- * disable reporting even when a DSN has been baked into the published image
- * (which is how a Hub-installed sidecar would receive one), so an operator can
- * always turn telemetry off without rebuilding:
+ * Error reporting is **opt-out** — on wherever a `SENTRY_DSN` is configured, and
+ * the user turns it off. With no `SENTRY_DSN` nothing is initialised and the
+ * process makes no outbound call; that is the absence of configuration, not a
+ * privacy setting. Two kill switches disable reporting even when a DSN has been
+ * baked into the published image (which is how a Hub-installed sidecar would
+ * receive one), so an operator can always turn telemetry off without rebuilding:
  *
- *   - `CI_TELEMETRY=off`   — explicit opt-out; this is what the marketplace
- *     "Share crash reports" toggle sets on both containers
+ *   - `CI_TELEMETRY=off`   — explicit opt-out; this is what the app-store
+ *     "Share crash reports" toggle sets on both containers. Leaving it *unset*
+ *     is not "off": it leaves the DSN in charge.
  *   - `CI_LOCAL_ONLY=true` — local-only mode must mean zero phone-home
  *
  * Ported verbatim (env names aside) from CI-Server's

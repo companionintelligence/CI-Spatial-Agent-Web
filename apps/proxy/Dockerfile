@@ -21,11 +21,14 @@ ENV NODE_ENV=production
 COPY apps/proxy/package.json ./package.json
 RUN npm install --omit=dev --no-audit --no-fund
 COPY --from=build /app/apps/proxy/dist ./dist
-# Error reporting (Sentry) is opt-in and read at RUNTIME — with SENTRY_DSN unset
-# nothing initialises and the process makes no outbound call. All optional:
+# Error reporting (Sentry) is opt-out and read entirely at RUNTIME — set
+# SENTRY_DSN and reporting is on unless a kill switch below turns it off; with
+# SENTRY_DSN unset nothing initialises and the process makes no outbound call.
+# All optional:
 #   SENTRY_DSN=https://<key>@o<org>.ingest.us.sentry.io/<id>
 #   SENTRY_ENV / APP_ENVIRONMENT / SENTRY_RELEASE / APP_VERSION
 #   CI_TELEMETRY=off      — kill switch; also gates the browser via /api/config/telemetry
+#                           (unset is NOT off: it leaves the DSN in charge)
 #   CI_LOCAL_ONLY=true    — local-only mode: zero phone-home, beats everything
 # See docs/operations/error-reporting.md.
 #

@@ -16,12 +16,13 @@ ARG VITE_LLM_OLLAMA_API_URL
 ARG VITE_LLM_OLLAMA_MODEL
 ARG VITE_TTS_MODE
 ARG VITE_POCKET_TTS_URL
-# Error reporting (Sentry) — opt-in, off by default. Leave VITE_SENTRY_DSN unset
-# and the SDK is tree-shaken out of the bundle entirely; there is no runtime
-# equivalent, because Vite bakes this in. Even with a DSN baked in, the browser
-# still asks the proxy sidecar (GET /api/config/telemetry) for consent first, so
-# CI_TELEMETRY=off on the containers turns reporting off without a rebuild.
-# See docs/operations/error-reporting.md.
+# Error reporting (Sentry) — opt-out. Pass VITE_SENTRY_DSN and reporting is on
+# unless the user turns it off; leave it unset and the SDK is tree-shaken out of
+# the bundle entirely. There is no runtime equivalent of the DSN, because Vite
+# bakes it in. The off switch does work at runtime though: even with a DSN baked
+# in, the browser asks the proxy sidecar (GET /api/config/telemetry) for consent
+# first and fails closed, so CI_TELEMETRY=off on the containers turns reporting
+# off without a rebuild. See docs/operations/error-reporting.md.
 ARG VITE_SENTRY_DSN
 ARG VITE_SENTRY_ENVIRONMENT
 ARG VITE_SENTRY_RELEASE
