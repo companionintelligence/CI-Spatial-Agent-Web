@@ -27,7 +27,7 @@
       "seconds": 5,
       "title": "Spatial Companion",
       "caption": "An AI with a face, a voice and a body.",
-      "narration": "Spatial Companion is an embodied AI that runs in a browser tab."
+      "narration": "An embodied AI that runs in a browser tab."
     },
     {
       "id": "ftue-first-run",
@@ -191,7 +191,7 @@
       "seconds": 6,
       "title": "What ships in the box",
       "caption": "No account. No backend required. The cloud is opt-in.",
-      "narration": "Twenty-four avatars, forty-seven body clips, five providers, no backend required.",
+      "narration": "Twenty-four avatars, forty-seven body clips, no backend required.",
       "items": [
         { "label": "Avatars", "value": "24" },
         { "label": "Body clips", "value": "47" },
@@ -205,7 +205,7 @@
       "seconds": 5,
       "cta": "UnCloud your life.",
       "url": "ci.computer",
-      "narration": "Spatial Companion, from Companion Intelligence. UnCloud your life."
+      "narration": "Spatial Companion. UnCloud your life."
     }
   ]
 }
