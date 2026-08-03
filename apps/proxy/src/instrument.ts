@@ -3,9 +3,10 @@
  * SDK patches Node internals on init, and instrumentation applied after the
  * route modules are loaded misses anything they set up at import time.
  *
- * Reporting is opt-in: with no `SENTRY_DSN` this module initialises nothing and
- * the process makes no outbound connection. See `telemetry/settings.ts` for the
- * kill switches.
+ * Reporting is opt-out: with a `SENTRY_DSN` configured it is on unless a kill
+ * switch turns it off, and with no `SENTRY_DSN` this module initialises nothing
+ * and the process makes no outbound connection. See `telemetry/settings.ts` for
+ * the kill switches.
  */
 
 import * as Sentry from '@sentry/node'

@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * The browser half of the opt-in gate.
+ * The browser half of the opt-out gate: a baked-in DSN means on, and the BFF
+ * consent check can only subtract from that.
  *
  * `VITE_SENTRY_DSN` is read at module scope, so every case re-imports the module
  * after stubbing the env. The SDK is mocked: a real `Sentry.init` against a fake
