@@ -39,5 +39,20 @@ jobs:
       - name: Typecheck + build web
         run: pnpm --filter @ci-avatar/web build
 
+      # The build above runs with VITE_SENTRY_DSN unset, so the whole telemetry
+      # path must fold to dead code and the Sentry SDK must be tree-shaken out.
+      # This is a real regression risk, not a theoretical one: writing the DSN as
+      # `import.meta.env.X?.trim()` instead of a bare module-scope const stops it
+      # folding under rolldown and silently ships ~90 kB of SDK — plus a reporting
+      # path — in a build that is supposed to have none.
+      - name: Assert no Sentry SDK in the DSN-less bundle
+        run: |
+          if grep -rlE "captureException|ingest\.sentry\.io" apps/web/dist --include="*.js"; then
+            echo "::error::VITE_SENTRY_DSN is unset but the Sentry SDK is still in the bundle."
+            echo "Check the module-scope 'const DSN = import.meta.env.VITE_SENTRY_DSN' shape in apps/web/src/lib/telemetry.ts (no optional chaining)."
+            exit 1
+          fi
+          echo "OK — no Sentry SDK in the DSN-less bundle"
+
       - name: Build Storybook (smoke)
         run: pnpm build-storybook

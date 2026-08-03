@@ -16,11 +16,23 @@ ARG VITE_LLM_OLLAMA_API_URL
 ARG VITE_LLM_OLLAMA_MODEL
 ARG VITE_TTS_MODE
 ARG VITE_POCKET_TTS_URL
+# Error reporting (Sentry) — opt-in, off by default. Leave VITE_SENTRY_DSN unset
+# and the SDK is tree-shaken out of the bundle entirely; there is no runtime
+# equivalent, because Vite bakes this in. Even with a DSN baked in, the browser
+# still asks the proxy sidecar (GET /api/config/telemetry) for consent first, so
+# CI_TELEMETRY=off on the containers turns reporting off without a rebuild.
+# See docs/operations/error-reporting.md.
+ARG VITE_SENTRY_DSN
+ARG VITE_SENTRY_ENVIRONMENT
+ARG VITE_SENTRY_RELEASE
 ENV VITE_LLM_PROVIDER=${VITE_LLM_PROVIDER} \
     VITE_LLM_OLLAMA_API_URL=${VITE_LLM_OLLAMA_API_URL} \
     VITE_LLM_OLLAMA_MODEL=${VITE_LLM_OLLAMA_MODEL} \
     VITE_TTS_MODE=${VITE_TTS_MODE} \
-    VITE_POCKET_TTS_URL=${VITE_POCKET_TTS_URL}
+    VITE_POCKET_TTS_URL=${VITE_POCKET_TTS_URL} \
+    VITE_SENTRY_DSN=${VITE_SENTRY_DSN} \
+    VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT} \
+    VITE_SENTRY_RELEASE=${VITE_SENTRY_RELEASE}
 # Full build: `tsc -b && vite build`. Both the lockfile drift and the
 # packages/core Scene3D.tsx type errors that previously forced workarounds
 # here are fixed, so the typecheck gate is back in the container build.
