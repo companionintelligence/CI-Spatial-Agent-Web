@@ -1,3 +1,14 @@
+/*
+ * DORMANT FILE — the only component here (`AvatarControls`, lines below) is entirely
+ * commented out, the module exports nothing, and nothing in the repo imports it.
+ * `docs/ANIMATION-SYSTEM-REVIEW.md` already flags it as dead API surface worth pruning.
+ *
+ * The remaining live code (`Dropdown`, its props interface, and the imports above it)
+ * exists only to serve that commented-out block, so it all reads as unused. Rather than
+ * delete the file as a drive-by in a lint PR, the two rules it trips are turned off here
+ * with this note. Deleting the file is the real fix — tracked in the PR that added this.
+ */
+/* eslint-disable @typescript-eslint/no-unused-vars, react-refresh/only-export-components */
 import { useSimpleStore } from '@hexafield/simple-store/react'
 import { useEffect, useRef, useState } from 'react'
 

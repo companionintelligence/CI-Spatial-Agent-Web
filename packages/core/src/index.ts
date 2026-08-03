@@ -59,6 +59,9 @@ export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel, AvatarState } from './components/scene/avatar/AvatarModel'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
 export type { SceneActions } from './components/scene/Scene3D'
+// Re-exported so consumers that don't depend on @react-three/xr directly (apps/vision-pro)
+// can still type the store that ControlOverlay/Viewport3D require.
+export type { XRStore } from '@react-three/xr'
 export { DatacenterDiorama } from './components/scene/environment/DatacenterDiorama'
 export { DioramaProps } from './components/scene/environment/DioramaProps'
 export type { DioramaPropName } from './components/scene/environment/DioramaProps'

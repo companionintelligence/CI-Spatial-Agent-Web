@@ -11,7 +11,11 @@ import { collectRecognitionResults } from './sttService'
 // Minimal duck-typed SpeechRecognitionEvent — one alternative per result, plus isFinal.
 function makeEvent(resultIndex: number, results: Array<{ transcript: string; isFinal: boolean; confidence?: number }>) {
   const list = results.map((r) => ({ 0: { transcript: r.transcript, confidence: r.confidence }, isFinal: r.isFinal, length: 1 }))
-  return { resultIndex, results: Object.assign(list, { length: list.length }) } as any
+  // Duck-typed stand-in: cast to the real parameter type rather than `any` so the
+  // mock stays pinned to collectRecognitionResults' actual signature.
+  return { resultIndex, results: Object.assign(list, { length: list.length }) } as unknown as Parameters<
+    typeof collectRecognitionResults
+  >[0]
 }
 
 describe('collectRecognitionResults', () => {

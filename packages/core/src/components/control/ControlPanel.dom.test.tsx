@@ -28,7 +28,10 @@ describe('ControlPanel', () => {
     const svgs = container.querySelectorAll('svg')
     expect(svgs.length).toBeGreaterThanOrEqual(4)
     // No emoji leaked into the DOM text.
-    expect(container.textContent ?? '').not.toMatch(/[🎤🔴🟢🥽📱⏹️🎯➖➕⚙️]/u)
+    // Alternation, not a character class: ⏹️ and ⚙️ are base char + U+FE0F variation
+    // selector, and a character class would match those code points individually
+    // (and so match a bare U+FE0F anywhere) rather than the emoji sequence.
+    expect(container.textContent ?? '').not.toMatch(/🎤|🔴|🟢|🥽|📱|⏹️|🎯|➖|➕|⚙️/u)
   })
 
   it('gives every icon button an accessible name', () => {

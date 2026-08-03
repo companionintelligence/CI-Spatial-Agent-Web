@@ -106,7 +106,6 @@ export async function llmProxy(params: LLMParams): Promise<LLMResult> {
     let buffer = ''
     let aborted = false
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       if (latest() > interrupt) {
         controller.abort()

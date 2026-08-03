@@ -20,7 +20,8 @@ import {
   useHasWebGPU,
   detectSurfaceSync,
   presetFor,
-  type SceneActions
+  type SceneActions,
+  type XRStore
 } from '@ci-avatar/core'
 
 // Surface-aware render budget: on the WebSpatial Vision Pro container the UA matches
@@ -29,7 +30,8 @@ import {
 const surface = detectSurfaceSync()
 const renderPreset = presetFor(surface)
 
-export const config = {
+// Module-local: only `App` is imported from this file (see main.tsx).
+const config = {
   vad: defaultVadConfig,
   tts: defaultTTSConfig,
   stt: defaultSTTConfig,
@@ -39,11 +41,11 @@ export const config = {
 export const App = () => {
   useResponsiveLayout()
 
-  const xrStore = useRef<any | null>(null)
+  const xrStore = useRef<XRStore | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState) as [AppConfig, (value: AppConfig) => void]
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
-  const setXRStore = useCallback((store: any) => {
+  const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
 

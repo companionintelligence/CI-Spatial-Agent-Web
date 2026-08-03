@@ -13,6 +13,10 @@ import type { EmotionType } from '../../services/emote/emoteTypes'
  */
 
 /** Canonical order of the emote palette (matches the EmotionType union). */
+// Part of the package's public API (re-exported from src/index.ts) and deliberately
+// colocated with the palette it orders; splitting it out purely to satisfy Fast Refresh
+// would churn the library surface.
+// eslint-disable-next-line react-refresh/only-export-components
 export const EMOTIONS: EmotionType[] = [
   'neutral',
   'happy',

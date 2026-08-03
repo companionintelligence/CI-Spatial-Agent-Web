@@ -29,7 +29,6 @@ test.describe('L4 · education (tutor turn-taking + barge-in)', () => {
     }
 
     // Observational only (never fails the test).
-    // eslint-disable-next-line no-console
     console.log('[education] canvas frames differed during Q&A:', await canvasFramesDiffer(page))
 
     expect(errors, `uncaught page errors:\n${errors.join('\n')}`).toEqual([])

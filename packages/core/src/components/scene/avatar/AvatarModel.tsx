@@ -4,6 +4,7 @@ import { MToonNodeMaterial } from '@pixiv/three-vrm/nodes'
 import { createVRMAnimationClip, VRMAnimation, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation'
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
+import type { ThreeEvent } from '@react-three/fiber'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
@@ -47,22 +48,34 @@ interface AvatarModelProps {
   webGPUEnabled?: boolean
 }
 
-// Custom hook to load external animation files, including VRMA animations
-export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D>, vrm?: VRMCore) => {
+// Custom hook to load external animation files, including VRMA animations.
+// Exported alongside AvatarModel because it is the loader for exactly that component;
+// the app harness also imports it directly.
+// eslint-disable-next-line react-refresh/only-export-components
+export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D | null>, vrm?: VRMCore) => {
   // Load BOTH catalogs every render (stable hook order); collect only the set that
   // matches the active avatar's skeleton below. VRMA → VRM avatars, GLB → GLB avatars.
   // GLB_ALL_CLIPS includes the feminine (F_*) set so female avatars can use it.
   const vrmaClips = Object.values(VRMA_CLIPS)
   const gltfClips = Object.values(GLB_ALL_CLIPS)
 
+  // These two `.map`s call hooks in a callback, which rules-of-hooks flags. It is safe
+  // here — and load-bearing: VRMA_CLIPS and GLB_ALL_CLIPS are module-level literals with
+  // a fixed key set (updateAnimationDurations only rewrites `duration` on existing
+  // entries), so both arrays have the same length on every render and hook order is
+  // stable. Loading each catalog unconditionally is what keeps it stable; making the
+  // loads conditional on avatar type is what would actually break the rule.
+
   // Load VRMA animations
   const vrmaGLTFs = vrmaClips.map((clip) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks -- fixed-length catalog, see above
     useLoader(GLTFLoader, clip.path, (loader) => {
       loader.register((parser: GLTFParser) => new VRMAnimationLoaderPlugin(parser))
     })
   )
 
   // Load GLTF/GLB animations
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- fixed-length catalog, see above
   const gltfGLTFs = gltfClips.map((clip) => useGLTF(clip.path))
 
   // Collect all animations
@@ -72,7 +85,8 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D>
     if (vrm) {
       // Process VRMA
       vrmaGLTFs.forEach((gltf, index) => {
-        const vrmAnimation: VRMAnimation | undefined = (gltf as any).userData?.vrmAnimations[0]
+        const vrmAnimation: VRMAnimation | undefined = (gltf as { userData?: { vrmAnimations?: VRMAnimation[] } })
+          .userData?.vrmAnimations?.[0]
 
         if (vrmAnimation && vrm) {
           const clip = createVRMAnimationClip(vrmAnimation, vrm)
@@ -181,10 +195,10 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
       
     } else {
       // GLB: try to find a bone named "head"
-      avatarRef.current?.traverse((child: any) => {
+      avatarRef.current?.traverse((child) => {
         if (
           !head &&
-          child.isBone &&
+          (child as THREE.Bone).isBone &&
           typeof child.name === 'string' &&
           child.name.toLowerCase().includes('head')
         ) {
@@ -222,7 +236,7 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   }, [avatarRef.current])
 
   // Load external animations from animationClips.ts
-  const { actions, mixer } = useExternalAnimations(avatarRef as any, vrm)
+  const { actions, mixer } = useExternalAnimations(avatarRef, vrm)
   // Setup animation service with R3F
   useEffect(() => {
     if (!avatarScene || !animationService || !actions || !mixer || !animationsEnabled) return
@@ -457,7 +471,7 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     if (isVRM && vrm) vrm.springBoneManager?.update(delta)
   })
 
-  const handleAvatarClick = useCallback((event: any) => {
+  const handleAvatarClick = useCallback((event: ThreeEvent<MouseEvent>) => {
     event.stopPropagation()
     if (animationService && emoteService) {
       const randomAction = getRandomClip('action', avatarCatalog) as AnimationClip
@@ -485,7 +499,7 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   return (
     <primitive 
       ref={avatarRef} 
-      object={avatarScene as any}
+      object={avatarScene as THREE.Object3D}
       onClick={handleAvatarClick}
       visible={isAvatarVisible}
     />

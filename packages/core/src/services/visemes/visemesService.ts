@@ -118,15 +118,18 @@ export function visemesUpdate(volume: VisemeState, _delta: number, config: Visem
   if (!volume.dirty) {
     volume.dirty = {}
   }
+  // Both target shapes (GLB `VisemeTarget` / VRM `VRMVisemeTarget`) are string→number
+  // maps; alias to that so the dynamic-key writes below are typed rather than `any`.
+  // Neither declares an index signature, hence the widening through `unknown`.
+  const targets = volume.targets as unknown as Record<string, number>
+
   // Apply dampening
-  Object.entries(volume.targets).forEach(([key, value]) => {
-    ;(volume.targets as any)[key] = value > 0.01 ? value * config.intensity.dampeningFactor : 0
+  Object.entries(targets).forEach(([key, value]) => {
+    targets[key] = value > 0.01 ? value * config.intensity.dampeningFactor : 0
   })
 
   // Process active visemes
   const activeVisemes = volume.sequence.filter((item) => item.ts[0] <= startTime && item.ts[1] >= startTime)
-
-  let visemesProcessed = 0
 
   for (const item of activeVisemes) {
     const begins = item.ts[0]
@@ -167,9 +170,8 @@ export function visemesUpdate(volume: VisemeState, _delta: number, config: Visem
       // Apply to appropriate target system
 
       const mappedKey = volume.isVRMMode ? OCULUS_TO_VRM_MAPPING[key as keyof typeof OCULUS_TO_VRM_MAPPING] : key
-      if (mappedKey && mappedKey in volume.targets) {
-        ;(volume.targets as any)[mappedKey] = value
-        visemesProcessed++
+      if (mappedKey && mappedKey in targets) {
+        targets[mappedKey] = value
       }
     })
   }
@@ -183,6 +185,9 @@ export function visemesToRig(volume: VisemeState, _delta: number, amplify: numbe
 
   if (!volume.targets) return
   if (!volume.dirty) volume.dirty = {}
+
+  // See visemesUpdate: these are string→number maps written by dynamic key.
+  const dirty = volume.dirty as Record<string, number>
 
   let targetsUpdated = 0
   // Handle VRM avatars
@@ -202,8 +207,8 @@ export function visemesToRig(volume: VisemeState, _delta: number, amplify: numbe
         value = value * amplify
       }
 
-      if (value === (volume.dirty as any)[key]) return
-      ;(volume.dirty as any)[key] = value
+      if (value === dirty[key]) return
+      dirty[key] = value
       targetsUpdated++
 
       try {
@@ -221,13 +226,14 @@ export function visemesToRig(volume: VisemeState, _delta: number, amplify: numbe
   }
 
   // Handle GLB morph target avatars (original system)
-  Object.entries(volume.targets).forEach(([key, value]) => {
+  const targets = volume.targets as unknown as Record<string, number>
+  Object.entries(targets).forEach(([key, value]) => {
     if (amplify !== 1.0) {
-      value = (volume.targets as any)[key] = value * amplify
+      value = targets[key] = value * amplify
     }
 
-    if (value === (volume.dirty as any)[key]) return
-    ;(volume.dirty as any)[key] = value
+    if (value === dirty[key]) return
+    dirty[key] = value
     targetsUpdated++
 
     const group = volume.dictionary?.[key]
@@ -339,7 +345,7 @@ export function setupVisemeStateForVRM(state: VisemeState, vrm: VRM): void {
     }
 
     console.log('VRM Available expressions:', expressions)
-  } catch (error) {
+  } catch {
     console.warn('Could not detect VRM expression capabilities, defaulting to GLB mode')
     state.isVRMMode = false
   }

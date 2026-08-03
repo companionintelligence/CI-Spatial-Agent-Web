@@ -24,7 +24,8 @@ import {
   type EnvironmentPreset
 } from '@ci-avatar/core'
 
-export const config = {
+// Module-local: only `App` is imported from this file (see main.tsx).
+const config = {
   vad: defaultVadConfig,
   tts: defaultTTSConfig,
   stt: defaultSTTConfig,

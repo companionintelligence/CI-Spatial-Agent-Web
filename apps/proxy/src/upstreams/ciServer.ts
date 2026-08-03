@@ -13,7 +13,6 @@ export function createCiServerAdapter(_cfg: ResolvedConfig): UpstreamAdapter {
   return {
     name: 'ci-server',
 
-    // eslint-disable-next-line require-yield
     async *chat(_req: ChatRequest, _signal: AbortSignal): AsyncGenerator<ChatEvent> {
       // TODO: implement CI-Server streaming + auth (session/token).
       yield { type: 'error', message: 'CI-Server upstream is not implemented yet' }

@@ -24,7 +24,7 @@ function oklch(L, C, H) { const h = H * Math.PI / 180, a = C * Math.cos(h), b = 
 function hsl(H, S, L) { H = ((H % 360) + 360) % 360; S /= 100; L /= 100; const c = (1 - Math.abs(2 * L - 1)) * S, x = c * (1 - Math.abs((H / 60) % 2 - 1)), m = L - c / 2; let r, g, b; if (H < 60)[r, g, b] = [c, x, 0]; else if (H < 120)[r, g, b] = [x, c, 0]; else if (H < 180)[r, g, b] = [0, c, x]; else if (H < 240)[r, g, b] = [0, x, c]; else if (H < 300)[r, g, b] = [x, 0, c]; else[r, g, b] = [c, 0, x]; return [r, g, b].map((v) => Math.round((v + m) * 255)); }
 const num = (s) => parseFloat(s);
 const lFrac = (s) => { s = s.trim(); const n = num(s); return (s.endsWith('%') ? n : (n <= 1 ? n * 100 : n)) / 100; };
-function parseColor(raw) { let v = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim(); if (/var\(/i.test(v)) return null; let m;
+function parseColor(raw) { const v = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/!important/i, '').trim(); if (/var\(/i.test(v)) return null; let m;
   if ((m = v.match(/^#([0-9a-f]{3,8})$/i))) { let h = m[1]; if (h.length === 3 || h.length === 4) h = h.split('').map((c) => c + c).join(''); return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)]; }
   if ((m = v.match(/^rgba?\(([^)]+)\)$/i))) { const p = m[1].split(/[,\s/]+/).filter(Boolean); return [num(p[0]), num(p[1]), num(p[2])].map(Math.round); }
   if ((m = v.match(/^hsla?\(([^)]+)\)$/i))) { const p = m[1].split(/[,\s/]+/).filter(Boolean); return hsl(num(p[0]), num(p[1]), num(p[2])); }

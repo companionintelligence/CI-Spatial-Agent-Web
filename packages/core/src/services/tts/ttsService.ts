@@ -32,6 +32,16 @@ self.addEventListener('message', async (e) => {
   return new Worker(URL.createObjectURL(new Blob([ttsWorkerString], { type: 'text/javascript' })), { type: 'module' })
 }
 
+declare global {
+  interface Window {
+    /**
+     * Optional host/console override for playback volume (0..1). Never set by the
+     * app itself — read here so an embedder can duck TTS without a rebuild.
+     */
+    globalTTSVolume?: number
+  }
+}
+
 interface TTSServiceOptions {
   config?: Partial<TTSConfig>
   onSpeechStart?: (text: string, whisperData: WhisperData) => void
@@ -88,7 +98,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           const gainNode = audioContext.createGain()
           
           // Use global volume if available, otherwise use config volume
-          const volume = (window as any).globalTTSVolume ?? config.volume
+          const volume = window.globalTTSVolume ?? config.volume
           gainNode.gain.value = volume
           
           source.buffer = decodedAudio
@@ -231,7 +241,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           method: 'POST',
           body: formData
         })
-      } catch (err) {
+      } catch {
         // Network-level failure (server not running / wrong host). Remember it so
         // the rest of the session degrades quietly instead of erroring per message.
         pocketUnreachable.current = true
@@ -349,7 +359,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               utterance.rate = config.speed
               utterance.pitch = config.pitch
               // Use global volume if available, otherwise fall back to config volume
-              utterance.volume = (window as any).globalTTSVolume ?? config.volume
+              utterance.volume = window.globalTTSVolume ?? config.volume
 
               // Parse voice gender from config and select appropriate voice
               const voices = speechSynthesis.getVoices()

@@ -1,5 +1,25 @@
 import { test, expect, type Page } from '@playwright/test'
 
+/** An event recorded by the speechSynthesis.speak monkey-patch below. */
+interface TtsEvent {
+  type: 'speak' | 'start' | 'end' | 'error'
+  text?: string
+  error?: string
+  timestamp: number
+}
+
+/**
+ * The page's `window` as these specs see it: vendor-prefixed audio APIs that are absent
+ * from the DOM lib, plus the globals the app and this spec's own instrumentation attach.
+ */
+type TestWindow = Window &
+  typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext
+    ttsEvents: TtsEvent[]
+    MicVAD?: unknown
+    tts?: unknown
+  }
+
 /**
  * Helper to check if browser supports required APIs
  */
@@ -28,7 +48,7 @@ async function injectFakeAudioStream(page: Page) {
     navigator.mediaDevices.getUserMedia = async (constraints: MediaStreamConstraints) => {
       if (constraints.audio) {
         // Create a fake audio stream
-        const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const audioContext = new (window.AudioContext || (window as TestWindow).webkitAudioContext)()
         const oscillator = audioContext.createOscillator()
         const dest = audioContext.createMediaStreamDestination()
         oscillator.connect(dest)
@@ -46,28 +66,28 @@ async function injectFakeAudioStream(page: Page) {
  */
 async function setupTTSMonitoring(page: Page) {
   await page.evaluate(() => {
-    (window as any).ttsEvents = []
+    (window as TestWindow).ttsEvents = []
     
     if (window.speechSynthesis) {
       const originalSpeak = window.speechSynthesis.speak.bind(window.speechSynthesis)
       
       window.speechSynthesis.speak = function(utterance: SpeechSynthesisUtterance) {
-        (window as any).ttsEvents.push({
+        (window as TestWindow).ttsEvents.push({
           type: 'speak',
           text: utterance.text,
           timestamp: Date.now()
         })
         
         utterance.addEventListener('start', () => {
-          (window as any).ttsEvents.push({ type: 'start', timestamp: Date.now() })
+          (window as TestWindow).ttsEvents.push({ type: 'start', timestamp: Date.now() })
         })
         
         utterance.addEventListener('end', () => {
-          (window as any).ttsEvents.push({ type: 'end', timestamp: Date.now() })
+          (window as TestWindow).ttsEvents.push({ type: 'end', timestamp: Date.now() })
         })
         
-        utterance.addEventListener('error', (event: any) => {
-          (window as any).ttsEvents.push({ type: 'error', error: event.error, timestamp: Date.now() })
+        utterance.addEventListener('error', (event: SpeechSynthesisErrorEvent) => {
+          (window as TestWindow).ttsEvents.push({ type: 'error', error: event.error, timestamp: Date.now() })
         })
         
         return originalSpeak(utterance)
@@ -79,8 +99,8 @@ async function setupTTSMonitoring(page: Page) {
 /**
  * Helper to get TTS events
  */
-async function getTTSEvents(page: Page): Promise<any[]> {
-  return await page.evaluate(() => (window as any).ttsEvents || [])
+async function getTTSEvents(page: Page): Promise<TtsEvent[]> {
+  return await page.evaluate(() => (window as TestWindow).ttsEvents || [])
 }
 
 /**
@@ -141,8 +161,8 @@ test.describe('Speech-to-Text (STT) Tests', () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         stream.getTracks().forEach(track => track.stop())
         return { success: true, error: null }
-      } catch (error: any) {
-        return { success: false, error: error.message }
+      } catch (error) {
+        return { success: false, error: (error as Error).message }
       }
     })
     
@@ -171,7 +191,7 @@ test.describe('Speech-to-Text (STT) Tests', () => {
       const hasWebSpeech = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
       
       // Check for VAD library
-      const hasVAD = !!(window as any).MicVAD
+      const hasVAD = !!(window as TestWindow).MicVAD
       
       return { hasWebSpeech, hasVAD }
     })
@@ -232,7 +252,7 @@ test.describe('Text-to-Speech (TTS) Tests', () => {
     // Check TTS configuration
     const config = await page.evaluate(() => {
       return {
-        hasTTSService: typeof (window as any).tts !== 'undefined',
+        hasTTSService: typeof (window as TestWindow).tts !== 'undefined',
         speechSynthesis: {
           speaking: window.speechSynthesis?.speaking,
           pending: window.speechSynthesis?.pending,
@@ -299,7 +319,7 @@ test.describe('Audio Integration Tests', () => {
 
   test('should have audio context for processing', async ({ page }) => {
     const audioInfo = await page.evaluate(() => {
-      const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext
+      const AudioContextClass = (window as TestWindow).AudioContext || (window as TestWindow).webkitAudioContext
       if (!AudioContextClass) {
         return { available: false }
       }
@@ -326,8 +346,8 @@ test.describe('Audio Integration Tests', () => {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
         stream.getTracks().forEach(track => track.stop())
         return 'granted'
-      } catch (error: any) {
-        return error.name
+      } catch (error) {
+        return (error as Error).name
       }
     })
     

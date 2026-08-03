@@ -12,6 +12,7 @@ import { DatacenterDiorama } from './environment/DatacenterDiorama'
 import { GraphicsFallback } from './GraphicsFallback'
 import { useRendererConfig } from './rendering/useRendererConfig'
 import { configureRenderer, createWebGLContext } from './rendering/RendererConfig'
+import type { DeviceCapabilities, RenderQuality } from './rendering/RendererConfig'
 import { PostProcessing } from './rendering/PostProcessing'
 import { XREnhancements } from './rendering/XREnhancements'
 
@@ -44,8 +45,8 @@ const SceneContent = ({
   worldGroupRef,
   worldScale,
   setRecenterHandler
-}: Scene3DProps & { store: XRStore; quality: any; capabilities: any; worldGroupRef: React.RefObject<THREE.Group | null>; worldScale: number; setRecenterHandler?: (fn: () => void) => void }) => {
-  const controlsRef = useRef<any>(null)
+}: Scene3DProps & { store: XRStore; quality: RenderQuality; capabilities: DeviceCapabilities; worldGroupRef: React.RefObject<THREE.Group | null>; worldScale: number; setRecenterHandler?: (fn: () => void) => void }) => {
+  const controlsRef = useRef<React.ComponentRef<typeof OrbitControls> | null>(null)
   const { camera, gl } = useThree()
   const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
   const [camPos, setCamPos] = useState<[number, number, number]>(sceneConfig.cameraPosition)
@@ -231,8 +232,9 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
         shadows={quality.useShadows}
         dpr={quality.pixelRatio}
         gl={glConfig}
-        onCreated={(state) => { 
-          (state as any).raycaster.firstHitOnly = true
+        onCreated={(state) => {
+          // `firstHitOnly` is a three-mesh-bvh extension, not part of three's Raycaster type.
+          ;(state.raycaster as THREE.Raycaster & { firstHitOnly?: boolean }).firstHitOnly = true
           // Additional optimizations for mobile
           if (capabilities.isMobile) {
             state.gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
