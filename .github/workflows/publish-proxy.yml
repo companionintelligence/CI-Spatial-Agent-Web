@@ -50,6 +50,20 @@ jobs:
           fi
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
 
+      # Advisory only — a missing secret must never fail the publish. Without it
+      # the build arg below expands to empty, the Dockerfile ARG default wins,
+      # and we ship the same DSN-less image we always did.
+      - name: Check Sentry DSN availability
+        shell: bash
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          if [ -z "${SENTRY_DSN}" ]; then
+            echo "::notice::SENTRY_DSN secret is not set — publishing a proxy image with no DSN compiled in. Error reporting stays inert (disabledReason: no-dsn)."
+          else
+            echo "SENTRY_DSN is set — baking it into the published proxy image."
+          fi
+
       - name: Build image (load for testing)
         uses: docker/build-push-action@v6
         with:
@@ -57,11 +71,17 @@ jobs:
           file: apps/proxy/Dockerfile
           load: true
           tags: ${{ steps.meta.outputs.sha_tag }}
+          build-args: |
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            SENTRY_RELEASE=ci-spatial-companion-proxy@${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Start container
-        run: docker run -d --name proxy -p 8787:8787 ${{ steps.meta.outputs.sha_tag }}
+        # CI_TELEMETRY=off because the image now has a real DSN baked in and this
+        # is a throwaway CI container: without it the health smoke test would file
+        # any boot error into the production Sentry project.
+        run: docker run -d --name proxy -e CI_TELEMETRY=off -p 8787:8787 ${{ steps.meta.outputs.sha_tag }}
 
       - name: Smoke test /api/health
         run: |
@@ -89,5 +109,11 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: ${{ steps.meta.outputs.tags }}
+          # Server-side sidecar: SENTRY_DSN (no VITE_ prefix) becomes a runtime
+          # ENV that instrument.ts reads at start-up. The web image is the
+          # opposite case — see docker-publish.yml.
+          build-args: |
+            SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            SENTRY_RELEASE=ci-spatial-companion-proxy@${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

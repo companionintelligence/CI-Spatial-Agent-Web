@@ -28,5 +28,20 @@ COPY --from=build /app/apps/proxy/dist ./dist
 #   CI_TELEMETRY=off      — kill switch; also gates the browser via /api/config/telemetry
 #   CI_LOCAL_ONLY=true    — local-only mode: zero phone-home, beats everything
 # See docs/operations/error-reporting.md.
+#
+# The DSN is read from the process env, so it COULD be supplied purely at run
+# time — but nothing supplies it: the marketplace runs this published sidecar
+# as-is, which is why the proxy has reported nothing. Released images are built
+# with `--build-arg SENTRY_DSN=…` and it is re-exported as ENV here, so a
+# marketplace install reports out of the box. Built without the arg the ARG
+# default is empty, which resolveTelemetrySettings already treats as unset
+# ("no-dsn") — nothing initialises and no outbound call is made.
+#
+# Both kill switches above are separate runtime vars and still beat a baked-in
+# DSN, and a runtime `-e SENTRY_DSN=…` still overrides this value.
+ARG SENTRY_DSN=""
+ARG SENTRY_RELEASE=""
+ENV SENTRY_DSN=${SENTRY_DSN} \
+    SENTRY_RELEASE=${SENTRY_RELEASE}
 EXPOSE 8787
 CMD ["node", "dist/server.js"]
