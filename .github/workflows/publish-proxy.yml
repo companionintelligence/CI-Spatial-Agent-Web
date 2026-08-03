@@ -3,12 +3,16 @@ name: Publish proxy container
 # Builds the BFF sidecar image, smoke-tests /api/health, then pushes to GHCR.
 # The marketplace manifest pins :latest.
 
+# >>> ci-local:gated original triggers below, restore with `ci-local restore`
+# on:
+#   push:
+#     branches: [main]
+#     tags: ["*"]
+#   pull_request:
+#     branches: [main]
+#   workflow_dispatch:
+# <<< ci-local:gated
 on:
-  push:
-    branches: [main]
-    tags: ["*"]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
