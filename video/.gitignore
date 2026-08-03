@@ -1,0 +1,10 @@
+# generated compositions — regenerate with `ci-video build`
+build/
+
+# rendered videos — regenerate with `ci-video render`
+out/
+
+# playwright auth state
+.auth/
+
+node_modules/
