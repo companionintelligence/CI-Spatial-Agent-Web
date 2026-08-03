@@ -2,7 +2,7 @@ import type { ErrorEvent } from '@sentry/node'
 import { describe, expect, it } from 'vitest'
 
 import { scrubEvent, scrubString, scrubUrl, scrubValue } from '../src/telemetry/index.js'
-import { MAX_STRING_LENGTH, SCRUB_CASES } from '../src/telemetry/scrubFixtures.js'
+import { KEY_SCRUB_CASES, MAX_STRING_LENGTH, SCRUB_CASES } from '../src/telemetry/scrubFixtures.js'
 
 const event = (partial: unknown) => partial as ErrorEvent
 
@@ -337,5 +337,115 @@ describe('shared scrub fixtures', () => {
     const cases = (source: string) => source.slice(source.indexOf('export interface ScrubCase'))
 
     expect(cases(a)).toBe(cases(b))
+  })
+})
+
+describe('shared key fixtures — the key is the only signal', () => {
+  it.each(KEY_SCRUB_CASES.map((c) => [c.key, c] as const))('scrubValue: %s', (_key, testCase) => {
+    // Non-vacuity guard: if the value redacted itself the case would prove
+    // nothing about key handling.
+    expect(scrubString(testCase.value)).toBe(testCase.value)
+
+    const scrubbed = scrubValue({ [testCase.key]: testCase.value }) as Record<string, unknown>
+
+    expect(scrubbed[testCase.key]).toBe(testCase.filtered ? '[Filtered]' : testCase.value)
+  })
+
+  it.each(KEY_SCRUB_CASES.map((c) => [c.key, c] as const))('request header: %s', (_key, testCase) => {
+    const headers = scrubEvent(event({ request: { headers: { [testCase.key]: testCase.value } } }))!.request!.headers!
+
+    expect(headers[testCase.key]).toBe(testCase.filtered ? '[Filtered]' : testCase.value)
+  })
+
+  it.each(KEY_SCRUB_CASES.map((c) => [c.key, c] as const))('breadcrumb data: %s', (_key, testCase) => {
+    const data = scrubEvent(event({ breadcrumbs: [{ data: { [testCase.key]: testCase.value } }] }))!.breadcrumbs![0]!
+      .data!
+
+    expect(data[testCase.key]).toBe(testCase.filtered ? '[Filtered]' : testCase.value)
+  })
+
+  it('filters the whole X-CI-Hub-* set the Traefik forward-auth injects', () => {
+    // This proxy sits behind CI-Hub's forward-auth, which injects all three on
+    // every authenticated request, and @sentry/core attaches request headers
+    // unfiltered regardless of `sendDefaultPii: false`.
+    const headers = scrubEvent(
+      event({
+        request: {
+          headers: {
+            'x-ci-hub-user': 'liam',
+            'x-ci-hub-timestamp': '1754179200',
+            'x-ci-hub-signature': 'd34db33f',
+            'user-agent': 'undici'
+          }
+        }
+      })
+    )!.request!.headers!
+
+    expect(headers['x-ci-hub-user']).toBe('[Filtered]')
+    expect(headers['x-ci-hub-signature']).toBe('[Filtered]')
+    expect(headers['user-agent']).toBe('undici')
+  })
+})
+
+describe('scrubEvent — ContextLines source snippets', () => {
+  const frameWith = (frame: Record<string, unknown>) =>
+    scrubEvent(event({ exception: { values: [{ value: 'boom', stacktrace: { frames: [frame] } }] } }))!.exception!
+      .values![0]!.stacktrace!.frames![0]!
+
+  it('scrubs context_line, which is real source text around the throw site', () => {
+    const frame = frameWith({ filename: '/app/dist/x.js', context_line: "const key = 'api_key=sk-live-1234567890'" })
+
+    expect(frame.context_line).not.toContain('sk-live-1234567890')
+  })
+
+  it('scrubs pre_context and post_context', () => {
+    const frame = frameWith({
+      filename: '/app/dist/x.js',
+      pre_context: ['// build at /Users/liam/devel/ci', "const dsn = 'postgres://ci:pgadmin_s3cure@db:5432/x'"],
+      post_context: ['fetch(url, { headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiJ9.a.b` } })']
+    })
+
+    expect(frame.pre_context![0]).toBe('// build at ~/devel/ci')
+    expect(frame.pre_context![1]).not.toContain('pgadmin_s3cure')
+    expect(frame.post_context![0]).not.toContain('eyJhbGciOiJIUzI1NiJ9')
+  })
+
+  it('leaves a frame with no source context alone', () => {
+    const frame = frameWith({ filename: '/app/dist/x.js' })
+
+    expect(frame.context_line).toBeUndefined()
+    expect(frame.pre_context).toBeUndefined()
+  })
+})
+
+describe('the two scrubbers in this repo redact identically', () => {
+  /**
+   * The BFF and the browser bundle are separate build graphs with separate
+   * copies of the same rules. `KEY_SCRUB_CASES` above proves both *behave* the
+   * same; this proves the two key regexes are literally the same text, so a
+   * one-sided edit fails here rather than silently opening a hole on one half.
+   */
+  const read = async (relative: string) => {
+    const [fs, path, url] = await Promise.all([import('node:fs/promises'), import('node:path'), import('node:url')])
+    const here = path.dirname(url.fileURLToPath(import.meta.url))
+
+    return fs.readFile(path.resolve(here, relative), 'utf8')
+  }
+
+  const pattern = (source: string, name: string) => {
+    const match = source.match(new RegExp(`const ${name} =\\s*(/[^\\n]*/i)`))
+
+    expect(match, `${name} not found`).not.toBeNull()
+
+    return match![1]
+  }
+
+  it.each(['SENSITIVE_KEY_PATTERN', 'IDENTITY_KEY_PATTERN'])('%s is byte-identical in both copies', async (name) => {
+    const [proxy, web] = await Promise.all([
+      read('../src/telemetry/scrubEvent.ts'),
+      read('../../web/src/lib/telemetry.ts')
+    ])
+
+    expect(pattern(proxy, name)).toBe(pattern(web, name))
   })
 })

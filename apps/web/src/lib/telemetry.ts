@@ -73,8 +73,32 @@ const HOME_PATH_PATTERNS = [
 // `messages|prompt|completion|transcript|utterance` is this repo's addition to
 // the fleet pattern: in a chat client those key names are the conversation
 // itself, and unlike a credential no regex over the *value* would recognise it.
+//
+// MUST stay byte-identical to the BFF copy at
+// apps/proxy/src/telemetry/scrubEvent.ts — a test in each suite reads both files
+// and compares these two literals.
 const SENSITIVE_KEY_PATTERN =
-  /password|secret|token|authorization|cookie|jwt|api[-_ ]?key|dsn|pepper|private[-_]?key|hub[-_]user|messages|prompt|completion|transcript|utterance/i
+  /password|secret|token|authorization|cookie|jwt|api[-_ ]?key|dsn|pepper|private[-_]?key|signature|messages|prompt|completion|transcript|utterance/i
+
+// Keys that name a PERSON rather than carrying a credential. No value pattern
+// can ever match these — a username is just a word — so the key is the only
+// signal, the same reason we drop `server_name`.
+//
+// This is not hypothetical here. The app is served from the same origin as the
+// BFF behind CI-Hub's Traefik forward-auth, which injects `X-CI-Hub-User`,
+// `-Timestamp` and `-Signature` on every authenticated request, and the SDK
+// attaches request headers regardless of `sendDefaultPii: false`.
+// (`x-ci-hub-user` used to be covered by a `hub[-_]user` alternate in the
+// credential pattern; `(?:^|[-_])user$` subsumes it and generalises.)
+//
+// Anchored on purpose: `user-agent`, `user_id` and `owner_id` are diagnostic
+// signal worth keeping, and a naive /user|owner/ would eat all three.
+const IDENTITY_KEY_PATTERN = /(?:^|[-_])user$|(?:^|[-_])owner$|username|email|forwarded|^remote-/i
+
+/** Single predicate so credential and identity coverage cannot diverge. */
+function isSensitiveKey(key: string): boolean {
+  return SENSITIVE_KEY_PATTERN.test(key) || IDENTITY_KEY_PATTERN.test(key)
+}
 
 const MAX_STRING_LENGTH = 8000
 
@@ -113,7 +137,7 @@ export function scrubValue(value: unknown, depth = 0): unknown {
     const result: Record<string, unknown> = {}
 
     for (const [key, nested] of Object.entries(value)) {
-      result[key] = SENSITIVE_KEY_PATTERN.test(key) ? '[Filtered]' : scrubValue(nested, depth + 1)
+      result[key] = isSensitiveKey(key) ? '[Filtered]' : scrubValue(nested, depth + 1)
     }
 
     return result
@@ -146,13 +170,20 @@ function scrubBreadcrumb(breadcrumb: Sentry.Breadcrumb): void {
     return
   }
 
-  for (const [key, value] of Object.entries(breadcrumb.data)) {
+  // The WHOLE `data` object goes through `scrubValue`, not each value in turn:
+  // `scrubValue` only consults `isSensitiveKey` while walking an object's own
+  // entries, so handing it the values one at a time never checks the crumb's own
+  // keys and a bare `data.token` — or `data.prompt` — ships intact. This is the
+  // shape the BFF copy has always had; the two now match.
+  const data = scrubValue(breadcrumb.data) as Record<string, unknown>
+
+  for (const [key, value] of Object.entries(data)) {
     if (typeof value === 'string' && URL_VALUED_KEYS.has(key)) {
-      breadcrumb.data[key] = scrubUrl(scrubString(value))
-    } else {
-      breadcrumb.data[key] = scrubValue(value)
+      data[key] = scrubUrl(value)
     }
   }
+
+  breadcrumb.data = data
 }
 
 export function scrubBrowserEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent | null {
@@ -179,6 +210,22 @@ export function scrubBrowserEvent(event: Sentry.ErrorEvent): Sentry.ErrorEvent |
 
       if (typeof frame.abs_path === 'string') {
         frame.abs_path = scrubString(frame.abs_path)
+      }
+
+      // Source lines around the throw site. `contextLinesIntegration` is not on
+      // by default in the browser SDK, but it exists, it reads inline script
+      // content, and the field is on the frame type either way — so this is the
+      // belt-and-braces half, and it keeps the two copies identical.
+      if (typeof frame.context_line === 'string') {
+        frame.context_line = scrubString(frame.context_line)
+      }
+
+      for (const key of ['pre_context', 'post_context'] as const) {
+        const lines = frame[key]
+
+        if (Array.isArray(lines)) {
+          frame[key] = lines.map((line) => (typeof line === 'string' ? scrubString(line) : line))
+        }
       }
 
       if (frame.vars) {

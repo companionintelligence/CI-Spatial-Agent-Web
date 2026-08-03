@@ -2,7 +2,7 @@ import type { ErrorEvent } from '@sentry/react'
 import { describe, expect, it } from 'vitest'
 
 import { scrubBrowserEvent, scrubString, scrubUrl, scrubValue, shouldDropEvent } from './telemetry'
-import { MAX_STRING_LENGTH, SCRUB_CASES } from './telemetryScrubFixtures'
+import { KEY_SCRUB_CASES, MAX_STRING_LENGTH, SCRUB_CASES } from './telemetryScrubFixtures'
 
 const event = (partial: unknown) => partial as ErrorEvent
 
@@ -262,5 +262,72 @@ describe('shared scrub fixtures — parity with the BFF scrubber', () => {
     const cases = (source: string) => source.slice(source.indexOf('export interface ScrubCase'))
 
     expect(cases(a)).toBe(cases(b))
+  })
+})
+
+/**
+ * The BFF suite runs this same list. Every value is innocuous under the string
+ * rules — asserted below — so the KEY is the only signal, which is exactly what
+ * `scrubBreadcrumb` used to skip: it handed `scrubValue` each crumb *value* in
+ * turn, and `scrubValue` only consults the key while walking an object's own
+ * entries. `authorization` was the one key that still worked, because
+ * `Bearer …` is caught by the value rules however the walk is shaped.
+ */
+describe('shared key fixtures — the key is the only signal', () => {
+  it.each(KEY_SCRUB_CASES.map((c) => [c.key, c] as const))('scrubValue: %s', (_key, testCase) => {
+    expect(scrubString(testCase.value)).toBe(testCase.value)
+
+    const scrubbed = scrubValue({ [testCase.key]: testCase.value }) as Record<string, unknown>
+
+    expect(scrubbed[testCase.key]).toBe(testCase.filtered ? '[Filtered]' : testCase.value)
+  })
+
+  it.each(KEY_SCRUB_CASES.map((c) => [c.key, c] as const))('request header: %s', (_key, testCase) => {
+    const headers = scrubBrowserEvent(event({ request: { headers: { [testCase.key]: testCase.value } } }))!.request!
+      .headers!
+
+    expect(headers[testCase.key]).toBe(testCase.filtered ? '[Filtered]' : testCase.value)
+  })
+
+  it.each(KEY_SCRUB_CASES.map((c) => [c.key, c] as const))('breadcrumb data: %s', (_key, testCase) => {
+    const data = scrubBrowserEvent(event({ breadcrumbs: [{ data: { [testCase.key]: testCase.value } }] }))!
+      .breadcrumbs![0]!.data!
+
+    expect(data[testCase.key]).toBe(testCase.filtered ? '[Filtered]' : testCase.value)
+  })
+
+  it('still treats url/from/to as URLs after the object walk', () => {
+    const data = scrubBrowserEvent(
+      event({ breadcrumbs: [{ category: 'fetch', data: { url: '/api/chat?ask=private', method: 'POST' } }] })
+    )!.breadcrumbs![0]!.data!
+
+    expect(data.url).toBe('/api/chat')
+    expect(data.method).toBe('POST')
+  })
+})
+
+describe('scrubBrowserEvent — source snippets attached to a frame', () => {
+  const frameWith = (frame: Record<string, unknown>) =>
+    scrubBrowserEvent(event({ exception: { values: [{ value: 'boom', stacktrace: { frames: [frame] } }] } }))!
+      .exception!.values![0]!.stacktrace!.frames![0]!
+
+  it('scrubs context_line, pre_context and post_context', () => {
+    const frame = frameWith({
+      filename: '/assets/index-abc123.js',
+      context_line: "const key = 'api_key=sk-live-1234567890'",
+      pre_context: ['// built from /Users/liam/devel/ci'],
+      post_context: ['fetch(url, { headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiJ9.a.b` } })']
+    })
+
+    expect(frame.context_line).not.toContain('sk-live-1234567890')
+    expect(frame.pre_context![0]).toBe('// built from ~/devel/ci')
+    expect(frame.post_context![0]).not.toContain('eyJhbGciOiJIUzI1NiJ9')
+  })
+
+  it('leaves a frame with no source context alone', () => {
+    const frame = frameWith({ filename: '/assets/index-abc123.js' })
+
+    expect(frame.context_line).toBeUndefined()
+    expect(frame.pre_context).toBeUndefined()
   })
 })
