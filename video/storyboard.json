@@ -1,0 +1,211 @@
+{
+  "$schema": "https://raw.githubusercontent.com/companionintelligence/CI-Common/main/packages/video-kit/schema/storyboard.schema.json",
+  "app": {
+    "id": "ci-spatial-companion-webxr",
+    "name": "Spatial Companion",
+    "repo": "companionintelligence/CI-Spatial-Companion-WebXR",
+    "marketplaceId": "ci-spatial-companion-webxr",
+    "website": "ci.computer"
+  },
+  "meta": {
+    "fps": 30,
+    "transitionSeconds": 0.5
+  },
+  "chapters": {
+    "ftue": "First run",
+    "talk": "Talking to it",
+    "stage": "The stage"
+  },
+  "media": {
+    "music": null,
+    "musicVolume": 0.14
+  },
+  "scenes": [
+    {
+      "id": "open",
+      "kind": "intro",
+      "seconds": 5,
+      "title": "Spatial Companion",
+      "caption": "An AI with a face, a voice and a body.",
+      "narration": "Spatial Companion is an embodied AI that runs in a browser tab."
+    },
+    {
+      "id": "ftue-first-run",
+      "kind": "screen",
+      "chapter": "ftue",
+      "seconds": 6,
+      "caption": "It asks once. Skip goes straight to text.",
+      "narration": "First load asks for your microphone. Skip it and type instead.",
+      "shots": [
+        {
+          "id": "first-run",
+          "url": "spatial-companion.local",
+          "alt": "The Enable Microphone modal layered over the live avatar scene on first load.",
+          "motion": "push-in",
+          "capture": {
+            "path": "/",
+            "waitFor": "button:has-text(\"Enable Mic\")",
+            "waitUntil": "networkidle",
+            "settle": 1200
+          }
+        }
+      ]
+    },
+    {
+      "id": "ftue-hud-shell",
+      "kind": "screen",
+      "chapter": "ftue",
+      "seconds": 6,
+      "caption": "The HUD: chat log, input, control dock.",
+      "narration": "Behind the modal the avatar is already live, with the HUD around it.",
+      "shots": [
+        {
+          "id": "hud-shell",
+          "url": "spatial-companion.local",
+          "alt": "The default HUD after onboarding: logo, avatar, empty Chat Log, floating control dock.",
+          "motion": "push-in",
+          "capture": {
+            "path": "/",
+            "waitFor": "canvas",
+            "waitUntil": "networkidle",
+            "settle": 2500,
+            "before": [
+              { "click": "button:has-text(\"Skip\")" },
+              { "waitFor": "textarea.chat-input" },
+              { "wait": 2500 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "one-turn",
+      "kind": "screen",
+      "chapter": "talk",
+      "seconds": 7,
+      "caption": "One turn. Face, voice and body all move.",
+      "narration": "Type a message. The reply drives lip sync, expression and a body animation.",
+      "shots": [
+        {
+          "id": "chat-turn",
+          "url": "spatial-companion.local",
+          "alt": "The Chat Log holding a You and Assistant exchange from the offline scripted provider.",
+          "motion": "drift-down",
+          "capture": {
+            "path": "/",
+            "waitFor": "textarea.chat-input",
+            "waitUntil": "networkidle",
+            "settle": 1500,
+            "before": [
+              { "wait": 2500 },
+              { "fill": ["textarea.chat-input", "hello"] },
+              { "press": ["textarea.chat-input", "Enter"] },
+              { "waitFor": "text=Assistant" },
+              { "wait": 1500 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "quiet-hud",
+      "kind": "screen",
+      "chapter": "stage",
+      "seconds": 6,
+      "caption": "Collapse the dock. Only the avatar is left.",
+      "narration": "Hide the dock and the screen is just the avatar and one input.",
+      "shots": [
+        {
+          "id": "controls-collapsed",
+          "url": "spatial-companion.local",
+          "alt": "The HUD with the control dock collapsed, leaving the avatar and the chat input.",
+          "motion": "push-in",
+          "capture": {
+            "path": "/",
+            "waitFor": "textarea.chat-input",
+            "waitUntil": "networkidle",
+            "settle": 1500,
+            "before": [
+              { "wait": 2500 },
+              { "click": "button[aria-label=\"Hide Controls\"]" },
+              { "wait": 800 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "kind": "screen",
+      "chapter": "stage",
+      "seconds": 6,
+      "caption": "Your model, your endpoint. Offline by default.",
+      "narration": "Point it at your own Ollama, or a proxy, or leave it entirely offline.",
+      "shots": [
+        {
+          "id": "settings-panel",
+          "url": "spatial-companion.local",
+          "alt": "The Settings dialog: LLM provider, endpoint URL and model, all editable at runtime.",
+          "motion": "push-in",
+          "capture": {
+            "path": "/",
+            "waitFor": "button[aria-label=\"Settings\"]",
+            "waitUntil": "networkidle",
+            "settle": 900,
+            "before": [
+              { "wait": 2500 },
+              { "click": "button[aria-label=\"Settings\"]" },
+              { "waitFor": "select#settings-provider" },
+              { "wait": 600 }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "environment",
+      "kind": "screen",
+      "chapter": "stage",
+      "seconds": 6,
+      "caption": "Optional rooms. A 1970s datacenter ships with it.",
+      "narration": "Or put a room around it. The seventies datacenter ships with the app.",
+      "shots": [
+        {
+          "id": "datacenter-diorama",
+          "url": "spatial-companion.local/?env=datacenter-1970s",
+          "alt": "The avatar standing inside the 1970s research-datacenter diorama.",
+          "motion": "drift-down",
+          "capture": {
+            "path": "/?env=datacenter-1970s",
+            "waitFor": "canvas",
+            "waitUntil": "networkidle",
+            "settle": 3000,
+            "before": [{ "wait": 3000 }]
+          }
+        }
+      ]
+    },
+    {
+      "id": "recap",
+      "kind": "feature",
+      "seconds": 6,
+      "title": "What ships in the box",
+      "caption": "No account, no cloud round trip, no backend.",
+      "narration": "Twenty-four avatars, forty-six body clips, five providers, no backend required.",
+      "items": [
+        { "label": "Avatars", "value": "24" },
+        { "label": "Body clips", "value": "46" },
+        { "label": "LLM providers", "value": "5" },
+        { "label": "Backend required", "value": "none" }
+      ]
+    },
+    {
+      "id": "close",
+      "kind": "outro",
+      "seconds": 5,
+      "cta": "Own your AI.",
+      "url": "ci.computer",
+      "narration": "Spatial Companion, from Companion Intelligence. Own your AI."
+    }
+  ]
+}
