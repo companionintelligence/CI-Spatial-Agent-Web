@@ -1,6 +1,6 @@
 name: Test
 
-# Unit/component tests (vitest) + Storybook build smoke + typecheck.
+# Lint (eslint) + unit/component tests (vitest) + Storybook build smoke + typecheck.
 # Separate from the container-publish workflow; that one remains the deploy gate.
 
 on:
@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   test:
-    name: vitest + storybook + typecheck
+    name: lint + vitest + storybook + typecheck
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +32,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Runs `eslint .` in each of the four workspace projects against the flat
+      # config at the repo root. Cheap, so it goes first and fails fast.
+      - name: Lint
+        run: pnpm lint
 
       - name: Unit + component tests
         run: pnpm test

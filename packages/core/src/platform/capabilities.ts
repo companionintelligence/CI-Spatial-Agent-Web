@@ -26,9 +26,11 @@ function detectWebGL2(): boolean {
 
 async function detectXR(): Promise<Pick<Capabilities, 'webxr' | 'immersiveVr' | 'immersiveAr' | 'handTracking'>> {
   const none = { webxr: false, immersiveVr: false, immersiveAr: false, handTracking: false }
-  const xr = (typeof navigator !== 'undefined' ? (navigator as any).xr : undefined) as
-    | { isSessionSupported?: (mode: string) => Promise<boolean> }
-    | undefined
+  // `navigator.xr` is not in the default DOM lib, so widen just that one property.
+  const xr =
+    typeof navigator !== 'undefined'
+      ? (navigator as Navigator & { xr?: { isSessionSupported?: (mode: string) => Promise<boolean> } }).xr
+      : undefined
   if (!xr?.isSessionSupported) return none
   try {
     const [immersiveVr, immersiveAr] = await Promise.all([
@@ -48,12 +50,13 @@ async function detectXR(): Promise<Pick<Capabilities, 'webxr' | 'immersiveVr' | 
 }
 
 export async function detectCapabilities(): Promise<Capabilities> {
-  const g = globalThis as any
+  // `navigator.gpu` is WebGPU, also absent from the default DOM lib.
+  const nav = typeof navigator !== 'undefined' ? (navigator as Navigator & { gpu?: unknown }) : undefined
   const xr = await detectXR()
   return {
     webgl2: detectWebGL2(),
-    webgpu: !!g.navigator?.gpu,
+    webgpu: !!nav?.gpu,
     ...xr,
-    webSpeech: typeof g.speechSynthesis !== 'undefined'
+    webSpeech: typeof globalThis.speechSynthesis !== 'undefined'
   }
 }

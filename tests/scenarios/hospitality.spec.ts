@@ -27,7 +27,6 @@ test.describe('L4 · hospitality (wayfinding greeter)', () => {
 
     // Observational only (never fails the test): note whether the canvas visibly moved.
     // See canvasFramesDiffer() for why this is not a hard gate on the real app.
-    // eslint-disable-next-line no-console
     console.log('[hospitality] canvas frames differed during reply:', await canvasFramesDiffer(page))
 
     expect(errors, `uncaught page errors:\n${errors.join('\n')}`).toEqual([])

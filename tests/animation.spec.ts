@@ -10,19 +10,16 @@ async function waitForAgentReady(page: Page) {
 }
 
 /**
- * Helper to capture canvas pixels for animation detection
+ * The page's `window`/`performance` as these specs see it: globals a debug build may
+ * attach, plus Chrome's non-standard `performance.memory`.
  */
-async function captureCanvasData(page: Page): Promise<ImageData | null> {
-  return await page.evaluate(() => {
-    const canvas = document.querySelector('canvas') as HTMLCanvasElement
-    if (!canvas) return null
-    
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-    
-    return ctx.getImageData(0, 0, canvas.width, canvas.height)
-  })
-}
+type TestWindow = Window &
+  typeof globalThis & {
+    THREE?: unknown
+    VRM?: unknown
+    vrm?: unknown
+  }
+type PerformanceWithMemory = Performance & { memory?: { usedJSHeapSize: number } }
 
 /**
  * Helper to check if avatar is animating by comparing frames
@@ -55,7 +52,7 @@ async function estimateFPS(page: Page, duration = 2000): Promise<number> {
   return await page.evaluate((duration) => {
     return new Promise<number>((resolve) => {
       let frames = 0
-      let startTime = performance.now()
+      const startTime = performance.now()
       
       function countFrame() {
         frames++
@@ -79,7 +76,7 @@ async function estimateFPS(page: Page, duration = 2000): Promise<number> {
  */
 async function checkThreeJSRendering(page: Page) {
   return await page.evaluate(() => {
-    const hasThree = typeof (window as any).THREE !== 'undefined'
+    const hasThree = typeof (window as TestWindow).THREE !== 'undefined'
     
     // Check for canvas WebGL context
     const canvas = document.querySelector('canvas') as HTMLCanvasElement
@@ -292,8 +289,8 @@ test.describe('Avatar Animation Tests', () => {
     // Check if VRM model is loaded
     const vrmInfo = await page.evaluate(() => {
       // Check for VRM-related objects in window
-      const hasVRM = typeof (window as any).VRM !== 'undefined' ||
-                     typeof (window as any).vrm !== 'undefined'
+      const hasVRM = typeof (window as TestWindow).VRM !== 'undefined' ||
+                     typeof (window as TestWindow).vrm !== 'undefined'
       
       return {
         hasVRM,
@@ -331,7 +328,7 @@ test.describe('Avatar Performance Tests', () => {
     
     // Get initial memory
     const initialMetrics = await page.evaluate(() => ({
-      memory: (performance as any).memory?.usedJSHeapSize,
+      memory: (performance as PerformanceWithMemory).memory?.usedJSHeapSize,
       timestamp: Date.now()
     }))
     
@@ -345,7 +342,7 @@ test.describe('Avatar Performance Tests', () => {
     
     // Get final memory
     const finalMetrics = await page.evaluate(() => ({
-      memory: (performance as any).memory?.usedJSHeapSize,
+      memory: (performance as PerformanceWithMemory).memory?.usedJSHeapSize,
       timestamp: Date.now()
     }))
     

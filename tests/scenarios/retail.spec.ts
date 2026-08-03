@@ -26,7 +26,6 @@ test.describe('L4 · retail (product assistant)', () => {
     expect(positive.length, 'positive reply should have text').toBeGreaterThan(0)
 
     // Observational only (never fails the test).
-    // eslint-disable-next-line no-console
     console.log('[retail] canvas frames differed during reply:', await canvasFramesDiffer(page))
 
     expect(errors, `uncaught page errors:\n${errors.join('\n')}`).toEqual([])

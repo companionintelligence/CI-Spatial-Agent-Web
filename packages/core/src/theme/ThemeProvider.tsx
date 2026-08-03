@@ -107,6 +107,9 @@ export const ThemeProvider = ({
   return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>
 }
 
+// The provider and its consumer hook are one unit and both are re-exported from
+// src/index.ts; the standard context pattern keeps them in the same module.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useTheme = (): ThemeProviderState => {
   const context = useContext(ThemeProviderContext)
   if (context === undefined) {

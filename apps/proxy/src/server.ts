@@ -26,6 +26,5 @@ if (isMain) {
   const app = createApp()
   const { serve } = await import('@hono/node-server')
   serve({ fetch: app.fetch, port: cfg.port })
-  // eslint-disable-next-line no-console
   console.log(`[proxy] listening on :${cfg.port} → upstream=${cfg.upstream}`)
 }

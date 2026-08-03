@@ -49,4 +49,7 @@ export const XREnhancements = memo(XREnhancementsComponent)
  * Create XR store and button for entering VR/AR mode
  * Usage: const xrStore = createXRStore(); <XREnterButton store={xrStore} />
  */
+// Convenience re-export of third-party XR helpers alongside the component that
+// documents their usage.
+// eslint-disable-next-line react-refresh/only-export-components
 export { createXRStore, XRButton }

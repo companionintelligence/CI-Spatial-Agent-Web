@@ -12,6 +12,9 @@
     "./styles/*": "./src/styles/*",
     "./utils": "./src/utils/index.ts"
   },
+  "scripts": {
+    "lint": "eslint ."
+  },
   "dependencies": {
     "@hexafield/simple-store": "^1.0.1",
     "@huggingface/transformers": "^3.7.1",
@@ -35,6 +38,7 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@types/three": "^0.182.0",
+    "eslint": "^9.39.2",
     "typescript": "^5.8.3",
     "vite": "^7.3.1",
     "vitest": "^4.1.9"

@@ -44,20 +44,24 @@ export const SttListening: Story = {
  * the typed text. A stateful wrapper feeds `message` back so the controlled
  * textarea updates as the user types.
  */
+const StatefulChatInput = (args: React.ComponentProps<typeof ChatInput>) => {
+  const [message, setMessage] = useState(args.message)
+  return (
+    <ChatInput
+      {...args}
+      message={message}
+      onMessageChange={(value) => {
+        args.onMessageChange(value)
+        setMessage(value)
+      }}
+    />
+  )
+}
+
 export const TypeAndSubmit: Story = {
-  render: (args) => {
-    const [message, setMessage] = useState(args.message)
-    return (
-      <ChatInput
-        {...args}
-        message={message}
-        onMessageChange={(value) => {
-          args.onMessageChange(value)
-          setMessage(value)
-        }}
-      />
-    )
-  },
+  // Rendered via a real component rather than calling useState inside `render`,
+  // which is not a component and so may not call hooks.
+  render: (args) => <StatefulChatInput {...args} />,
   play: async ({ args, canvasElement }) => {
     const canvas = within(canvasElement)
     const textarea = canvas.getByPlaceholderText('Type your message here...')

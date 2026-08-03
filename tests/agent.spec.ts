@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { questionBank, expectedPatterns, getQuestionsFromCategory } from './data/questionBank'
+import { expectedPatterns, getQuestionsFromCategory } from './data/questionBank'
 
 /**
  * Helper function to wait for agent to be ready

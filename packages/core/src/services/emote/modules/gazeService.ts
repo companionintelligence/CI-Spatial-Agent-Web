@@ -1,4 +1,5 @@
 import { Euler, Quaternion, Vector3, MathUtils } from 'three'
+import type { Mesh, Object3D } from 'three'
 
 import type { EmoteState, PlayerVisionType } from '../emoteTypes'
 import { safeExecute } from '../utils/errorHandling'
@@ -230,8 +231,8 @@ function getPlayerVisionState(state: EmoteState, camera: CameraType , config: Em
     }
   } = config.gaze
 
-  let leftEyeObj: any = null
-  let rightEyeObj: any = null
+  let leftEyeObj: Object3D | null = null
+  let rightEyeObj: Object3D | null = null
 
   if (state.vrm && state.bones?.leftEye && state.bones?.rightEye) {
     // VRM: use bones
@@ -244,12 +245,13 @@ function getPlayerVisionState(state: EmoteState, camera: CameraType , config: Em
   } else {
     // Not VRM: try to find skinned mesh eyes and hips
     // Traverse the node's children to find meshes with "eye" in the name
-    state.node.traverse((child: any) => {
+    state.node.traverse((child) => {
       const name = child.name?.toLowerCase?.() ?? ''
-      if (!leftEyeObj && child.isMesh && name.includes('left') && name.includes('eye')) {
+      const isMesh = (child as Mesh).isMesh === true
+      if (!leftEyeObj && isMesh && name.includes('left') && name.includes('eye')) {
         leftEyeObj = child
       }
-      if (!rightEyeObj && child.isMesh && name.includes('right') && name.includes('eye')) {
+      if (!rightEyeObj && isMesh && name.includes('right') && name.includes('eye')) {
         rightEyeObj = child
       }
     })
@@ -281,12 +283,12 @@ function getPlayerVisionState(state: EmoteState, camera: CameraType , config: Em
   }
 
   // Helper to check if a single eye can see the target within given angles
-  function eyeCanSee(eye: any, hAngle: number, vAngle: number): boolean {
+  function eyeCanSee(eye: Object3D, hAngle: number, vAngle: number): boolean {
     // Account for the overall orientation of the avatar (root node)
     const eyePos = eye.getWorldPosition(new Vector3())
 
     // Get the avatar's world orientation (quaternion)
-    let avatarQuat = new Quaternion()
+    const avatarQuat = new Quaternion()
     if (state.node && state.node.getWorldQuaternion) {
       state.node.getWorldQuaternion(avatarQuat)
     }
@@ -296,7 +298,7 @@ function getPlayerVisionState(state: EmoteState, camera: CameraType , config: Em
     const eyeLocalUp = new Vector3(0, 1, 0)
 
     // Compose the eye's world orientation by combining avatar and eye quaternions
-    let eyeWorldQuat = eye.quaternion.clone()
+    const eyeWorldQuat = eye.quaternion.clone()
     if (avatarQuat) {
       eyeWorldQuat.premultiply(avatarQuat)
     }

@@ -25,10 +25,25 @@ import {
   useAnimationService,
   useEmoteService,
   useVisemeService,
+  type AnimationClip,
+  type EmotionType,
   type WhisperData
 } from '@ci-avatar/core'
 
 type Shot = 'face' | 'upper' | 'body'
+
+declare global {
+  interface Window {
+    /**
+     * Debug/QA surface driven by the Playwright capture driver (see e2e/capture/).
+     * Typed loosely on purpose: it is consumed from `page.evaluate` as plain JS, and
+     * pinning an interface here would just duplicate the literal below.
+     */
+    __harness?: Record<string, unknown>
+    __harnessReady?: boolean
+    __avatarLoaded?: boolean
+  }
+}
 
 const params = new URLSearchParams(location.search)
 const initialAvatar = params.get('avatar')
@@ -121,7 +136,7 @@ function HarnessScene() {
       AvatarState.set((s) => ({ ...s, selectedModel: AvatarOptions[initialAvatar as keyof typeof AvatarOptions] }))
     }
 
-    const w = window as any
+    const w = window
     w.__harness = {
       listAvatars: () => Object.keys(AvatarOptions),
       listClips: () => Object.keys(activeCatalog()),
@@ -162,10 +177,10 @@ function HarnessScene() {
       captureClip(clip: string) {
         const catalog = activeCatalog()
         const found = catalog[clip] ?? Object.values(catalog).find((c) => c.name === clip)
-        const st: any = animations.state
+        const st = animations.state
         const action = found && st.actions?.[found.name]
         if (!action) return 0
-        Object.values<any>(st.actions).forEach((a) => a && a.stop())
+        Object.values(st.actions ?? {}).forEach((a) => a && a.stop())
         action.reset()
         action.setLoop(THREE.LoopRepeat, Infinity)
         action.clampWhenFinished = false
@@ -182,7 +197,7 @@ function HarnessScene() {
 
       /** Play a random clip of a category (idle|gesture|expression|action|...). */
       playCategory(category: string, opts?: { loopCount?: number; blendTime?: number }) {
-        const clip = getRandomClip(category as any, activeCatalog())
+        const clip = getRandomClip(category as AnimationClip['category'], activeCatalog())
         if (!clip) return false
         animations.actions.performAction({
           clip,
@@ -194,7 +209,7 @@ function HarnessScene() {
       },
 
       setEmote(emotion: string, relaxTime = 4000) {
-        emotes.actions.performAction({ emotion: emotion as any, relaxTime })
+        emotes.actions.performAction({ emotion: emotion as EmotionType, relaxTime })
         return true
       },
 
@@ -206,8 +221,8 @@ function HarnessScene() {
 
       /** Introspect the live animation mixer (for mixing/crossfade QA). */
       debugActions() {
-        const s: any = animations.state
-        const acts: Record<string, any> = s.actions || {}
+        const s = animations.state
+        const acts: Record<string, THREE.AnimationAction> = s.actions || {}
         const live = Object.entries(acts)
           .map(([name, a]) => ({
             name,
@@ -238,8 +253,9 @@ function HarnessScene() {
       /** Every morph-target name on the avatar (visemes + ARKit) — diagnostic. */
       faceMorphs() {
         const names = new Set<string>()
-        three.scene.traverse((o: any) => {
-          if (o.morphTargetDictionary) Object.keys(o.morphTargetDictionary).forEach((n) => names.add(n))
+        three.scene.traverse((o) => {
+          const mesh = o as THREE.Mesh
+          if (mesh.morphTargetDictionary) Object.keys(mesh.morphTargetDictionary).forEach((n) => names.add(n))
         })
         return [...names].sort()
       },
@@ -247,12 +263,13 @@ function HarnessScene() {
       /** Directly set GLB morph influences: {morphName: value}. Returns #applied. */
       setMorph(entries: Record<string, number>) {
         let n = 0
-        three.scene.traverse((o: any) => {
-          if (!o.morphTargetDictionary || !o.morphTargetInfluences) return
+        three.scene.traverse((o) => {
+          const mesh = o as THREE.Mesh
+          if (!mesh.morphTargetDictionary || !mesh.morphTargetInfluences) return
           for (const [name, val] of Object.entries(entries)) {
-            const idx = o.morphTargetDictionary[name]
+            const idx = mesh.morphTargetDictionary[name]
             if (idx !== undefined) {
-              o.morphTargetInfluences[idx] = val
+              mesh.morphTargetInfluences[idx] = val
               n++
             }
           }
@@ -262,22 +279,25 @@ function HarnessScene() {
 
       /** Zero all morph influences (reset the face). */
       clearMorphs() {
-        three.scene.traverse((o: any) => {
-          if (o.morphTargetInfluences) o.morphTargetInfluences.fill(0)
+        three.scene.traverse((o) => {
+          const mesh = o as THREE.Mesh
+          if (mesh.morphTargetInfluences) mesh.morphTargetInfluences.fill(0)
         })
       },
 
       /** VRM expression names + current values (diagnose VRM face driving). */
       vrmExpressions() {
-        const vrm: any = (visemes as any).state?.viseme?.vrm
-        const em = vrm?.expressionManager
+        const em = visemes.state.viseme?.vrm?.expressionManager
         if (!em) return { vrm: false, note: 'no VRM expressionManager on this avatar' }
         const names = Object.keys(em.expressionMap || {})
         const values: Record<string, number> = {}
         for (const n of names) {
           try {
             values[n] = Number((em.getValue(n) ?? 0).toFixed(2))
-          } catch {}
+          } catch {
+            // Expression present in the map but unreadable — skip it rather than
+            // failing the whole diagnostic dump.
+          }
         }
         return { vrm: true, names, values }
       }
@@ -307,7 +327,7 @@ function HarnessScene() {
             frameRef.current.head = head
             frameRef.current.forward = forward
             frameRef.current.ready = true
-            ;(window as any).__avatarLoaded = true
+            window.__avatarLoaded = true
           }}
         />
       </Suspense>
