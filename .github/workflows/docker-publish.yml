@@ -55,16 +55,41 @@ jobs:
           fi
           echo "tags=${tags}" >> "$GITHUB_OUTPUT"
 
+      # Advisory only — a missing secret must never fail the publish. Without it
+      # the build arg below expands to empty, the Dockerfile ARG default wins,
+      # and we ship the same DSN-less bundle we always did (SDK tree-shaken out).
+      - name: Check Sentry DSN availability
+        shell: bash
+        env:
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+        run: |
+          if [ -z "${SENTRY_DSN}" ]; then
+            echo "::notice::SENTRY_DSN secret is not set — publishing a bundle with no DSN compiled in. The Sentry SDK is tree-shaken out entirely and the image cannot report."
+          else
+            echo "SENTRY_DSN is set — baking it into the published web bundle."
+          fi
+
+      # Built WITH the DSN so the screenshot gate exercises the bundle that
+      # actually ships: a configured build keeps ~90 kB of SDK and takes the
+      # consent-then-init path, neither of which a DSN-less build has.
       - name: Build image (load for testing)
         uses: docker/build-push-action@v6
         with:
           context: .
           load: true
           tags: ${{ steps.meta.outputs.sha_tag }}
+          build-args: |
+            VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            VITE_SENTRY_RELEASE=ci-spatial-companion-web@${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Start container
+        # No CI_TELEMETRY=off here, unlike the proxy job: the browser half asks the
+        # proxy sidecar (GET /api/config/telemetry) for consent before Sentry.init,
+        # no proxy runs in this job, and telemetry.ts fails closed on an
+        # unreachable or non-OK config. So the screenshot gate cannot report even
+        # with a DSN baked in.
         run: docker run -d --name app -p 8080:${INTERNAL_PORT} ${{ steps.meta.outputs.sha_tag }}
 
       - name: Wait for HTTP
@@ -117,5 +142,13 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
+          # Browser half: VITE_ prefix, consumed during `pnpm --filter
+          # @ci-avatar/web build`. Vite inlines import.meta.env.* into the bundle,
+          # so there is no runtime knob and this is the only moment a DSN can
+          # enter the artifact. The proxy sidecar is the opposite case — plain
+          # SENTRY_DSN read from the container env; see publish-proxy.yml.
+          build-args: |
+            VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
+            VITE_SENTRY_RELEASE=ci-spatial-companion-web@${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
