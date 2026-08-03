@@ -93,28 +93,44 @@ test compares the two files byte for byte.
   macOS rule otherwise matches inside `C:/Users/<name>` and leaves a stranded
   `C:~/…`
 - Object and header keys matching
-  `password|secret|token|authorization|cookie|jwt|api[-_ ]?key|dsn|pepper|private_key|hub_user`
+  `password|secret|token|authorization|cookie|jwt|api[-_ ]?key|dsn|pepper|private_key|signature`
   → `[Filtered]`. The hyphenated form matters: `sendDefaultPii: false` does
   **not** stop request headers reaching the event — it only resolves an
   IP-oriented deny list for span attributes — so this regex is the only guard.
+- Object and header keys matching the anchored identity set
+  `(?:^|[-_])user$|(?:^|[-_])owner$|username|email|forwarded|^remote-` →
+  `[Filtered]`. These name a *person* rather than carrying a credential, so no
+  value-level rule can ever catch them. The BFF sits behind CI-Hub's Traefik
+  forward-auth, which injects `X-CI-Hub-User`, `-Timestamp` and `-Signature` on
+  every authenticated request; the SDK ships the headers that *arrived*, so all
+  three reach the event with no reference in our code at all. Anchored on
+  purpose: `user-agent`, `user_id` and `owner_id` stay as diagnostics.
 - **Plus, only in this repo:** keys matching
   `messages|prompt|completion|transcript|utterance` → `[Filtered]`. In a chat
   client those key names *are* the conversation, and no regex over the value
   would recognise it.
+- The BFF copy and the browser copy must declare those two key regexes as
+  **byte-identical literals**; a test in each suite reads both source files and
+  compares them, and the shared `KEY_SCRUB_CASES` list is run against both
+  implementations through `scrubValue`, request headers and breadcrumb `data`.
 - Request cookies and bodies dropped; **query strings removed from
   `request.query_string`, from `request.url`, and from the
   `referer`/`referrer`/`location` headers** — the SDK builds `request.url` from
   `req.url`, which on a Node server is path+query, so filtering only
   `query_string` redacts nothing
-- Stack frame `filename` / `abs_path` (absolute paths outside Docker) and
-  captured `vars`. The path *body* is deliberately left intact beyond the
-  home-dir collapse — Sentry groups issues on `filename`
+- Stack frame `filename` / `abs_path` (absolute paths outside Docker), the
+  `context_line` / `pre_context` / `post_context` source snippets the
+  ContextLines integration attaches around the throw site, and captured `vars`.
+  The path *body* is deliberately left intact beyond the home-dir collapse —
+  Sentry groups issues on `filename`
 - `server_name` (the machine hostname) removed, and `includeServerName: false`
   set at init on the proxy
-- Breadcrumbs: `message` and every `data` value, with `url`/`from`/`to` treated
-  as URLs. This matters more than it sounds — fetch/xhr crumbs carry `data.url`
-  *with the query string*, and console crumbs carry raw arguments (which is why
-  the browser does not record them at all)
+- Breadcrumbs: `message`, and the whole `data` **object** — not each value in
+  turn, or the crumb's own keys are never key-checked and a bare `data.token` or
+  `data.prompt` ships intact — with `url`/`from`/`to` then treated as URLs. This
+  matters more than it sounds: fetch/xhr crumbs carry `data.url` *with the query
+  string*, and console crumbs carry raw arguments (which is why the browser does
+  not record them at all)
 - Strings over 8 KB truncated, so a stray blob can't smuggle a transcript out
   inside an exception message
 - Cyclic and deeply nested payloads bottom out at depth 8 rather than stalling
