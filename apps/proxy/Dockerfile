@@ -16,10 +16,17 @@ RUN pnpm --filter @ci-avatar/proxy build
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-# Only two light, pure-JS prod deps (hono + @hono/node-server); install them fresh to
+# Pure-JS prod deps (hono, @hono/node-server, @sentry/node); install them fresh to
 # avoid copying the pnpm workspace symlink farm.
 COPY apps/proxy/package.json ./package.json
 RUN npm install --omit=dev --no-audit --no-fund
 COPY --from=build /app/apps/proxy/dist ./dist
+# Error reporting (Sentry) is opt-in and read at RUNTIME — with SENTRY_DSN unset
+# nothing initialises and the process makes no outbound call. All optional:
+#   SENTRY_DSN=https://<key>@o<org>.ingest.us.sentry.io/<id>
+#   SENTRY_ENV / APP_ENVIRONMENT / SENTRY_RELEASE / APP_VERSION
+#   CI_TELEMETRY=off      — kill switch; also gates the browser via /api/config/telemetry
+#   CI_LOCAL_ONLY=true    — local-only mode: zero phone-home, beats everything
+# See docs/operations/error-reporting.md.
 EXPOSE 8787
 CMD ["node", "dist/server.js"]

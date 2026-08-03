@@ -9,7 +9,9 @@ import { defineConfig } from 'vitest/config'
  *   - `*.node.test.ts`      → pure logic (three.js math runs fine in node)
  *   - `*.dom.test.{ts,tsx}` → jsdom + @testing-library/react component logic
  *
- * A third `proxy` project runs the BFF (apps/proxy) unit + integration tests.
+ * A third `proxy` project runs the BFF (apps/proxy) unit + integration tests, and
+ * a fourth `web-node` project covers app-level logic that lives outside
+ * packages/core (apps/web/src/lib — the browser telemetry gate and scrubber).
  *
  * `resolve.dedupe` mirrors apps/web/vite.config.ts so a single React/three
  * instance is used under test.
@@ -48,6 +50,16 @@ export default defineConfig({
           environment: 'node',
           globals: true,
           include: ['apps/proxy/test/**/*.test.ts']
+        }
+      },
+      {
+        // App-level logic outside packages/core — the browser telemetry gate and
+        // scrubber, which are node-testable pure functions plus a fetch gate.
+        test: {
+          name: 'web-node',
+          environment: 'node',
+          globals: true,
+          include: ['apps/web/src/**/*.node.test.ts']
         }
       }
     ]

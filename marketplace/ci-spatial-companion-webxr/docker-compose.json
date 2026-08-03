@@ -23,6 +23,10 @@
         {
           "key": "APP_LLM_MODEL",
           "value": "${APP_LLM_MODEL}"
+        },
+        {
+          "key": "CI_TELEMETRY",
+          "value": "${CI_TELEMETRY}"
         }
       ]
     },
@@ -46,6 +50,10 @@
         {
           "key": "APP_OLLAMA_MODEL",
           "value": "${APP_LLM_MODEL}"
+        },
+        {
+          "key": "CI_TELEMETRY",
+          "value": "${CI_TELEMETRY}"
         }
       ]
     }

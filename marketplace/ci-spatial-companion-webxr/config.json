@@ -42,6 +42,14 @@
       "default": "gemma3:1b",
       "required": false,
       "hint": "Ollama model tag to chat with (e.g. gemma3:1b, llama3.1:8b). Pull it first with `ollama pull <model>`. Can also be changed in-app."
+    },
+    {
+      "type": "boolean",
+      "label": "Share crash reports",
+      "env_variable": "CI_TELEMETRY",
+      "default": false,
+      "required": false,
+      "hint": "Send crash reports to Companion Intelligence to help fix bugs. Off by default. Your conversations, prompts and the model's replies are never included. Turning this off stops reporting from both the app and its proxy immediately, with no reinstall."
     }
   ]
 }
