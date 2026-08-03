@@ -167,7 +167,7 @@
       "kind": "screen",
       "chapter": "stage",
       "seconds": 6,
-      "caption": "Optional rooms. A 1970s datacenter ships with it.",
+      "caption": "One optional room: the 1970s Research Datacenter.",
       "narration": "Or put a room around it. The seventies datacenter ships with the app.",
       "shots": [
         {
@@ -190,11 +190,11 @@
       "kind": "feature",
       "seconds": 6,
       "title": "What ships in the box",
-      "caption": "No account, no cloud round trip, no backend.",
-      "narration": "Twenty-four avatars, forty-six body clips, five providers, no backend required.",
+      "caption": "No account. No backend required. The cloud is opt-in.",
+      "narration": "Twenty-four avatars, forty-seven body clips, five providers, no backend required.",
       "items": [
         { "label": "Avatars", "value": "24" },
-        { "label": "Body clips", "value": "46" },
+        { "label": "Body clips", "value": "47" },
         { "label": "LLM providers", "value": "5" },
         { "label": "Backend required", "value": "none" }
       ]
@@ -203,9 +203,9 @@
       "id": "close",
       "kind": "outro",
       "seconds": 5,
-      "cta": "Own your AI.",
+      "cta": "UnCloud your life.",
       "url": "ci.computer",
-      "narration": "Spatial Companion, from Companion Intelligence. Own your AI."
+      "narration": "Spatial Companion, from Companion Intelligence. UnCloud your life."
     }
   ]
 }
