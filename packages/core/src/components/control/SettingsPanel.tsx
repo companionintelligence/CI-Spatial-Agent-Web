@@ -214,8 +214,19 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
+          // border-box so maxWidth/maxHeight bound the RENDERED card. With the
+          // default content-box the 2.8rem of padding sat outside `width`, so a
+          // 24rem card actually drew 26.9rem and blew past both caps: on a
+          // 360x640 phone it clipped its own title row and Save/Cancel row off
+          // the top and bottom of the screen (measured 708px in a 640px
+          // viewport), leaving Save unreachable.
+          boxSizing: 'border-box',
           width: isXR ? '30rem' : '24rem',
           maxWidth: '92vw',
+          // Never taller than the surface it floats on; scroll the overflow
+          // instead of clipping it.
+          maxHeight: 'calc(100% - 2rem)',
+          overflowY: 'auto',
           padding: isXR ? '1.75rem' : '1.4rem',
           borderRadius: 'var(--radius-xl)',
           background: 'var(--xr-glass-bg)',

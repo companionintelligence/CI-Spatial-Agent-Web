@@ -163,6 +163,8 @@
               },
               { "waitFor": "#settings-url" },
               { "waitFor": "#settings-model" },
+              { "fill": ["#settings-url", "http://localhost:11434"] },
+              { "eval": "document.activeElement.blur()" },
               { "wait": 600 }
             ]
           }
