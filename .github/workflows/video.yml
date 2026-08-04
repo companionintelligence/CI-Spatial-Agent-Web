@@ -23,6 +23,17 @@ jobs:
   video:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Was implicit before. The org/repo default is currently
+    # `default_workflow_permissions: write`, so this block does not *add* anything
+    # today — it pins what the job actually needs so a future org-wide flip to
+    # read-only cannot silently break either `packages: read` (the video-kit
+    # install) or the drift PR. `contents: write` + `pull-requests: write` are
+    # required by peter-evans/create-pull-request at the bottom of this job;
+    # narrowing `contents` to `read` would break it.
+    permissions:
+      contents: write
+      packages: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +46,36 @@ jobs:
           # package there, and public deps (playwright, remotion) 404 on install.
           scope: "@companionintelligence"
 
+      # ── KNOWN BLOCKER, NOT FIXABLE FROM THIS REPO ────────────────────────────
+      # Run 30868139318 (main, 2026-08-04T01:14Z) died here in 28s:
+      #
+      #   npm error code E403
+      #   npm error 403 Forbidden - GET
+      #     https://npm.pkg.github.com/@companionintelligence%2fvideo-kit
+      #     - Permission permission_denied: read_package
+      #
+      # This is fleet-wide, not a bug in this file — CI-Spellbook (30868089948),
+      # CI-Planning (30868086599) and CI-Hub (30868081300) all failed identically
+      # in the same dispatch batch. Cause:
+      #   gh api /orgs/companionintelligence/packages/npm/video-kit
+      #   -> visibility=private, repository=CI-Common
+      # A consuming repo's default GITHUB_TOKEN cannot read a PRIVATE package
+      # owned by a DIFFERENT repository, no matter what `permissions:` says. The
+      # token here already carries packages:write (org default is `write`), so
+      # scope is not the problem — the package-side grant is.
+      #
+      # FIX (one of these; both are outside this repo, so nothing is faked here):
+      #   A. In CI-Common -> Packages -> video-kit -> Manage Actions access,
+      #      add this repository (or set the package visibility to Internal so
+      #      every org repo can read it). Web UI only — there is no REST endpoint
+      #      for either, `gh api PATCH` 404s.
+      #   B. Create an org-scoped PAT secret with `read:packages` and swap the
+      #      NODE_AUTH_TOKEN below to it. No such secret exists today
+      #      (`gh secret list` shows only SENTRY_DSN), so this is a human action.
+      #
+      # Until one of those lands, capture never runs, assets/shots/ stays empty,
+      # and BOTH cuts render as video-kit's "capture pending" slates. Re-verify
+      # with a single workflow_dispatch before trusting any storyboard change.
       - name: Install video project
         working-directory: video
         run: npm install

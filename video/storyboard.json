@@ -112,13 +112,13 @@
       "kind": "screen",
       "chapter": "stage",
       "seconds": 6,
-      "caption": "Collapse the dock. Only the avatar is left.",
+      "caption": "Collapse the panels. Just the avatar and one input.",
       "narration": "Hide the dock and the screen is just the avatar and one input.",
       "shots": [
         {
           "id": "controls-collapsed",
           "url": "spatial-companion.local",
-          "alt": "The HUD with the control dock collapsed, leaving the avatar and the chat input.",
+          "alt": "The HUD with both the control dock and the Chat Log collapsed, leaving the avatar and the chat input.",
           "motion": "push-in",
           "capture": {
             "path": "/",
@@ -128,6 +128,8 @@
             "before": [
               { "wait": 2500 },
               { "click": "button[aria-label=\"Hide Controls\"]" },
+              { "click": "button[aria-label=\"Hide Chat\"]" },
+              { "waitFor": "button[aria-label=\"Show Chat\"]" },
               { "wait": 800 }
             ]
           }
@@ -156,6 +158,11 @@
               { "wait": 2500 },
               { "click": "button[aria-label=\"Settings\"]" },
               { "waitFor": "select#settings-provider" },
+              {
+                "eval": "(()=>{const s=document.querySelector('#settings-provider');const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,'ollama');s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+              },
+              { "waitFor": "#settings-url" },
+              { "waitFor": "#settings-model" },
               { "wait": 600 }
             ]
           }
