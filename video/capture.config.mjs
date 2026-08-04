@@ -70,12 +70,45 @@
  *    ChatInput into readOnly with a "🎤 Starting..." placeholder and would make
  *    the chat beat unfillable.
  *
- * 6. XR status text is environment-derived. ControlPanel renders "XR: unavailable"
- *    under a plain headless Chromium (no navigator.xr) and "XR: ready" on a
- *    machine with a headset or the WebXR emulator extension. It is stable for the
- *    Playwright browser this pipeline uses; it is a real diff source if anyone
- *    ever captures through a browser that exposes WebXR. Not masked — there is no
- *    stable selector for it without touching app source, which is out of scope.
+ * 6. XR status text is environment-derived, AND IT IS AN OPEN POLICY QUESTION.
+ *    ControlOverlay derives xrStatusText from navigator.xr.isSessionSupported()
+ *    for 'immersive-ar'/'immersive-vr'. Headless Chromium exposes no navigator.xr,
+ *    so xrSupport stays {ar:false, vr:false}: the status line films as
+ *    "XR: unavailable" and ControlButton renders Enter VR / Enter AR at opacity
+ *    0.5 with cursor:not-allowed. FOUR shots carry that dock — hud-shell,
+ *    controls-collapsed, settings-panel and datacenter-diorama — so every dock
+ *    frame in the video says the headset feature is unavailable.
+ *
+ *    STATUS: deliberately UNCHANGED. This is a messaging decision, not a bug, so
+ *    it is flagged here rather than patched silently. The two options:
+ *
+ *    A. (current) Accept it. README.md commits to exactly this: XR entry, Vision
+ *       Pro, voice and WebGPU "are not fabricated here; only what genuinely
+ *       renders headlessly is shown." The cost is that the dock never looks
+ *       XR-capable, and an `xr-ready` scene is not feasible.
+ *    B. Stub the capability in onContext below:
+ *         await page.addInitScript(() => {
+ *           Object.defineProperty(navigator, 'xr', {
+ *             value: { isSessionSupported: async () => true,
+ *                      addEventListener(){}, removeEventListener(){} },
+ *             configurable: true,
+ *           })
+ *         })
+ *       That is exactly what a Quest or Vision Pro browser reports, flips the
+ *       line to "XR: ready" and enables the buttons, without ever requesting a
+ *       session. VERIFY LOCALLY FIRST: Scene3D.tsx calls createXRStore() and
+ *       mounts <XR store={store}> on every render, so confirm @react-three/xr
+ *       tolerates the partial stub before trusting it.
+ *
+ *    Either way the status line is stable for THIS pipeline's browser, and it is
+ *    a real diff source if anyone ever captures through a browser that exposes
+ *    WebXR. Not masked — there is no stable selector for it without touching app
+ *    source, which is out of scope.
+ *
+ *    The immersive session itself stays unfilmable under both options:
+ *    handleEnterVRMode/handleEnterARMode route to navigator.xr.requestSession,
+ *    which no stub can satisfy, and the output would be a stereo framebuffer
+ *    rather than a screenshot.
  *
  * 7. NOT volatile, checked: no clocks, uptimes, relative timestamps or live
  *    counters render anywhere in the HUD (ChatBubble carries a `timestamp` but
