@@ -94,10 +94,39 @@
  *             configurable: true,
  *           })
  *         })
- *       That is exactly what a Quest or Vision Pro browser reports, flips the
- *       line to "XR: ready" and enables the buttons, without ever requesting a
- *       session. VERIFY LOCALLY FIRST: Scene3D.tsx calls createXRStore() and
- *       mounts <XR store={store}> on every render, so confirm @react-three/xr
+ *       That is exactly what a Quest or Vision Pro browser reports, and it does
+ *       flip the line to "XR: ready" and enable the buttons without ever
+ *       requesting a session — MEASURED, both viewports report "XR: ready".
+ *
+ *       ⚠️ DO NOT PASTE THIS WITHOUT READING THE REST OF THIS PARAGRAPH. The
+ *       stub is NOT confined to the status line: navigator.xr.isSessionSupported
+ *       is also the first input to useXRLayout.ts:15-25, which computes
+ *         isXR = (supportsImmersive && isCoarsePointer) || isXRDevice
+ *       and `isCoarsePointer` splits the kit's two viewports. video-kit's
+ *       VIEWPORTS (capture.mjs) build desktop as 1280x720 isMobile:false and
+ *       mobile as 360x640 isMobile:true + hasTouch:true, so MEASURED under the
+ *       kit's own contexts: desktop pointer:coarse=false, mobile
+ *       pointer:coarse=TRUE. With the stub in place every MOBILE shot therefore
+ *       renders isXR=true and the whole 9:16 cut films the headset layout on a
+ *       360px phone frame: SettingsPanel goes 24rem -> 30rem wide with 1.75rem
+ *       padding and 1rem fields (SettingsPanel.tsx:173/224/230), ChatPanel goes
+ *       17.5rem -> 22rem (ChatPanel.tsx:58), ControlPanel buttons go 44px ->
+ *       56px (ControlPanel.tsx:119). MEASURED on the settings shot: XR sizing
+ *       inflates that dialog by ~62px of intrinsic height (708 -> 770 against a
+ *       640px viewport, taken before the panel learned to cap itself), so even
+ *       now that SettingsPanel clamps to the viewport and scrolls, the stub
+ *       just pushes more of the form out of the filmed frame while the dock and
+ *       chat panel bloat around it. Desktop is unaffected (isXR stays false
+ *       there).
+ *
+ *       So Option B is a MOBILE-CUT REGRESSION, not a free win. If it is ever
+ *       taken, it has to be scoped to the desktop context — onContext receives
+ *       the viewport name (`config.onContext(context, { viewport, page })`), so
+ *       gate the addInitScript on `viewport === "desktop"`. A repo-wide stub
+ *       ships a broken 9:16 cut.
+ *
+ *       ALSO VERIFY LOCALLY FIRST: Scene3D.tsx calls createXRStore() and mounts
+ *       <XR store={store}> on every render, so confirm @react-three/xr
  *       tolerates the partial stub before trusting it.
  *
  *    Either way the status line is stable for THIS pipeline's browser, and it is
