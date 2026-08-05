@@ -18,7 +18,24 @@ export interface DeviceCapabilities {
   devicePixelRatio: number
   maxTextureSize: number
   vendorInfo?: string
+  /** UNMASKED_RENDERER_WEBGL — names the actual GL implementation. */
+  rendererInfo?: string
+  /**
+   * True when WebGL is being rasterised on the CPU (SwiftShader, llvmpipe,
+   * Microsoft Basic Render Driver). Such a context advertises full WebGL2 and
+   * the same capabilities a discrete GPU does while being orders of magnitude
+   * slower, so feature detection alone cannot tell the two apart.
+   */
+  isSoftwareRenderer: boolean
 }
+
+/**
+ * Names reported by the common software rasterisers. SwiftShader is what
+ * headless Chromium falls back to; llvmpipe/softpipe are the Mesa equivalents;
+ * the Microsoft and VMware entries appear on VMs and over remote desktop.
+ */
+const SOFTWARE_RENDERER_RE =
+  /swiftshader|llvmpipe|softpipe|software|basic render|microsoft basic|vmware|virgl/i
 
 export interface RenderQuality {
   shadowMapSize: number
@@ -66,14 +83,20 @@ export const detectCapabilities = async (): Promise<DeviceCapabilities> => {
   // Get device pixel ratio (capped for performance)
   const devicePixelRatio = Math.min(window.devicePixelRatio || 1, 2)
 
-  // Get GPU vendor info for optimization hints
+  // Get GPU vendor info for optimization hints. The RENDERER string is the one
+  // that names the implementation ("ANGLE (Google, Vulkan … SwiftShader Device)"),
+  // so it is what decides whether we are on a CPU rasteriser; VENDOR alone reads
+  // "Google Inc." for both hardware ANGLE and SwiftShader.
   let vendorInfo: string | undefined
+  let rendererInfo: string | undefined
   if (gl) {
     const debugInfo = gl.getExtension('WEBGL_debug_renderer_info')
     if (debugInfo) {
       vendorInfo = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)
+      rendererInfo = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
     }
   }
+  const isSoftwareRenderer = SOFTWARE_RENDERER_RE.test(`${vendorInfo ?? ''} ${rendererInfo ?? ''}`)
 
   return {
     isDesktop,
@@ -83,7 +106,9 @@ export const detectCapabilities = async (): Promise<DeviceCapabilities> => {
     hasWebGL2,
     devicePixelRatio,
     maxTextureSize,
-    vendorInfo
+    vendorInfo,
+    rendererInfo,
+    isSoftwareRenderer
   }
 }
 
@@ -96,6 +121,16 @@ export const getRenderQuality = (capabilities: DeviceCapabilities, forceQuality?
   
   if (forceQuality) {
     quality = forceQuality
+  } else if (capabilities.isSoftwareRenderer) {
+    // A CPU rasteriser passes every check below — desktop UA, WebGL2 present,
+    // large MAX_TEXTURE_SIZE — and would land on 'high': 2048² shadow maps plus
+    // SSAO, FXAA and MSAA at up to 2× pixel ratio, all without a GPU. That is a
+    // slideshow on a real machine that has fallen back to software (no GPU,
+    // blocklisted driver, VM, remote desktop), and in headless Chromium it is
+    // slow enough that a frame never lands: every desktop product-video shot
+    // timed out — page.screenshot at 30s, page.goto at 45s — while the mobile
+    // viewport, which takes the 'low' branch below, captured fine.
+    quality = 'low'
   } else if (capabilities.isMobile && !capabilities.isTablet) {
     quality = 'low'
   } else if (capabilities.isTablet || !capabilities.hasWebGL2) {
