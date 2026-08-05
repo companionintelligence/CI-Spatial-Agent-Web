@@ -51,20 +51,19 @@ const SceneContent = ({
   const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
   const [camPos, setCamPos] = useState<[number, number, number]>(sceneConfig.cameraPosition)
 
-  // Configure renderer on mount with quality settings
+  // Configure renderer on mount with quality settings.
+  //
+  // Uses the `capabilities` prop rather than re-deriving it. This used to build a
+  // second, partial copy inline — re-sniffing the user agent and asserting
+  // `hasWebGL2: true` and `maxTextureSize: 2048` whatever the context actually
+  // reported — so the renderer was configured from different facts than the ones
+  // that chose `quality`. The detected object is already passed in and now also
+  // carries isSoftwareRenderer.
   useEffect(() => {
     if (gl && quality) {
-      configureRenderer(gl as THREE.WebGLRenderer, {
-        isDesktop: !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)),
-        isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
-        isTablet: /iPad|Android/i.test(navigator.userAgent) && window.innerWidth > 768,
-        hasWebGPU: webGPUEnabled,
-        hasWebGL2: true,
-        devicePixelRatio: window.devicePixelRatio || 1,
-        maxTextureSize: 2048
-      }, quality)
+      configureRenderer(gl as THREE.WebGLRenderer, { ...capabilities, hasWebGPU: webGPUEnabled }, quality)
     }
-  }, [gl, quality, webGPUEnabled])
+  }, [gl, quality, webGPUEnabled, capabilities])
 
   useEffect(() => {
     camera.position.set(camPos[0], camPos[1], camPos[2])
