@@ -46,6 +46,27 @@ Sketchfab exports carry dead absolute paths), drops orphaned non-mesh backdrop o
 normalizes to the real-world target dimension above, floor-aligns, exports GLB
 (Y-up, no Draco). Re-run it if a source asset is replaced; then update the table here.
 
+### Where the pipeline did not finish
+
+Three of the twelve shipped without it. Measure any prop with
+`node scripts/prop-glb.mjs` (world bounds from the GLB header, full TRS chain) or
+`node scripts/prop-glb.mjs --nodes <file>` for a per-mesh-node breakdown.
+
+- **`ibm-1401-mainframe.glb` — repaired at source, no Blender needed.** The file held
+  two unrelated coordinate clusters: 29 nodes forming a 0.59 × 0.93 × 1.03 m cabinet
+  (the 1401, already at real scale) and 240 nodes forming a 184 × 44 × 160 unit set of
+  floor and ceiling slabs and structural ironwork — the Sketchfab source's backdrop,
+  which the "drops orphaned backdrop objects" step above did not drop. That backdrop is
+  the whole reason the file measured 184 m. `scripts/prop-glb.mjs --repair` prunes it
+  from the scene graph and recentres the cabinet on its origin. Rigid, verified against
+  the re-measured result, binary chunk copied through byte for byte. The pruned meshes'
+  buffer views are still in the BIN chunk, so the file is still 5.9 MB for 0.4 MB of
+  geometry — a real re-export would fix that too.
+- **`kenbak-1.glb` and `ibm-3178-terminal.glb` — still need the source archive.** See
+  `PROP_NEEDS_REEXPORT` in `DioramaProps.ts` for the measurements and why rescaling them
+  is not a fix. The diorama leaves them out until they are re-exported; deleting the
+  entry there puts them back with no other change.
+
 ## Layout rationale (from the GDD)
 
 - **Back wall — big iron**, oldest→newest left to right (RAMAC → 1401 → 1401 CPU →
