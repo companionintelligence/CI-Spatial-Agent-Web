@@ -47,21 +47,52 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
     }
   }, [isVisible])
 
+  /*
+   * A side rail is a desktop shape. Ported to a 360 px phone unchanged it was a
+   * 200 px slab pinned to the right edge from `top: 1rem` down 80% of the
+   * screen: it cut the avatar's face in half along a hard vertical seam, it
+   * slid under the centred logo (the logo box spans roughly x=114..246, the
+   * panel starts at x=160, so "Chat Log" read out from behind it), and every
+   * bubble wrapped to three or four words. Below the tablet breakpoint the panel
+   * becomes a top sheet instead — full width, docked under the logo, 40% tall —
+   * which is the same information in a shape a phone actually has room for.
+   */
+  const sheetStyle = isMobile
+    ? {
+        top: '5rem',
+        left: 0,
+        right: 0,
+        // Sized by what is in it, capped at 40% of the surface. A fixed-height
+        // sheet spends its full budget even when the conversation is one line,
+        // and on a phone that budget lands squarely over the avatar's face —
+        // the one thing the frame is of. Animating max-height rather than
+        // height keeps the open/close transition while letting the content set
+        // the resting size.
+        height: 'auto',
+        maxHeight: isVisible ? '40%' : '0',
+        width: 'auto',
+        borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
+        transition: 'max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }
+    : {
+        top: isXR ? '2rem' : '1rem',
+        right: 0,
+        height: '80%',
+        width: isVisible ? (isXR ? '22rem' : '17.5rem') : '0',
+        borderRadius: 'var(--radius-lg) 0 0 var(--radius-lg)',
+        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+      }
+
   return (
     <>
       <div
         style={{
           position: 'absolute',
-          top: isXR ? '2rem' : '1rem',
-          right: 0,
-          height: '80%',
-          width: isVisible ? (isXR ? '22rem' : isMobile ? '12.5rem' : '17.5rem') : '0',
+          ...sheetStyle,
           zIndex: 999,
-          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           background: 'var(--xr-glass-bg)',
           backdropFilter: 'blur(var(--xr-glass-blur))',
           border: '0.0625rem solid var(--xr-glass-border)',
-          borderRadius: 'var(--radius-lg) 0 0 var(--radius-lg)',
           overflow: 'hidden',
           boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.04)',
           margin: '0'
@@ -72,8 +103,9 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
           style={{
             opacity: isVisible ? 1 : 0,
             transition: 'opacity 0.3s ease',
-            height: '100%',
-            paddingTop: isXR ? '3rem' : isMobile ? '2.5rem' : '3.75rem',
+            height: isMobile ? 'auto' : '100%',
+            maxHeight: '100%',
+            paddingTop: isXR ? '3rem' : isMobile ? '0.75rem' : '3.75rem',
             paddingLeft: isXR ? '1.5rem' : isMobile ? '0.75rem' : '1.25rem',
             paddingRight: isXR ? '1.5rem' : isMobile ? '0.75rem' : '1.25rem',
             paddingBottom: isXR ? '1.5rem' : isMobile ? '0.75rem' : '1.25rem',
@@ -135,11 +167,24 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
             }}
             className="custom-scrollbar"
           >
-            {messages.map((message) => (
-              <ChatBubble key={message.id} message={message} />
-            ))}
-            {/* Invisible element at the bottom to ensure proper scrolling */}
-            <div style={{ height: '5rem' }} />
+            {messages.length === 0 ? (
+              <p
+                style={{
+                  margin: 0,
+                  color: 'var(--muted-foreground)',
+                  fontSize: isXR ? '0.95rem' : '0.8125rem',
+                  lineHeight: 1.5
+                }}
+              >
+                Nothing here yet. Say hello, or type below — the whole
+                conversation stays on this machine.
+              </p>
+            ) : (
+              messages.map((message) => <ChatBubble key={message.id} message={message} />)
+            )}
+            {/* Keeps the last bubble clear of the rail's bottom edge. On the
+                auto-sized mobile sheet it would just be 5rem of empty glass. */}
+            {!isMobile && <div style={{ height: '5rem' }} />}
           </div>
         </div>
       </div>
@@ -150,7 +195,7 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
         label="Chat"
         position="right"
         isMobile={isMobile}
-        panelWidth={{ mobile: '12.5rem', desktop: isXR ? '22rem' : '17.5rem' }}
+        panelWidth={{ mobile: '2.625rem', desktop: isXR ? '22rem' : '17.5rem' }}
         size={isXR ? 44 : 32}
       />
     </>

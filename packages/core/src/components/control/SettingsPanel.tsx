@@ -104,6 +104,9 @@ const FIELD_MAP: Record<LLMProvider, { urlKey?: keyof LLMConfig; modelKey?: keyo
 
 export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const { isXR } = useXRLayout()
+  // Phone-width card: the footer has room for two buttons and a short link, not
+  // a sentence. Matches the isMobile breakpoint used across the overlay.
+  const isNarrow = typeof window !== 'undefined' && window.innerWidth <= 768
   const [settings] = useSimpleStore(LLMSettingsState)
   const [appConfig] = useSimpleStore(AppConfigState)
   const hasWebGPU = useHasWebGPU()
@@ -226,7 +229,16 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           // Never taller than the surface it floats on; scroll the overflow
           // instead of clipping it.
           maxHeight: 'calc(100% - 2rem)',
-          overflowY: 'auto',
+          // Header / scrolling body / pinned footer. Scrolling the WHOLE card
+          // kept Save reachable but not visible: on a 360x640 phone the card
+          // filled the screen, the fold landed mid-sentence in the Graphics
+          // section, and the only thing telling you Save existed was a
+          // scrollbar. A settings dialog whose commit button is below the fold
+          // is a dialog people abandon. The two rows that matter — what this is
+          // and how to leave it — now stay put and only the fields move.
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
           padding: isXR ? '1.75rem' : '1.4rem',
           borderRadius: 'var(--radius-xl)',
           background: 'var(--xr-glass-bg)',
@@ -238,6 +250,7 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
       >
         <div
           style={{
+            flexShrink: 0,
             display: 'flex',
             alignItems: 'center',
             gap: '0.5rem',
@@ -250,6 +263,18 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           <span>Settings</span>
         </div>
 
+        <div
+          style={{
+            // The only part that scrolls. `minHeight: 0` is what lets a flex
+            // child actually shrink below its content height instead of pushing
+            // the footer off the card.
+            flex: '1 1 auto',
+            minHeight: 0,
+            overflowY: 'auto',
+            // Room for the footer's top rule without the last field touching it.
+            paddingRight: '0.15rem'
+          }}
+        >
         <div style={{ ...sectionHeaderStyle, paddingTop: 0, borderTop: 'none', marginTop: 0 }}>
           <Server size={13} aria-hidden />
           <span>Connection</span>
@@ -334,7 +359,20 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           onChange={(v) => AppConfigState.set((prev) => ({ ...prev, webGPUEnabled: v }))}
         />
 
-        <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem' }}>
+        </div>
+
+        <div
+          style={{
+            flexShrink: 0,
+            display: 'flex',
+            gap: '0.6rem',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop: '1rem',
+            paddingTop: '1rem',
+            borderTop: '0.0625rem solid var(--border)'
+          }}
+        >
           <button
             onClick={handleReset}
             style={{
@@ -344,10 +382,15 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
               fontSize: isXR ? '0.95rem' : '0.85rem',
               cursor: 'pointer',
               textDecoration: 'underline',
-              padding: '0.4rem'
+              padding: '0.4rem',
+              // "Reset to defaults" + Cancel + Save is about 5 px wider than a
+              // 360 px card's footer, so it broke across two lines under the
+              // buttons. Never wrap; drop to the short label on a narrow card.
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}
           >
-            Reset to defaults
+            {isNarrow ? 'Reset' : 'Reset to defaults'}
           </button>
 
           <div style={{ display: 'flex', gap: '0.6rem' }}>

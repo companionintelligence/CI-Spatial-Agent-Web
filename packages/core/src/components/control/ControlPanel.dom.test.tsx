@@ -55,4 +55,35 @@ describe('ControlPanel', () => {
     // The mic button's accessible name and its under-icon label both flip.
     expect(screen.getByRole('button', { name: 'Listening' })).toBeInTheDocument()
   })
+
+  // Regression: the bar was positioned with `left: 50%` + `translateX(-50%)`.
+  // That makes its shrink-to-fit width `containing block - 50%`, i.e. half the
+  // screen — 180 px on a 360 px phone — so `flexWrap` folded eight 44 px
+  // controls into a 2-across, 4-down tower that climbed over the chat input.
+  it('spans the surface rather than starting at the halfway mark', () => {
+    const { container } = render(<ControlPanel {...baseProps} />)
+    const root = container.firstElementChild as HTMLElement
+    expect(root.style.left).toBe('0px')
+    expect(root.style.right).toBe('0px')
+    expect(root.style.transform).not.toContain('translateX')
+  })
+
+  it('hides the bar from the pointer while it is collapsed', () => {
+    const { container } = render(<ControlPanel {...baseProps} isVisible={false} />)
+    const root = container.firstElementChild as HTMLElement
+    expect(root.style.pointerEvents).toBe('none')
+  })
+
+  // "XR: unavailable" is permanently true in any desktop browser without a
+  // headset, so it sat across the bottom of every captured frame saying nothing
+  // actionable. Only an informative status earns the space.
+  it('suppresses the XR status line when XR is simply unavailable', () => {
+    const { container } = render(<ControlPanel {...baseProps} xrStatusText="XR: unavailable" />)
+    expect(container.textContent ?? '').not.toContain('XR: unavailable')
+  })
+
+  it('shows the XR status line when a headset is ready', () => {
+    render(<ControlPanel {...baseProps} xrStatusText="XR: ready" />)
+    expect(screen.getByText('XR: ready')).toBeInTheDocument()
+  })
 })

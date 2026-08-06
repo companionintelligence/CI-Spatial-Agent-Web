@@ -129,18 +129,52 @@ export const ControlPanel = memo(({
     <Mic size={iconSize} aria-hidden />
   )
 
+  // "XR: unavailable" is a diagnostic, not product information: on any desktop
+  // browser without a headset it is permanently true, so it sat across the
+  // bottom of every frame — under the bar, half over the avatar, one line above
+  // the viewport edge — saying nothing a viewer can act on. Surface the status
+  // only when there is something to say (a headset is ready, or a session is
+  // running), and put it ABOVE the bar so it is never the thing hugging the
+  // bottom edge.
+  const showXrStatus = Boolean(xrStatusText) && xrStatusText !== 'XR: unavailable'
+
   return (
     <div
       style={{
         position: 'absolute',
         bottom: isXR ? '2rem' : '1.25rem',
-        left: '50%',
+        // Span the surface and centre the bar inside it, rather than
+        // `left: 50%` + `translateX(-50%)`.
+        //
+        // An absolutely positioned box with only `left` set is shrink-to-fit
+        // against `containing block width - left`, so at `left: 50%` the bar
+        // could never be wider than HALF the screen — 180 px on a 360 px phone.
+        // `flexWrap` then did what it was told and folded eight 44 px controls
+        // into a 2-across, 4-down block ~230 px tall, which climbed straight
+        // over the chat input sitting at `bottom: 7.5rem`. The transform reads
+        // as the cause because it is the visible half of the trick; the real
+        // cause is the width the trick leaves behind.
+        left: 0,
+        right: 0,
         zIndex: 1000,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: isVisible ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(100%)',
-        opacity: isVisible ? 1 : 0
+        transform: isVisible ? 'translateY(0)' : 'translateY(100%)',
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? 'auto' : 'none'
       }}
     >
+      {showXrStatus && (
+        <div
+          style={{
+            marginBottom: '0.5rem',
+            textAlign: 'center',
+            fontSize: '0.75rem',
+            color: 'var(--muted-foreground)'
+          }}
+        >
+          {xrStatusText}
+        </div>
+      )}
       <div
         style={{
           background: 'var(--xr-glass-bg)',
@@ -158,7 +192,11 @@ export const ControlPanel = memo(({
           alignItems: 'flex-start',
           width: 'fit-content',
           margin: '0 auto',
-          maxWidth: isXR ? '38rem' : isMobile ? '20rem' : '32rem'
+          // Mobile is capped to exactly four controls per row (4 x 44 px + 3 x
+          // 12 px gap + 2 x 20 px padding = 15.75rem), so eight actions land as
+          // a tidy 4 + 4 grid instead of a ragged 5 + 3. Two rows is 124 px
+          // tall, which is what the mobile chat input is raised to clear.
+          maxWidth: isXR ? '38rem' : isMobile ? '15.75rem' : '32rem'
         }}
       >
         <LabeledControl
@@ -256,18 +294,6 @@ export const ControlPanel = memo(({
           />
         )}
       </div>
-      {xrStatusText && (
-        <div
-          style={{
-            marginTop: '0.5rem',
-            textAlign: 'center',
-            fontSize: '0.75rem',
-            color: 'var(--muted-foreground)'
-          }}
-        >
-          {xrStatusText}
-        </div>
-      )}
     </div>
   )
 })

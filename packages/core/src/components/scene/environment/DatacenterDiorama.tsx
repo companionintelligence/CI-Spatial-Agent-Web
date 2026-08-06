@@ -13,7 +13,12 @@ import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { DioramaProps, type DioramaPropName } from './DioramaProps'
+import {
+  DioramaProps,
+  PropTargetMaxDim,
+  PROP_SCALE_TOLERANCE,
+  type DioramaPropName
+} from './DioramaProps'
 
 interface PropPlacement {
   name: DioramaPropName
@@ -53,15 +58,44 @@ const PROP_LAYOUT: PropPlacement[] = [
   { name: 'Prologica CP-500 (1982)', position: [3.55, 0, 0.5], rotation: [0, -1.2, 0] }
 ]
 
+/**
+ * Repair factor for a GLB whose export skipped normalization.
+ *
+ * docs/DIORAMA.md promises every prop arrives scaled to its real machine's
+ * dimensions, "so placements need no per-prop correction". Three of the twelve
+ * do not: measured off the shipped files, the IBM 1401 mainframe is 88 m across,
+ * the 3178 terminal 40 m and the KENBAK-1 46 m. Trusting the promise put the
+ * camera inside a 90-metre cabinet.
+ *
+ * Rather than paper over it with three magic numbers in PROP_LAYOUT, measure
+ * what actually loaded and rescale it to the documented target when it is out by
+ * more than PROP_SCALE_TOLERANCE. Within tolerance the shipped scale is used
+ * untouched, so the nine correct props render exactly as before — and a future
+ * bad re-export self-corrects instead of swallowing the frame.
+ */
+function normalizationFactor(name: DioramaPropName, object: THREE.Object3D): number {
+  const target = PropTargetMaxDim[name]
+  const size = new THREE.Box3().setFromObject(object).getSize(new THREE.Vector3())
+  const measured = Math.max(size.x, size.y, size.z)
+  if (!Number.isFinite(measured) || measured <= 0) return 1
+  const ratio = measured / target
+  if (ratio <= PROP_SCALE_TOLERANCE && ratio >= 1 / PROP_SCALE_TOLERANCE) return 1
+  return target / measured
+}
+
 function DioramaProp({ placement }: { placement: PropPlacement }) {
   const { scene } = useGLTF(DioramaProps[placement.name])
   const cloned = useMemo(() => scene.clone(true), [scene])
+  const scale = useMemo(
+    () => (placement.scale ?? 1) * normalizationFactor(placement.name, cloned),
+    [cloned, placement.name, placement.scale]
+  )
   return (
     <primitive
       object={cloned}
       position={placement.position}
       rotation={placement.rotation ?? [0, 0, 0]}
-      scale={placement.scale ?? 1}
+      scale={scale}
     />
   )
 }
@@ -80,15 +114,29 @@ function IndicatorLamp({ position, color = '#e8a24a' }: { position: [number, num
 function RoomShell() {
   return (
     <group>
+      {/* Raised computer-room floor tile: matte, not chrome.
+          At `metalness: 0.4` this 14 m plane, seen at the grazing angle a 1.8 m
+          eye height gives it, turned into one enormous specular mirror for the
+          studio IBL and the cool CI rim light — the frame came back as a sheet
+          of saturated cyan with the room somewhere behind it. Perforated steel
+          tile with 40 years of chair castors on it is closer to 0.05/0.85, and
+          the room reads as a room again. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -1.5]} receiveShadow>
         <planeGeometry args={[14, 14]} />
-        <meshStandardMaterial color="#0a1418" metalness={0.4} roughness={0.6} />
+        <meshStandardMaterial color="#0a1418" metalness={0.05} roughness={0.85} />
       </mesh>
       <mesh position={[0, 5, -5.3]}>
         <planeGeometry args={[14, 10]} />
         <meshStandardMaterial color="#081319" metalness={0.15} roughness={0.95} />
       </mesh>
       <mesh position={[-5.3, 5, -1.5]} rotation={[0, Math.PI / 2, 0]}>
+        <planeGeometry args={[7, 10]} />
+        <meshStandardMaterial color="#081319" metalness={0.15} roughness={0.95} />
+      </mesh>
+      {/* The mirrored side wall. With only one, the half of frame the camera
+          actually looks at was open void, so the "room" had no far corner to
+          sit in. */}
+      <mesh position={[5.3, 5, -1.5]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[7, 10]} />
         <meshStandardMaterial color="#081319" metalness={0.15} roughness={0.95} />
       </mesh>
@@ -103,7 +151,22 @@ export interface DatacenterDioramaProps {
 
 export function DatacenterDiorama({ showShell = true }: DatacenterDioramaProps) {
   return (
-    <group name="datacenter-diorama">
+    // Face the room at the camera the app actually uses.
+    //
+    // PROP_LAYOUT is authored around "camera at [0, 1.6, 3] looking toward the
+    // origin" — the <Canvas camera> default. But Scene3D immediately overrides
+    // it from `sceneConfig.cameraPosition`, which is [0, 1.8, -2]: the opposite
+    // side of the avatar. Every prop sits at negative z, so the camera stood
+    // BEHIND all of them, inside the shell, looking out at bare floor. The only
+    // thing that ever made it into frame was the Prologica CP-500 at z = +0.5,
+    // which is exactly the lone cream-coloured cabinet corner visible at the
+    // bottom-right of the committed diorama screenshot.
+    //
+    // A half-turn is the whole fix: the layout is a rigid body, so the room is
+    // identical from the other side, and it also swings the cool rim light from
+    // 3.6 m in front of the camera (where it was scorching the near floor) to
+    // behind the avatar, where a rim light belongs.
+    <group name="datacenter-diorama" rotation={[0, Math.PI, 0]}>
       {showShell && <RoomShell />}
 
       {/* diegetic warm key: tungsten desk-lamp glow the avatar's own key/fill doesn't cover */}
