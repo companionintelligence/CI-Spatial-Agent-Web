@@ -9,7 +9,8 @@
   },
   "meta": {
     "fps": 30,
-    "transitionSeconds": 0.5
+    "transitionSeconds": 0.5,
+    "pacing": "fit"
   },
   "chapters": {
     "ftue": "First run",
@@ -70,9 +71,15 @@
             "waitUntil": "networkidle",
             "settle": 2500,
             "before": [
-              { "click": "button:has-text(\"Skip\")" },
-              { "waitFor": "textarea.chat-input" },
-              { "wait": 2500 }
+              {
+                "click": "button:has-text(\"Skip\")"
+              },
+              {
+                "waitFor": "textarea.chat-input"
+              },
+              {
+                "wait": 2500
+              }
             ]
           }
         }
@@ -97,9 +104,18 @@
             "waitUntil": "networkidle",
             "settle": 1200,
             "before": [
-              { "wait": 2500 },
-              { "fill": ["textarea.chat-input", "Where do my messages go?"] },
-              { "wait": 600 }
+              {
+                "wait": 2500
+              },
+              {
+                "fill": [
+                  "textarea.chat-input",
+                  "Where do my messages go?"
+                ]
+              },
+              {
+                "wait": 600
+              }
             ]
           }
         },
@@ -114,11 +130,27 @@
             "waitUntil": "networkidle",
             "settle": 1500,
             "before": [
-              { "wait": 2500 },
-              { "fill": ["textarea.chat-input", "Where do my messages go?"] },
-              { "press": ["textarea.chat-input", "Enter"] },
-              { "waitFor": "text=Assistant" },
-              { "wait": 1500 }
+              {
+                "wait": 2500
+              },
+              {
+                "fill": [
+                  "textarea.chat-input",
+                  "Where do my messages go?"
+                ]
+              },
+              {
+                "press": [
+                  "textarea.chat-input",
+                  "Enter"
+                ]
+              },
+              {
+                "waitFor": "text=Assistant"
+              },
+              {
+                "wait": 1500
+              }
             ]
           }
         }
@@ -143,11 +175,21 @@
             "waitUntil": "networkidle",
             "settle": 1500,
             "before": [
-              { "wait": 2500 },
-              { "click": "button[aria-label=\"Hide Controls\"]" },
-              { "click": "button[aria-label=\"Hide Chat\"]" },
-              { "waitFor": "button[aria-label=\"Show Chat\"]" },
-              { "wait": 800 }
+              {
+                "wait": 2500
+              },
+              {
+                "click": "button[aria-label=\"Hide Controls\"]"
+              },
+              {
+                "click": "button[aria-label=\"Hide Chat\"]"
+              },
+              {
+                "waitFor": "button[aria-label=\"Show Chat\"]"
+              },
+              {
+                "wait": 800
+              }
             ]
           }
         }
@@ -172,17 +214,36 @@
             "waitUntil": "networkidle",
             "settle": 900,
             "before": [
-              { "wait": 2500 },
-              { "click": "button[aria-label=\"Settings\"]" },
-              { "waitFor": "select#settings-provider" },
+              {
+                "wait": 2500
+              },
+              {
+                "click": "button[aria-label=\"Settings\"]"
+              },
+              {
+                "waitFor": "select#settings-provider"
+              },
               {
                 "eval": "(()=>{const s=document.querySelector('#settings-provider');const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,'ollama');s.dispatchEvent(new Event('change',{bubbles:true}));})()"
               },
-              { "waitFor": "#settings-url" },
-              { "waitFor": "#settings-model" },
-              { "fill": ["#settings-url", "http://localhost:11434"] },
-              { "eval": "document.activeElement.blur()" },
-              { "wait": 600 }
+              {
+                "waitFor": "#settings-url"
+              },
+              {
+                "waitFor": "#settings-model"
+              },
+              {
+                "fill": [
+                  "#settings-url",
+                  "http://localhost:11434"
+                ]
+              },
+              {
+                "eval": "document.activeElement.blur()"
+              },
+              {
+                "wait": 600
+              }
             ]
           }
         }
@@ -206,7 +267,11 @@
             "waitFor": "canvas",
             "waitUntil": "networkidle",
             "settle": 3000,
-            "before": [{ "wait": 3000 }]
+            "before": [
+              {
+                "wait": 3000
+              }
+            ]
           }
         }
       ]
@@ -219,10 +284,22 @@
       "caption": "No account. No backend required. The cloud is opt-in.",
       "narration": "Forty-seven body clips, five ways to connect a model, and no monthly fee.",
       "items": [
-        { "label": "Monthly fee", "value": "$0" },
-        { "label": "Backend required", "value": "none" },
-        { "label": "Body clips", "value": "47" },
-        { "label": "LLM providers", "value": "5" }
+        {
+          "label": "Monthly fee",
+          "value": "$0"
+        },
+        {
+          "label": "Backend required",
+          "value": "none"
+        },
+        {
+          "label": "Body clips",
+          "value": "47"
+        },
+        {
+          "label": "LLM providers",
+          "value": "5"
+        }
       ]
     },
     {
