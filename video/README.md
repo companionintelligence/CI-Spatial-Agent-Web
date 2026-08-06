@@ -5,6 +5,33 @@
 Generates a **16:9 desktop cut** and a **9:16 mobile cut** of Spatial Companion's FTUE and major
 screens, from this repo's own UI. Both are produced from [`storyboard.json`](storyboard.json).
 
+## Making one
+
+Product videos are built **on a developer machine, on demand**. Nothing in CI builds them, and the
+MP4s are not stored anywhere — no artifacts, no committed `.mp4`, no release assets. A cut is a
+build output: regenerate it when you need one, then delete it.
+
+One command, from a CI-Engineering checkout:
+
+```bash
+node tools/make-videos.mjs spatial-companion
+```
+
+Both cuts land in `~/Movies/CI-Product-Videos/spatial-companion/`, outside every repo. It needs
+`CI-Common` cloned beside the other repos (the render kit is run straight off disk, so there is no
+registry and no token), `ffmpeg` + `ffprobe` on `PATH`, and Node 22+.
+
+Two things worth knowing before you use it here:
+
+- It renders from the screenshots **committed under `assets/shots/`**, so it needs nothing running
+  and takes about ninety seconds.
+- It exports `video/` from `origin/main`, not from your working tree. A storyboard edit you have
+  not pushed will not appear in the render — iterate with the in-repo commands below, then push.
+
+Spatial Companion has no scripted stage in the runner, so `--capture` falls back to render-only.
+Re-shooting the screens is the in-repo path: stand the app up yourself as described next, then run
+`npm run capture`.
+
 ## The stage
 
 This app has **one route**; every filmable state is an overlay composed in
@@ -27,7 +54,10 @@ The app needs no backend for any of these shots: with no `/config.json` and no
 [`capture.config.mjs`](capture.config.mjs) pins that explicitly and stubs the
 response set so the transcript is fixed.
 
-## Quick start
+## Re-shooting and iterating
+
+The runner above is the way to *get* a video. These are the commands to change what is in one —
+re-shoot a screen, try a storyboard edit, or check a cut before pushing.
 
 ```bash
 npm install
@@ -59,7 +89,11 @@ picked up automatically from `assets/audio/<sceneId>.mp3`; regenerate it from th
 ## What is committed
 
 `assets/shots/*.png` and `assets/audio/*.mp3` **are** committed — they are the record of what the
-product looked like. `build/` and `out/` are not.
+product looked like, and they are *inputs*: keeping them means anyone can render a cut without
+standing this app up at all. When a screen moves, the new shot shows up as a reviewable diff.
+
+`build/` and `out/` are not committed, and no MP4 is stored anywhere else either. Only the videos
+are ephemeral.
 
 **Byte-stability does not hold in this repo.** Every shot contains a live WebGL avatar whose
 render loop never stops (`Scene3D.tsx` keeps `frameloop` at `"always"` deliberately), and
