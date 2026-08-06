@@ -16,6 +16,7 @@ import * as THREE from 'three'
 import {
   DioramaProps,
   PropTargetMaxDim,
+  PROP_NEEDS_REEXPORT,
   PROP_SCALE_TOLERANCE,
   type DioramaPropName
 } from './DioramaProps'
@@ -59,19 +60,44 @@ const PROP_LAYOUT: PropPlacement[] = [
 ]
 
 /**
- * Repair factor for a GLB whose export skipped normalization.
+ * The layout minus the props whose GLBs are not usable as shipped
+ * (PROP_NEEDS_REEXPORT — currently the KENBAK-1 and the IBM 3178, both measured
+ * and explained there). PROP_LAYOUT itself keeps all twelve authored placements,
+ * so a good re-export drops back into the room by deleting one line in
+ * DioramaProps.ts and nothing else.
  *
- * docs/DIORAMA.md promises every prop arrives scaled to its real machine's
- * dimensions, "so placements need no per-prop correction". Three of the twelve
- * do not: measured off the shipped files, the IBM 1401 mainframe is 88 m across,
- * the 3178 terminal 40 m and the KENBAK-1 46 m. Trusting the promise put the
- * camera inside a 90-metre cabinet.
+ * Removing the 3178 would leave a hole in the middle of the terminal row, so the
+ * CP-500 takes its slot: the row then reads Alto -> PET -> CP-500 evenly spaced
+ * at z = -2.6, -1.7, -0.6 instead of three machines and a gap. The side desk just
+ * loses its third artifact, which needs no compensation — the mouse and plugboard
+ * still read as a desk.
+ */
+const VISIBLE_LAYOUT: PropPlacement[] = (() => {
+  const absent = new Set<DioramaPropName>(PROP_NEEDS_REEXPORT)
+  const slotOf = (name: DioramaPropName) => PROP_LAYOUT.find((p) => p.name === name)
+  const terminalSlot = slotOf('IBM 3178 Terminal (1979)')
+  return PROP_LAYOUT.filter((p) => !absent.has(p.name)).map((p) =>
+    p.name === 'Prologica CP-500 (1982)' && absent.has('IBM 3178 Terminal (1979)') && terminalSlot
+      ? { ...p, position: terminalSlot.position, rotation: terminalSlot.rotation }
+      : p
+  )
+})()
+
+/**
+ * Last-resort guard against a GLB that arrives at the wrong scale.
  *
- * Rather than paper over it with three magic numbers in PROP_LAYOUT, measure
- * what actually loaded and rescale it to the documented target when it is out by
- * more than PROP_SCALE_TOLERANCE. Within tolerance the shipped scale is used
- * untouched, so the nine correct props render exactly as before — and a future
- * bad re-export self-corrects instead of swallowing the frame.
+ * docs/DIORAMA.md promises every prop is scaled to its real machine's dimensions,
+ * "so placements need no per-prop correction". Trusting that promise once put the
+ * camera inside a 184-metre asset. If a future export lands more than
+ * PROP_SCALE_TOLERANCE off target, rescale it rather than let it swallow the
+ * frame; within tolerance the shipped scale is used untouched.
+ *
+ * Every prop the diorama currently places is within tolerance, so this returns 1
+ * for all of them — it is a tripwire, not a load-bearing correction. It is
+ * deliberately NOT the answer to the two props in PROP_NEEDS_REEXPORT: their
+ * measured boxes are not their machines, so scaling those boxes to target
+ * produces a confidently wrong shape rather than a right one. Those are left out
+ * of the room instead.
  */
 function normalizationFactor(name: DioramaPropName, object: THREE.Object3D): number {
   const target = PropTargetMaxDim[name]
@@ -178,7 +204,7 @@ export function DatacenterDiorama({ showShell = true }: DatacenterDioramaProps) 
       <IndicatorLamp position={[0.3, 1.3, -4.6]} color="#58ebbf" />
       <IndicatorLamp position={[2.1, 1.4, -4.6]} color="#e8a24a" />
 
-      {PROP_LAYOUT.map((p) => (
+      {VISIBLE_LAYOUT.map((p) => (
         <DioramaProp key={p.name} placement={p} />
       ))}
     </group>
