@@ -57,7 +57,7 @@
       "chapter": "ftue",
       "seconds": 6,
       "caption": "The HUD: chat log, input, control dock.",
-      "narration": "Behind the modal the avatar is already live, with the HUD around it.",
+      "narration": "Past the modal, the avatar is already live, with the HUD around it.",
       "shots": [
         {
           "id": "hud-shell",
@@ -82,10 +82,27 @@
       "id": "one-turn",
       "kind": "screen",
       "chapter": "talk",
-      "seconds": 7,
-      "caption": "One turn. Face, voice and body all move.",
-      "narration": "Type a message. The reply drives lip sync, expression and a body animation.",
+      "seconds": 9,
+      "caption": "One turn, answered on this machine.",
+      "narration": "Type a message. The reply lands in the log, and drives lip sync, expression and a body animation.",
       "shots": [
+        {
+          "id": "chat-typed",
+          "url": "spatial-companion.local",
+          "alt": "The question typed into the chat input, with the Chat Log still empty.",
+          "motion": "drift-down",
+          "capture": {
+            "path": "/",
+            "waitFor": "textarea.chat-input",
+            "waitUntil": "networkidle",
+            "settle": 1200,
+            "before": [
+              { "wait": 2500 },
+              { "fill": ["textarea.chat-input", "Where do my messages go?"] },
+              { "wait": 600 }
+            ]
+          }
+        },
         {
           "id": "chat-turn",
           "url": "spatial-companion.local",
@@ -98,7 +115,7 @@
             "settle": 1500,
             "before": [
               { "wait": 2500 },
-              { "fill": ["textarea.chat-input", "hello"] },
+              { "fill": ["textarea.chat-input", "Where do my messages go?"] },
               { "press": ["textarea.chat-input", "Enter"] },
               { "waitFor": "text=Assistant" },
               { "wait": 1500 }
@@ -200,12 +217,12 @@
       "seconds": 6,
       "title": "What ships in the box",
       "caption": "No account. No backend required. The cloud is opt-in.",
-      "narration": "Twenty-four avatars, forty-seven body clips, no backend required.",
+      "narration": "Forty-seven body clips, five ways to connect a model, and no monthly fee.",
       "items": [
-        { "label": "Avatars", "value": "24" },
+        { "label": "Monthly fee", "value": "$0" },
+        { "label": "Backend required", "value": "none" },
         { "label": "Body clips", "value": "47" },
-        { "label": "LLM providers", "value": "5" },
-        { "label": "Backend required", "value": "none" }
+        { "label": "LLM providers", "value": "5" }
       ]
     },
     {

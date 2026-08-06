@@ -23,10 +23,19 @@ registry and no token), `ffmpeg` + `ffprobe` on `PATH`, and Node 22+.
 
 Two things worth knowing before you use it here:
 
-- It renders from the screenshots **committed under `assets/shots/`**, so it needs nothing running
-  and takes about ninety seconds.
+- It renders from the screenshots under `assets/shots/`, so it needs nothing running and takes
+  about ninety seconds — **once those screenshots exist**. See the warning below: right now they
+  do not.
 - It exports `video/` from `origin/main`, not from your working tree. A storyboard edit you have
   not pushed will not appear in the render — iterate with the in-repo commands below, then push.
+
+> ⚠️ **No shots are committed yet.** `assets/shots/` holds only `.gitkeep`, so every one of the
+> seven screen shots (`first-run`, `hud-shell`, `chat-typed`, `chat-turn`, `controls-collapsed`,
+> `settings-panel`, `datacenter-diorama`, × desktop and mobile) is missing. `ci-video build`
+> substitutes a branded "capture pending" slate for each, `ci-video check` fails on them unless
+> you pass `--allow-slates`, and a render would be a cut of slates. Stand the app up as described
+> under [The stage](#the-stage), run `npm run capture`, and commit the PNGs before rendering
+> anything you intend to show anyone.
 
 Spatial Companion has no scripted stage in the runner, so `--capture` falls back to render-only.
 Re-shooting the screens is the in-repo path: stand the app up yourself as described next, then run
@@ -88,9 +97,14 @@ picked up automatically from `assets/audio/<sceneId>.mp3`; regenerate it from th
 
 ## What is committed
 
-`assets/shots/*.png` and `assets/audio/*.mp3` **are** committed — they are the record of what the
-product looked like, and they are *inputs*: keeping them means anyone can render a cut without
-standing this app up at all. When a screen moves, the new shot shows up as a reviewable diff.
+`assets/shots/*.png` and `assets/audio/*.mp3` are meant to **be** committed — they are the record
+of what the product looked like, and they are *inputs*: keeping them means anyone can render a cut
+without standing this app up at all. When a screen moves, the new shot shows up as a reviewable
+diff. Neither path is gitignored.
+
+The nine `assets/audio/*.mp3` are committed and current. **The shots are not: `assets/shots/`
+contains no PNGs at all.** Until someone runs a capture against a real stage and commits the
+result, this project can only render placeholder slates.
 
 `build/` and `out/` are not committed, and no MP4 is stored anywhere else either. Only the videos
 are ephemeral.
