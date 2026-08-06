@@ -75,9 +75,14 @@
  *    for 'immersive-ar'/'immersive-vr'. Headless Chromium exposes no navigator.xr,
  *    so xrSupport stays {ar:false, vr:false}: the status line films as
  *    "XR: unavailable" and ControlButton renders Enter VR / Enter AR at opacity
- *    0.5 with cursor:not-allowed. FOUR shots carry that dock — hud-shell,
- *    controls-collapsed, settings-panel and datacenter-diorama — so every dock
- *    frame in the video says the headset feature is unavailable.
+ *    0.5 with cursor:not-allowed. FIVE shots carry that dock legibly — hud-shell,
+ *    chat-typed, chat-turn, settings-panel and datacenter-diorama — so every dock
+ *    frame in the video says the headset feature is unavailable. Two shots do not:
+ *    controls-collapsed clicks "Hide Controls" first and the whole panel, status
+ *    line included, drops to opacity 0 (ControlPanel.tsx isVisible), and first-run
+ *    has the dock behind OnboardingOverlay's zIndex 1200 blur(6px) backdrop.
+ *    (An earlier revision of this note listed controls-collapsed and omitted the
+ *    chat shots; corrected here against the components.)
  *
  *    STATUS: deliberately UNCHANGED. This is a messaging decision, not a bug, so
  *    it is flagged here rather than patched silently. The two options:
@@ -148,18 +153,48 @@
  *    ~210 MB of avatars/animations/props into apps/web/public/assets (gitignored).
  *    Capture against a server whose predev has not finished yields 404s for every
  *    GLB/VRM and an empty scene.
+ *
+ * 9. THE AVATAR IS FRAMED AS A BUST, AND NO `before` CLICK CAN WIDEN IT.
+ *    Every shot photographs head-and-shoulders: AvatarModel.tsx locates the head
+ *    bone on load and calls onHeadLocated with `cameraDistance = .5` — the camera
+ *    is parked 50 cm in front of the face, looking at it (Scene3D.tsx camPos/
+ *    camTarget). That is why docs/media/*.png are all busts, and why the cut can
+ *    say "a body" and "Body clips · 47" without ever showing a body.
+ *
+ *    DO NOT try to fix this by clicking the dock's "Smaller" button before the
+ *    shutter. It is the obvious-looking fix and it makes the frame worse:
+ *    "Smaller" is sceneActions.scaleBy(-0.1) (ControlOverlay.tsx), which only
+ *    shrinks `<group scale={worldScale}>` about the floor origin (Scene3D.tsx).
+ *    The camera does not re-frame — onHeadLocated runs once, on `[avatarRef.current]`
+ *    — so the avatar shrinks *away from* a look-at point that stays put at the old
+ *    head height, and at 0.5 m the head drops out of the bottom of the frame long
+ *    before the feet come into it. "Larger" (scaleBy(+0.1), clamped at 2) crops the
+ *    head instead. Neither is a framing control; they are XR world-scale controls.
+ *
+ *    The honest ways to get a body in frame are app-side, not capture-side:
+ *    widen `cameraDistance`/expose it as a prop, or film the existing full-body
+ *    rig — apps/web/src/harness/AvatarHarness.tsx is served as its own Vite entry
+ *    at /harness.html and already has a `?shot=body` preset (d 4.5, fov 30) that
+ *    frames the whole avatar with the real AvatarModel and the real services.
+ *    The harness renders no HUD, so it cannot stand in for a product screen — it
+ *    would be an avatar beat of its own, and that is a storyboard decision.
  */
 
-/** Single deterministic reply, standing in for the 8-way random greeting set. */
+/**
+ * Single deterministic reply, standing in for the 8-way random greeting set.
+ *
+ * The trigger list carries the storyboard's own prompt verbatim so llmDirected's
+ * exact-match branch fires (llmDirected.ts findMatch: `triggers.includes(lowerMessage)`),
+ * with "default" kept as the belt-and-braces fallback for any other prompt.
+ */
 const SCRIPTED_RESPONSES = {
   triggers: [
     {
-      triggers: ["hello", "hi", "hey", "default"],
+      triggers: ["where do my messages go?", "hello", "hi", "hey", "default"],
       responses: [
         {
           id: "capture-greeting",
-          response:
-            "Hello. I run entirely on this machine, so nothing you say leaves it. Ask me anything.",
+          response: "Nowhere. I run entirely on this machine, so nothing you say leaves it.",
           emotion: "friendly",
         },
       ],
