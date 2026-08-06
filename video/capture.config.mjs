@@ -13,6 +13,11 @@
  * occupied"). Reusing it means one dev server serves both the L4/L5 suites and
  * this capture, and `reuseExistingServer: true` there makes them compose.
  *
+ * ── HOST: 127.0.0.1, NEVER `localhost` ───────────────────────────────────────
+ * This is not cosmetic and it is not interchangeable. See hazard 10: on the
+ * hostname `localhost` @react-three/xr silently injects a WebXR *emulator* and
+ * its dev UI, and the dev UI's "Enter XR" button lands in frame on every shot.
+ *
  * ── DETERMINISM HAZARDS FOUND IN THIS APP ────────────────────────────────────
  *
  * 1. THE AVATAR IS GPU-RASTERISED WebGL, AND IT NEVER STOPS MOVING.
@@ -30,16 +35,44 @@
  *    WebGL/canvas content. Mask the canvas or use a tolerance check."). The
  *    workflow's `Detect UI drift` step is therefore advisory here, not a gate.
  *
- * 2. WebGL under the kit's launch args — VERIFIED WORKING, no flags needed.
- *    playwright.config.capture.ts passes --use-gl=angle / --use-angle=swiftshader
- *    / --enable-unsafe-swiftshader, and the kit hard-codes its own launch args
- *    with no passthrough. Probed directly with the kit's exact arg list on
- *    Playwright 1.58's Chromium 145 headless shell: webgl2 comes up on
- *    "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device ...))". So the avatar
- *    rasterises and Scene3D does NOT fall through to GraphicsFallback
- *    ("Graphics Unavailable"). If a future Chromium drops the implicit
- *    SwiftShader fallback, that is exactly the symptom to expect, and the fix
- *    belongs in video-kit (a `launchArgs` passthrough), not here.
+ * 2. WebGL comes up, but the DEFAULT LAUNCH RASTERISES ON THE CPU — and that
+ *    costs one shot. MEASURED on an M2 Max, Playwright 1.62 / Chromium 1234,
+ *    with the kit's exact hard-coded arg list:
+ *
+ *      chromium.launch({args})                   -> "ANGLE (Google, Vulkan 1.3.0
+ *                                                    (SwiftShader Device ...))"
+ *      chromium.launch({args, channel:"chromium"}) -> "ANGLE (Apple, ANGLE Metal
+ *                                                    Renderer: Apple M2 Max)"
+ *
+ *    The difference is the BINARY, not the flags: bare `launch()` runs Playwright's
+ *    `chromium_headless_shell`, which has no GPU path and always lands on
+ *    SwiftShader. Adding --use-gl=angle --use-angle=metal --enable-gpu to the
+ *    headless shell does NOT change it (measured — still SwiftShader). Only
+ *    `channel: "chromium"`, the full Chrome-for-Testing build, reaches Metal.
+ *
+ *    On SwiftShader the app is correct but slow, and #131 already tiers quality
+ *    down for it. Six of seven desktop shots still capture. The seventh —
+ *    `datacenter-diorama`, the only shot with a whole room of geometry — blows
+ *    the kit's 30s page.screenshot budget at 1280x720 @dsf3 (3840x2160) and is
+ *    recorded as a hard failure. Hardware Metal captures it in a few seconds.
+ *
+ *    So this config UPGRADES THE LAUNCH (see the shim below `import`). The kit
+ *    hard-codes its launch args and exposes no passthrough, so the only lever
+ *    available from inside a repo is to patch `chromium.launch` on the exact
+ *    module instance the kit will resolve. It is deliberately conservative:
+ *    it only ADDS `channel`, keeps every kit arg, and falls back to the
+ *    unmodified call if the full build is not installed — so a Linux CI runner
+ *    with only the headless shell behaves exactly as it does today.
+ *    `CAPTURE_GPU=software` forces the old path for an A/B.
+ *
+ *    THE PROPER FIX IS STILL IN video-kit: a `launchOptions` passthrough in
+ *    capture.mjs. Delete this shim the day that lands.
+ *
+ *    Consequence worth knowing: on hardware, RendererConfig's isSoftwareRenderer
+ *    is false, so the scene renders at the `high` tier — 2048px shadow maps,
+ *    SSAO, FXAA — instead of `low`. The shots therefore look like the product on
+ *    a real GPU, which is the honest thing to put in a product video, but they
+ *    are NOT pixel-comparable to a SwiftShader capture.
  *
  * 3. Playwright's fake clock does NOT stall the render loop — VERIFIED.
  *    `context.clock.install()` fakes requestAnimationFrame, which would have
@@ -178,7 +211,100 @@
  *    frames the whole avatar with the real AvatarModel and the real services.
  *    The harness renders no HUD, so it cannot stand in for a product screen — it
  *    would be an avatar beat of its own, and that is a storyboard decision.
+ *
+ * 10. `localhost` PUTS A DEVELOPER TOOL IN EVERY FRAME. This is why baseURL below
+ *    resolves to 127.0.0.1, and the two hostnames are NOT interchangeable here.
+ *
+ *    Scene3D.tsx calls `createXRStore()` with no options. @pmndrs/xr's store.js
+ *    defaults `emulate` to 'metaQuest3' and its injection gate to
+ *    `{ hostname: 'localhost' }`:
+ *
+ *      const emulate = options?.emulate ?? 'metaQuest3'
+ *      const inject  = (typeof emulate === 'object' ? emulate.inject : undefined)
+ *                      ?? { hostname: 'localhost' }
+ *      if (inject === true || window.location.hostname === inject.hostname) {
+ *        injectEmulator(store, emulate, false)   // pulls in @iwer/devui
+ *      }
+ *
+ *    So on `localhost`, and only there, the app loads IWER — the Immersive Web
+ *    Emulation Runtime — and mounts its dev UI. That dev UI renders a dark
+ *    "Enter XR" pill at top-centre, which lands directly behind the Companion
+ *    Intelligence logo card and pokes out above it. It was in all seven of the
+ *    first desktop captures. It is a developer tool, not product UI, and a
+ *    product video must not show it. MEASURED: `document.body` carries 10
+ *    children on localhost vs 6 on 127.0.0.1 — the four extras are the dev UI.
+ *
+ *    Do not "fix" this by hiding the pill with CSS. Suppressing the widget while
+ *    leaving IWER loaded still leaves an emulated `navigator.xr` in the page, and
+ *    hazard 6 explains what a live navigator.xr does to the mobile cut. Changing
+ *    the hostname keeps the emulator out of the page entirely.
+ *
+ *    Two things this does NOT change, both checked: `navigator.xr` is defined on
+ *    both hostnames (Chromium 1234 exposes the interface with no devices behind
+ *    it, so isSessionSupported resolves false either way), and the mobile layout
+ *    is byte-for-byte the same — ChatPanel measures 12.5rem, its non-XR mobile
+ *    width, so useXRLayout's isXR stays false and hazard 6's Option-B regression
+ *    was never actually triggered. Only the dev UI differs.
+ *
+ * 11. THERE IS A T-POSE WINDOW AFTER `networkidle`, AND IT IS ~2 SECONDS WIDE.
+ *    The avatar GLB resolves before its idle clip starts driving the mixer, so
+ *    for a moment the rig sits in its bind pose — arms straight out. MEASURED on
+ *    hardware GL, shutter after `networkidle` + N ms:
+ *
+ *      N = 1200  T-POSE, arms spanning the full frame
+ *      N = 2500  settled, arms down, idle running
+ *      N = 4000  settled          N = 6000  settled
+ *
+ *    Every other shot already clears this by accident, because each carries a
+ *    `before: [{ wait: 2500 }]` on its way to some click. `first-run` has no
+ *    clicks — it photographs the modal on arrival — so it had nothing to hide
+ *    behind and shipped a T-posed avatar behind the onboarding blur. Its
+ *    `settle` is 3000 for that reason alone; do not trim it back.
+ *
+ *    Worth knowing that this got WORSE on hardware. Under SwiftShader the whole
+ *    boot was slow enough that 1200 ms landed after the clip had started. Going
+ *    faster moved the shutter INTO the window. A load-state artifact that only
+ *    appears on the fast path is the kind that survives review.
  */
+
+import { createRequire } from "node:module";
+
+/**
+ * ── LAUNCH SHIM: run the full Chromium build so the GPU rasterises (hazard 2) ──
+ *
+ * video-kit's capture.mjs calls `chromium.launch({ args: [...] })` with a
+ * hard-coded arg list and no options passthrough, and it resolves `playwright`
+ * with `createRequire(<video/package.json>)`. This file is imported by
+ * `ci-video capture` BEFORE that launch happens, and CommonJS caches by resolved
+ * path — so requiring playwright here hands back the very object the kit will
+ * use, and patching `launch` on it is enough.
+ *
+ * The patch only ADDS `channel: "chromium"`. Every kit arg is preserved, and if
+ * the full build is not installed (a runner that ran `playwright install
+ * chromium-headless-shell` only) the original call is retried unchanged, so this
+ * can never turn a working capture into a failing one.
+ */
+if (process.env.CAPTURE_GPU !== "software") {
+  try {
+    const pw = createRequire(import.meta.url)("playwright");
+    if (pw?.chromium && !pw.chromium.__ciHardwareLaunch) {
+      const original = pw.chromium.launch.bind(pw.chromium);
+      pw.chromium.launch = async (options = {}) => {
+        try {
+          const browser = await original({ ...options, channel: "chromium" });
+          console.log("  · launched full Chromium (hardware GL where available)");
+          return browser;
+        } catch (err) {
+          console.warn(`  ! full Chromium unavailable (${err.message.split("\n")[0]}); falling back to the headless shell / SwiftShader`);
+          return original(options);
+        }
+      };
+      pw.chromium.__ciHardwareLaunch = true;
+    }
+  } catch {
+    /* playwright not installed yet — the kit raises its own, better error */
+  }
+}
 
 /**
  * Single deterministic reply, standing in for the 8-way random greeting set.
@@ -203,7 +329,9 @@ const SCRIPTED_RESPONSES = {
 };
 
 export default {
-  baseURL: process.env.CAPTURE_BASE_URL ?? `http://localhost:${process.env.CAPTURE_PORT ?? 5178}`,
+  // 127.0.0.1, not localhost — hazard 10. The dev server binds both (vite
+  // `server.host: true`), so this is purely about which hostname the page sees.
+  baseURL: process.env.CAPTURE_BASE_URL ?? `http://127.0.0.1:${process.env.CAPTURE_PORT ?? 5178}`,
 
   // The shell is dark-ONLY by design (apps/web/src/styles/index.css: "we keep
   // color-scheme: dark and do not ship a light shell"), and index.html hard-sets

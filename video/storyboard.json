@@ -46,7 +46,7 @@
             "path": "/",
             "waitFor": "button:has-text(\"Enable Mic\")",
             "waitUntil": "networkidle",
-            "settle": 1200
+            "settle": 3000
           }
         }
       ]
