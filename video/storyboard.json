@@ -28,7 +28,8 @@
       "seconds": 5,
       "title": "Spatial Companion",
       "caption": "An AI with a face, a voice and a body.",
-      "narration": "An embodied AI that runs in a browser tab."
+      "narration": "An embodied AI that runs in a browser tab.",
+      "mark": "./assets/app-icon.jpg"
     },
     {
       "id": "ftue-first-run",
@@ -300,7 +301,8 @@
           "label": "LLM providers",
           "value": "5"
         }
-      ]
+      ],
+      "reveal": "paced"
     },
     {
       "id": "close",
@@ -308,7 +310,8 @@
       "seconds": 5,
       "cta": "UnCloud your life.",
       "url": "ci.computer",
-      "narration": "Spatial Companion. UnCloud your life."
+      "narration": "Spatial Companion. UnCloud your life.",
+      "mark": "brand:logo.full"
     }
   ]
 }
