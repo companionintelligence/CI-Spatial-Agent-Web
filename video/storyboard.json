@@ -87,6 +87,27 @@
       ]
     },
     {
+      "id": "promise",
+      "kind": "screen",
+      "chapter": "ftue",
+      "seconds": 6,
+      "caption": "It opens straight into this. No account, no sign-in.",
+      "narration": "The empty log makes the promise before you have typed anything at all.",
+      "shots": [
+        {
+          "id": "hud-shell",
+          "url": "spatial-companion.local",
+          "alt": "The Chat Log's empty state, reading \"Nothing here yet. Say hello, or type below — the whole conversation stays on this machine.\"",
+          "motion": "push-in",
+          "_focusNote": "Same screenshot as ftue-hud-shell, punched in on the Chat Log rail — a wide-then-detail cut, and the film's only tight framing. The rail is a narrow right-hand column at 16:9 and a full-width band under the logo at 9:16, so the rectangle CANNOT be shared and is declared per format.\n\nThe landscape rectangle is DELIBERATELY LOOSER than the copy it is about, and the reason is worth keeping. Pointed straight at the text (x 0.775, w 0.225) it asks for ~3x, MAX_SCALE clamps that to 2.4, and at 2.4 the window is 0.526 of the plate anchored to the right edge — starting at x 0.474, which is exactly far enough left to catch the top of the avatar's head. The rendered end frame was a forehead and a pair of eyes sliced off in the bottom-left corner: a botched crop, not a camera move. Retargeting to x 0.57 changed NOTHING — verified against the kit's own focusState, both rectangles clamp to the identical transform (scale 2.4, x -864), because past the ceiling the rectangle stops being read at all. The only lever left is asking for LESS: w 0.60 lands 2.105x, a 0.60-wide window from x 0.40, and the avatar arrives whole instead of guillotined. Twelve percent smaller type, an actual composition.\n\nThe general lesson, for anyone adding a focus here: a focus rectangle is a request, and past MAX_SCALE the clamps stop honouring the part you care about. Render the frame and look at it — `check` has nothing to say about this.",
+          "focus": {
+            "landscape": { "x": 0.4, "y": 0.0, "w": 0.6, "h": 0.55 },
+            "portrait": { "x": 0.0, "y": 0.185, "w": 1.0, "h": 0.16 }
+          }
+        }
+      ]
+    },
+    {
       "id": "one-turn",
       "kind": "screen",
       "chapter": "talk",
@@ -251,6 +272,60 @@
       ]
     },
     {
+      "id": "on-device",
+      "kind": "screen",
+      "chapter": "stage",
+      "seconds": 6,
+      "caption": "On-device (WebLLM). The model runs in the tab.",
+      "narration": "One of the five providers runs the model inside the browser tab itself.",
+      "shots": [
+        {
+          "id": "settings-on-device",
+          "url": "spatial-companion.local",
+          "alt": "The Settings dialog with the LLM provider set to On-device (WebLLM): the Server URL field is gone and only Model remains, holding the app's default local model.",
+          "motion": "push-in",
+          "_focusNote": "Focused on the CONNECTION block, which is the beat. It also frames out a real defect at 9:16: mlc has one field fewer than ollama, so the dialog's scroll container lands its boundary mid-row and slices 'WebGPU rendering' through the middle of the glyphs. The committed ollama shot happens to cut cleanly at a divider instead. This is the app's own scroll clipping at 360x640, not a capture artefact, and it is not worth masking — but there is no reason to put it on screen.",
+          "focus": {
+            "landscape": { "x": 0.355, "y": 0.14, "w": 0.29, "h": 0.28 },
+            "portrait": { "x": 0.06, "y": 0.09, "w": 0.88, "h": 0.32 }
+          },
+          "_captureNote": "Establishes onboarding ITSELF (the eval below), for the reason written up on datacenter-diorama: shot order is not a declared dependency and `--only` does not replay it. Selecting `mlc` is the point of the frame, not decoration — FIELD_MAP in SettingsPanel.tsx gives mlc a modelKey and NO urlKey, so the Server URL row disappears and the dialog is visibly a different shape from the Ollama one in `connection`. Nothing is typed here: the model shown is the app's own default (llmConfig.ts defaultLLMConfig.mlc_model), which is the honest thing to film.",
+          "capture": {
+            "path": "/",
+            "waitFor": "button[aria-label=\"Settings\"]",
+            "waitUntil": "networkidle",
+            "settle": 900,
+            "before": [
+              {
+                "eval": "[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Skip')?.click()"
+              },
+              {
+                "waitFor": "textarea.chat-input"
+              },
+              {
+                "wait": 2500
+              },
+              {
+                "click": "button[aria-label=\"Settings\"]"
+              },
+              {
+                "waitFor": "select#settings-provider"
+              },
+              {
+                "eval": "(()=>{const s=document.querySelector('#settings-provider');const set=Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;set.call(s,'mlc');s.dispatchEvent(new Event('change',{bubbles:true}));})()"
+              },
+              {
+                "waitFor": "#settings-model"
+              },
+              {
+                "wait": 700
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "id": "environment",
       "kind": "screen",
       "chapter": "stage",
@@ -278,6 +353,57 @@
               },
               {
                 "wait": 3000
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stage-room",
+      "kind": "screen",
+      "chapter": "stage",
+      "seconds": 7,
+      "caption": "The room moves the camera back. Body included.",
+      "narration": "In the room the camera sits further back, so the whole body comes into frame.",
+      "shots": [
+        {
+          "id": "datacenter-quiet",
+          "url": "spatial-companion.local/?env=datacenter-1970s",
+          "alt": "The 1970s datacenter with both HUD panels collapsed: the desk and terminal, the machine wall, and the avatar standing full-length in the middle of it.",
+          "motion": "push-in",
+          "_focusNote": "push-in, not drift-down, and with a subject. The room only occupies the lower two thirds of the plate — above the machines is unlit ceiling, and it is a third of the 9:16 crop. A drift-down would spend the shot travelling INTO that emptiness. The focus rects instead end the push on the desk-and-avatar band at 16:9 and on the avatar at 9:16, so the move settles on something and the dead air at the top is cropped out rather than approached.",
+          "focus": {
+            "landscape": { "x": 0.06, "y": 0.3, "w": 0.72, "h": 0.62 },
+            "portrait": { "x": 0.06, "y": 0.38, "w": 0.88, "h": 0.56 }
+          },
+          "_captureNote": "The film's only wide shot, and the only frame in which the avatar has legs. That is not a camera trick in the edit — Scene3D's ENVIRONMENT_LOOK parks the camera at 2.4 m landscape / 3.6 m portrait for `datacenter-1970s`, against 0.5 m for the studio, so every other shot is a bust and no `before` step can widen them (capture.config.mjs hazard 9). Collapsing both panels is what makes it work at 9:16: with the Chat Log rail up, the portrait crop of this room keeps the bust and loses the desk entirely. Establishes onboarding itself — same reason as datacenter-diorama.",
+          "capture": {
+            "path": "/?env=datacenter-1970s",
+            "waitFor": "canvas",
+            "waitUntil": "networkidle",
+            "settle": 1500,
+            "before": [
+              {
+                "eval": "[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Skip')?.click()"
+              },
+              {
+                "waitFor": "textarea.chat-input"
+              },
+              {
+                "wait": 3000
+              },
+              {
+                "click": "button[aria-label=\"Hide Controls\"]"
+              },
+              {
+                "click": "button[aria-label=\"Hide Chat\"]"
+              },
+              {
+                "waitFor": "button[aria-label=\"Show Chat\"]"
+              },
+              {
+                "wait": 1200
               }
             ]
           }
