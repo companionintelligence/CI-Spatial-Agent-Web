@@ -17,6 +17,83 @@ import { PostProcessing } from './rendering/PostProcessing'
 import { XREnhancements } from './rendering/XREnhancements'
 
 
+/**
+ * Per-environment camera and lighting. `none` reproduces the studio viewport EXACTLY —
+ * 0.5 / 1 / 1 are the values this file has always had inline — so the default look, and
+ * every committed product screenshot of it, is unchanged.
+ *
+ * `cameraDistance` — how far in front of the located head bone the camera parks.
+ *   `sceneConfig.cameraPosition` is NOT where the camera ends up: AvatarModel finds the
+ *   head bone on load and calls onHeadLocated, and handleHeadLocated below overwrites both
+ *   position and target with it. So this distance is the only real framing control.
+ *   MEASURED at 0.5 m against the real render (fov 50, aspect 1.78, camera ending up at
+ *   [0, 1.638, 1.008] looking down -Z): 0 of the diorama's 11 props and 0 of its 3 walls
+ *   had a single AABB corner inside the frustum. 2.4 m brings the back wall of machines,
+ *   both side walls and the terminal row into shot and still keeps the avatar a mid-shot.
+ *
+ * `iblIntensity` — how much of the `studio` HDRI reaches the scene.
+ *   The studio preset is a bright white lightbox. It is the right key for a bust floating
+ *   on a dark HUD, and it is overwhelming inside a room: MEASURED, it was supplying nearly
+ *   all the diorama's light. At intensity 1 the machine cabinets clipped to (255,255,192)
+ *   and the floor — a #0a1418 plane — rendered at (169,182,195), brighter than anything
+ *   else in frame and directly behind the chat input and the control dock. Dropping the
+ *   IBL to 0 took the same floor pixel to (31,34,35) and un-clipped the cabinets.
+ *   NOTE this is scene.environmentIntensity, not material.envMapIntensity: measured,
+ *   setting envMapIntensity to 0 on every diorama material changed the floor by nothing
+ *   at all (156,169,181 -> 156,169,181). Tuning that number is tuning a no-op.
+ *
+ * `rigScale` — multiplier on the four studio directionals and the ambient below.
+ *   They are a product-shot rig aimed at a floating figure; at full strength inside a room
+ *   they flatten it and wash the walls. Scaled back, the diorama's own practicals become
+ *   the light you actually read, which is what docs/DIORAMA.md asks for.
+ */
+interface EnvironmentLook {
+  cameraDistance: number
+  /**
+   * Camera distance on a PORTRAIT viewport, where the same lens sees far less of the room.
+   *
+   * three's PerspectiveCamera holds the VERTICAL fov fixed and derives the horizontal one
+   * from aspect, so narrowing the window narrows the field rather than letterboxing it. At
+   * 1280x720 the frame is +/-0.830*d wide; at 360x640 it is +/-0.262*d — 3.2x less. A room
+   * staged to read at 16:9 therefore has almost none of its width left at 9:16, and the
+   * measured portrait frame at 2.4 m showed the avatar with one cabinet edge behind it and
+   * the whole workstation outside the frame.
+   *
+   * Full parity would need 3.2x the distance and would leave the avatar a doll. This is the
+   * compromise: far enough back that the room wraps the figure, close enough that the figure
+   * is still the subject. It is a different staging for a different frame, which is what a
+   * 9:16 cut is supposed to be — not the 16:9 one squeezed.
+   *
+   * Portrait also drops the pitch: at this distance the eyeline is already high in a tall
+   * frame, and pitching further down buries the avatar in the bottom third.
+   */
+  portraitCameraDistance: number
+  /** Metres the look-at sits below the head bone, pitching the camera down. 0 = eyeline. */
+  cameraTargetDrop: number
+  portraitCameraTargetDrop: number
+  iblIntensity: number
+  rigScale: number
+}
+
+const ENVIRONMENT_LOOK: Record<NonNullable<SceneConfig['environment']>, EnvironmentLook> = {
+  none: {
+    cameraDistance: 0.5,
+    portraitCameraDistance: 0.5,
+    cameraTargetDrop: 0,
+    portraitCameraTargetDrop: 0,
+    iblIntensity: 1,
+    rigScale: 1
+  },
+  'datacenter-1970s': {
+    cameraDistance: 2.4,
+    portraitCameraDistance: 3.6,
+    cameraTargetDrop: 0.28,
+    portraitCameraTargetDrop: 0.1,
+    iblIntensity: 0.14,
+    rigScale: 0.42
+  }
+}
+
 interface Scene3DProps {
   sceneConfig: SceneConfig
   visemeService?: ReturnType<typeof useVisemeService>
@@ -47,7 +124,7 @@ const SceneContent = ({
   setRecenterHandler
 }: Scene3DProps & { store: XRStore; quality: RenderQuality; capabilities: DeviceCapabilities; worldGroupRef: React.RefObject<THREE.Group | null>; worldScale: number; setRecenterHandler?: (fn: () => void) => void }) => {
   const controlsRef = useRef<React.ComponentRef<typeof OrbitControls> | null>(null)
-  const { camera, gl } = useThree()
+  const { camera, gl, size: viewportSize } = useThree()
   const [camTarget, setCamTarget] = useState<[number, number, number]>(sceneConfig.cameraTarget)
   const [camPos, setCamPos] = useState<[number, number, number]>(sceneConfig.cameraPosition)
 
@@ -95,6 +172,12 @@ const SceneContent = ({
   const shadowMapSize = quality?.shadowMapSize || 1024
   const useShadows = quality?.useShadows !== false
 
+  const look = ENVIRONMENT_LOOK[sceneConfig.environment ?? 'none']
+  // Portrait is decided by the drawing buffer, not by a user-agent guess: the capture films
+  // 1280x720 and 360x640 through the same browser build, so a UA check would call both
+  // desktop and stage the 9:16 cut as a cropped 16:9.
+  const isPortrait = viewportSize.height > viewportSize.width
+
   return (
     <XR store={store}>
       <OrbitControls
@@ -107,14 +190,16 @@ const SceneContent = ({
         maxDistance={10}
       />
 
-      {/* Enhanced lighting setup with quality-based shadows */}
-      <ambientLight intensity={0.5} color={0xffffff} />
-      
+      {/* Enhanced lighting setup with quality-based shadows.
+          Every intensity here is scaled by the environment's rigScale — 1 for the plain
+          studio viewport, so those numbers are untouched. */}
+      <ambientLight intensity={0.5 * look.rigScale} color={0xffffff} />
+
       {/* Key light - main directional light from front-right */}
-      <directionalLight 
-        position={[3, 5, 5]} 
-        intensity={1.5} 
-        color={0xffffff} 
+      <directionalLight
+        position={[3, 5, 5]}
+        intensity={1.5 * look.rigScale}
+        color={0xffffff}
         castShadow={useShadows}
         shadow-mapSize={[shadowMapSize, shadowMapSize]}
         shadow-bias={-0.0001}
@@ -127,27 +212,27 @@ const SceneContent = ({
       />
       
       {/* Fill light - softer light from left */}
-      <directionalLight 
-        position={[-3, 3, 2]} 
-        intensity={0.6} 
+      <directionalLight
+        position={[-3, 3, 2]}
+        intensity={0.6 * look.rigScale}
         color={0xeeeeff}
       />
-      
+
       {/* Rim/back light for depth */}
-      <directionalLight 
-        position={[0, 3, -5]} 
-        intensity={0.4} 
+      <directionalLight
+        position={[0, 3, -5]}
+        intensity={0.4 * look.rigScale}
         color={0xffeedd}
       />
-      
+
       {/* Bottom fill light to reduce harsh shadows */}
-      <directionalLight 
-        position={[0, -2, 2]} 
-        intensity={0.3} 
+      <directionalLight
+        position={[0, -2, 2]}
+        intensity={0.3 * look.rigScale}
         color={0xffffff}
       />
 
-      <Environment preset="studio" background={false} />
+      <Environment preset="studio" background={false} environmentIntensity={look.iblIntensity} />
 
       {/* XR enhancements for VR/AR */}
       <XREnhancements enabled={true} showGrid={false} />
@@ -159,6 +244,8 @@ const SceneContent = ({
           emoteService={emoteService}
           animationService={animationService}
           onHeadLocated={handleHeadLocated}
+          cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
+          cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
           webGPUEnabled={webGPUEnabled}
         />
       </group>
