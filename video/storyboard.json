@@ -56,6 +56,7 @@
     {
       "id": "ftue-hud-shell",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "ftue",
       "seconds": 6,
       "caption": "The HUD: chat log, input, control dock.",
@@ -89,6 +90,7 @@
     {
       "id": "promise",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "ftue",
       "seconds": 6,
       "caption": "It opens straight into this. No account, no sign-in.",
@@ -99,9 +101,9 @@
           "url": "spatial-companion.local",
           "alt": "The Chat Log's empty state, reading \"Nothing here yet. Say hello, or type below — the whole conversation stays on this machine.\"",
           "motion": "push-in",
-          "_focusNote": "Same screenshot as ftue-hud-shell, punched in on the Chat Log rail — a wide-then-detail cut, and the film's only tight framing. The rail is a narrow right-hand column at 16:9 and a full-width band under the logo at 9:16, so the rectangle CANNOT be shared and is declared per format.\n\nThe landscape rectangle is DELIBERATELY LOOSER than the copy it is about, and the reason is worth keeping. Pointed straight at the text (x 0.775, w 0.225, at the h 0.42 the band was being trialled at — shorter than the 0.55 that shipped, and the numbers below only reproduce at that height) it asks for ~3x, MAX_SCALE clamps that to 2.4, and at 2.4 the window is 0.526 of the plate anchored to the right edge — starting at x 0.474, which is exactly far enough left to catch the top of the avatar's head. The rendered end frame was a forehead and a pair of eyes sliced off in the bottom-left corner: a botched crop, not a camera move. Retargeting to x 0.57 changed NOTHING — but note WHICH rectangle that was: one still running to the plate's right edge, x 0.57 w 0.43. Verified against the kit's own focusState, it and the one above clamp to the identical transform (scale 2.4, x -864), because both centres sit far enough right that the translate clamp pins the window to the same edge. Slide the left edge and keep w at 0.225 and the equivalence does NOT hold — centre 0.6825, x -665.76, inside the clamp range and honoured, a genuinely different frame. It is the right edge that was stuck, not the rectangle that stopped being read. The only lever left is asking for LESS: w 0.60 lands 2.105x, a 0.60-wide window from x 0.40, and the avatar arrives whole instead of guillotined. Twelve percent smaller type, an actual composition.\n\nThe general lesson, for anyone adding a focus here: a focus rectangle is a request, and past MAX_SCALE the clamps stop honouring the part you care about. `check` has nothing to say about this. video-kit 0.8.0 added a way to try a rectangle without rendering — `ci-video focus-preview assets/shots/hud-shell.png --x 0.57 --w 0.43 --y 0 --h 0.42` reports the asked-for scale, which clamp bit, and whether the subject ended up anchored off-centre. This project still pins ^0.1.0, so run it from a 0.8.0 checkout of the kit until that dep is bumped. It reconstructs rather than renders, so still render the frame and look at it before believing the framing is right.",
+          "_focusNote": "Same screenshot as ftue-hud-shell, punched in on the Chat Log rail — a wide-then-detail cut, and the film's only tight framing. The rail is a narrow right-hand column at 16:9 and a full-width band under the logo at 9:16, so the rectangle CANNOT be shared and is declared per format.\n\nThe landscape rectangle is DELIBERATELY LOOSER than the copy it is about, and the reason is worth keeping. Pointed straight at the text (x 0.775, w 0.225, at the h 0.42 the band was being trialled at — shorter than the 0.55 that shipped, and the numbers below only reproduce at that height) it asks for ~3x, MAX_SCALE clamps that to 2.4, and at 2.4 the window is 0.526 of the plate anchored to the right edge — starting at x 0.474, which is exactly far enough left to catch the top of the avatar's head. The rendered end frame was a forehead and a pair of eyes sliced off in the bottom-left corner: a botched crop, not a camera move. Retargeting to x 0.57 changed NOTHING — but note WHICH rectangle that was: one still running to the plate's right edge, x 0.57 w 0.43. Verified against the kit's own focusState, it and the one above clamp to the identical transform (scale 2.4, x -864), because both centres sit far enough right that the translate clamp pins the window to the same edge. Slide the left edge and keep w at 0.225 and the equivalence does NOT hold — centre 0.6825, x -665.76, inside the clamp range and honoured, a genuinely different frame. It is the right edge that was stuck, not the rectangle that stopped being read. The only lever left is asking for LESS: w 0.60 lands 2.105x, a 0.60-wide window from x 0.40, and the avatar arrives whole instead of guillotined. Twelve percent smaller type, an actual composition.\n\nThe general lesson, for anyone adding a focus here: a focus rectangle is a request, and past MAX_SCALE the clamps stop honouring the part you care about. `check` has nothing to say about this. video-kit 0.8.0 added a way to try a rectangle without rendering — `ci-video focus-preview assets/shots/hud-shell.png --x 0.57 --w 0.43 --y 0 --h 0.42` reports the asked-for scale, which clamp bit, and whether the subject ended up anchored off-centre. This project still pins ^0.1.0, so run it from a 0.8.0 checkout of the kit until that dep is bumped. It reconstructs rather than renders, so still render the frame and look at it before believing the framing is right.\n\nAMENDED 2026-08-07, and the amendment is the reason the paragraph above ends where it does. Everything about the clamp is correct and worth keeping; the conclusion drawn from it — w 0.60 at x 0.40, y 0, h 0.55 — was still the wrong rectangle, and rendering it is what showed that. The end frame was a giant CI logo lockup in the top-left, the avatar's head floating in the lower-left CUT OFF AT THE JAW by the caption band, the Chat Log copy small in the top-right, and a hole through the middle: three things in three corners, no focal point, and the subject the shot is named for was the smallest element in it. Asking for less had fixed the SCALE and left the ANCHOR wrong — y 0 pins the window to the top of the plate, so the crop is the logo and the panel header, and the avatar only creeps in from the bottom.\n\nNow x 0.36, y 0.08, w 0.64, h 0.64 — 2.016x, honoured exactly. Dropping the top 8% loses the logo (which is a repeat of the intro's mark and carries nothing here) and buys enough height for the avatar to arrive as a proper bust — head, shoulders, chest — against the Chat Log rail on the right. Two columns, one face, one block of copy. The lesson to add to the one above: past MAX_SCALE the rectangle's SIZE stops being read, but its POSITION never stops mattering, and a rect that clears the clamp can still be aimed at the wrong part of the plate.",
           "focus": {
-            "landscape": { "x": 0.4, "y": 0.0, "w": 0.6, "h": 0.55 },
+            "landscape": { "x": 0.36, "y": 0.08, "w": 0.64, "h": 0.64 },
             "portrait": { "x": 0.0, "y": 0.185, "w": 1.0, "h": 0.16 }
           }
         }
@@ -110,6 +112,7 @@
     {
       "id": "one-turn",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "talk",
       "seconds": 9,
       "caption": "One turn, answered on this machine.",
@@ -181,6 +184,7 @@
     {
       "id": "quiet-hud",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "stage",
       "seconds": 6,
       "caption": "Collapse the panels. Just the avatar and one input.",
@@ -220,6 +224,7 @@
     {
       "id": "connection",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "stage",
       "seconds": 6,
       "caption": "Your model, your endpoint. Offline by default.",
@@ -274,6 +279,7 @@
     {
       "id": "on-device",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "stage",
       "seconds": 6,
       "caption": "On-device (WebLLM). The model runs in the tab.",
@@ -286,7 +292,7 @@
           "motion": "push-in",
           "_focusNote": "Focused on the CONNECTION block, which is the beat. It also frames out a real defect at 9:16: mlc has one field fewer than ollama, so the dialog's scroll container lands its boundary mid-row and slices 'WebGPU rendering' through the middle of the glyphs. The committed ollama shot happens to cut cleanly at a divider instead. This is the app's own scroll clipping at 360x640, not a capture artefact, and it is not worth masking — but there is no reason to put it on screen.",
           "focus": {
-            "landscape": { "x": 0.355, "y": 0.14, "w": 0.29, "h": 0.28 },
+            "landscape": { "x": 0.2, "y": 0.045, "w": 0.6, "h": 0.6 },
             "portrait": { "x": 0.06, "y": 0.09, "w": 0.88, "h": 0.32 }
           },
           "_captureNote": "Establishes onboarding ITSELF (the eval below), for the reason written up on datacenter-diorama: shot order is not a declared dependency and `--only` does not replay it. Selecting `mlc` is the point of the frame, not decoration — FIELD_MAP in SettingsPanel.tsx gives mlc a modelKey and NO urlKey, so the Server URL row disappears and the dialog is visibly a different shape from the Ollama one in `connection`. Nothing is typed here: the model shown is the app's own default (llmConfig.ts defaultLLMConfig.mlc_model), which is the honest thing to film.",
@@ -339,6 +345,7 @@
           "alt": "The avatar standing in the 1970s research-datacenter room: the resident's desk and terminal on the left, a wall of IBM big iron behind.",
           "motion": "drift-down",
           "_captureNote": "Dismisses onboarding ITSELF rather than inheriting it. Every shot after hud-shell used to rely on hud-shell's Skip click having persisted ci_avatar_onboarded into the shared browser context — an ordering dependency nothing declares. It holds for a full run and breaks the moment anyone re-shoots one shot: `make.sh --only datacenter-diorama` captured this frame with the Enable Microphone modal and its blur backdrop over the whole room. The step below is an eval, not a click, because it has to be a no-op on the full run too: by the time this shot runs in order the key is already set, the Skip button does not exist, and a plain click step would fail the run.",
+          "_poseNote": "The wait is 9000, not 3000, and it is about the avatar's ARMS. On load the rig greets (a Waving clip) before it settles into its idle, and the greet is still unwinding at +6s — arms out, fingers spread, which photographs as a mannequin rather than a character. Sampled on Metal at networkidle + N ms: 1000 bind pose, 2500 arms overhead mid-wave, 4000-6000 arms coming down, 10000+ a settled idle with the arms hanging naturally. 9000 + settle 3000 lands well clear of it. See capture.config.mjs hazard 12 for the other half of this — under a software rasteriser the mixer never drives the rig at all and NO settle helps, which is what put the A-pose in the shots this replaced.",
           "capture": {
             "path": "/?env=datacenter-1970s",
             "waitFor": "canvas",
@@ -352,7 +359,7 @@
                 "waitFor": "textarea.chat-input"
               },
               {
-                "wait": 3000
+                "wait": 9000
               }
             ]
           }
@@ -362,6 +369,7 @@
     {
       "id": "stage-room",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "stage",
       "seconds": 7,
       "caption": "The room moves the camera back. Body included.",
@@ -372,9 +380,9 @@
           "url": "spatial-companion.local/?env=datacenter-1970s",
           "alt": "The 1970s datacenter with both HUD panels collapsed: the desk and terminal, the machine wall, and the avatar standing full-length in the middle of it.",
           "motion": "push-in",
-          "_focusNote": "push-in, not drift-down, and with a subject. The room only occupies the lower two thirds of the plate — above the machines is unlit ceiling, and it is a third of the 9:16 crop. A drift-down would spend the shot travelling INTO that emptiness. The focus rects instead end the push on the desk-and-avatar band at 16:9 and on the avatar at 9:16, so the move settles on something and the dead air at the top is cropped out rather than approached.",
+          "_focusNote": "push-in, not drift-down, and with a subject. The room only occupies the lower two thirds of the plate — above the machines is unlit ceiling, and it is a third of the 9:16 crop. A drift-down would spend the shot travelling INTO that emptiness. The focus rects instead end the push on the desk-and-avatar band at 16:9 and on the avatar at 9:16, so the move settles on something and the dead air at the top is cropped out rather than approached.\n\nLandscape widened 0.72 -> 0.80 (1.79x -> 1.61x) on 2026-08-07, because the caption of this very scene is \"Body included.\" and the old rectangle cut the avatar at the knee — the shot argued against its own caption. It also slid: at 0.72 the kit reported the window sliding back to y 0.279 from the requested 0.30, and left a fragment of the collapsed Controls button showing under the caption band. At 0.80 the figure reads full-length from head to shin, the far-right machine pair comes back into frame, and nothing slides. The feet are still behind the caption band and cannot be rescued — they sit at y~0.97 of the plate, so no window that keeps the avatar this size clears them. \"Body included\" is a claim about a full-length framing against the busts everywhere else in the film, which this now supports; it is not a claim about toes.",
           "focus": {
-            "landscape": { "x": 0.06, "y": 0.3, "w": 0.72, "h": 0.62 },
+            "landscape": { "x": 0.1, "y": 0.14, "w": 0.8, "h": 0.8 },
             "portrait": { "x": 0.06, "y": 0.38, "w": 0.88, "h": 0.56 }
           },
           "_captureNote": "The film's only wide shot, and the only frame in which the avatar has legs. That is not a camera trick in the edit — Scene3D's ENVIRONMENT_LOOK parks the camera at 2.4 m landscape / 3.6 m portrait for `datacenter-1970s`, against 0.5 m for the studio, so every other shot is a bust and no `before` step can widen them (capture.config.mjs hazard 9). Collapsing both panels is what makes it work at 9:16: with the Chat Log rail up, the portrait crop of this room keeps the bust and loses the desk entirely. Establishes onboarding itself — same reason as datacenter-diorama.",
@@ -391,7 +399,7 @@
                 "waitFor": "textarea.chat-input"
               },
               {
-                "wait": 3000
+                "wait": 9000
               },
               {
                 "click": "button[aria-label=\"Hide Controls\"]"
@@ -440,6 +448,7 @@
     {
       "id": "close",
       "kind": "outro",
+      "transition": "cut",
       "seconds": 5,
       "cta": "UnCloud your life.",
       "url": "ci.computer",
