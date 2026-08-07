@@ -270,11 +270,40 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     animationService.actions.setup(validActions, mixer, avatarRef.current || undefined, idleClip, avatarCatalog)
 
   console.log(`Animation service setup with ${Object.keys(actions).length} animations`)
-  // Make avatar visible after idle animation is applied
-  setTimeout(() => {
-    setIsAvatarVisible(true)
-  }, 100) // Small delay to ensure animation is applied
-    
+
+    // Reveal the avatar once the mixer is actually DRIVING the rig — not after a
+    // fixed 100 ms guess.
+    //
+    // The old line's comment ("Make avatar visible after idle animation is
+    // applied") described the right intent; 100 ms was the wrong way to get it.
+    // Until some action has advanced past its first frame the rig sits in its
+    // bind pose — arms straight out from the shoulders, fingers splayed — and
+    // that timer routinely fired inside that window, so the avatar's FIRST
+    // painted frame was a mannequin. It is not a small window:
+    // useExternalAnimations resolves its 47 clip files through useLoader inside
+    // a .map, so suspend-react throws on the first uncached entry and they land
+    // one per render pass rather than in parallel. Measured on an M2 Max the
+    // first clip starts driving 1.2-2.5 s after the model itself resolves.
+    //
+    // Polling the actions is what makes this self-correcting on slow machines
+    // instead of needing a bigger magic number. The timeout is a floor, not the
+    // mechanism: if animation never starts the avatar still appears, because a
+    // static avatar beats no avatar.
+    let raf = 0
+    const startedAt = performance.now()
+    const REVEAL_TIMEOUT_MS = 6000
+
+    const revealWhenAnimating = () => {
+      const driving = Object.values(validActions).some((a) => a.isRunning() && a.time > 0)
+      if (driving || performance.now() - startedAt > REVEAL_TIMEOUT_MS) {
+        setIsAvatarVisible(true)
+        return
+      }
+      raf = requestAnimationFrame(revealWhenAnimating)
+    }
+    raf = requestAnimationFrame(revealWhenAnimating)
+
+    return () => cancelAnimationFrame(raf)
   }, [animationsEnabled, animationService, actions, mixer])
 
   useEffect(() => {
