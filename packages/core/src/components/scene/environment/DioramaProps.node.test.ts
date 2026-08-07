@@ -73,25 +73,50 @@ describe('diorama prop GLBs', () => {
     expect(Math.abs(min[2] + max[2]) / 2, 'Z centre offset').toBeLessThan(0.05 * (max[2] - min[2]))
   })
 
-  // Pins the exclusion list to what is actually broken. A good re-export makes
-  // this fail and tells you to delete the entry, instead of the prop staying out
-  // of the room forever because nobody remembered it was.
-  it('excludes exactly the props whose files are still unusable', () => {
+  /**
+   * Props excluded for what is INSIDE the bounding box rather than for the size of
+   * the box. A bounding box cannot see this class of break, so it has to be listed.
+   *
+   * This list exists because the previous version of the test asserted that the
+   * exclusion list was EXACTLY the set of out-of-scale files — which quietly asserted
+   * that scale is the only way a prop can be broken. It is not.
+   */
+  const EXCLUDED_FOR_CONTENT: DioramaPropName[] = ['IBM 1401 Mainframe (1959)']
+
+  // Pins the exclusion list to what is actually broken. A good re-export makes this
+  // fail and tells you to delete the entry, instead of the prop staying out of the
+  // room forever because nobody remembered it was.
+  it('excludes every out-of-scale prop, plus the ones excluded for content', () => {
     const outOfRange = entries
       .filter(([name, url]) => {
         const ratio = measureGlbFile(fileFor(url)).maxDim / PropTargetMaxDim[name]
         return ratio > PROP_SCALE_TOLERANCE || ratio < 1 / PROP_SCALE_TOLERANCE
       })
       .map(([name]) => name)
-    expect(outOfRange.sort()).toEqual([...PROP_NEEDS_REEXPORT].sort())
+    for (const name of outOfRange) expect(PROP_NEEDS_REEXPORT).toContain(name)
+    const extra = PROP_NEEDS_REEXPORT.filter((n) => !outOfRange.includes(n))
+    expect([...extra].sort()).toEqual([...EXCLUDED_FOR_CONTENT].sort())
   })
 
-  // ibm-1401-mainframe was repaired at source by scripts/prop-glb.mjs (the
-  // Sketchfab backdrop set was dropped from the scene graph). If someone restores
-  // the raw file, this is the assertion that says so.
-  it('has the 1401 mainframe backdrop set pruned', () => {
+  /**
+   * The 1401 mainframe measures like a repaired prop and renders like an empty box.
+   *
+   * The assertion this replaces was "has the 1401 mainframe backdrop set pruned":
+   * largest dimension < 2 m and floor at 0. Both still hold — 0.59 x 0.93 x 1.03 m,
+   * floor 0.000 — and both are true of a file with no 1401 in it. Rendered alone on a
+   * neutral background the whole visible contents are a white slab, three floating flat
+   * blue plates above it, and a scatter of dots. The prune took the machine with the
+   * backdrop, the box stayed plausible, and the green check said the repair worked.
+   *
+   * So this pins the measured numbers as a REGRESSION MARKER, not as a pass: while the
+   * file measures exactly this, it is the known-empty one and stays in
+   * PROP_NEEDS_REEXPORT. A real re-export changes these numbers, fails this test, and
+   * that failure is the instruction to look at the render and put the prop back.
+   */
+  it('pins the 1401 mainframe as the known-empty export', () => {
     const { size, min } = measureGlbFile(fileFor(DioramaProps['IBM 1401 Mainframe (1959)']))
-    expect(Math.max(...size), 'largest dimension').toBeLessThan(2)
+    expect(PROP_NEEDS_REEXPORT).toContain('IBM 1401 Mainframe (1959)')
+    expect(size.map((n: number) => +n.toFixed(2))).toEqual([0.59, 0.93, 1.03])
     expect(min[1], 'floor').toBeCloseTo(0, 3)
   })
 })

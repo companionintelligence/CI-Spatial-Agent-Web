@@ -261,14 +261,21 @@
         {
           "id": "datacenter-diorama",
           "url": "spatial-companion.local/?env=datacenter-1970s",
-          "alt": "The avatar standing inside the 1970s research-datacenter diorama.",
+          "alt": "The avatar standing in the 1970s research-datacenter room: the resident's desk and terminal on the left, a wall of IBM big iron behind.",
           "motion": "drift-down",
+          "_captureNote": "Dismisses onboarding ITSELF rather than inheriting it. Every shot after hud-shell used to rely on hud-shell's Skip click having persisted ci_avatar_onboarded into the shared browser context — an ordering dependency nothing declares. It holds for a full run and breaks the moment anyone re-shoots one shot: `make.sh --only datacenter-diorama` captured this frame with the Enable Microphone modal and its blur backdrop over the whole room. The step below is an eval, not a click, because it has to be a no-op on the full run too: by the time this shot runs in order the key is already set, the Skip button does not exist, and a plain click step would fail the run.",
           "capture": {
             "path": "/?env=datacenter-1970s",
             "waitFor": "canvas",
             "waitUntil": "networkidle",
             "settle": 3000,
             "before": [
+              {
+                "eval": "[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Skip')?.click()"
+              },
+              {
+                "waitFor": "textarea.chat-input"
+              },
               {
                 "wait": 3000
               }

@@ -45,6 +45,14 @@ interface AvatarModelProps {
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
   onHeadLocated?: (target: [number, number, number], position: [number, number, number]) => void
+  /** Metres to park the camera in front of the located head bone. Default 0.5 — the bust
+   *  framing the studio viewport has always used. Environments that need the room in shot
+   *  pass a wider value; see the comment at the call site. */
+  cameraDistance?: number
+  /** Metres to lower the look-at below the head bone. Default 0 — dead on the eyeline,
+   *  which is right for a bust. A wider shot uses it to pitch the camera down a little,
+   *  which lifts the room UP the frame and cuts the dead wall above it. */
+  cameraTargetDrop?: number
   webGPUEnabled?: boolean
 }
 
@@ -139,7 +147,7 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D 
   return { actions, mixer, animations: allAnimations }
 }
 
-const AvatarModelComponent = ({ visemeService, emoteService, animationService, onHeadLocated, webGPUEnabled }: AvatarModelProps) => {
+const AvatarModelComponent = ({ visemeService, emoteService, animationService, onHeadLocated, cameraDistance = 0.5, cameraTargetDrop = 0, webGPUEnabled }: AvatarModelProps) => {
   const { camera: viewerCamera } = useThree()
 
   const [state] = useSimpleStore(AvatarState)
@@ -220,11 +228,20 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
       avatarRef.current.getWorldQuaternion(avatarWorldQuat)
       const avatarForward = new Vector3(0, 0, isVRM ? -1 : 1)  .applyQuaternion(avatarWorldQuat).normalize()
 
-      // Set camera target to the head's world position
-      const cameraTarget = headWorldPos.toArray() as [number, number, number]
+      // Set camera target on the head, optionally dropped to pitch the camera down.
+      const cameraTarget = headWorldPos
+        .clone()
+        .add(new Vector3(0, -cameraTargetDrop, 0))
+        .toArray() as [number, number, number]
 
-      // Set camera position a certain distance in front of the head, along the avatar's forward vector
-      const cameraDistance = .5 // You can adjust this distance as needed
+      // Set camera position a certain distance in front of the head, along the avatar's
+      // forward vector. 0.5 m — a bust — is the default and stays the default: it is what
+      // every committed screenshot and the whole studio viewport is framed on.
+      //
+      // It is also, on its own, why an environment cannot be seen. At 0.5 m a 50° vertical
+      // FOV subtends about 0.9 m of width; the diorama's back wall of machines is 5 m away
+      // and 8 m wide, so none of it can be in shot at any exposure. `cameraDistance` is
+      // therefore a prop, set per environment by Scene3D, rather than a constant.
       const cameraPos = headWorldPos.clone().add(avatarForward.multiplyScalar(cameraDistance))
       const cameraPosition = cameraPos.toArray() as [number, number, number]
 

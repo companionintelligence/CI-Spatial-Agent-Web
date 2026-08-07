@@ -79,12 +79,27 @@ export const PROP_SCALE_TOLERANCE = 2
  * metre deep. A wrong-shaped machine in frame is worse than an absent one: the
  * diorama's whole claim is that this is real hardware.
  *
- * The fix is a proper re-export (docs/DIORAMA.md "Export pipeline"). Until then
- * these two are measured, named and left out. `ibm-1401-mainframe` used to be on
- * this list and was repaired at source instead — its problem was a backdrop set
- * the pipeline failed to drop, which is a scene-graph edit, not a re-export.
+ *   ibm-1401-mainframe.glb  0.59 x 0.93 x 1.03 m, floor at 0 — the box is right, and
+ *     there is no 1401 inside it. Rendered on its own against a neutral background
+ *     (three lights, no HUD, bounding box drawn) the entire visible contents are a
+ *     white rounded slab, three floating flat blue plates stacked above it, and a
+ *     scatter of loose dots. No cabinet, no tape frames, no control panel — none of
+ *     the 268 meshes the file carries put geometry where the machine should be.
+ *
+ *     This entry was REMOVED from this list once already, on the grounds that the
+ *     1401's problem was "a backdrop set the pipeline failed to drop, which is a
+ *     scene-graph edit, not a re-export", and `scripts/prop-glb.mjs` still reports it
+ *     as "already repaired". The repair dropped the backdrop and the machine with it.
+ *     Nobody caught it because at the diorama's old 0.5 m bust framing the prop was
+ *     outside the frustum; the first frame wide enough to contain it shows two blue
+ *     plates hanging in mid-air beside the avatar. It goes back on the list, with the
+ *     render as the evidence rather than the script's verdict.
+ *
+ * The fix is a proper re-export (docs/DIORAMA.md "Export pipeline"). Until then these
+ * three are measured, named and left out.
  */
 export const PROP_NEEDS_REEXPORT: readonly DioramaPropName[] = [
   'KENBAK-1 (1971)',
-  'IBM 3178 Terminal (1979)'
+  'IBM 3178 Terminal (1979)',
+  'IBM 1401 Mainframe (1959)'
 ]
