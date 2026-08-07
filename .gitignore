@@ -12,3 +12,8 @@ coverage/
 apps/*/public/assets/avatars/
 apps/*/public/assets/animations/
 apps/*/public/assets/props/
+
+# Runtime LLM config. In the container nginx/40-render-config.sh writes this
+# from env at boot; locally it is hand-written per environment. loadRuntimeConfig
+# resolves to {} when it is absent, so nothing needs a committed copy.
+apps/*/public/config.json
