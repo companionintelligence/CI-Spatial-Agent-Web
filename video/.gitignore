@@ -8,3 +8,15 @@ out/
 .auth/
 
 node_modules/
+
+# Runtime assets `ci-video build` copies in FROM THE KIT. They are build output,
+# not inputs: the kit owns them and reinstates them on every build, so committing
+# them pins this repo to whichever kit version happened to run last.
+#
+# Listed by exact name rather than as `assets/fonts/`, because assets/shots/ and
+# assets/audio/ next door ARE committed inputs and the distinction is easy to
+# lose. Without these three lines a `git add -A` after a build silently commits
+# them — the mistake this file exists to prevent.
+assets/vendor/
+assets/fonts/manrope-latin-var.woff2
+assets/fonts/LICENSE-Manrope.txt

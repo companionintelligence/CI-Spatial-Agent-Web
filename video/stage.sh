@@ -8,6 +8,48 @@
 # a local capture films exactly what the L4/L5 capture suite films. That harness
 # sets `reuseExistingServer: true`, so the two compose rather than fighting over
 # the port.
+#
+# ── DOES THIS STAGE NEED A HEADED BROWSER? NO. SETTLED, WITH NUMBERS. ─────────
+#
+# tools/stages.json carried a standing note that "WebXR never reached a
+# renderable state in headless Chromium" and that "a real Mac with a GPU may do
+# better" — which left open whether this stage has to run a HEADED browser. It
+# does not, and the note was conflating two separate things. Measured on an
+# M2 Max (Metal 4), Playwright 1.62.1, four launches against this stage:
+#
+#   launch                              WebGL renderer            immersive-vr/ar
+#   ---------------------------------   -----------------------   ---------------
+#   chromium.launch()                   SwiftShader (CPU)         false / false
+#   + channel:"chromium"                ANGLE Metal, Apple M2 Max false / false
+#   + channel + headless:false          ANGLE Metal, Apple M2 Max false / false
+#   + headed + --force-webxr-runtime=   ANGLE Metal, Apple M2 Max false / false
+#     openxr, --enable-features=OpenXR
+#
+# 1. THE 3D SCENE. This was the real blocker, and it is a BINARY problem, not a
+#    headed/headless one. Bare `launch()` runs `chromium_headless_shell`, which
+#    has no GPU path; `channel: "chromium"` runs the full Chrome-for-Testing
+#    build and reaches Metal. capture.config.mjs already performs that upgrade.
+#    Headless full Chromium rasterises on the GPU exactly as well as headed does,
+#    and it is what captured all 14 shots here — including datacenter-diorama,
+#    which blows the kit's 30s screenshot budget under SwiftShader.
+#
+# 2. THE IMMERSIVE SESSION. Not available on this machine in ANY launch mode.
+#    `navigator.xr` is defined in all four (Chromium always exposes the
+#    interface) and `inline` is supported in all four, but `immersive-vr` and
+#    `immersive-ar` are false everywhere and requestSession fails identically,
+#    headed included:
+#
+#      NotSupportedError: Failed to execute 'requestSession' on 'XRSystem':
+#      No XR hardware found.
+#
+#    Forcing the runtime does not change it: macOS Chromium ships no OpenXR
+#    device backend, so there is nothing for the flag to select. Going headed
+#    buys exactly nothing here — the variable is the platform, not the window.
+#
+# So: keep capturing headless. An honest XR shot needs a Quest or Vision Pro
+# browser, and a real session's output is a stereo framebuffer rather than a page
+# screenshot, so it is a different capture path entirely — not a stage tweak.
+# Do not spend another pass trying to coax an immersive session out of this Mac.
 
 STAGE_PID=""
 
