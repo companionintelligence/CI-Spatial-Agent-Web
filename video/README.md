@@ -24,22 +24,20 @@ registry and no token), `ffmpeg` + `ffprobe` on `PATH`, and Node 22+.
 Two things worth knowing before you use it here:
 
 - It renders from the screenshots under `assets/shots/`, so it needs nothing running and takes
-  about ninety seconds — **once those screenshots exist**. See the warning below: right now they
-  do not.
+  about ninety seconds.
 - It exports `video/` from `origin/main`, not from your working tree. A storyboard edit you have
   not pushed will not appear in the render — iterate with the in-repo commands below, then push.
 
-> ⚠️ **No shots are committed yet.** `assets/shots/` holds only `.gitkeep`, so every one of the
-> seven screen shots (`first-run`, `hud-shell`, `chat-typed`, `chat-turn`, `controls-collapsed`,
-> `settings-panel`, `datacenter-diorama`, × desktop and mobile) is missing. `ci-video build`
-> substitutes a branded "capture pending" slate for each, `ci-video check` fails on them unless
-> you pass `--allow-slates`, and a render would be a cut of slates. Stand the app up as described
-> under [The stage](#the-stage), run `npm run capture`, and commit the PNGs before rendering
-> anything you intend to show anyone.
+All eight screen shots are committed (`first-run`, `hud-shell`, `chat-typed`, `chat-turn`,
+`controls-collapsed`, `settings-panel`, `settings-on-device`, `datacenter-diorama`,
+`datacenter-quiet`, × desktop and mobile), so a fresh checkout renders a real cut. `ci-video status`
+is the authority on that; when it reports a shot missing, `build` substitutes a branded "capture
+pending" slate, `check` fails on it unless you pass `--allow-slates`, and the render is a cut of
+slates. Re-shoot before you render anything you intend to show anyone.
 
-Spatial Companion has no scripted stage in the runner, so `--capture` falls back to render-only.
-Re-shooting the screens is the in-repo path: stand the app up yourself as described next, then run
-`npm run capture`.
+Spatial Companion has no scripted stage in the cross-product runner, so its `--capture` falls back
+to render-only. Re-shooting is the in-repo path: `video/make.sh` stands the app up and drives the
+capture in one command (see [Re-shooting and iterating](#re-shooting-and-iterating)).
 
 ## The stage
 
@@ -102,9 +100,13 @@ of what the product looked like, and they are *inputs*: keeping them means anyon
 without standing this app up at all. When a screen moves, the new shot shows up as a reviewable
 diff. Neither path is gitignored.
 
-The nine `assets/audio/*.mp3` are committed and current. **The shots are not: `assets/shots/`
-contains no PNGs at all.** Until someone runs a capture against a real stage and commits the
-result, this project can only render placeholder slates.
+Both sets are committed and current: twelve `assets/audio/*.mp3`, one per scene, and eighteen
+`assets/shots/*.png` — nine screens × desktop and mobile.
+
+An mp3 is stale the moment its scene's `narration` string changes, and nothing detects that:
+`narrate` only fills in files that are *missing*, so an edited line keeps its old recording and the
+cut says one thing while the caption says another. Delete the scene's mp3 and re-run `narrate`
+after any narration edit.
 
 `build/` and `out/` are not committed, and no MP4 is stored anywhere else either. Only the videos
 are ephemeral.
