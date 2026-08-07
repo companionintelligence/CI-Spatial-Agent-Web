@@ -265,6 +265,42 @@
  *    boot was slow enough that 1200 ms landed after the clip had started. Going
  *    faster moved the shutter INTO the window. A load-state artifact that only
  *    appears on the fast path is the kind that survives review.
+ *
+ *    SUPERSEDED IN PART — see hazard 12. The premise above is that the capture
+ *    runs on hardware GL. Measured 2026-08-07 it does not, and under the
+ *    software rasteriser the rig never leaves bind pose at ANY settle, so no
+ *    amount of waiting fixes it. The settle values are still correct and should
+ *    not be trimmed; they were simply never the binding constraint.
+ *
+ * 12. `channel: "chromium"` ALONE DOES NOT REACH THE GPU. IT MUST BE ASSERTED.
+ *    The shim below used to add only `channel: "chromium"`, on the theory that
+ *    the full Chromium build rasterises on the GPU where the headless shell does
+ *    not. Measured on an M2 Max, 2026-08-07, asking the page for its UNMASKED
+ *    renderer:
+ *
+ *      bare launch                      SwiftShader
+ *      channel: "chromium"              SwiftShader
+ *      channel + the kit's arg list     SwiftShader
+ *      channel + headless: false        SwiftShader
+ *      channel + --use-angle=metal      ANGLE Metal Renderer: Apple M2 Max
+ *
+ *    So every shot in this project was captured on a software rasteriser, and
+ *    that is what put the A-pose in the committed frames. Sampling the avatar in
+ *    `?env=datacenter-1970s` at networkidle + N ms:
+ *
+ *              N =  1000   2500     4000    6000   10000   16000   24000
+ *      Metal      bind    waving    arms out  ...   IDLE    IDLE    IDLE
+ *      SwiftShader bind    bind      bind    bind    bind    bind    bind
+ *
+ *    Under SwiftShader the pose is byte-identical across all seven marks: the
+ *    mixer is not driving the rig, full stop. On Metal the avatar greets and
+ *    then settles into its idle. The A-pose was never a timing artifact and
+ *    never real app behaviour — it was the renderer.
+ *
+ *    The shim now appends the ANGLE flags and PROBES the result, refusing the
+ *    capture if it still landed on software. A silent software fallback is
+ *    exactly how a mannequin shipped; make it loud. `CAPTURE_GPU=software`
+ *    still opts out, and now means "I accept an un-animated avatar".
  */
 
 import { createRequire } from "node:module";
@@ -284,24 +320,63 @@ import { createRequire } from "node:module";
  * chromium-headless-shell` only) the original call is retried unchanged, so this
  * can never turn a working capture into a failing one.
  */
+const GPU_ARGS =
+  process.platform === "darwin"
+    ? ["--use-angle=metal", "--enable-gpu"]
+    : ["--use-angle=vulkan", "--enable-gpu"];
+
+/** Ask the page what actually rasterised it. Returns the UNMASKED renderer string. */
+const probeRenderer = async (browser) => {
+  const page = await browser.newPage();
+  try {
+    await page.goto("about:blank");
+    return await page.evaluate(() => {
+      const gl = document.createElement("canvas").getContext("webgl2");
+      if (!gl) return "no webgl2";
+      const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+      return dbg ? String(gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : "no debug ext";
+    });
+  } finally {
+    await page.close();
+  }
+};
+
 if (process.env.CAPTURE_GPU !== "software") {
   try {
     const pw = createRequire(import.meta.url)("playwright");
     if (pw?.chromium && !pw.chromium.__ciHardwareLaunch) {
       const original = pw.chromium.launch.bind(pw.chromium);
       pw.chromium.launch = async (options = {}) => {
+        const args = [...(options.args ?? []), ...GPU_ARGS];
+        let browser;
         try {
-          const browser = await original({ ...options, channel: "chromium" });
-          console.log("  · launched full Chromium (hardware GL where available)");
-          return browser;
+          browser = await original({ ...options, args, channel: "chromium" });
         } catch (err) {
           console.warn(`  ! full Chromium unavailable (${err.message.split("\n")[0]}); falling back to the headless shell / SwiftShader`);
           return original(options);
         }
+        const renderer = await probeRenderer(browser);
+        const software = /SwiftShader|llvmpipe|Software|Mesa Offscreen/i.test(renderer);
+        console.log(`  · GL renderer: ${renderer}`);
+        if (software) {
+          // Hazard 12 (below). A software rasteriser does not merely make the
+          // capture slow — the animation mixer never drives the rig at all, and
+          // every full-body shot ships a bind-pose mannequin. Refuse rather
+          // than photograph it, unless the caller has opted in explicitly.
+          await browser.close();
+          throw new Error(
+            `capture refused: WebGL fell back to a software rasteriser (${renderer}).\n` +
+              `  The avatar never leaves its bind pose under SwiftShader — measured identical at 1s and 24s —\n` +
+              `  so every full-body shot would ship an A-posed mannequin. Fix the GPU path, or set\n` +
+              `  CAPTURE_GPU=software to capture anyway and accept that the avatar will not be animating.`,
+          );
+        }
+        return browser;
       };
       pw.chromium.__ciHardwareLaunch = true;
     }
-  } catch {
+  } catch (err) {
+    if (err?.message?.startsWith("capture refused:")) throw err;
     /* playwright not installed yet — the kit raises its own, better error */
   }
 }
