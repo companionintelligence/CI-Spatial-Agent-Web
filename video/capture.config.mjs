@@ -35,6 +35,13 @@
  *    WebGL/canvas content. Mask the canvas or use a tolerance check."). The
  *    workflow's `Detect UI drift` step is therefore advisory here, not a gate.
  *
+ *    SUPERSEDED FROM "DECISION" ONWARD — see hazard 13. The description is right
+ *    and worth keeping: the scene does animate every frame and FREEZE_CSS does
+ *    nothing to it. The decision not to mask STANDS. But the conclusion that the
+ *    shots therefore cannot be stable does not: neither this note nor the kit
+ *    README considers the third option, which is to stop the scene rather than
+ *    hide it or tolerate it. Most shots are byte-identical now.
+ *
  * 2. WebGL comes up, but the DEFAULT LAUNCH RASTERISES ON THE CPU — and that
  *    costs one shot. MEASURED on an M2 Max, Playwright 1.62 / Chromium 1234,
  *    with the kit's exact hard-coded arg list:
@@ -301,6 +308,53 @@
  *    capture if it still landed on software. A silent software fallback is
  *    exactly how a mannequin shipped; make it loud. `CAPTURE_GPU=software`
  *    still opts out, and now means "I accept an un-animated avatar".
+ *
+ * 13. THE SCENE IS PINNED WHILE IT IS PHOTOGRAPHED, AND THAT IS WHAT MADE THE
+ *    SHOTS WORTH COMMITTING. onContext sets window.__CI_CAPTURE_MODE__; the
+ *    whole rationale lives next to the code it governs, in
+ *    packages/core/src/services/capture/captureMode.ts. What matters here:
+ *
+ *    MEASURED BEFORE, three consecutive `make.sh --no-render` runs on one pinned
+ *    kit, worst pair: 8 of 18 shots differed, peak delta 34/255, and the two
+ *    datacenter shots differed across 7-16% of their pixels. Three named causes
+ *    — the blink schedule, the diorama's pulsing indicator lamps, and
+ *    sub-visible pose drift — all of them wall-clock driven.
+ *
+ *    MEASURED AFTER, same protocol, on the kit these shots were captured with
+ *    (video-kit 0.13.1): 17 of 18 byte-identical across all three runs, and 18
+ *    of 18 between runs 1 and 3. The single exception was datacenter-diorama at
+ *    16:9, differing on 0.45% of its pixels at a peak of 2/255 — nothing above
+ *    8/255 anywhere in the shoot. The scene-level drift is gone, and the four
+ *    datacenter shots, the ones that used to be worst by two orders of
+ *    magnitude, are byte-identical.
+ *
+ *    An earlier pass on 0.13.0 measured a looser 13-14 of 18 with a peak of
+ *    25/255 in the settings dialogs. That is what the drift envelope below is
+ *    sized for; it is deliberately NOT retightened onto the better numbers
+ *    above, because one clean shoot is not evidence that 2/255 is the ceiling.
+ *
+ *    TWO THINGS THAT DO NOT WORK, both tried and measured, so nobody spends the
+ *    afternoon again:
+ *
+ *    - PAUSING PLAYWRIGHT'S CLOCK. context.clock.pauseAt() plus paying out
+ *      virtual time through clock.runFor() does make requestAnimationFrame
+ *      deterministic — the kit's fake clock implements rAF as a 16 ms timer, so
+ *      a paused clock renders no frames and runFor advances in exact steps. It
+ *      is still strictly worse: the app streams ~243 MB of avatar assets on real
+ *      time, so the virtual budget gets spent at an arbitrary point in the LOAD
+ *      rather than the animation. All 18 shots then drifted, against 8 before,
+ *      and first-run.mobile came out with no avatar in the frame at all.
+ *    - SETTLING ON THE RENDER LOOP. "Wait for N consecutive frames with an
+ *      unchanged framebuffer" cannot terminate here: without capture mode the
+ *      idle clip, the blink and the lamps never stop, so it would spin to its
+ *      timeout on every shot and then photograph an unsettled frame anyway.
+ *
+ *    THE REMAINING DIFFERENCE IS SMALL BUT NOT ZERO, so a byte comparison is
+ *    still the wrong gate by a hair. Compare with an amplitude+area envelope
+ *    (peak delta <= 32, and <= 0.01% of pixels differing by more than 8/255)
+ *    rather than md5. Both limits are set from the measurements above and are
+ *    tight enough to catch a one-button change: a 41x41 px edit is 0.0203% of
+ *    the frame at delta 248, outside the envelope on both axes.
  */
 
 import { createRequire } from "node:module";
@@ -433,6 +487,13 @@ export default {
         /* storage may be unavailable */
       }
       window.__APP_CONFIG__ = { llm: { llm_provider: "script" } };
+
+      // Hold the scene still for the photograph — hazard 13. Read before first
+      // render by packages/core/src/services/capture/captureMode.ts, which is
+      // where the whole rationale lives. Set here rather than by URL so it can
+      // never reach a real user, and set in the SAME init script as the LLM pin
+      // so the two cannot drift apart.
+      window.__CI_CAPTURE_MODE__ = true;
     });
 
     // Freeze the transcript: one fixed reply instead of an 8-way Math.random pick.
