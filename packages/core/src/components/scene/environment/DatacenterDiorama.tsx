@@ -12,6 +12,7 @@
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
+import { getCaptureMode } from '../../../services/capture/captureMode'
 import * as THREE from 'three'
 import {
   DioramaProps,
@@ -203,8 +204,28 @@ function AimedLight({
 function IndicatorLamp({ position, color = '#e8a24a' }: { position: [number, number, number]; color?: string }) {
   const ref = useRef<THREE.PointLight>(null)
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
+  // Null in every normal run — see services/capture/captureMode.ts.
+  const captureMode = useMemo(() => getCaptureMode(), [])
   useFrame(({ clock }) => {
     if (!ref.current) return
+    // These four lamps are the single largest source of run-to-run pixel
+    // difference in the whole video pipeline, and it is not close: a fraction of
+    // a stop of room light moves every 8-bit quantisation boundary at once, so
+    // two captures of an unchanged UI differ across 7-16% of the frame in broad
+    // contour rings. Nobody can see it; a byte comparison sees all of it. Under
+    // capture mode the lamp holds a constant and the room stops breathing for
+    // the length of one photograph.
+    //
+    // The constant is the sine's mean rather than its phase-zero value, so the
+    // still reads at the brightness the room averages rather than at the bottom
+    // of its swing. `phase` is deliberately not consulted: it is a Math.random
+    // draw, and although the capture layer seeds that PRNG, the draw ORDER
+    // depends on mount order — so honouring it here would reintroduce exactly
+    // the nondeterminism this branch exists to remove.
+    if (captureMode) {
+      ref.current.intensity = 0.35 + 0.25 * (2 / Math.PI)
+      return
+    }
     ref.current.intensity = 0.35 + 0.25 * Math.abs(Math.sin(clock.getElapsedTime() * 1.3 + phase))
   })
   return <pointLight ref={ref} position={position} color={color} intensity={0.4} distance={2.2} decay={2} />
