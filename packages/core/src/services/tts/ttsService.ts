@@ -76,8 +76,21 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   const activeContextRef = useRef<AudioContext | null>(null)
   const generationRef = useRef(0)
   // Once the Pocket TTS server proves unreachable (network-level failure), stop
-  // hammering it for every message — degrade to silent text chat with one warning.
+  // hammering it for every message — one warning, then degrade for the session.
   const pocketUnreachable = useRef(false)
+  // What that degrade lands on. It used to be silence, which meant an opted-in
+  // backend that simply wasn't running turned the avatar mute with only a console
+  // warning to say why. Fall back to the browser's own speechSynthesis instead:
+  // it needs nothing installed, so the one thing the product always keeps is a
+  // voice. Set once, session-scoped, and it only ever moves in this direction.
+  const degradedToBrowser = useRef(false)
+  // The mode actually in force right now — the configured one until a backend has
+  // failed, then 'browser'. Every branch below reads this rather than config.mode,
+  // so generation and playback can never disagree about which path a message is on.
+  const effectiveMode = useCallback(
+    () => (degradedToBrowser.current ? 'browser' : config.mode),
+    [config.mode]
+  )
 
   // Initialize worker for local TTS
   const getOrCreateWorker = useCallback(() => {
@@ -231,8 +244,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         formData.append('voice_url', voice)
       }
 
+      // Already proved unreachable earlier this session: don't retry the socket,
+      // just speak it with the browser voice.
       if (pocketUnreachable.current) {
-        throw new Error('POCKET_TTS_UNREACHABLE')
+        return generateBrowserAudio(message)
       }
 
       let response: Response
@@ -243,13 +258,17 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         })
       } catch {
         // Network-level failure (server not running / wrong host). Remember it so
-        // the rest of the session degrades quietly instead of erroring per message.
+        // the rest of the session degrades quietly instead of erroring per message,
+        // and degrade to the browser's own voice rather than to silence.
         pocketUnreachable.current = true
+        degradedToBrowser.current = true
         console.warn(
-          `TTS: Pocket TTS server unreachable at ${serverUrl}; speech is disabled. ` +
-            'Run a Pocket TTS server there, set VITE_POCKET_TTS_URL, or set VITE_TTS_MODE=browser.'
+          `TTS: Pocket TTS server unreachable at ${serverUrl}; falling back to the ` +
+            'browser speech synthesiser for the rest of this session. Run a Pocket TTS ' +
+            'server there or set VITE_POCKET_TTS_URL to keep the higher-quality voice.'
         )
-        throw new Error('POCKET_TTS_UNREACHABLE')
+        // Speak this message on the fallback path instead of dropping it.
+        return generateBrowserAudio(message)
       }
 
       if (!response.ok) {
@@ -258,7 +277,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       message.audio = await response.arrayBuffer()
     },
-    [config.pocketTts?.serverUrl, config.pocketTts?.voice]
+    [config.pocketTts?.serverUrl, config.pocketTts?.voice, generateBrowserAudio]
   )
 
   // Generate audio for a specific message
@@ -268,28 +287,25 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       console.log(`Generating audio for message ${message.id}`)
 
       try {
-        if (config.mode === 'remote') {
+        const mode = effectiveMode()
+        if (mode === 'remote') {
           await generateRemoteAudio(message)
-        } else if (config.mode === 'browser') {
+        } else if (mode === 'browser') {
           await generateBrowserAudio(message)
-        } else if (config.mode === 'local') {
+        } else if (mode === 'local') {
           await generateLocalAudio(message)
-        } else if (config.mode === 'pocket') {
+        } else if (mode === 'pocket') {
           await generatePocketAudio(message)
         }
         message.status = 'ready'
       } catch (error) {
         const errMessage = error instanceof Error ? error.message : 'Unknown error'
-        // The unreachable-server case is already warned about once; don't spam
-        // the console for every queued message.
-        if (errMessage !== 'POCKET_TTS_UNREACHABLE') {
-          console.error(`Error generating audio for message ${message.id}:`, error)
-        }
+        console.error(`Error generating audio for message ${message.id}:`, error)
         message.status = 'error'
         message.error = errMessage
       }
     },
-    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
+    [effectiveMode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
   )
 
   // Process the queue sequentially
@@ -324,15 +340,13 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         // If message is not ready after generation, skip for now
         if (nextMessage.status !== 'ready') {
           if (nextMessage.status === 'error') {
-            if (nextMessage.error !== 'POCKET_TTS_UNREACHABLE') {
-              console.warn(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
-            }
+            console.warn(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
             messageQueue.current = messageQueue.current.filter((msg) => msg.id !== nextMessage.id)
             nextExpectedId.current = nextMessage.id + 1
             continue
           } else if (nextMessage.status === 'generating') {
             // For local and pocket modes, wait a bit for generation to complete
-            if (config.mode === 'local' || config.mode === 'pocket') {
+            if (effectiveMode() === 'local' || effectiveMode() === 'pocket') {
               await new Promise((resolve) => setTimeout(resolve, 100))
               continue
             }
@@ -353,7 +367,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
         try {
           // Handle different TTS modes for playback
-          if (config.mode === 'browser') {
+          if (effectiveMode() === 'browser') {
             await new Promise<void>((resolve, reject) => {
               const utterance = new SpeechSynthesisUtterance(nextMessage.text)
               utterance.rate = config.speed
@@ -441,7 +455,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     config.speed,
     config.pitch,
     config.volume,
-    config.mode,
+    effectiveMode,
     onSpeechStart,
     playAudioBuffer,
     onSpeechEnd
@@ -467,7 +481,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       console.log(`Queued message ${messageId}:`, cleanedText.substring(0, 50))
 
       // For local and pocket modes, start generating all pending messages immediately
-      if (config.mode === 'local' || config.mode === 'pocket') {
+      if (effectiveMode() === 'local' || effectiveMode() === 'pocket') {
         const allPendingMessages = messageQueue.current.filter((msg) => msg.status === 'pending')
         allPendingMessages.forEach((message) => {
           generateAudioForMessage(message) // Don't await - let them generate in parallel
@@ -481,7 +495,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       return messageId
     },
-    [processQueue, config.mode, generateAudioForMessage]
+    [processQueue, effectiveMode, generateAudioForMessage]
   )
 
   const stopSpeaking = useCallback(() => {
