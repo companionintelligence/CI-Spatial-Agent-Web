@@ -13,36 +13,86 @@
     "pacing": "fit"
   },
   "chapters": {
-    "ftue": "First run",
-    "talk": "Talking to it",
-    "stage": "The stage"
+    "meet": "Meeting it",
+    "wire": "Wiring it up"
   },
   "media": {
     "music": null,
     "musicVolume": 0.14
   },
+  "_honestyNote": "WHAT THIS FILM CLAIMS, AND WHAT HAD TO BE TRUE FIRST.\n\n1. THE VOICE — SETTLED ON MAIN, NOT HERE. The previous cut opened on 'An AI with a face, a voice and a body' while a stock install was mute: ttsConfig defaulted `mode` to 'pocket' at localhost:8000, a server this repo does not ship or start. This branch originally carried its own fix (fall back to speechSynthesis when the backend is unreachable). #157 then landed on main with a better one — it moves the DEFAULT to 'browser' and routes generation and playback through a single effectiveMode() so the two can never disagree — and this branch now takes main's implementation wholesale. The claim is true of every install, so the title card carries it again.\n\n2. THE COUNTS. Verified in animationClips.ts: 6 VRMA + 34 GLB + 7 feminine = 47 clips, and 5 providers in SettingsPanel. But NO SINGLE AVATAR LOADS ALL 47 — a VRM gets 6, a GLB rig 34 — so the chip says 'Clip library' and the narration says 'library'. It must never be phrased as what the avatar on screen can do. EnvironmentPreset is 'none' | 'datacenter-1970s': one optional room plus the plain studio, filmed and worded as one room.\n\n3. THE A-POSE IS A CAPTURE ARTEFACT, AND NOT THE ONE ANYONE EXPECTED. Measured on ANGLE/Metal, asserted from the page: the rig IS live (7 distinct canvas frames across 24s, 46-58 fps). At deviceScaleFactor 1 the avatar leaves bind pose and is in a natural arms-down idle from about 4s. At the capture's dsf 3 the arms stop at 35-40 degrees and do NOT come down at 6s, 12s, 20s, 30s or 45s — same build, same browser, only the scale factor differs. So a USER does not see it and every committed plate does. Root cause not found; recorded in capture.config.mjs hazard 12b rather than guessed at, and left visible in the film rather than cropped around. The cut claims a body.\n\n4. PROP_NEEDS_REEXPORT is untouched. It excludes props whose GLB does not contain the machine its filename claims. The restage on this branch also found WHY four other props render flat — the .blend-sourced ones lost every texture in a lossy re-export — which is written up in docs/DIORAMA.md and needs a Sketchfab login to fix.\n\n5. THE SHOTS ARE PINNED NOW, and an earlier revision of this note said the opposite. It claimed these shots could not be byte-stable because the avatar is a live render loop, and measured 9/18 differing between two identical runs to prove it. #155 then landed on main and did the thing that note had ruled out: it stops the scene rather than tolerating or masking it, via window.__CI_CAPTURE_MODE__ (see services/capture/captureMode.ts), pinning the blink schedule, the diorama's indicator lamps and the pose. That machinery is merged in here, and the lamp pin was re-derived for this branch's lower lamp levels rather than copied — see the merge note in DatacenterDiorama.tsx.",
   "scenes": [
     {
-      "id": "open",
-      "kind": "intro",
-      "seconds": 5,
-      "title": "Spatial Companion",
-      "caption": "An AI with a face, a voice and a body.",
-      "narration": "An embodied AI that runs in a browser tab.",
-      "mark": "./assets/app-icon.jpg"
+      "id": "pain-text-box",
+      "kind": "feature",
+      "seconds": 6.5,
+      "minSeconds": 4,
+      "title": "A year of conversations.",
+      "caption": "You have never once looked at it.",
+      "narration": "You have been talking to this thing for a year. You have never once looked at it, because there has never been anything to look at.",
+      "reveal": "paced",
+      "items": [
+        {
+          "label": "A face",
+          "value": "—"
+        },
+        {
+          "label": "A voice",
+          "value": "—"
+        },
+        {
+          "label": "A body",
+          "value": "—"
+        }
+      ],
+      "_editNote": "The pain, stated as the user actually experiences it. Typographic rather than a screen: the subject of this beat is an ABSENCE, and the only way to shoot an absence is to caption a blank — which is what this card is.\n\nThe three em-dashes are the beat, and they set up the title card two scenes later ('A face and a body, in a browser tab.') by naming what is missing first.\n\nThey are also load-bearing for the frozen-picture gate. A `feature` with a title and NO items paints once and then holds: both the paced reveal and the drift target the chips row (`.<id>-chips`), so an itemless card has literally nothing in motion for its whole length. Measured on the Companion Scan film in this same rewrite: three itemless cards took that cut to 11% landscape / 14% portrait against an 8% bar, and adding items took it to 0%/0%. Do not strip these back out."
     },
     {
-      "id": "ftue-first-run",
+      "id": "quit",
+      "kind": "feature",
+      "transition": "cut",
+      "seconds": 6.5,
+      "minSeconds": 4,
+      "title": "Most people quit right about here.",
+      "caption": "The usual price of a face.",
+      "narration": "Giving an assistant a face usually means a game engine, a character rig, and a bill that runs by the minute. Most people quit right about here.",
+      "reveal": "paced",
+      "items": [
+        {
+          "label": "A game engine"
+        },
+        {
+          "label": "A character rig"
+        },
+        {
+          "label": "A bill by the minute"
+        }
+      ]
+    },
+    {
+      "id": "title",
+      "kind": "intro",
+      "seconds": 5,
+      "minSeconds": 3.5,
+      "title": "Spatial Companion",
+      "caption": "A face, a voice and a body — in a browser tab.",
+      "narration": "This one is a browser tab.",
+      "mark": "brand:logo.mark",
+      "reveal": "paced",
+      "_editNote": "The voice is back on the title card, and it is now earned. This scene deliberately dropped the word while a stock install was mute; #157 landed on main and made `browser` (speechSynthesis) the DEFAULT TTS mode, so a clean checkout speaks with nothing installed. The card claims a face, a voice and a body, and the product now has all three out of the box.\n\nThe rule that put it in the recap in the first place still stands for anything else: a title card is the worst place in a film for a claim the pictures cannot back. This one is carried by the product, not by the frame, and that is only acceptable because it is now true of every install rather than of a configured one."
+    },
+    {
+      "id": "first-run",
       "kind": "screen",
-      "chapter": "ftue",
+      "chapter": "meet",
       "seconds": 6,
       "caption": "It asks once. Skip goes straight to text.",
-      "narration": "First load asks for your microphone. Skip it and type instead.",
+      "narration": "It asks for a microphone once, on the first load. Skip it, and type instead.",
       "shots": [
         {
           "id": "first-run",
           "url": "spatial-companion.local",
-          "alt": "The Enable Microphone modal layered over the live avatar scene on first load.",
+          "alt": "First-run onboarding modal asking for microphone access, over the blurred avatar scene, with a Skip option",
           "motion": "push-in",
           "capture": {
             "path": "/",
@@ -54,18 +104,19 @@
       ]
     },
     {
-      "id": "ftue-hud-shell",
+      "id": "already-there",
       "kind": "screen",
       "transition": "cut",
-      "chapter": "ftue",
-      "seconds": 6,
-      "caption": "The HUD: chat log, input, control dock.",
-      "narration": "Past the modal, the avatar is already live, with the HUD around it.",
+      "chapter": "meet",
+      "seconds": 7,
+      "caption": "Nothing in the log yet. It is already looking at you.",
+      "narration": "Past the modal there is no account, no sign-in and nothing in the log. There is just something on the other side of it, already awake.",
+      "_editNote": "This is the film's presence beat and the reason the pain card works. The chat panel's own empty state does the arguing — 'Nothing here yet. Say hello, or type below — the whole conversation stays on this machine.' — so the caption does not have to repeat it.",
       "shots": [
         {
           "id": "hud-shell",
           "url": "spatial-companion.local",
-          "alt": "The default HUD after onboarding: logo, avatar, empty Chat Log, floating control dock.",
+          "alt": "The HUD around a live avatar: the Companion Intelligence logo card, an empty chat log promising the conversation stays on this machine, a message input and the control dock",
           "motion": "push-in",
           "capture": {
             "path": "/",
@@ -88,40 +139,18 @@
       ]
     },
     {
-      "id": "promise",
-      "kind": "screen",
-      "transition": "cut",
-      "chapter": "ftue",
-      "seconds": 6,
-      "caption": "It opens straight into this. No account, no sign-in.",
-      "narration": "The empty log makes the promise before you have typed anything at all.",
-      "shots": [
-        {
-          "id": "hud-shell",
-          "url": "spatial-companion.local",
-          "alt": "The Chat Log's empty state, reading \"Nothing here yet. Say hello, or type below — the whole conversation stays on this machine.\"",
-          "motion": "push-in",
-          "_focusNote": "Same screenshot as ftue-hud-shell, punched in on the Chat Log rail — a wide-then-detail cut, and the film's only tight framing. The rail is a narrow right-hand column at 16:9 and a full-width band under the logo at 9:16, so the rectangle CANNOT be shared and is declared per format.\n\nThe landscape rectangle is DELIBERATELY LOOSER than the copy it is about, and the reason is worth keeping. Pointed straight at the text (x 0.775, w 0.225, at the h 0.42 the band was being trialled at — shorter than the 0.55 that shipped, and the numbers below only reproduce at that height) it asks for ~3x, MAX_SCALE clamps that to 2.4, and at 2.4 the window is 0.526 of the plate anchored to the right edge — starting at x 0.474, which is exactly far enough left to catch the top of the avatar's head. The rendered end frame was a forehead and a pair of eyes sliced off in the bottom-left corner: a botched crop, not a camera move. Retargeting to x 0.57 changed NOTHING — but note WHICH rectangle that was: one still running to the plate's right edge, x 0.57 w 0.43. Verified against the kit's own focusState, it and the one above clamp to the identical transform (scale 2.4, x -864), because both centres sit far enough right that the translate clamp pins the window to the same edge. Slide the left edge and keep w at 0.225 and the equivalence does NOT hold — centre 0.6825, x -665.76, inside the clamp range and honoured, a genuinely different frame. It is the right edge that was stuck, not the rectangle that stopped being read. The only lever left is asking for LESS: w 0.60 lands 2.105x, a 0.60-wide window from x 0.40, and the avatar arrives whole instead of guillotined. Twelve percent smaller type, an actual composition.\n\nThe general lesson, for anyone adding a focus here: a focus rectangle is a request, and past MAX_SCALE the clamps stop honouring the part you care about. `check` has nothing to say about this. video-kit 0.8.0 added a way to try a rectangle without rendering — `ci-video focus-preview assets/shots/hud-shell.png --x 0.57 --w 0.43 --y 0 --h 0.42` reports the asked-for scale, which clamp bit, and whether the subject ended up anchored off-centre. This project still pins ^0.1.0, so run it from a 0.8.0 checkout of the kit until that dep is bumped. It reconstructs rather than renders, so still render the frame and look at it before believing the framing is right.\n\nAMENDED 2026-08-07, and the amendment is the reason the paragraph above ends where it does. Everything about the clamp is correct and worth keeping; the conclusion drawn from it — w 0.60 at x 0.40, y 0, h 0.55 — was still the wrong rectangle, and rendering it is what showed that. The end frame was a giant CI logo lockup in the top-left, the avatar's head floating in the lower-left CUT OFF AT THE JAW by the caption band, the Chat Log copy small in the top-right, and a hole through the middle: three things in three corners, no focal point, and the subject the shot is named for was the smallest element in it. Asking for less had fixed the SCALE and left the ANCHOR wrong — y 0 pins the window to the top of the plate, so the crop is the logo and the panel header, and the avatar only creeps in from the bottom.\n\nNow x 0.36, y 0.08, w 0.64, h 0.64 — 2.016x, honoured exactly. Dropping the top 8% loses the logo (which is a repeat of the intro's mark and carries nothing here) and buys enough height for the avatar to arrive as a proper bust — head, shoulders, chest — against the Chat Log rail on the right. Two columns, one face, one block of copy. The lesson to add to the one above: past MAX_SCALE the rectangle's SIZE stops being read, but its POSITION never stops mattering, and a rect that clears the clamp can still be aimed at the wrong part of the plate.",
-          "focus": {
-            "landscape": { "x": 0.36, "y": 0.08, "w": 0.64, "h": 0.64 },
-            "portrait": { "x": 0.0, "y": 0.185, "w": 1.0, "h": 0.16 }
-          }
-        }
-      ]
-    },
-    {
       "id": "one-turn",
       "kind": "screen",
       "transition": "cut",
-      "chapter": "talk",
+      "chapter": "meet",
       "seconds": 9,
-      "caption": "One turn, answered on this machine.",
-      "narration": "Type a message. The reply lands in the log, and drives lip sync, expression and a body animation.",
+      "caption": "One turn: lip sync, expression, a body clip.",
+      "narration": "Type a message. The reply lands in the log, and the same reply drives the mouth, the face and a body clip.",
       "shots": [
         {
           "id": "chat-typed",
           "url": "spatial-companion.local",
-          "alt": "The question typed into the chat input, with the Chat Log still empty.",
+          "alt": "A question typed into the chat input, ready to send",
           "motion": "drift-down",
           "capture": {
             "path": "/",
@@ -147,7 +176,7 @@
         {
           "id": "chat-turn",
           "url": "spatial-companion.local",
-          "alt": "The Chat Log holding a You and Assistant exchange from the offline scripted provider.",
+          "alt": "The same HUD after sending: the question and the avatar’s reply are both in the chat log",
           "motion": "drift-down",
           "capture": {
             "path": "/",
@@ -182,18 +211,18 @@
       ]
     },
     {
-      "id": "quiet-hud",
+      "id": "quiet",
       "kind": "screen",
       "transition": "cut",
-      "chapter": "stage",
+      "chapter": "meet",
       "seconds": 6,
-      "caption": "Collapse the panels. Just the avatar and one input.",
-      "narration": "Hide the dock and the screen is just the avatar and one input.",
+      "caption": "Collapse the dock. A face and one line.",
+      "narration": "Hide the panels and what is left is a face and one line to type into.",
       "shots": [
         {
           "id": "controls-collapsed",
           "url": "spatial-companion.local",
-          "alt": "The HUD with both the control dock and the Chat Log collapsed, leaving the avatar and the chat input.",
+          "alt": "The same scene with the control dock and chat panel collapsed, leaving the avatar and a single message input",
           "motion": "push-in",
           "capture": {
             "path": "/",
@@ -222,18 +251,17 @@
       ]
     },
     {
-      "id": "connection",
+      "id": "your-model",
       "kind": "screen",
-      "transition": "cut",
-      "chapter": "stage",
-      "seconds": 6,
-      "caption": "Your model, your endpoint. Offline by default.",
-      "narration": "Point it at your own Ollama, or a proxy, or leave it entirely offline.",
+      "chapter": "wire",
+      "seconds": 7,
+      "caption": "Your model, your endpoint.",
+      "narration": "Point it at your own Ollama, or an OpenAI-compatible endpoint you run, or a proxy of your choosing.",
       "shots": [
         {
           "id": "settings-panel",
           "url": "spatial-companion.local",
-          "alt": "The Settings dialog: LLM provider, endpoint URL and model, all editable at runtime.",
+          "alt": "The settings panel with Ollama selected as the model provider and a local endpoint filled in",
           "motion": "push-in",
           "capture": {
             "path": "/",
@@ -272,28 +300,53 @@
                 "wait": 600
               }
             ]
-          }
+          },
+          "focus": {
+            "landscape": {
+              "x": 0.32,
+              "y": 0.02,
+              "w": 0.36,
+              "h": 0.45
+            },
+            "portrait": {
+              "x": 0.06,
+              "y": 0.09,
+              "w": 0.88,
+              "h": 0.32
+            }
+          },
+          "_focusNote": "A LOOSER RECT THAN `settings-on-device`, AND IT HAS TO BE LOOSER.\n\nThese two scenes are the same dialog a beat apart, and only the second had a focus — so the pair cut from a wide frame, where the panel sits in the middle third of a 3840px plate, straight to a close-up of the same panel. Matching them was the point of adding this.\n\nThe obvious move — copy `settings-on-device`'s 0.6 square at (0.2, 0.045) — is WRONG here, and the focus-preview shows why in one frame: it slices the word 'Settings' in half along the top edge. The dialog is vertically centred, and the Ollama panel carries a Server URL field that the WebLLM panel does not, so it is taller and its header sits HIGHER in the plate. The same rectangle lands below it.\n\n0.36 x 0.45 at (0.32, 0.02) instead. That asks for 2.22x and gets 2.4x — CLAMPED by MAX_SCALE, so the window lands at 53.8% of the plate rather than the 45% requested, i.e. slightly looser than asked. Checked rather than assumed, and the looser framing is the better one: the dialog's rounded top corner stays in shot, so it reads as a panel rather than as a slice. It frames the dialog top through the Model field — the provider, the endpoint and the model name, which is the whole claim of the beat — and leaves BEHAVIOR, GRAPHICS and the Save/Cancel footer outside. Verified against `ci-video focus-preview`, not computed and trusted.\n\nNo re-capture needed: `focus` is a camera move the builder applies to the committed plate, not a capture-time crop."
         }
       ]
     },
     {
-      "id": "on-device",
+      "id": "in-the-tab",
       "kind": "screen",
       "transition": "cut",
-      "chapter": "stage",
-      "seconds": 6,
-      "caption": "On-device (WebLLM). The model runs in the tab.",
-      "narration": "One of the five providers runs the model inside the browser tab itself.",
+      "chapter": "wire",
+      "seconds": 7,
+      "caption": "On-device: the model runs in the tab.",
+      "narration": "Or pick on-device, and one of the five providers runs the model inside the browser tab itself.",
       "shots": [
         {
           "id": "settings-on-device",
           "url": "spatial-companion.local",
-          "alt": "The Settings dialog with the LLM provider set to On-device (WebLLM): the Server URL field is gone and only Model remains, holding the app's default local model.",
+          "alt": "The settings panel with On-device (WebLLM) selected as the model provider",
           "motion": "push-in",
           "_focusNote": "Focused on the CONNECTION block, which is the beat. It also frames out a real defect at 9:16: mlc has one field fewer than ollama, so the dialog's scroll container lands its boundary mid-row and slices 'WebGPU rendering' through the middle of the glyphs. The committed ollama shot happens to cut cleanly at a divider instead. This is the app's own scroll clipping at 360x640, not a capture artefact, and it is not worth masking — but there is no reason to put it on screen.",
           "focus": {
-            "landscape": { "x": 0.2, "y": 0.045, "w": 0.6, "h": 0.6 },
-            "portrait": { "x": 0.06, "y": 0.09, "w": 0.88, "h": 0.32 }
+            "landscape": {
+              "x": 0.2,
+              "y": 0.045,
+              "w": 0.6,
+              "h": 0.6
+            },
+            "portrait": {
+              "x": 0.06,
+              "y": 0.09,
+              "w": 0.88,
+              "h": 0.32
+            }
           },
           "_captureNote": "Establishes onboarding ITSELF (the eval below), for the reason written up on datacenter-diorama: shot order is not a declared dependency and `--only` does not replay it. Selecting `mlc` is the point of the frame, not decoration — FIELD_MAP in SettingsPanel.tsx gives mlc a modelKey and NO urlKey, so the Server URL row disappears and the dialog is visibly a different shape from the Ollama one in `connection`. Nothing is typed here: the model shown is the app's own default (llmConfig.ts defaultLLMConfig.mlc_model), which is the honest thing to film.",
           "capture": {
@@ -332,17 +385,19 @@
       ]
     },
     {
-      "id": "environment",
+      "id": "a-room",
       "kind": "screen",
-      "chapter": "stage",
-      "seconds": 6,
-      "caption": "One optional room: the 1970s Research Datacenter.",
-      "narration": "Or put a room around it. The seventies datacenter ships with the app.",
+      "transition": "cut",
+      "chapter": "wire",
+      "seconds": 8,
+      "caption": "One room ships with it: a 1970s research datacenter.",
+      "narration": "Put a room around it, and the camera steps back far enough to bring the whole body into frame.",
+      "_editNote": "The only environment in the product besides the plain studio — EnvironmentPreset is 'none' | 'datacenter-1970s'. Worded as one room for that reason. The two props whose GLBs do not match their filenames are excluded by PROP_NEEDS_REEXPORT and are not in these frames.",
       "shots": [
         {
           "id": "datacenter-diorama",
           "url": "spatial-companion.local/?env=datacenter-1970s",
-          "alt": "The avatar standing in the 1970s research-datacenter room: the resident's desk and terminal on the left, a wall of IBM big iron behind.",
+          "alt": "The avatar standing full-length in the 1970s research datacenter: a plotter on a desk, a minicomputer with a printer, a tape reel and cabinets behind",
           "motion": "drift-down",
           "_captureNote": "Dismisses onboarding ITSELF rather than inheriting it. Every shot after hud-shell used to rely on hud-shell's Skip click having persisted ci_avatar_onboarded into the shared browser context — an ordering dependency nothing declares. It holds for a full run and breaks the moment anyone re-shoots one shot: `make.sh --only datacenter-diorama` captured this frame with the Enable Microphone modal and its blur backdrop over the whole room. The step below is an eval, not a click, because it has to be a no-op on the full run too: by the time this shot runs in order the key is already set, the Skip button does not exist, and a plain click step would fail the run.",
           "_poseNote": "The wait is 9000, not 3000, and it is about the avatar's ARMS. On load the rig greets (a Waving clip) before it settles into its idle, and the greet is still unwinding at +6s — arms out, fingers spread, which photographs as a mannequin rather than a character. Sampled on Metal at networkidle + N ms: 1000 bind pose, 2500 arms overhead mid-wave, 4000-6000 arms coming down, 10000+ a settled idle with the arms hanging naturally. 9000 + settle 3000 lands well clear of it. See capture.config.mjs hazard 12 for the other half of this — under a software rasteriser the mixer never drives the rig at all and NO settle helps, which is what put the A-pose in the shots this replaced.",
@@ -350,7 +405,7 @@
             "path": "/?env=datacenter-1970s",
             "waitFor": "canvas",
             "waitUntil": "networkidle",
-            "settle": 3000,
+            "settle": 4000,
             "before": [
               {
                 "eval": "[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Skip')?.click()"
@@ -359,38 +414,37 @@
                 "waitFor": "textarea.chat-input"
               },
               {
-                "wait": 9000
+                "wait": 22000
               }
             ]
           }
-        }
-      ]
-    },
-    {
-      "id": "stage-room",
-      "kind": "screen",
-      "transition": "cut",
-      "chapter": "stage",
-      "seconds": 7,
-      "caption": "The room moves the camera back. Body included.",
-      "narration": "In the room the camera sits further back, so the whole body comes into frame.",
-      "shots": [
+        },
         {
           "id": "datacenter-quiet",
           "url": "spatial-companion.local/?env=datacenter-1970s",
-          "alt": "The 1970s datacenter with both HUD panels collapsed: the desk and terminal, the machine wall, and the avatar standing full-length in the middle of it.",
+          "alt": "The same room with the dock and chat panel collapsed, leaving the avatar full-length in the diorama",
           "motion": "push-in",
           "_focusNote": "push-in, not drift-down, and with a subject. The room only occupies the lower two thirds of the plate — above the machines is unlit ceiling, and it is a third of the 9:16 crop. A drift-down would spend the shot travelling INTO that emptiness. The focus rects instead end the push on the desk-and-avatar band at 16:9 and on the avatar at 9:16, so the move settles on something and the dead air at the top is cropped out rather than approached.\n\nLandscape widened 0.72 -> 0.80 (1.79x -> 1.61x) on 2026-08-07, because the caption of this very scene is \"Body included.\" and the old rectangle cut the avatar at the knee — the shot argued against its own caption. It also slid: at 0.72 the kit reported the window sliding back to y 0.279 from the requested 0.30, and left a fragment of the collapsed Controls button showing under the caption band. At 0.80 the figure reads full-length from head to shin, the far-right machine pair comes back into frame, and nothing slides. The feet are still behind the caption band and cannot be rescued — they sit at y~0.97 of the plate, so no window that keeps the avatar this size clears them. \"Body included\" is a claim about a full-length framing against the busts everywhere else in the film, which this now supports; it is not a claim about toes.",
           "focus": {
-            "landscape": { "x": 0.1, "y": 0.14, "w": 0.8, "h": 0.8 },
-            "portrait": { "x": 0.06, "y": 0.38, "w": 0.88, "h": 0.56 }
+            "landscape": {
+              "x": 0.1,
+              "y": 0.14,
+              "w": 0.8,
+              "h": 0.8
+            },
+            "portrait": {
+              "x": 0.06,
+              "y": 0.38,
+              "w": 0.88,
+              "h": 0.56
+            }
           },
           "_captureNote": "The film's only wide shot, and the only frame in which the avatar has legs. That is not a camera trick in the edit — Scene3D's ENVIRONMENT_LOOK parks the camera at 2.4 m landscape / 3.6 m portrait for `datacenter-1970s`, against 0.5 m for the studio, so every other shot is a bust and no `before` step can widen them (capture.config.mjs hazard 9). Collapsing both panels is what makes it work at 9:16: with the Chat Log rail up, the portrait crop of this room keeps the bust and loses the desk entirely. Establishes onboarding itself — same reason as datacenter-diorama.",
           "capture": {
             "path": "/?env=datacenter-1970s",
             "waitFor": "canvas",
             "waitUntil": "networkidle",
-            "settle": 1500,
+            "settle": 4000,
             "before": [
               {
                 "eval": "[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Skip')?.click()"
@@ -399,7 +453,7 @@
                 "waitFor": "textarea.chat-input"
               },
               {
-                "wait": 9000
+                "wait": 22000
               },
               {
                 "click": "button[aria-label=\"Hide Controls\"]"
@@ -419,12 +473,12 @@
       ]
     },
     {
-      "id": "recap",
+      "id": "what-stays-yours",
       "kind": "feature",
-      "seconds": 6,
-      "title": "What ships in the box",
+      "seconds": 7,
       "caption": "No account. No backend required. The cloud is opt-in.",
-      "narration": "Forty-seven body clips, five ways to connect a model, and no monthly fee.",
+      "narration": "Five ways to connect a model, a clip library of forty-seven, and a voice that needs no backend at all. None of it needs an account.",
+      "_editNote": "'Backend required: none' comes from main — #157 made the browser voice the default, which is what finally made that chip true, and #154 had explicitly left it as a promise to redeem. Carried forward here rather than re-litigated.\n\nOne deliberate divergence from main's wording: main's chip reads 'Body clips 47' and this one reads 'Clip LIBRARY 47'. Verified in animationClips.ts, the 47 is 6 VRMA + 34 GLB + 7 feminine across the whole catalog, and NO SINGLE AVATAR LOADS ALL OF THEM — a VRM rig resolves 6, a GLB rig 34. 'Body clips' next to one avatar reads as what that avatar can do, which is false by a factor of about eight. 'Library' is the same number and a true sentence.\n\nThe narration says 'a voice that needs no backend at all' rather than 'falls back to the browser' — after #157 the browser voice is the DEFAULT, not a fallback, and describing the default as a fallback undersells it and is wrong.",
       "items": [
         {
           "label": "Monthly fee",
@@ -435,11 +489,11 @@
           "value": "none"
         },
         {
-          "label": "Body clips",
+          "label": "Clip library",
           "value": "47"
         },
         {
-          "label": "LLM providers",
+          "label": "Model providers",
           "value": "5"
         }
       ],
@@ -450,6 +504,7 @@
       "kind": "outro",
       "transition": "cut",
       "seconds": 5,
+      "minSeconds": 3.5,
       "cta": "UnCloud your life.",
       "url": "ci.computer",
       "narration": "Spatial Companion, from Companion Intelligence. UnCloud your life.",

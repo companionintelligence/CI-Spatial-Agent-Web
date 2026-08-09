@@ -67,6 +67,69 @@ Three of the twelve shipped without it. Measure any prop with
   is not a fix. The diorama leaves them out until they are re-exported; deleting the
   entry there puts them back with no other change.
 
+### The relink step drops every texture on `.blend` sources
+
+The export step above "relinks each image to the texture files actually shipped with the
+asset (matched by basename — many Sketchfab exports carry dead absolute paths)". A basename
+match finds loose texture files sitting next to an FBX. It finds **nothing** for a `.blend`,
+whose images are packed inside the file or referenced by an absolute path from the author's
+machine — and the export then writes a GLB with no image at all, silently, for a material
+that renders as a flat 0.8 grey.
+
+Measured on the shipped files' JSON chunks against the source collection's public metadata
+(`api.sketchfab.com/v3/models/<uid>` reports a per-model texture count):
+
+| Prop | Source | Source textures | Shipped images |
+|---|---|---|---|
+| IBM 1401 CPU | `.blend` | 1 | **0** |
+| IBM 2401 Tape | `.blend` | 4 | **0** |
+| IBM 3178 Terminal | `.blend` | 4 | **0** |
+| IBM 3350 Disk | `.blend` | 4 | **0** |
+| every other prop | FBX | 1–6 | 1–6 ✓ |
+
+Four for four. It is the source format, not the individual asset.
+
+This is most of why the room reads as white plastic boxes: the 1401 CPU's one lost texture is
+its entire identity — a charcoal cabinet in a pale blue-grey frame with the machine's control
+panel on it — and that prop is **instanced sixteen times** as the machine ranks.
+
+**The re-export, when the source archive is to hand.** Open each `.blend` directly rather than
+importing it, `bpy.ops.file.unpack_all(method='USE_LOCAL')` so packed images land on disk, and
+then **fail the export** if any material references an image whose `filepath` does not resolve,
+instead of exporting a blank. A silent partial export is what produced this.
+
+The source models are `sketchfab.com/hegemonbill`, collection `metahuman` — all eleven CC-BY
+and flagged downloadable, but the download API needs the account, so this is an owner task.
+(`plugboard` is not in that collection; its source is elsewhere.)
+
+Two things a re-export will **not** fix, so nobody goes looking: nothing in this set has a
+normal, metallic-roughness or occlusion map — upstream or here — and the props are baseColour
+only across the board. Surface response is handled at runtime instead, by `SURFACE_FINISH` /
+`PROP_SURFACE` in `DioramaProps.ts` and the generated detail map in `detailSurface.ts`. The
+two jobs are separate; recovering the albedo does not make the material table redundant.
+
+`DioramaProps.node.test.ts` pins the four at zero images, so a good re-export fails the test
+and the failure is the instruction to delete the entry from `PROP_TEXTURES_LOST` and re-grade
+`PROP_TINT` against a prop that finally has an albedo.
+
+## Look and lighting
+
+- **Environment map.** `MachineRoomEnvironment.tsx` generates the IBL from the room itself —
+  a dark shell with the four ceiling troffers, the desk practical and the teal rim in it —
+  rather than loading drei's `studio` HDRI. One cube render at mount, then a PMREM prefilter,
+  then nothing per frame; and no CDN in the path. The studio preset stays for the default
+  (`environment: 'none'`) viewport, where a white lightbox is the right key for a bust.
+- **Surface finish.** `SURFACE_FINISH` in `DioramaProps.ts` is the metalness / roughness /
+  `envMapIntensity` table, keyed per prop and per GLB material name. Glass drive windows,
+  bare metal and paper are called out individually; everything else is painted steel.
+- **Detail map.** `detailSurface.ts` generates one small tiling normal + roughness map. It is
+  surface only — grain and orange peel. It carries **no markings of any kind**: no logos, no
+  labels, no model numbers. Those live in the lost textures above, and the only honest way to
+  get them back is the re-export, not a canvas.
+- **Occlusion.** `ContactShadows` inside the diorama seats the machines on the floor (rendered
+  for the first 90 frames, then free), and `N8AO` in the post chain darkens the panel gaps and
+  door seams. AO is opt-in per environment — the default viewport has nothing to occlude.
+
 ## Layout rationale (from the GDD)
 
 - **Back wall — big iron**, oldest→newest left to right (RAMAC → 1401 → 1401 CPU →

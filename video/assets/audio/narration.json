@@ -1,0 +1,79 @@
+{
+  "_": "Written by `ci-video narrate`. Records which line each mp3 is a read of, in which voice, on which engine, at what prosody — so a later edit to any of those can be detected instead of silently keeping the old recording. Commit this with the mp3s.",
+  "engine": "edge",
+  "voice": "en-GB-SoniaNeural",
+  "scenes": {
+    "open": {
+      "text": "An embodied AI that runs in a browser tab.",
+      "seconds": 3.312,
+      "adopted": true
+    },
+    "ftue-first-run": {
+      "text": "First load asks for your microphone. Skip it and type instead.",
+      "seconds": 4.848,
+      "adopted": true
+    },
+    "ftue-hud-shell": {
+      "text": "Past the modal, the avatar is already live, with the HUD around it.",
+      "seconds": 4.824,
+      "adopted": true
+    },
+    "promise": {
+      "text": "The empty log makes the promise before you have typed anything at all.",
+      "seconds": 4.248,
+      "adopted": true
+    },
+    "one-turn": {
+      "text": "Type a message. The reply lands in the log, and the same reply drives the mouth, the face and a body clip.",
+      "seconds": 7.344
+    },
+    "quiet-hud": {
+      "text": "Hide the dock and the screen is just the avatar and one input.",
+      "seconds": 4.128,
+      "adopted": true
+    },
+    "connection": {
+      "text": "Point it at your own Ollama, or a proxy, or leave it entirely offline.",
+      "seconds": 5.016,
+      "adopted": true
+    },
+    "on-device": {
+      "text": "One of the five providers runs the model inside the browser tab itself.",
+      "seconds": 4.8,
+      "adopted": true
+    },
+    "environment": {
+      "text": "Or put a room around it. The seventies datacenter ships with the app.",
+      "seconds": 5.112,
+      "adopted": true
+    },
+    "stage-room": {
+      "text": "In the room the camera sits further back, so the whole body comes into frame.",
+      "seconds": 4.776,
+      "adopted": true
+    },
+    "recap": {
+      "text": "Forty-seven body clips, five ways to connect a model, and no monthly fee.",
+      "seconds": 5.304,
+      "adopted": true
+    },
+    "close": {
+      "text": "Spatial Companion, from Companion Intelligence. UnCloud your life.",
+      "seconds": 5.688,
+      "adopted": true
+    },
+    "a-room": {
+      "text": "Put a room around it, and the camera steps back far enough to bring the whole body into frame.",
+      "seconds": 5.544
+    },
+    "what-stays-yours": {
+      "text": "Five ways to connect a model, a clip library of forty-seven, and a voice that needs no backend at all. None of it needs an account.",
+      "seconds": 8.928,
+      "prosody": {
+        "rate": "-5%",
+        "pitch": "-1Hz",
+        "volume": "+0%"
+      }
+    }
+  }
+}

@@ -193,6 +193,19 @@ export function measureGlbFile(file) {
   return measureGltf(readGlb(file).gltf)
 }
 
+/**
+ * The parsed JSON chunk of a GLB — materials, images, meshes.
+ *
+ * Exported because a bounding box cannot see a material, and the second class of broken export
+ * in this asset set is invisible to every measurement above it: four props measure perfectly
+ * and still ship with `images` empty, so sixteen instanced cabinets render as blank grey. See
+ * PROP_TEXTURES_LOST in DioramaProps.ts; DioramaProps.node.test.ts reads this to pin the
+ * texture inventory the same way it pins the geometry.
+ */
+export function readGlbJson(file) {
+  return readGlb(file).gltf
+}
+
 // ── CLI ───────────────────────────────────────────────────────────────────────
 
 const argv = process.argv.slice(2)
