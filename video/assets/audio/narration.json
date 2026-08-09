@@ -25,7 +25,7 @@
     },
     "one-turn": {
       "text": "Type a message. The reply lands in the log, and the same reply drives the mouth, the face and a body clip.",
-      "seconds": 7.56,
+      "seconds": 7.263,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -64,7 +64,7 @@
     },
     "close": {
       "text": "Spatial Companion, from Companion Intelligence. UnCloud your life.",
-      "seconds": 6.192,
+      "seconds": 5.81,
       "prosody": {
         "rate": "-8%",
         "pitch": "-2Hz",
@@ -73,7 +73,7 @@
     },
     "a-room": {
       "text": "Put a room around it, and the camera steps back far enough to bring the whole body into frame.",
-      "seconds": 5.712,
+      "seconds": 5.63,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -82,7 +82,7 @@
     },
     "what-stays-yours": {
       "text": "Five ways to connect a model, a clip library of forty-seven, and a voice that needs no backend at all. None of it needs an account.",
-      "seconds": 8.928,
+      "seconds": 8.529,
       "prosody": {
         "rate": "-5%",
         "pitch": "-1Hz",
