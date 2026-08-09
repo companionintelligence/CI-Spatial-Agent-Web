@@ -3,23 +3,42 @@
 # Published as ghcr.io/companionintelligence/ci-spatial-companion-proxy.
 #
 # Build context is the repo root (pnpm workspace).
+#
+# Runs under Deno (`deno run`, via its npm/Node compat mode — see
+# apps/proxy/deno.json) rather than Node, as part of an org-wide Node→Deno
+# migration. The BFF's own source is untouched: @hono/node-server's `serve()`
+# runs on Deno's node:http compat exactly as it does on Node. `deno compile`
+# is deliberately not used for either stage — it isn't reliable against
+# pnpm's symlinked node_modules layout — so this stays `deno run` in a
+# container, matching how the sidecar was already deployed.
 
 # ---- build stage ----
 FROM node:22-bookworm-slim AS build
+# Official "bin" image variant, meant to be copied from — see
+# https://github.com/denoland/deno_docker. Pinned to the same Deno version
+# this migration was developed and tested against.
+COPY --from=denoland/deno:bin-2.9.5 /deno /usr/local/bin/deno
 RUN corepack enable
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
-RUN pnpm --filter @ci-avatar/proxy build
+# `deno task build` runs the same `tsc` this package always built with (see
+# apps/proxy/deno.json), against the node_modules pnpm just installed above —
+# just invoked through Deno instead of a Node binary.
+RUN deno task --cwd apps/proxy build
 
 # ---- runtime stage ----
-FROM node:22-bookworm-slim AS runtime
+FROM denoland/deno:2.9.5 AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-# Pure-JS prod deps (hono, @hono/node-server, @sentry/node); install them fresh to
-# avoid copying the pnpm workspace symlink farm.
+# Pure-JS prod deps (hono, @hono/node-server, @sentry/node). `deno install`
+# resolves and fetches these itself straight from package.json/the npm
+# registry (nodeModulesDir defaults to "auto" whenever a deno.json's own
+# workspace parent isn't present, which is the case here) — no Node, npm, or
+# the pnpm workspace symlink farm needed in this image.
 COPY apps/proxy/package.json ./package.json
-RUN npm install --omit=dev --no-audit --no-fund
+COPY apps/proxy/deno.json ./deno.json
+RUN deno install
 COPY --from=build /app/apps/proxy/dist ./dist
 # Error reporting (Sentry) is opt-out and read entirely at RUNTIME — set
 # SENTRY_DSN and reporting is on unless a kill switch below turns it off; with
@@ -47,4 +66,4 @@ ARG SENTRY_RELEASE=""
 ENV SENTRY_DSN=${SENTRY_DSN} \
     SENTRY_RELEASE=${SENTRY_RELEASE}
 EXPOSE 8787
-CMD ["node", "dist/server.js"]
+CMD ["deno", "run", "-A", "dist/server.js"]
