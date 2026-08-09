@@ -1,6 +1,12 @@
 {
   "compilerOptions":{
     "jsxImportSource": "@webspatial/react-sdk",
+    // No files are compiled directly by this root config ("files": [] below;
+    // see tsconfig.app.json / tsconfig.node.json for the real project
+    // references), so "jsx" is inert here too -- set for the same reason as
+    // tsconfig.node.json: Deno's workspace-wide config validation errors on
+    // jsxImportSource without a jsx mode wherever it finds a tsconfig.json.
+    "jsx": "react-jsx"
   },
   "files": [],
   "references": [
