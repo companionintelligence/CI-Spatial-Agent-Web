@@ -35,6 +35,13 @@
  *    WebGL/canvas content. Mask the canvas or use a tolerance check."). The
  *    workflow's `Detect UI drift` step is therefore advisory here, not a gate.
  *
+ *    SUPERSEDED FROM "DECISION" ONWARD — see hazard 13. The description is right
+ *    and worth keeping: the scene does animate every frame and FREEZE_CSS does
+ *    nothing to it. The decision not to mask STANDS. But the conclusion that the
+ *    shots therefore cannot be stable does not: neither this note nor the kit
+ *    README considers the third option, which is to stop the scene rather than
+ *    hide it or tolerate it. Most shots are byte-identical now.
+ *
  * 2. WebGL comes up, but the DEFAULT LAUNCH RASTERISES ON THE CPU — and that
  *    costs one shot. MEASURED on an M2 Max, Playwright 1.62 / Chromium 1234,
  *    with the kit's exact hard-coded arg list:
@@ -79,22 +86,6 @@
  *    frozen the three.js loop mid-boot and photographed an empty canvas. Probed:
  *    with `clock.install({time})` a rAF ticker still runs ~63 ticks/s and Date
  *    advances from the pinned instant. So `fixedTime` stays on.
- *
- * 3b. …AND IT IS NOW OFF ANYWAY, because the clock stalls the SHUTTER even
- *    though it does not stall the loop. Hazard 3 asked whether rAF keeps
- *    ticking; it does. It did not ask whether `page.screenshot({ animations:
- *    "disabled" })` still returns, and on the diorama — the heaviest scene in
- *    the app — it does not. Measured on one stage, one browser, one 3840x2160
- *    buffer, differing only in `clock.install()`:
- *
- *        clock off   screenshot returned in 10.8 s
- *        clock on    TIMEOUT, still not returned at 45 s
- *
- *    `document.getAnimations()` reports nothing live either way, so this is not
- *    Playwright waiting out a CSS animation. Costs nothing to drop: hazard 7
- *    already established that no clock, uptime or relative timestamp renders
- *    anywhere in this app. See `fixedTime: false` at the bottom of this file,
- *    and note it has to be literally `false`, not absent.
  *
  * 4. Scripted replies are chosen with Math.random(), NOT round-robin.
  *    llmDirected.ts picks `Math.floor(Math.random() * group.responses.length)`
@@ -318,37 +309,52 @@
  *    exactly how a mannequin shipped; make it loud. `CAPTURE_GPU=software`
  *    still opts out, and now means "I accept an un-animated avatar".
  *
- * 12b. …AND THE RENDERER WAS NOT THE WHOLE STORY. Re-measured 2026-08-08 on
- *    ANGLE/Metal (asserted from the page, not assumed). Two findings, the
- *    second of which is a live product issue rather than a capture one:
+ * 13. THE SCENE IS PINNED WHILE IT IS PHOTOGRAPHED, AND THAT IS WHAT MADE THE
+ *    SHOTS WORTH COMMITTING. onContext sets window.__CI_CAPTURE_MODE__; the
+ *    whole rationale lives next to the code it governs, in
+ *    packages/core/src/services/capture/captureMode.ts. What matters here:
  *
- *      · THE RIG IS DEFINITELY LIVE ON HARDWARE. Hashing the canvas alone at
- *        seven marks between 1 s and 24 s gives SEVEN distinct frames; at
- *        dsf 3 across 6 s-45 s, five distinct frames. Measured frame rate is
- *        58.5 fps at dsf 1 and 46.0 fps at dsf 3, so this is not a starved
- *        render loop and the mixer is genuinely driving the rig.
+ *    MEASURED BEFORE, three consecutive `make.sh --no-render` runs on one pinned
+ *    kit, worst pair: 8 of 18 shots differed, peak delta 34/255, and the two
+ *    datacenter shots differed across 7-16% of their pixels. Three named causes
+ *    — the blink schedule, the diorama's pulsing indicator lamps, and
+ *    sub-visible pose drift — all of them wall-clock driven.
  *
- *      · THE POSE IT SETTLES INTO DEPENDS ON deviceScaleFactor, AND NOTHING
- *        IN THIS REPO EXPLAINS WHY. At dsf 1 the avatar leaves bind pose (arms
- *        horizontal at t=1000 ms) and is in a natural arms-down idle from about
- *        4000 ms onward, and stays there. At dsf 3 — the factor this pipeline
- *        captures at — the arms stop around 35-40° from the body with the
- *        fingers spread and do NOT come down at 6 s, 12 s, 20 s, 30 s or 45 s.
- *        Same build, same browser, same stage; only deviceScaleFactor differs.
+ *    MEASURED AFTER, same protocol, on the kit these shots were captured with
+ *    (video-kit 0.13.1): 17 of 18 byte-identical across all three runs, and 18
+ *    of 18 between runs 1 and 3. The single exception was datacenter-diorama at
+ *    16:9, differing on 0.45% of its pixels at a peak of 2/255 — nothing above
+ *    8/255 anywhere in the shoot. The scene-level drift is gone, and the four
+ *    datacenter shots, the ones that used to be worst by two orders of
+ *    magnitude, are byte-identical.
  *
- *        So a USER does not see a splayed A-pose — they are at dsf 1-2, where
- *        it settles in about four seconds — but every committed plate here
- *        does, and no amount of `wait` fixes it. Waiting was tried out to 45 s.
+ *    An earlier pass on 0.13.0 measured a looser 13-14 of 18 with a peak of
+ *    25/255 in the settings dialogs. That is what the drift envelope below is
+ *    sized for; it is deliberately NOT retightened onto the better numbers
+ *    above, because one clean shoot is not evidence that 2/255 is the ceiling.
  *
- *        NOT the environment: reproduced with `?env=none`, diorama absent.
- *        `animationsEnabled` defaults true and is not tied to resolution, and
- *        getRenderQuality only tiers shadowMapSize/SSAO/pixelRatio, never the
- *        mixer. Root cause NOT found — recorded rather than guessed at.
+ *    TWO THINGS THAT DO NOT WORK, both tried and measured, so nobody spends the
+ *    afternoon again:
  *
- *        Left visible in the film rather than cropped around. The cut claims a
- *        body; framing the body out to make the claim easier to keep is exactly
- *        the failure mode this storyboard was rewritten to remove. Fix belongs
- *        in the animation system, not in the camera.
+ *    - PAUSING PLAYWRIGHT'S CLOCK. context.clock.pauseAt() plus paying out
+ *      virtual time through clock.runFor() does make requestAnimationFrame
+ *      deterministic — the kit's fake clock implements rAF as a 16 ms timer, so
+ *      a paused clock renders no frames and runFor advances in exact steps. It
+ *      is still strictly worse: the app streams ~243 MB of avatar assets on real
+ *      time, so the virtual budget gets spent at an arbitrary point in the LOAD
+ *      rather than the animation. All 18 shots then drifted, against 8 before,
+ *      and first-run.mobile came out with no avatar in the frame at all.
+ *    - SETTLING ON THE RENDER LOOP. "Wait for N consecutive frames with an
+ *      unchanged framebuffer" cannot terminate here: without capture mode the
+ *      idle clip, the blink and the lamps never stop, so it would spin to its
+ *      timeout on every shot and then photograph an unsettled frame anyway.
+ *
+ *    THE REMAINING DIFFERENCE IS SMALL BUT NOT ZERO, so a byte comparison is
+ *    still the wrong gate by a hair. Compare with an amplitude+area envelope
+ *    (peak delta <= 32, and <= 0.01% of pixels differing by more than 8/255)
+ *    rather than md5. Both limits are set from the measurements above and are
+ *    tight enough to catch a one-button change: a 41x41 px edit is 0.0203% of
+ *    the frame at delta 248, outside the envelope on both axes.
  */
 
 import { createRequire } from "node:module";
@@ -462,35 +468,8 @@ export default {
   colorScheme: "dark",
   locale: "en-US",
   timezoneId: "UTC",
-
-  /**
-   * fixedTime IS OFF, AND IT HAS TO BE — see hazard 3b. The fake clock does not
-   * stall the render loop (hazard 3 is still true) but it DOES stall
-   * `page.screenshot({ animations: "disabled" })` on the diorama, which is the
-   * heaviest scene in the app. Measured on the same stage, same browser, same
-   * 3840x2160 buffer, differing only in whether `clock.install()` ran:
-   *
-   *     clock off   screenshot returned in 10.8 s
-   *     clock on    TIMEOUT, still not returned at 45 s
-   *
-   * `document.getAnimations()` reports NOTHING live in either case, so this is
-   * not Playwright waiting out a CSS animation — it is the screenshot path
-   * itself needing wall time the frozen clock never gives it.
-   *
-   * Dropping it costs nothing, because nothing in this app renders a time:
-   * hazard 7 checked that already ("no clocks, uptimes, relative timestamps or
-   * live counters render anywhere in the HUD"). ChatBubble carries a
-   * `timestamp` field and never displays it. So there is no frame this pins and
-   * no drift it prevents — it was insurance against a hazard this app does not
-   * have, and it was costing two shots.
-   *
-   * It must be `false` EXPLICITLY. Deleting the key is not enough: capture.mjs
-   * reads `if (config.fixedTime !== false)` and then installs the clock at its
-   * own default instant, so an omitted key is "on", not "off". Measured the
-   * hard way — the first attempt at this fix just removed the line and both
-   * shots failed again, identically.
-   */
-  fixedTime: false,
+  // Safe here — verified above that the fake clock does not stall requestAnimationFrame.
+  fixedTime: "2026-06-15T15:04:00Z",
 
   // No auth: the app has no login wall. It is a static SPA plus an optional
   // same-origin BFF proxy, and we pin it to the offline `script` provider below.
@@ -508,6 +487,13 @@ export default {
         /* storage may be unavailable */
       }
       window.__APP_CONFIG__ = { llm: { llm_provider: "script" } };
+
+      // Hold the scene still for the photograph — hazard 13. Read before first
+      // render by packages/core/src/services/capture/captureMode.ts, which is
+      // where the whole rationale lives. Set here rather than by URL so it can
+      // never reach a real user, and set in the SAME init script as the LLM pin
+      // so the two cannot drift apart.
+      window.__CI_CAPTURE_MODE__ = true;
     });
 
     // Freeze the transcript: one fixed reply instead of an 8-way Math.random pick.

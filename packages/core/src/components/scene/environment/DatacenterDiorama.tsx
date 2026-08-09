@@ -12,6 +12,7 @@
 import { ContactShadows, useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
+import { getCaptureMode } from '../../../services/capture/captureMode'
 import * as THREE from 'three'
 import {
   DioramaProps,
@@ -511,8 +512,37 @@ function AimedLight({
 function IndicatorLamp({ position, color = '#e8a24a' }: { position: [number, number, number]; color?: string }) {
   const ref = useRef<THREE.PointLight>(null)
   const phase = useMemo(() => Math.random() * Math.PI * 2, [])
+  // Null in every normal run — see services/capture/captureMode.ts.
+  const captureMode = useMemo(() => getCaptureMode(), [])
   useFrame(({ clock }) => {
     if (!ref.current) return
+    // These four lamps are the single largest source of run-to-run pixel
+    // difference in the whole video pipeline, and it is not close: a fraction of
+    // a stop of room light moves every 8-bit quantisation boundary at once, so
+    // two captures of an unchanged UI differ across 7-16% of the frame in broad
+    // contour rings. Nobody can see it; a byte comparison sees all of it. Under
+    // capture mode the lamp holds a constant and the room stops breathing for
+    // the length of one photograph.
+    //
+    // The constant is the sine's mean rather than its phase-zero value, so the
+    // still reads at the brightness the room averages rather than at the bottom
+    // of its swing. `phase` is deliberately not consulted: it is a Math.random
+    // draw, and although the capture layer seeds that PRNG, the draw ORDER
+    // depends on mount order — so honouring it here would reintroduce exactly
+    // the nondeterminism this branch exists to remove.
+    //
+    // MERGE NOTE: the amplitude here is a THIRD of what #155 pinned. #155 wrote
+    // the pin against `0.35 + 0.25 * |sin|`; the restage on this branch cut the
+    // lamps to `0.12 + 0.09 * |sin|` because at the old value, against the new
+    // room lighting and the tinted-down cabinets, they read as a small sun on
+    // the RAMAC's front panel. Both changes are kept: the pin is #155's, the
+    // levels are the restage's, and the constant below is recomputed as the mean
+    // of THIS sine rather than carried over from the old one. Taking #155's
+    // literal constant would have pinned the lamps three times too bright.
+    if (captureMode) {
+      ref.current.intensity = 0.12 + 0.09 * (2 / Math.PI)
+      return
+    }
     ref.current.intensity = 0.12 + 0.09 * Math.abs(Math.sin(clock.getElapsedTime() * 1.3 + phase))
   })
   return <pointLight ref={ref} position={position} color={color} intensity={0.14} distance={1.5} decay={2} />

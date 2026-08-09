@@ -144,8 +144,14 @@ docker build \
 | `VITE_LLM_PROVIDER`       | `script`                | `script`, `ollama`, `mlc` (in-browser WebLLM), or `openai`  |
 | `VITE_LLM_OLLAMA_API_URL` | —                       | Ollama server URL (required for `ollama`)                   |
 | `VITE_LLM_OLLAMA_MODEL`   | `gemma3:1b`             | Ollama model name                                           |
-| `VITE_TTS_MODE`           | `pocket`                | `pocket`, `browser` (speechSynthesis), `local`, or `remote` |
-| `VITE_POCKET_TTS_URL`     | `http://localhost:8000` | Pocket TTS server URL                                       |
+| `VITE_TTS_MODE`           | `browser`               | `browser` (speechSynthesis), `pocket`, `local`, or `remote` |
+| `VITE_POCKET_TTS_URL`     | `http://localhost:8000` | Pocket TTS server URL (used when `VITE_TTS_MODE=pocket`)    |
+
+The default is `browser` because it is the only mode that needs nothing installed:
+a stock install speaks out of the box. `pocket`, `local` and `remote` are quality
+upgrades you opt into. If you opt into `pocket` and the server turns out to be
+unreachable, the app logs one warning and falls back to the browser voice for the
+rest of the session rather than going silent.
 
 Note: the LLM/TTS requests are made from the **browser**, not the container, so the
 backend URL must be reachable from the user's machine and must allow the app's

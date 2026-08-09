@@ -13,6 +13,7 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 import { AvatarOptions } from './AvatarOptions'
 import { Vector3 } from 'three'
+import { getCaptureMode } from '../../../services/capture/captureMode'
 import {
   VRMA_CLIPS,
   GLB_ALL_CLIPS,
@@ -156,6 +157,19 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   const startupPlayedRef = useRef<boolean>(false)
   const [isAvatarVisible, setIsAvatarVisible] = useState<boolean>(false)
 
+  // Null in every normal run. Set only when the product-video pipeline is
+  // photographing the app — see services/capture/captureMode.ts. Read once:
+  // the harness installs it before first render and it never changes after.
+  const captureMode = useMemo(() => getCaptureMode(), [])
+
+  // Capture mode only: flipped true the first frame the pinned pose has been
+  // written to the rig, so the camera placement below can wait for it. See the
+  // head-bone effect for why that ordering is the difference between a
+  // reproducible frame and a bimodal one.
+  const [capturePosePinned, setCapturePosePinned] = useState<boolean>(false)
+  const capturePosePinnedRef = useRef<boolean>(false)
+  const vrmRotatedRef = useRef<boolean>(false)
+
   const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled } = state
 
   const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
@@ -192,6 +206,23 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   // TODO : very manual and hardcoded, must standarize avatar input 
   useEffect(() => {
     if (!avatarRef.current || !viewerCamera) return
+
+    // The camera is parked relative to the HEAD BONE's world position, and a
+    // bone's world position is a function of the CURRENT POSE. This effect keys
+    // on the avatar object mounting, which races the first mixer update: run it
+    // before the pose is applied and the head is measured in the bind pose, run
+    // it after and it is measured in the idle. The two land a few millimetres
+    // apart, the camera moves with them, and the whole frame shifts by a
+    // fraction of a pixel — which is invisible to look at and shows up in a byte
+    // comparison as a broad wash of 1-3/255 differences across everything.
+    //
+    // Measured: with the pose pinned but this effect left racing, three captures
+    // produced TWO distinct results per shot rather than a spread — runs 1 and 3
+    // identical, run 2 different — which is the signature of a coin flip, not of
+    // accumulating drift. Under capture mode we therefore wait for the pinned
+    // pose before measuring, so the head is always found in the same place.
+    if (captureMode && !capturePosePinned) return
+
     // Try to find the head or face bone/node
     let head: THREE.Object3D | null = null
 
@@ -199,8 +230,14 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     if (isVRM && vrm?.humanoid) {
       const normalizedBone = vrm.humanoid.getRawBone('head')
       head = normalizedBone?.node ?? null
-      VRMUtils.rotateVRM0(vrm) // only works for vrm 0.0
-      
+      // Guarded because capture mode can run this effect a second time (once the
+      // pose is pinned): rotateVRM0 mutates the model, so a second call would
+      // rotate an already-corrected VRM0 avatar through another 180 degrees.
+      if (!vrmRotatedRef.current) {
+        VRMUtils.rotateVRM0(vrm) // only works for vrm 0.0
+        vrmRotatedRef.current = true
+      }
+
     } else {
       // GLB: try to find a bone named "head"
       avatarRef.current?.traverse((child) => {
@@ -248,9 +285,10 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
       onHeadLocated?.(cameraTarget, cameraPosition)
       if(isVRM) avatarRef.current.position.x += .2  // hardcoded adjustment for now
     }
-    // Only run on initial avatar load
+    // Only run on initial avatar load — plus, under capture mode, once more the
+    // moment the pinned pose exists, which is the run this one is placed from.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [avatarRef.current])
+  }, [avatarRef.current, capturePosePinned])
 
   // Load external animations from animationClips.ts
   const { actions, mixer } = useExternalAnimations(avatarRef, vrm)
@@ -289,6 +327,15 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     // instead of needing a bigger magic number. The timeout is a floor, not the
     // mechanism: if animation never starts the avatar still appears, because a
     // static avatar beats no avatar.
+    // Capture mode holds a constant pose (see the useFrame below), so "is the
+    // mixer driving the rig yet" is not a question worth waiting on — the rig is
+    // never in its bind pose here, and polling for motion that has deliberately
+    // been switched off would just spend the 6 s timeout on every shot.
+    if (captureMode) {
+      setIsAvatarVisible(true)
+      return
+    }
+
     let raf = 0
     const startedAt = performance.now()
     const REVEAL_TIMEOUT_MS = 6000
@@ -442,6 +489,19 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     if (!emoteService || !animationService) return
     if (startupPlayedRef.current) return
     if (!isAvatarVisible) return // Wait until avatar is visible
+
+    // Capture mode: the looping idle, immediately, and nothing else. The greet
+    // is skipped deliberately — it is a one-shot that blends into the idle over
+    // 2 s, so for as long as it is unwinding the pose depends on how long the
+    // clips took to load, which is exactly the coupling that made the committed
+    // shots irreproducible. No emote either: 'happy' drives the face, and the
+    // face is where the largest run-to-run differences were.
+    if (captureMode) {
+      animationService.actions.performAction({ clip: idleClip, loopCount: Infinity, blendTime: 0 })
+      startupPlayedRef.current = true
+      return
+    }
+
     // Mark startup as played to prevent re-execution
     const startupTimer = setTimeout(() => {
       emoteService.actions.performAction({ emotion: 'happy', relaxTime: greetClip.duration })
@@ -473,6 +533,46 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
 
 
   useFrame((_, delta) => {
+    // ── CAPTURE MODE: hold one frame, forever ────────────────────────────────
+    //
+    // Everything below this block advances the avatar by `delta`, which is wall
+    // clock, which is what makes two captures of the same UI differ. Here the
+    // pose is written absolutely instead of accumulated, so it does not depend
+    // on the frame rate, on how long the 47 clip files took to load, or on how
+    // busy the machine was — only on captureMode.poseTime.
+    //
+    // timeScale 0 is what makes it hold. The mixer belongs to drei's
+    // useAnimations, which ticks it in its OWN useFrame (see the note in
+    // animationService.update), so this callback cannot be the last word on
+    // mixer time: whatever we set here would be advanced by drei's update
+    // afterwards. Zeroing the time scale makes that update a no-op and leaves
+    // the action time we write below standing.
+    //
+    // Emotes, visemes and spring bones are all skipped: blink and gaze are the
+    // highest-amplitude drift in the whole shoot, and spring bones are an
+    // iterative integrator whose output depends on the step sizes it was fed.
+    if (captureMode) {
+      if (mixer) mixer.timeScale = 0
+      let pinned = false
+      for (const action of Object.values(actions)) {
+        if (action?.isRunning()) {
+          action.time = captureMode.poseTime
+          pinned = true
+        }
+      }
+      mixer?.update(0)
+
+      // Tell the camera placement that the rig is now in its final pose. Via a
+      // ref so this is a single setState on the first pinned frame rather than
+      // one per frame — a setState in useFrame that ran every frame would
+      // re-render the avatar sixty times a second for the length of the shoot.
+      if (pinned && !capturePosePinnedRef.current) {
+        capturePosePinnedRef.current = true
+        setCapturePosePinned(true)
+      }
+      return
+    }
+
     if (isVRM && vrm) vrm.expressionManager?.update()
     // Update animation service using R3F integration
     if (animationsEnabled && animationService) {

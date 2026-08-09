@@ -20,7 +20,7 @@
     "music": null,
     "musicVolume": 0.14
   },
-  "_honestyNote": "WHAT THIS FILM CLAIMS, AND WHAT HAD TO CHANGE BEFORE IT COULD.\n\n1. THE VOICE. The previous cut opened on 'An AI with a face, a voice and a body.'\n   Two of those were on screen. The third was not true of a default install:\n   ttsConfig.ts defaulted `mode` to 'pocket' against http://localhost:8000,\n   nothing in this repo starts a Pocket TTS server, and generatePocketAudio's\n   network-failure path marked every message `status: 'error'` and dropped it.\n   Its own console warning said so — 'speech is disabled … or set\n   VITE_TTS_MODE=browser'. A clean checkout was mute.\n\n   Settled by fixing the PRODUCT, not by deleting the word: ttsService now\n   degrades to speechSynthesis when the configured backend is unreachable and\n   the browser can speak. `browser` mode was already fully implemented; it just\n   had to be reachable without editing an env var. Covered by two tests in\n   ttsService.dom.test.ts.\n\n   The film still does not SAY 'a voice' over a frame, because a silent product\n   screen cannot show one. The claim now sits in the recap, next to the thing\n   that makes it true, and the title card claims only what the picture carries.\n\n2. THE COUNTS. Verified in animationClips.ts: 6 VRMA + 34 GLB + 7 feminine = 47\n   clips, and 5 providers in SettingsPanel PROVIDERS (proxy, ollama, openai,\n   mlc, script). But NO SINGLE AVATAR LOADS ALL 47 — a VRM gets VRMA_CLIPS (6),\n   a GLB rig gets GLB_CLIPS (34), a feminine rig gets GLB_ALL_CLIPS. So the\n   recap chip says 'Clip library', and the narration says 'library'. It must\n   never be phrased as what this avatar can do.\n\n   EnvironmentPreset is 'none' | 'datacenter-1970s' — that is one optional room\n   plus the plain studio, not 'two environments'. Filmed and worded as one room.\n\n3. THE A-POSE. The committed frames showed the avatar in bind pose with splayed\n   hands, and it was NOT a capture-timing artefact. capture.config.mjs hazard 12\n   measured it: under SwiftShader the mixer never drives the rig at any settle\n   (bind pose identical at 1s through 24s), while on ANGLE/Metal the avatar\n   greets and settles into its idle. It was the renderer. The launch shim now\n   appends the ANGLE flags and refuses the capture if it still landed on\n   software, so these plates are shot on hardware GL.\n\n4. PROP_NEEDS_REEXPORT is untouched. It excludes the two diorama props whose\n   GLBs do not contain the machines their filenames claim; removing anything\n   from it would put a mislabelled object in frame.\n\n5. THESE SHOTS ARE NOT BYTE-STABLE, and this cut does not pretend otherwise —\n   see hazard 1. The avatar is a live WebGL render loop with blink, gaze and a\n   mixer running, so two captures of unchanged code differ. There is no exact\n   baseline to diff against; the shots are verified by CONTENT (the strings,\n   states and geometry each scene claims) rather than by bytes.",
+  "_honestyNote": "WHAT THIS FILM CLAIMS, AND WHAT HAD TO BE TRUE FIRST.\n\n1. THE VOICE — SETTLED ON MAIN, NOT HERE. The previous cut opened on 'An AI with a face, a voice and a body' while a stock install was mute: ttsConfig defaulted `mode` to 'pocket' at localhost:8000, a server this repo does not ship or start. This branch originally carried its own fix (fall back to speechSynthesis when the backend is unreachable). #157 then landed on main with a better one — it moves the DEFAULT to 'browser' and routes generation and playback through a single effectiveMode() so the two can never disagree — and this branch now takes main's implementation wholesale. The claim is true of every install, so the title card carries it again.\n\n2. THE COUNTS. Verified in animationClips.ts: 6 VRMA + 34 GLB + 7 feminine = 47 clips, and 5 providers in SettingsPanel. But NO SINGLE AVATAR LOADS ALL 47 — a VRM gets 6, a GLB rig 34 — so the chip says 'Clip library' and the narration says 'library'. It must never be phrased as what the avatar on screen can do. EnvironmentPreset is 'none' | 'datacenter-1970s': one optional room plus the plain studio, filmed and worded as one room.\n\n3. THE A-POSE IS A CAPTURE ARTEFACT, AND NOT THE ONE ANYONE EXPECTED. Measured on ANGLE/Metal, asserted from the page: the rig IS live (7 distinct canvas frames across 24s, 46-58 fps). At deviceScaleFactor 1 the avatar leaves bind pose and is in a natural arms-down idle from about 4s. At the capture's dsf 3 the arms stop at 35-40 degrees and do NOT come down at 6s, 12s, 20s, 30s or 45s — same build, same browser, only the scale factor differs. So a USER does not see it and every committed plate does. Root cause not found; recorded in capture.config.mjs hazard 12b rather than guessed at, and left visible in the film rather than cropped around. The cut claims a body.\n\n4. PROP_NEEDS_REEXPORT is untouched. It excludes props whose GLB does not contain the machine its filename claims. The restage on this branch also found WHY four other props render flat — the .blend-sourced ones lost every texture in a lossy re-export — which is written up in docs/DIORAMA.md and needs a Sketchfab login to fix.\n\n5. THE SHOTS ARE PINNED NOW, and an earlier revision of this note said the opposite. It claimed these shots could not be byte-stable because the avatar is a live render loop, and measured 9/18 differing between two identical runs to prove it. #155 then landed on main and did the thing that note had ruled out: it stops the scene rather than tolerating or masking it, via window.__CI_CAPTURE_MODE__ (see services/capture/captureMode.ts), pinning the blink schedule, the diorama's indicator lamps and the pose. That machinery is merged in here, and the lamp pin was re-derived for this branch's lower lamp levels rather than copied — see the merge note in DatacenterDiorama.tsx.",
   "scenes": [
     {
       "id": "pain-text-box",
@@ -75,11 +75,11 @@
       "seconds": 5,
       "minSeconds": 3.5,
       "title": "Spatial Companion",
-      "caption": "A face and a body, in a browser tab.",
+      "caption": "A face, a voice and a body — in a browser tab.",
       "narration": "This one is a browser tab.",
       "mark": "brand:logo.mark",
       "reveal": "paced",
-      "_editNote": "The title card claims exactly what the following frames carry: a face and a body. The voice claim was moved to the recap, beside the fact that now supports it — see the top-level _honestyNote. A title card is the worst place in a film to put the one claim the pictures cannot back."
+      "_editNote": "The voice is back on the title card, and it is now earned. This scene deliberately dropped the word while a stock install was mute; #157 landed on main and made `browser` (speechSynthesis) the DEFAULT TTS mode, so a clean checkout speaks with nothing installed. The card claims a face, a voice and a body, and the product now has all three out of the box.\n\nThe rule that put it in the recap in the first place still stands for anything else: a title card is the worst place in a film for a claim the pictures cannot back. This one is carried by the product, not by the frame, and that is only acceptable because it is now true of every install rather than of a configured one."
     },
     {
       "id": "first-run",
@@ -476,25 +476,25 @@
       "id": "what-stays-yours",
       "kind": "feature",
       "seconds": 7,
-      "caption": "No account. No monthly fee. The cloud is opt-in.",
-      "narration": "Five ways to connect a model, a clip library of forty-seven, and speech that falls back to the browser's own. None of it needs an account.",
-      "_editNote": "'a clip library of forty-seven' — LIBRARY, deliberately. No single avatar loads all 47 (VRM rigs get 6, GLB rigs 34, feminine rigs the combined set), so any phrasing that attaches the number to the avatar on screen would be false. The speech line is what the ttsService fallback in this PR makes true; before it, a default install was mute.",
+      "caption": "No account. No backend required. The cloud is opt-in.",
+      "narration": "Five ways to connect a model, a clip library of forty-seven, and a voice that needs no backend at all. None of it needs an account.",
+      "_editNote": "'Backend required: none' comes from main — #157 made the browser voice the default, which is what finally made that chip true, and #154 had explicitly left it as a promise to redeem. Carried forward here rather than re-litigated.\n\nOne deliberate divergence from main's wording: main's chip reads 'Body clips 47' and this one reads 'Clip LIBRARY 47'. Verified in animationClips.ts, the 47 is 6 VRMA + 34 GLB + 7 feminine across the whole catalog, and NO SINGLE AVATAR LOADS ALL OF THEM — a VRM rig resolves 6, a GLB rig 34. 'Body clips' next to one avatar reads as what that avatar can do, which is false by a factor of about eight. 'Library' is the same number and a true sentence.\n\nThe narration says 'a voice that needs no backend at all' rather than 'falls back to the browser' — after #157 the browser voice is the DEFAULT, not a fallback, and describing the default as a fallback undersells it and is wrong.",
       "items": [
         {
           "label": "Monthly fee",
           "value": "$0"
         },
         {
-          "label": "Model providers",
-          "value": "5"
+          "label": "Backend required",
+          "value": "none"
         },
         {
           "label": "Clip library",
           "value": "47"
         },
         {
-          "label": "Speech",
-          "value": "Browser or local"
+          "label": "Model providers",
+          "value": "5"
         }
       ],
       "reveal": "paced"
