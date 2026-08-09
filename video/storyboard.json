@@ -423,7 +423,7 @@
       "kind": "feature",
       "seconds": 6,
       "title": "What ships in the box",
-      "caption": "No account. No monthly fee. The cloud is opt-in.",
+      "caption": "No account. No backend required. The cloud is opt-in.",
       "narration": "Forty-seven body clips, five ways to connect a model, and no monthly fee.",
       "items": [
         {
@@ -432,7 +432,7 @@
         },
         {
           "label": "Backend required",
-          "value": "only for voice"
+          "value": "none"
         },
         {
           "label": "Body clips",

@@ -45,7 +45,14 @@ export interface TTSConfig {
     speed: parseFloat(import.meta.env.VITE_TTS_SPEED || "1.0") || 1.0,
     pitch: parseFloat(import.meta.env.VITE_TTS_PITCH || "1.0") || 1.0,
     volume: parseFloat(import.meta.env.VITE_TTS_VOLUME || "1.0") || 1.0,
-    mode: (import.meta.env.VITE_TTS_MODE || 'pocket') as 'browser' | 'local' | 'remote' | 'pocket', // 'browser', 'local', 'remote' or 'pocket'
+    // Default to the browser's own speechSynthesis, because it is the only mode
+    // that needs nothing installed. The previous default was 'pocket', pointed at
+    // http://localhost:8000 — a server that is not part of this app and is absent
+    // from the published image, so a default install was silent while the product
+    // described itself as "an AI with a face, a voice and a body". Every richer
+    // backend (pocket / local / remote) stays available as an opt-in upgrade via
+    // VITE_TTS_MODE; only the fallback position changed.
+    mode: (import.meta.env.VITE_TTS_MODE || 'browser') as 'browser' | 'local' | 'remote' | 'pocket', // 'browser', 'local', 'remote' or 'pocket'
     apiKey: import.meta.env.VITE_TTS_API_KEY,
     url: import.meta.env.VITE_TTS_URL || 'https://api.openai.com/v1/audio/speech',
     model: import.meta.env.VITE_TTS_MODEL || 'tts-1',
