@@ -158,3 +158,92 @@ describe('TTS barge-in', () => {
     expect(spokenTexts(onSpeechStart)).toContain('four')
   })
 })
+
+/**
+ * THE DEFAULT INSTALL MUST NOT BE MUTE.
+ *
+ * ttsConfig defaults `mode` to 'pocket' at http://localhost:8000 and nothing in
+ * this repo starts that server, so on a clean checkout every reply used to be
+ * marked `status: 'error'` and silently dropped. The product claimed a voice it
+ * only actually had once you set VITE_TTS_MODE=browser by hand.
+ *
+ * `browser` mode was already fully implemented; these cover reaching it
+ * automatically when the configured backend is unreachable.
+ */
+describe('TTS fallback when the configured backend is unreachable', () => {
+  /** Install a speechSynthesis stub and report what it was asked to say. */
+  const stubSpeechSynthesis = () => {
+    const spoken: string[] = []
+    class MockUtterance {
+      text: string
+      rate = 1
+      pitch = 1
+      volume = 1
+      voice: unknown = undefined
+      onend: (() => void) | null = null
+      onerror: ((e: { error: string }) => void) | null = null
+      constructor(text: string) {
+        this.text = text
+      }
+    }
+    globalThis.SpeechSynthesisUtterance = MockUtterance as unknown as typeof SpeechSynthesisUtterance
+    ;(globalThis as unknown as { speechSynthesis: unknown }).speechSynthesis = {
+      getVoices: () => [],
+      cancel() {},
+      speak(u: MockUtterance) {
+        spoken.push(u.text)
+        // Browsers fire onend asynchronously; the queue awaits it.
+        setTimeout(() => u.onend?.(), 0)
+      }
+    }
+    return spoken
+  }
+
+  beforeEach(() => {
+    // A Pocket TTS server that is not running: fetch rejects at the network
+    // level, which is exactly what generatePocketAudio treats as unreachable.
+    globalThis.fetch = vi.fn(async () => {
+      throw new TypeError('Failed to fetch')
+    }) as unknown as typeof fetch
+  })
+
+  /**
+   * `speak` kicks pocket-mode generation off WITHOUT awaiting it (ttsService
+   * "let them generate in parallel"), so processQueue finds the message still
+   * `generating` and polls on a 100 ms timer. `flush()` only crosses a 0 ms
+   * boundary, so it can never get past that — wait past the poll instead.
+   */
+  const settleQueue = async () => {
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 400))
+    })
+  }
+
+  it('speaks through speechSynthesis when Pocket TTS is unreachable', async () => {
+    const spoken = stubSpeechSynthesis()
+    const { result } = renderHook(() => useTTSService({ config: { mode: 'pocket' } }))
+
+    await act(async () => {
+      await result.current.actions.speak('the default install still talks')
+    })
+    await settleQueue()
+
+    expect(spoken).toContain('the default install still talks')
+    // And it never reached the Web Audio path, because nothing was generated.
+    expect(MockAudioContext.startedSources).toHaveLength(0)
+  })
+
+  it('degrades quietly where the browser cannot speak', async () => {
+    delete (globalThis as unknown as { speechSynthesis?: unknown }).speechSynthesis
+    const { result } = renderHook(() => useTTSService({ config: { mode: 'pocket' } }))
+
+    await act(async () => {
+      await result.current.actions.speak('no speech synthesis here')
+    })
+    await flush()
+
+    // An unreachable backend on a mute platform must not take the chat down
+    // with it — this is the pre-existing behaviour, kept.
+    expect(MockAudioContext.startedSources).toHaveLength(0)
+  })
+})

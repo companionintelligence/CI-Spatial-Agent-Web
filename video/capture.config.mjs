@@ -80,6 +80,22 @@
  *    with `clock.install({time})` a rAF ticker still runs ~63 ticks/s and Date
  *    advances from the pinned instant. So `fixedTime` stays on.
  *
+ * 3b. …AND IT IS NOW OFF ANYWAY, because the clock stalls the SHUTTER even
+ *    though it does not stall the loop. Hazard 3 asked whether rAF keeps
+ *    ticking; it does. It did not ask whether `page.screenshot({ animations:
+ *    "disabled" })` still returns, and on the diorama — the heaviest scene in
+ *    the app — it does not. Measured on one stage, one browser, one 3840x2160
+ *    buffer, differing only in `clock.install()`:
+ *
+ *        clock off   screenshot returned in 10.8 s
+ *        clock on    TIMEOUT, still not returned at 45 s
+ *
+ *    `document.getAnimations()` reports nothing live either way, so this is not
+ *    Playwright waiting out a CSS animation. Costs nothing to drop: hazard 7
+ *    already established that no clock, uptime or relative timestamp renders
+ *    anywhere in this app. See `fixedTime: false` at the bottom of this file,
+ *    and note it has to be literally `false`, not absent.
+ *
  * 4. Scripted replies are chosen with Math.random(), NOT round-robin.
  *    llmDirected.ts picks `Math.floor(Math.random() * group.responses.length)`
  *    over the 8 greeting variants in assets/directed-responses.json. The kit
@@ -301,6 +317,38 @@
  *    capture if it still landed on software. A silent software fallback is
  *    exactly how a mannequin shipped; make it loud. `CAPTURE_GPU=software`
  *    still opts out, and now means "I accept an un-animated avatar".
+ *
+ * 12b. …AND THE RENDERER WAS NOT THE WHOLE STORY. Re-measured 2026-08-08 on
+ *    ANGLE/Metal (asserted from the page, not assumed). Two findings, the
+ *    second of which is a live product issue rather than a capture one:
+ *
+ *      · THE RIG IS DEFINITELY LIVE ON HARDWARE. Hashing the canvas alone at
+ *        seven marks between 1 s and 24 s gives SEVEN distinct frames; at
+ *        dsf 3 across 6 s-45 s, five distinct frames. Measured frame rate is
+ *        58.5 fps at dsf 1 and 46.0 fps at dsf 3, so this is not a starved
+ *        render loop and the mixer is genuinely driving the rig.
+ *
+ *      · THE POSE IT SETTLES INTO DEPENDS ON deviceScaleFactor, AND NOTHING
+ *        IN THIS REPO EXPLAINS WHY. At dsf 1 the avatar leaves bind pose (arms
+ *        horizontal at t=1000 ms) and is in a natural arms-down idle from about
+ *        4000 ms onward, and stays there. At dsf 3 — the factor this pipeline
+ *        captures at — the arms stop around 35-40° from the body with the
+ *        fingers spread and do NOT come down at 6 s, 12 s, 20 s, 30 s or 45 s.
+ *        Same build, same browser, same stage; only deviceScaleFactor differs.
+ *
+ *        So a USER does not see a splayed A-pose — they are at dsf 1-2, where
+ *        it settles in about four seconds — but every committed plate here
+ *        does, and no amount of `wait` fixes it. Waiting was tried out to 45 s.
+ *
+ *        NOT the environment: reproduced with `?env=none`, diorama absent.
+ *        `animationsEnabled` defaults true and is not tied to resolution, and
+ *        getRenderQuality only tiers shadowMapSize/SSAO/pixelRatio, never the
+ *        mixer. Root cause NOT found — recorded rather than guessed at.
+ *
+ *        Left visible in the film rather than cropped around. The cut claims a
+ *        body; framing the body out to make the claim easier to keep is exactly
+ *        the failure mode this storyboard was rewritten to remove. Fix belongs
+ *        in the animation system, not in the camera.
  */
 
 import { createRequire } from "node:module";
@@ -414,8 +462,35 @@ export default {
   colorScheme: "dark",
   locale: "en-US",
   timezoneId: "UTC",
-  // Safe here — verified above that the fake clock does not stall requestAnimationFrame.
-  fixedTime: "2026-06-15T15:04:00Z",
+
+  /**
+   * fixedTime IS OFF, AND IT HAS TO BE — see hazard 3b. The fake clock does not
+   * stall the render loop (hazard 3 is still true) but it DOES stall
+   * `page.screenshot({ animations: "disabled" })` on the diorama, which is the
+   * heaviest scene in the app. Measured on the same stage, same browser, same
+   * 3840x2160 buffer, differing only in whether `clock.install()` ran:
+   *
+   *     clock off   screenshot returned in 10.8 s
+   *     clock on    TIMEOUT, still not returned at 45 s
+   *
+   * `document.getAnimations()` reports NOTHING live in either case, so this is
+   * not Playwright waiting out a CSS animation — it is the screenshot path
+   * itself needing wall time the frozen clock never gives it.
+   *
+   * Dropping it costs nothing, because nothing in this app renders a time:
+   * hazard 7 checked that already ("no clocks, uptimes, relative timestamps or
+   * live counters render anywhere in the HUD"). ChatBubble carries a
+   * `timestamp` field and never displays it. So there is no frame this pins and
+   * no drift it prevents — it was insurance against a hazard this app does not
+   * have, and it was costing two shots.
+   *
+   * It must be `false` EXPLICITLY. Deleting the key is not enough: capture.mjs
+   * reads `if (config.fixedTime !== false)` and then installs the clock at its
+   * own default instant, so an omitted key is "on", not "off". Measured the
+   * hard way — the first attempt at this fix just removed the line and both
+   * shots failed again, identically.
+   */
+  fixedTime: false,
 
   // No auth: the app has no login wall. It is a static SPA plus an optional
   // same-origin BFF proxy, and we pin it to the offline `script` provider below.

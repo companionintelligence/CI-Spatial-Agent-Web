@@ -76,8 +76,35 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   const activeContextRef = useRef<AudioContext | null>(null)
   const generationRef = useRef(0)
   // Once the Pocket TTS server proves unreachable (network-level failure), stop
-  // hammering it for every message — degrade to silent text chat with one warning.
+  // hammering it for every message — one warning, then fall back (see below).
   const pocketUnreachable = useRef(false)
+
+  /**
+   * THE DEFAULT INSTALL HAS NO TTS BACKEND, AND USED TO BE MUTE BECAUSE OF IT.
+   *
+   * ttsConfig defaults `mode` to 'pocket' pointed at http://localhost:8000, and
+   * nothing in this repo starts a Pocket TTS server. So on a clean checkout the
+   * first reply hit the `catch` in generatePocketAudio, logged one warning
+   * ("speech is disabled … or set VITE_TTS_MODE=browser") and every message
+   * after it was marked `status: 'error'` and never spoken. The product shipped
+   * a face and a body, and claimed a voice it did not have unless you went and
+   * configured one.
+   *
+   * The remedy was already in the file — `browser` mode is a complete,
+   * working speechSynthesis path — it just had to be reached automatically
+   * instead of by editing an env var. When a configured backend fails at the
+   * network level and the browser can speak, we degrade to speechSynthesis for
+   * the rest of the session rather than to silence.
+   *
+   * Deliberately a session-scoped ref, not a config write: the user's chosen
+   * mode is not overwritten, so a Pocket server that appears later is still
+   * what they get on the next load. And deliberately only on the *unreachable*
+   * path — a backend that answers with a 500 is a real error worth surfacing,
+   * not a reason to quietly change voice mid-conversation.
+   */
+  const fellBackToBrowser = useRef(false)
+  const canSpeakInBrowser = () =>
+    typeof window !== 'undefined' && 'speechSynthesis' in window
 
   // Initialize worker for local TTS
   const getOrCreateWorker = useCallback(() => {
@@ -280,6 +307,20 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         message.status = 'ready'
       } catch (error) {
         const errMessage = error instanceof Error ? error.message : 'Unknown error'
+
+        // Backend unreachable + the browser can speak => degrade to
+        // speechSynthesis instead of to silence. See `fellBackToBrowser`.
+        if (errMessage === 'POCKET_TTS_UNREACHABLE' && canSpeakInBrowser()) {
+          if (!fellBackToBrowser.current) {
+            fellBackToBrowser.current = true
+            console.warn('TTS: falling back to browser speech synthesis for this session.')
+          }
+          // generateBrowserAudio pre-generates nothing — playback speaks the
+          // text directly — so there is no second call to make here.
+          message.status = 'ready'
+          return
+        }
+
         // The unreachable-server case is already warned about once; don't spam
         // the console for every queued message.
         if (errMessage !== 'POCKET_TTS_UNREACHABLE') {
@@ -352,8 +393,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         }
 
         try {
-          // Handle different TTS modes for playback
-          if (config.mode === 'browser') {
+          // Handle different TTS modes for playback. `fellBackToBrowser` is the
+          // degraded path: the configured backend was unreachable, so this
+          // session speaks through speechSynthesis instead of going mute.
+          if (config.mode === 'browser' || fellBackToBrowser.current) {
             await new Promise<void>((resolve, reject) => {
               const utterance = new SpeechSynthesisUtterance(nextMessage.text)
               utterance.rate = config.speed
