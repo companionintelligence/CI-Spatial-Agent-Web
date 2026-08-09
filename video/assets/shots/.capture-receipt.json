@@ -1,97 +1,97 @@
 {
   "version": 1,
-  "at": "2026-08-09T03:06:12.600Z",
-  "kit": "0.17.1",
+  "at": "2026-08-09T06:10:32.682Z",
+  "kit": "0.18.0",
   "shots": {
     "chat-turn.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "2b1443e78c8e94b3b47b542bb317b2060b4aeb7e59ca3e71a660f5be5e4ba8b3"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "c376e6c26f576705b5f17f495f6e727c4244524baadfb63efe30cb44688dfd28"
     },
     "chat-turn.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "aefab4852b4f8de08b70e57f7853a04aa42193ffa747c0bc2a10bad153e29f73"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "40d47d490b1d436c8f6bc0bbcd021f852879e070d31c83fe30b275314fe40c02"
     },
     "chat-typed.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "80f46309e13f60c6f03dec4c3ab8e2a7ed35b4dc609a2541aee8e094a2edd73c"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "6765dd93448d87a5d517bd5239b6d4ede1318352dbbd21e154c90efa269337d1"
     },
     "chat-typed.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "c882c755c334e6ba5806256ff78a172a3adf77956e681bd4f8e5966ac013db05"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "877d88988eec0086b12a77178abcb4b06b82301862945b9e9a0aa024fb5fd2ec"
     },
     "controls-collapsed.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "6a1adf1dd83526f4d69fc47cb7791ac10775def1be9ed14e7faa1eee8dca3a6a"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "86816a6aa2b944e51d9613cd1aa37ddfea78075bcf4669c0cd63146fd8f270c1"
     },
     "controls-collapsed.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "ae80279de303b1c0c0b60dab77adb89664333d59abc3560c0c531b44bb672757"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "0299bbcc2c3174f3e6366441dc7a3ec48f0dbf1f56fef58686f2127000150e49"
     },
     "datacenter-diorama.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "4cbeb62b2b8d3367b335bf67d3987f4cc4173cbcde97dcf962f76bec4a2e4495"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "efb6a1957d3bf8acf9494360cd9ef237a24a25fcad136fc2dc8cf529659b47a3"
     },
     "datacenter-diorama.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "4e082e699d4937231152a80d2631de62356f7083f432147a5354877ea12afa40"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "4bd5bfdda7f85335e45f13dc0f1bf4665dc26018a2744557523883a4d3b69cbb"
     },
     "datacenter-quiet.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "e093251dcd6afcd2b9f4e098439932b9c22b95830f3161c05718d6d7bae76d39"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "1b620cb5f330a705b41b22ebdf569284fb49262e639e5dbf93762cd912e0e74a"
     },
     "datacenter-quiet.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "32385ba3879e15cca8f0a885b3a8835ff3a23bbb20e747340168369af60a73a6"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "ea2f71d5946a609df9b95ea333514d7664146a36602053706c2c8ff01d144d5f"
     },
     "first-run.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "fda8af0c406f3a132945c6bd25ae44f9077abb00c1ea45e52805e4fa3cc317f3"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "58e1b0cb656eb82b4bc60b66e56f99160615205dc848f5a90dd5415fe24dc083"
     },
     "first-run.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "c7988d621c3d5823a79845fd929102292141b79a5c434e178786e4f879f467ce"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "c5b64456cb1e6981154c9476c881988c049a41aed2865d6168ed1b89c7fffef4"
     },
     "hud-shell.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "e6c7d5167b1a7521409fec882b998eddc6c7216e92fbb32909af91e198db0f1e"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "74d881f25bbaca8a50d0ba3a2c3ff849b6d164a28bb04bdc84167f1218402c68"
     },
     "hud-shell.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "7604820a8609ae1e4dee9b7ccc787e10717fabf8939a75b3d1b647b5a51d08e8"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "b57e6e52125c1b2fb45370c88c474ba3fc622a8a3910dfebf9d4128c193e67ad"
     },
     "settings-on-device.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "52723cf4b84ec1b301038a16a67d08a1b7bc72aab4740e793f0dd7e868e32c95"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "262554595acbe0ca72af47158b88f93704b9cfbb6d092c9f85843eded7673cc1"
     },
     "settings-on-device.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "c0c7d2e5180c124a9d9147dbe7eb34635316802f91f8fd36fb85c7ef26ed0b01"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "1cfe74fbc85b1d62280bb35a50cc8da2df81bef318def730483972eb3c205caf"
     },
     "settings-panel.mobile.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "7d880a73a66a5da04cc2f0fc296c378f5edabafdfbfe512511e12ee997c719f9"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "4d26f92968c2af219fe99143837dfea0951c77830c8edc7029830001553faaf0"
     },
     "settings-panel.png": {
       "ok": true,
-      "at": "2026-08-09T03:06:12.600Z",
-      "sha256": "f269ee614f176d14f55a312c9f9355c29565d436b545cde6f52f9c9bbb8620d4"
+      "at": "2026-08-09T06:10:32.682Z",
+      "sha256": "7fbca812b802a44c2f6c9067931e37d011987746c8b9c2811af9f69d1ea303c4"
     }
   }
 }
