@@ -1,0 +1,15 @@
+{
+  "tasks": {
+    "predev": "deno run -A ../../scripts/pack-assets.mjs web",
+    "dev": "deno task predev && deno run -A npm:vite",
+    "prebuild": "deno run -A ../../scripts/pack-assets.mjs web",
+    "build": "deno task prebuild && deno run -A npm:typescript/tsc -b && deno run -A npm:vite build && deno task postbuild",
+    "postbuild": "deno run -A ../../scripts/pages-poststrip.mjs dist",
+    "prepreview": "deno run -A ../../scripts/pack-assets.mjs web",
+    "preview": "deno task prepreview && deno run -A npm:vite preview",
+    "lint": "deno run -A npm:eslint .",
+    "format": "deno run -A npm:prettier --write \"**/*.{ts,tsx}\"",
+    "storybook": "deno run -A npm:storybook dev -p 6006 --no-open",
+    "build-storybook": "deno run -A npm:storybook build -o storybook-static"
+  }
+}
