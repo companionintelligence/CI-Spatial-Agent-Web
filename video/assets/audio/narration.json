@@ -1,5 +1,6 @@
 {
-  "_": "Written by `ci-video narrate`. Records which line each mp3 is a read of, so a later edit to scene.narration can be detected instead of silently keeping the old recording. Commit this with the mp3s.",
+  "_": "Written by `ci-video narrate`. Records which line each mp3 is a read of, in which voice, on which engine, at what prosody — so a later edit to any of those can be detected instead of silently keeping the old recording. Commit this with the mp3s.",
+  "engine": "edge",
   "voice": "en-GB-SoniaNeural",
   "scenes": {
     "open": {
@@ -66,8 +67,13 @@
       "seconds": 5.544
     },
     "what-stays-yours": {
-      "text": "Five ways to connect a model, a clip library of forty-seven, and speech that falls back to the browser's own. None of it needs an account.",
-      "seconds": 8.568
+      "text": "Five ways to connect a model, a clip library of forty-seven, and a voice that needs no backend at all. None of it needs an account.",
+      "seconds": 8.928,
+      "prosody": {
+        "rate": "-5%",
+        "pitch": "-1Hz",
+        "volume": "+0%"
+      }
     }
   }
 }
