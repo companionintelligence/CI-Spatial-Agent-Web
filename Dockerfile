@@ -1,9 +1,18 @@
 # Spatial Companion (ci-spatial-companion-webxr) — CI marketplace container.
 # pnpm monorepo: builds only the web app and serves its static dist with nginx.
 # Published as ghcr.io/companionintelligence/ci-spatial-companion-webxr.
+#
+# The build stage runs under Deno (`deno run`/`deno task`, via its npm/Node
+# compat mode — see deno.json and apps/web/deno.json) as part of an org-wide
+# Node→Deno migration. The runtime stage is unchanged: this ships a static
+# SPA with no server/runtime component to migrate, so it stays nginx.
 
 # ---- build stage ----
 FROM node:22-bookworm-slim AS build
+# Official "bin" image variant, meant to be copied from — see
+# https://github.com/denoland/deno_docker. Pinned to the same Deno version
+# this migration was developed and tested against.
+COPY --from=denoland/deno:bin-2.9.5 /deno /usr/local/bin/deno
 RUN corepack enable
 WORKDIR /app
 COPY . .
@@ -34,10 +43,11 @@ ENV VITE_LLM_PROVIDER=${VITE_LLM_PROVIDER} \
     VITE_SENTRY_DSN=${VITE_SENTRY_DSN} \
     VITE_SENTRY_ENVIRONMENT=${VITE_SENTRY_ENVIRONMENT} \
     VITE_SENTRY_RELEASE=${VITE_SENTRY_RELEASE}
-# Full build: `tsc -b && vite build`. Both the lockfile drift and the
+# Full build: `tsc -b && vite build` (see apps/web/deno.json), against the
+# node_modules pnpm just installed above. Both the lockfile drift and the
 # packages/core Scene3D.tsx type errors that previously forced workarounds
 # here are fixed, so the typecheck gate is back in the container build.
-RUN pnpm --filter @ci-avatar/web build
+RUN deno task --cwd apps/web build
 
 # ---- runtime stage ----
 FROM nginx:1.27-alpine

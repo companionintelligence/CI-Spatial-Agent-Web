@@ -6,8 +6,12 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "jsxImportSource": "@webspatial/react-sdk",
-
-
+    // "jsx" is set even though this project only includes vite.config.ts (no
+    // .tsx here): tsc doesn't require it since jsxImportSource is simply unused
+    // on non-jsx files, but Deno's workspace-wide config validation checks every
+    // tsconfig.json it discovers and errors on jsxImportSource without a jsx
+    // mode regardless of what's actually included. Matches tsconfig.app.json.
+    "jsx": "react-jsx",
 
     /* Bundler mode */
     "moduleResolution": "bundler",

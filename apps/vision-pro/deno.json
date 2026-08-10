@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "predev": "deno run -A ../../scripts/pack-assets.mjs vision-pro",
+    "dev": "deno task predev && deno run -A npm:vite",
+    "predev:avp": "deno run -A ../../scripts/pack-assets.mjs vision-pro",
+    "dev:avp": "deno task predev:avp && XR_ENV=avp deno run -A npm:vite",
+    "predev:avp:host": "deno run -A ../../scripts/pack-assets.mjs vision-pro",
+    "dev:avp:host": "deno task predev:avp:host && XR_ENV=avp deno run -A npm:vite --host",
+    "prebuild": "deno run -A ../../scripts/pack-assets.mjs vision-pro",
+    "build": "deno task prebuild && deno run -A npm:vite build",
+    "prepreview": "deno run -A ../../scripts/pack-assets.mjs vision-pro",
+    "preview": "deno task prepreview && deno run -A npm:vite preview",
+    "lint": "deno run -A npm:eslint .",
+    "format": "deno run -A npm:prettier --write \"**/*.{ts,tsx}\"",
+    "run:avp": "deno run -A npm:dotenv-cli -e .env.local -- sh -c 'webspatial-builder run --base=$XR_DEV_SERVER'",
+    "build:avp": "deno run -A npm:dotenv-cli -e .env.local -- sh -c 'webspatial-builder build --base=$XR_PRE_SERVER --bundle-id=$XR_BUNDLE_ID --teamId=$XR_TEAM_ID'",
+    "publish:avp": "deno run -A npm:dotenv-cli -e .env.local -- sh -c 'webspatial-builder publish --base=$XR_PROD_SERVER --bundle-id=$XR_BUNDLE_ID --teamId=$XR_TEAM_ID --version=$XR_VERSION --u=$XR_DEV_NAME --p=$XR_DEV_PASSWORD'"
+  }
+}

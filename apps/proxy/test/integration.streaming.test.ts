@@ -8,7 +8,7 @@ import { createApp } from '../src/server.js'
 import type { ChatEvent } from '../src/upstreams/types.js'
 
 let ollamaServer: Server
-let proxyServer: { close: (cb?: () => void) => void }
+let proxyServer: { close: (cb?: () => void) => void; closeAllConnections?: () => void }
 let proxyPort = 0
 let mockMode: 'finite' | 'infinite' = 'finite'
 let upstreamAborted = false
@@ -77,6 +77,15 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
+  // Force-close any lingering keep-alive sockets before waiting on `close()`'s
+  // callback. Under Node this is a no-op fast path (idle sockets from the
+  // `fetch()` calls above are usually already gone by teardown); under Deno's
+  // node:http compat, `close()`'s callback doesn't reliably fire while a
+  // keep-alive socket from a *native* `fetch()` client is still open, which
+  // hung this hook past its timeout. Both methods exist on both runtimes
+  // (Node 18.2+ / Deno 2.9's node:http compat).
+  proxyServer.closeAllConnections?.()
+  ollamaServer.closeAllConnections?.()
   await new Promise<void>((resolve) => proxyServer.close(() => resolve()))
   await new Promise<void>((resolve) => ollamaServer.close(() => resolve()))
   delete process.env.APP_OLLAMA_URL
