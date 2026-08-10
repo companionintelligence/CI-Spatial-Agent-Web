@@ -94,6 +94,17 @@
           "url": "spatial-companion.local",
           "alt": "First-run onboarding modal asking for microphone access, over the blurred avatar scene, with a Skip option",
           "motion": "push-in",
+          "pointer": {
+            "landscape": {
+              "x": 0.51,
+              "y": 0.57
+            },
+            "portrait": {
+              "x": 0.538,
+              "y": 0.578
+            }
+          },
+          "_pointerNote": "The caption is \"Skip goes straight to text\" and Skip is the one control on screen the film ever asks anyone to press, so this is the shot that has to show it being pressed rather than described.\n\nBoth points are the centre of the Skip button, read off the committed plate rather than computed: on the 3840x2160 landscape plate the button box is centred at (1958, 1231) px = (0.510, 0.570); on the 1080x1920 phone plate at (581, 1110) px = (0.538, 0.578). They differ because the modal is a fixed-width card centred in a 1280px page and a near-full-width card in a 360px one, so the button pair sits at a different fraction of the image in each cut — this is exactly the case the per-format form exists for.\n\nPortrait renders as a tap, not a cursor, and that is not a choice made here: `pointerStyle` reads the DEVICE FRAME, and the portrait cut's default frame is the phone. A mouse arrow gliding across a phone screen would be a lie about how this is used.",
           "capture": {
             "path": "/",
             "waitFor": "button:has-text(\"Enable Mic\")",
@@ -118,6 +129,21 @@
           "url": "spatial-companion.local",
           "alt": "The HUD around a live avatar: the Companion Intelligence logo card, an empty chat log promising the conversation stays on this machine, a message input and the control dock",
           "motion": "push-in",
+          "focus": {
+            "landscape": {
+              "x": 0.231,
+              "y": 0.151,
+              "w": 0.538,
+              "h": 0.538
+            },
+            "portrait": {
+              "x": 0.096,
+              "y": 0.235,
+              "w": 0.738,
+              "h": 0.738
+            }
+          },
+          "_focusNote": "THE PRESENCE BEAT, AND IT HAD NO SUBJECT. This shot declared `push-in` with no `focus`, which is the kit's 1.045 linear creep — 0.75%/second, under the threshold of noticing. The scene whose whole argument is \"it is already looking at you\" was a full-page screenshot being held.\n\nThe narration lands in this order: no account, no sign-in, nothing in the log — and then the presence. So the move starts wide, where the empty Chat Log rail is legible and does the arguing, and ends on the face. That is the shot-size change, and it also puts the punchline where the last frame is.\n\nLandscape 0.538 square at (0.231, 0.151). 0.538 is the FLOOR — 1.290323/0.538 = 2.398, a hair under MAX_SCALE, so the rectangle is still read and the window is 53.8% of the plate, the tightest 16:9 framing the grammar allows. Centred on the head (0.5, 0.42), measured off the plate: hair crown y 0.271, chin y 0.556, temples x 0.441..0.559. Reconstructed end frame checked: a clean bust, nothing sliced, and the chat rail (x 0.823..1.0) falls outside the window rather than being cut through.\n\nPORTRAIT IS NOT THE SAME RECTANGLE, and the reason is a defect I hit and backed out of. The obvious mirror — the 0.738 window centred on the face — starts at y 0.031 and slices the empty-log paragraph through the middle of its glyphs at BOTH edges: \"...hing here yet\" / \"...ersation stays on this machine.\" The log is full-bleed at 360px, so no window under 1.0 can contain it. Dropped to y 0.235, just below the log panel's bottom edge (0.228), so the log leaves frame cleanly instead of being cut in half. x stays 0.096 to put the window centre on the head centre (0.465). The control dock then sits in the lower third, and the collapse chevron in the bottom-left corner is clipped — it is at y 0.955, under the caption scrim, and is the only thing given up.",
           "capture": {
             "path": "/",
             "waitFor": "canvas",
@@ -152,6 +178,17 @@
           "url": "spatial-companion.local",
           "alt": "A question typed into the chat input, ready to send",
           "motion": "drift-down",
+          "pointer": {
+            "landscape": {
+              "x": 0.61,
+              "y": 0.833
+            },
+            "portrait": {
+              "x": 0.777,
+              "y": 0.747
+            }
+          },
+          "_pointerNote": "THE SEND BUTTON, AND THIS IS THE SHOT THE WHOLE CURSOR IDEA IS FOR. The two shots of this scene are the same screen a beat apart — a question sitting in the input, then the question and its reply in the log. What happens between them is a click, and until now the film simply dissolved over it and hoped the caption carried it. A cursor that arrives on the send button and presses it is the only thing in this storyboard that shows the product being USED rather than photographed.\n\nCentre of the circular send control, measured on the plates: landscape (2342, 1799) px of 3840x2160 = (0.610, 0.833); portrait (839, 1434) px of 1080x1920 = (0.777, 0.747). Both were checked by drawing the point back onto the plate, not derived from the layout.\n\nA POINTER HERE IS SAFE WHERE A FOCUS WOULD NOT BE. This is shot 1 of 2 and layer 0 crossfades out partway through the scene's single camera tween, so a focus declared here would never be reached. `pointerPlan` is given the LAYER's window rather than the scene's, so the click is placed inside the span this shot is actually the visible one — which is why the cursor goes here and the focus goes on `chat-turn`.\n\nNo `at`. The default is 58% of that layer's window, which is past the caption's arrival and clear of the outgoing dissolve; a hand-set time would be measured against a scene length that `pacing: \"fit\"` re-derives from the narration on every render.",
           "capture": {
             "path": "/",
             "waitFor": "textarea.chat-input",
@@ -177,7 +214,16 @@
           "id": "chat-turn",
           "url": "spatial-companion.local",
           "alt": "The same HUD after sending: the question and the avatar’s reply are both in the chat log",
-          "motion": "drift-down",
+          "motion": "push-in",
+          "focus": {
+            "landscape": {
+              "x": 0.28,
+              "y": 0,
+              "w": 0.72,
+              "h": 0.72
+            }
+          },
+          "_focusNote": "LANDSCAPE ONLY, DELIBERATELY — see the second half of this note.\n\nMotion changed from `drift-down` to `push-in` because the shot now has a subject and the subject is at the TOP of the plate. With a focus, `drift-down` starts on the subject and travels down THROUGH it; on a chat log that is a move away from the thing that just appeared. `push-in` ends on it.\n\n0.72 square at (0.28, 0) — window x 0.28..1.0, y 0..0.72, scale 1.792. It is deliberately LOOSER than the 0.538 floor, and asking for less is the whole point: this repo already owns the defect where a rectangle aimed at the chat rail produced a frame with half a face sliced off in the corner (it is cited by name in the kit's own camera.mjs). The rail is 0.177 wide and no legal window is narrower than 0.538, so a rectangle aimed at the rail alone cannot avoid catching part of the head. At 0.72 the head (x 0.441..0.559) is INSIDE the window whole, and the end frame is a two-shot: the face on the left third, the question and the reply legible on the right. Reconstructed and looked at — both bubbles, both avatar chips and the \"Chat Log\" heading are complete, nothing clipped.\n\nWHY NO PORTRAIT RECTANGLE. At 360px the log is a full-width panel across the top, and the two rows together span x 0.036..0.955 of the plate — 0.919 wide. The tightest portrait window is 0.738. There is therefore NO placement of any legal rectangle that does not cut a bubble edge or an avatar chip: the version I checked rendered \"Chat Log\" as \"Log\" and sliced the assistant bubble's left edge through the text. A format left out keeps the plain move, which is the correct outcome here — a missing focus is a wide shot, a wrong one is a frame that reads as broken.",
           "capture": {
             "path": "/",
             "waitFor": "textarea.chat-input",
@@ -223,7 +269,22 @@
           "id": "controls-collapsed",
           "url": "spatial-companion.local",
           "alt": "The same scene with the control dock and chat panel collapsed, leaving the avatar and a single message input",
-          "motion": "push-in",
+          "motion": "pull-back",
+          "focus": {
+            "landscape": {
+              "x": 0.231,
+              "y": 0.151,
+              "w": 0.538,
+              "h": 0.538
+            },
+            "portrait": {
+              "x": 0.096,
+              "y": 0.105,
+              "w": 0.738,
+              "h": 0.738
+            }
+          },
+          "_focusNote": "THE ONLY REVEAL IN THE FILM, AND THE BEAT IS A REVEAL. \"Hide the panels and what is left is a face and one line to type into\" is a sentence about what is ABSENT, and you cannot photograph an absence by pushing into it. `pull-back` starts on the focus and ends at rest, so the shot opens tight on the face and opens out to the bare screen with the two collapsed pills and a single input line — the emptiness arrives as the move, which is what the line claims.\n\nIt is also the counterweight to `already-there`. That scene pushes IN to this same face from the same wide; this one starts there and leaves. Same rectangle at 16:9 on purpose — the two scenes are the same framing run in opposite directions, which is a rhythm change the cut did not have when both were `push-in`.\n\nLandscape reuses the 0.538 floor square at (0.231, 0.151); the collapsed \"Chat\" pill (0.962, 0.031) and \"Controls\" pill (0.045, 0.960) both fall outside it, so the opening frame is the face alone and the pills are part of what the pull-back reveals.\n\nPortrait is (0.096, 0.105), NOT the 0.031 the landscape maps to. At 0.031 the window's top edge lands inside the header bar and cuts the logo card and the \"Chat\" pill in half — a sliced pill in the first frame of the shot reads as a broken render. 0.105 clears the header divider (0.097). The window then runs 0.105..0.843, which holds the face and the message input complete and leaves the Controls pill (y 0.955) to the reveal. Reconstructed and checked at both formats.",
           "capture": {
             "path": "/",
             "waitFor": "textarea.chat-input",
@@ -253,8 +314,10 @@
     {
       "id": "your-model",
       "kind": "screen",
+      "transition": "cut",
       "chapter": "wire",
       "seconds": 7,
+      "_transitionNote": "The only transition added in this pass, and the only boundary in the film where a cut is both safe and needed.\n\nNEEDED: `quiet` and this scene are the SAME app screen a beat apart — the settings dialog simply opens over the avatar the previous shot ended on. A cross-dissolve between two shots of one screen reads as a double-exposure ghost, with the dialog fading up through the face. It is also the meet -> wire chapter change, and the film had no punctuation there at all.\n\nSAFE: a cut suppresses the incoming dissolve, which is what was covering the previous scene's tail — so before adding one you have to know what the previous scene IS. Here it is `quiet`, a `screen` scene, and after this pass it is a pull-back: its tail is a moving picture, not a static card holding after its narration has stopped. The two boundaries where that is NOT true — `title` (after the `quit` card) and `first-run` (after the `title` card) — are deliberately left dissolving for exactly this reason.",
       "caption": "Your model, your endpoint.",
       "narration": "Point it at your own Ollama, or an OpenAI-compatible endpoint you run, or a proxy of your choosing.",
       "shots": [
@@ -263,6 +326,17 @@
           "url": "spatial-companion.local",
           "alt": "The settings panel with Ollama selected as the model provider and a local endpoint filled in",
           "motion": "push-in",
+          "pointer": {
+            "landscape": {
+              "x": 0.499,
+              "y": 0.349
+            },
+            "portrait": {
+              "x": 0.496,
+              "y": 0.33
+            }
+          },
+          "_pointerNote": "The Server URL field, because the caption's second half is \"your endpoint\" and this is the field that makes it true — the row that exists for `ollama` and does not exist for `mlc`, which is the visible difference between this dialog and `in-the-tab`'s.\n\nThe provider select is one row above and is the pointer target on `in-the-tab` instead. Deliberately split: two consecutive scenes of the same dialog clicking the same control would be the cursor decorating the shot rather than using it. Here the beat is where you point it; there the beat is picking what runs it.\n\nCentre of the input box, read off the plates: landscape (1916, 754) px of 3840x2160 = (0.499, 0.349); portrait (536, 634) px of 1080x1920 = (0.496, 0.330). Marked back onto both plates and checked to land inside the box, vertically centred.\n\nBOTH POINTS SURVIVE THIS SHOT'S CAMERA MOVE. The push ends on a window of x 0.131..0.669 / y 0..0.538 at 16:9 and x 0.031..0.769 / y 0..0.738 at 9:16; the hotspot is inside both, so the cursor is on canvas from the start of the push to the end of it rather than being carried off the edge before it can press.",
           "capture": {
             "path": "/",
             "waitFor": "button[aria-label=\"Settings\"]",
@@ -333,6 +407,17 @@
           "url": "spatial-companion.local",
           "alt": "The settings panel with On-device (WebLLM) selected as the model provider",
           "motion": "push-in",
+          "pointer": {
+            "landscape": {
+              "x": 0.499,
+              "y": 0.306
+            },
+            "portrait": {
+              "x": 0.496,
+              "y": 0.281
+            }
+          },
+          "_pointerNote": "The LLM provider select, because the narration is \"pick on-device\" and this is the control that picks it. The frame already shows the RESULT of that choice — the capture drives the select to `mlc`, which is why the Server URL row is missing and the dialog is a visibly different shape from `your-model`'s. The cursor supplies the act the still cannot: it lands on the select that produced the state on screen.\n\nCentre of the select box, read off the plates: landscape (1916, 661) px of 3840x2160 = (0.499, 0.306); portrait (536, 540) px of 1080x1920 = (0.496, 0.281). Marked back onto both plates and confirmed inside the control.\n\nY differs from `your-model`'s pointer by more than the one row you would expect (0.306 vs 0.349 at 16:9) because the two dialogs are not the same height: dropping the Server URL row shortens the panel, and the dialog is vertically centred, so every row above the fold moves DOWN in the plate. That is the same fact `your-model`'s focus note records about slicing the word \"Settings\" — the two dialogs cannot share coordinates, and a pointer copied from the neighbouring scene would land in the gap above the select.\n\nBoth points sit inside this shot's focus window (x 0.131..0.669 / y 0.007..0.545 at 16:9; x 0.031..0.769 / y 0..0.738 at 9:16), so the push carries the cursor with the control it is pressing rather than off the frame.",
           "_focusNote": "Focused on the CONNECTION block, which is the beat. It also frames out a real defect at 9:16: mlc has one field fewer than ollama, so the dialog's scroll container lands its boundary mid-row and slices 'WebGPU rendering' through the middle of the glyphs. The committed ollama shot happens to cut cleanly at a divider instead. This is the app's own scroll clipping at 360x640, not a capture artefact, and it is not worth masking — but there is no reason to put it on screen.",
           "focus": {
             "landscape": {
@@ -398,7 +483,8 @@
           "id": "datacenter-diorama",
           "url": "spatial-companion.local/?env=datacenter-1970s",
           "alt": "The avatar standing full-length in the 1970s research datacenter: a plotter on a desk, a minicomputer with a printer, a tape reel and cabinets behind",
-          "motion": "drift-down",
+          "motion": "pull-back",
+          "_motionNote": "`drift-down` -> `pull-back`, to say what the narration says: \"the camera steps back far enough to bring the whole body into frame.\" A drift travelled down into the unlit ceiling that fills the top third of this plate; a pull-back opens out, which is the sentence.\n\nNo `focus` is declared here ON PURPOSE, and that is the whole reason this change is safe. This is shot 1 of 2 and the scene has ONE camera tween shared across both layers, so layer 0 dissolves out at roughly the halfway point of the move. A focus declared here would never be reached, and a focus move that is interrupted mid-push leaves the device frame's edge slicing across the canvas. Without one, `pull-back` is the legacy mirror — 1.045 down to rest — so the frame is a card on the ground for every frame it is on screen and being cut away halfway costs nothing. The subject-bearing rectangle stays on `datacenter-quiet`, which is the shot that is still up when the tween ends.",
           "_captureNote": "Dismisses onboarding ITSELF rather than inheriting it. Every shot after hud-shell used to rely on hud-shell's Skip click having persisted ci_avatar_onboarded into the shared browser context — an ordering dependency nothing declares. It holds for a full run and breaks the moment anyone re-shoots one shot: `make.sh --only datacenter-diorama` captured this frame with the Enable Microphone modal and its blur backdrop over the whole room. The step below is an eval, not a click, because it has to be a no-op on the full run too: by the time this shot runs in order the key is already set, the Skip button does not exist, and a plain click step would fail the run.",
           "_poseNote": "The wait is 9000, not 3000, and it is about the avatar's ARMS. On load the rig greets (a Waving clip) before it settles into its idle, and the greet is still unwinding at +6s — arms out, fingers spread, which photographs as a mannequin rather than a character. Sampled on Metal at networkidle + N ms: 1000 bind pose, 2500 arms overhead mid-wave, 4000-6000 arms coming down, 10000+ a settled idle with the arms hanging naturally. 9000 + settle 3000 lands well clear of it. See capture.config.mjs hazard 12 for the other half of this — under a software rasteriser the mixer never drives the rig at all and NO settle helps, which is what put the A-pose in the shots this replaced.",
           "capture": {
