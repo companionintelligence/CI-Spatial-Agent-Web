@@ -91,7 +91,7 @@
       "shots": [
         {
           "id": "first-run",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "First-run onboarding modal asking for microphone access, over the blurred avatar scene, with a Skip option",
           "motion": "push-in",
           "pointer": {
@@ -126,7 +126,7 @@
       "shots": [
         {
           "id": "hud-shell",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "The HUD around a live avatar: the Companion Intelligence logo card, an empty chat log promising the conversation stays on this machine, a message input and the control dock",
           "motion": "push-in",
           "focus": {
@@ -175,7 +175,7 @@
       "shots": [
         {
           "id": "chat-typed",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "A question typed into the chat input, ready to send",
           "motion": "drift-down",
           "pointer": {
@@ -212,7 +212,7 @@
         },
         {
           "id": "chat-turn",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "The same HUD after sending: the question and the avatar’s reply are both in the chat log",
           "motion": "push-in",
           "focus": {
@@ -267,7 +267,7 @@
       "shots": [
         {
           "id": "controls-collapsed",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "The same scene with the control dock and chat panel collapsed, leaving the avatar and a single message input",
           "motion": "pull-back",
           "focus": {
@@ -323,7 +323,7 @@
       "shots": [
         {
           "id": "settings-panel",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "The settings panel with Ollama selected as the model provider and a local endpoint filled in",
           "motion": "push-in",
           "pointer": {
@@ -404,7 +404,7 @@
       "shots": [
         {
           "id": "settings-on-device",
-          "url": "spatial-companion.local",
+          "url": "spatial-companion-living-room-server-acme.ci.computer",
           "alt": "The settings panel with On-device (WebLLM) selected as the model provider",
           "motion": "push-in",
           "pointer": {
@@ -481,7 +481,7 @@
       "shots": [
         {
           "id": "datacenter-diorama",
-          "url": "spatial-companion.local/?env=datacenter-1970s",
+          "url": "spatial-companion-living-room-server-acme.ci.computer/?env=datacenter-1970s",
           "alt": "The avatar standing full-length in the 1970s research datacenter: a plotter on a desk, a minicomputer with a printer, a tape reel and cabinets behind",
           "motion": "pull-back",
           "_motionNote": "`drift-down` -> `pull-back`, to say what the narration says: \"the camera steps back far enough to bring the whole body into frame.\" A drift travelled down into the unlit ceiling that fills the top third of this plate; a pull-back opens out, which is the sentence.\n\nNo `focus` is declared here ON PURPOSE, and that is the whole reason this change is safe. This is shot 1 of 2 and the scene has ONE camera tween shared across both layers, so layer 0 dissolves out at roughly the halfway point of the move. A focus declared here would never be reached, and a focus move that is interrupted mid-push leaves the device frame's edge slicing across the canvas. Without one, `pull-back` is the legacy mirror — 1.045 down to rest — so the frame is a card on the ground for every frame it is on screen and being cut away halfway costs nothing. The subject-bearing rectangle stays on `datacenter-quiet`, which is the shot that is still up when the tween ends.",
@@ -507,7 +507,7 @@
         },
         {
           "id": "datacenter-quiet",
-          "url": "spatial-companion.local/?env=datacenter-1970s",
+          "url": "spatial-companion-living-room-server-acme.ci.computer/?env=datacenter-1970s",
           "alt": "The same room with the dock and chat panel collapsed, leaving the avatar full-length in the diorama",
           "motion": "push-in",
           "_focusNote": "push-in, not drift-down, and with a subject. The room only occupies the lower two thirds of the plate — above the machines is unlit ceiling, and it is a third of the 9:16 crop. A drift-down would spend the shot travelling INTO that emptiness. The focus rects instead end the push on the desk-and-avatar band at 16:9 and on the avatar at 9:16, so the move settles on something and the dead air at the top is cropped out rather than approached.\n\nLandscape widened 0.72 -> 0.80 (1.79x -> 1.61x) on 2026-08-07, because the caption of this very scene is \"Body included.\" and the old rectangle cut the avatar at the knee — the shot argued against its own caption. It also slid: at 0.72 the kit reported the window sliding back to y 0.279 from the requested 0.30, and left a fragment of the collapsed Controls button showing under the caption band. At 0.80 the figure reads full-length from head to shin, the far-right machine pair comes back into frame, and nothing slides. The feet are still behind the caption band and cannot be rescued — they sit at y~0.97 of the plate, so no window that keeps the avatar this size clears them. \"Body included\" is a claim about a full-length framing against the busts everywhere else in the film, which this now supports; it is not a claim about toes.",
