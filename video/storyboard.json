@@ -17,10 +17,9 @@
     "wire": "Wiring it up"
   },
   "media": {
-    "music": null,
-    "musicVolume": 0.14
+    "music": "assets/media/ci-campaign-bed.mp3",
+    "musicLufs": -22
   },
-  "_honestyNote": "WHAT THIS FILM CLAIMS, AND WHAT HAD TO BE TRUE FIRST.\n\n1. THE VOICE — SETTLED ON MAIN, NOT HERE. The previous cut opened on 'An AI with a face, a voice and a body' while a stock install was mute: ttsConfig defaulted `mode` to 'pocket' at localhost:8000, a server this repo does not ship or start. This branch originally carried its own fix (fall back to speechSynthesis when the backend is unreachable). #157 then landed on main with a better one — it moves the DEFAULT to 'browser' and routes generation and playback through a single effectiveMode() so the two can never disagree — and this branch now takes main's implementation wholesale. The claim is true of every install, so the title card carries it again.\n\n2. THE COUNTS. Verified in animationClips.ts: 6 VRMA + 34 GLB + 7 feminine = 47 clips, and 5 providers in SettingsPanel. But NO SINGLE AVATAR LOADS ALL 47 — a VRM gets 6, a GLB rig 34 — so the chip says 'Clip library' and the narration says 'library'. It must never be phrased as what the avatar on screen can do. EnvironmentPreset is 'none' | 'datacenter-1970s': one optional room plus the plain studio, filmed and worded as one room.\n\n3. THE A-POSE IS A CAPTURE ARTEFACT, AND NOT THE ONE ANYONE EXPECTED. Measured on ANGLE/Metal, asserted from the page: the rig IS live (7 distinct canvas frames across 24s, 46-58 fps). At deviceScaleFactor 1 the avatar leaves bind pose and is in a natural arms-down idle from about 4s. At the capture's dsf 3 the arms stop at 35-40 degrees and do NOT come down at 6s, 12s, 20s, 30s or 45s — same build, same browser, only the scale factor differs. So a USER does not see it and every committed plate does. Root cause not found; recorded in capture.config.mjs hazard 12b rather than guessed at, and left visible in the film rather than cropped around. The cut claims a body.\n\n4. PROP_NEEDS_REEXPORT is untouched. It excludes props whose GLB does not contain the machine its filename claims. The restage on this branch also found WHY four other props render flat — the .blend-sourced ones lost every texture in a lossy re-export — which is written up in docs/DIORAMA.md and needs a Sketchfab login to fix.\n\n5. THE SHOTS ARE PINNED NOW, and an earlier revision of this note said the opposite. It claimed these shots could not be byte-stable because the avatar is a live render loop, and measured 9/18 differing between two identical runs to prove it. #155 then landed on main and did the thing that note had ruled out: it stops the scene rather than tolerating or masking it, via window.__CI_CAPTURE_MODE__ (see services/capture/captureMode.ts), pinning the blink schedule, the diorama's indicator lamps and the pose. That machinery is merged in here, and the lamp pin was re-derived for this branch's lower lamp levels rather than copied — see the merge note in DatacenterDiorama.tsx.",
   "scenes": [
     {
       "id": "pain-text-box",
@@ -595,6 +594,55 @@
       "url": "ci.computer",
       "narration": "Spatial Companion, from Companion Intelligence. UnCloud your life.",
       "mark": "brand:logo.full"
+    }
+  ],
+  "_honestyNote": "WHAT THIS FILM CLAIMS, AND WHAT HAD TO BE TRUE FIRST.\n\n1. THE VOICE — SETTLED ON MAIN, NOT HERE. The previous cut opened on 'An AI with a face, a voice and a body' while a stock install was mute: ttsConfig defaulted `mode` to 'pocket' at localhost:8000, a server this repo does not ship or start. This branch originally carried its own fix (fall back to speechSynthesis when the backend is unreachable). #157 then landed on main with a better one — it moves the DEFAULT to 'browser' and routes generation and playback through a single effectiveMode() so the two can never disagree — and this branch now takes main's implementation wholesale. The claim is true of every install, so the title card carries it again.\n\n2. THE COUNTS. Verified in animationClips.ts: 6 VRMA + 34 GLB + 7 feminine = 47 clips, and 5 providers in SettingsPanel. But NO SINGLE AVATAR LOADS ALL 47 — a VRM gets 6, a GLB rig 34 — so the chip says 'Clip library' and the narration says 'library'. It must never be phrased as what the avatar on screen can do. EnvironmentPreset is 'none' | 'datacenter-1970s': one optional room plus the plain studio, filmed and worded as one room.\n\n3. THE A-POSE IS A CAPTURE ARTEFACT, AND NOT THE ONE ANYONE EXPECTED. Measured on ANGLE/Metal, asserted from the page: the rig IS live (7 distinct canvas frames across 24s, 46-58 fps). At deviceScaleFactor 1 the avatar leaves bind pose and is in a natural arms-down idle from about 4s. At the capture's dsf 3 the arms stop at 35-40 degrees and do NOT come down at 6s, 12s, 20s, 30s or 45s — same build, same browser, only the scale factor differs. So a USER does not see it and every committed plate does. Root cause not found; recorded in capture.config.mjs hazard 12b rather than guessed at, and left visible in the film rather than cropped around. The cut claims a body.\n\n4. PROP_NEEDS_REEXPORT is untouched. It excludes props whose GLB does not contain the machine its filename claims. The restage on this branch also found WHY four other props render flat — the .blend-sourced ones lost every texture in a lossy re-export — which is written up in docs/DIORAMA.md and needs a Sketchfab login to fix.\n\n5. THE SHOTS ARE PINNED NOW, and an earlier revision of this note said the opposite. It claimed these shots could not be byte-stable because the avatar is a live render loop, and measured 9/18 differing between two identical runs to prove it. #155 then landed on main and did the thing that note had ruled out: it stops the scene rather than tolerating or masking it, via window.__CI_CAPTURE_MODE__ (see services/capture/captureMode.ts), pinning the blink schedule, the diorama's indicator lamps and the pose. That machinery is merged in here, and the lamp pin was re-derived for this branch's lower lamp levels rather than copied — see the merge note in DatacenterDiorama.tsx.",
+  "master": [
+    {
+      "ref": "one-turn",
+      "chapter": "ftue",
+      "caption": "Speak once. See the reply become voice and motion.",
+      "narration": "Speak once and see the reply become voice, expression, and motion.",
+      "minSeconds": 7
+    },
+    {
+      "ref": "first-run",
+      "caption": "Choose how your Companion connects before the first conversation.",
+      "narration": "Choose how your Companion connects before the first conversation begins.",
+      "minSeconds": 6.5
+    },
+    {
+      "ref": "quiet",
+      "caption": "The controls stay quiet until you need them.",
+      "narration": "The interface keeps the character central and the controls within reach.",
+      "minSeconds": 6.5
+    },
+    {
+      "ref": "your-model",
+      "caption": "Choose the AI endpoint you want to use.",
+      "narration": "Choose an on-device model, your Ollama endpoint, or another configured provider.",
+      "minSeconds": 7
+    },
+    {
+      "ref": "in-the-tab",
+      "caption": "An on-device model can keep the conversation on the headset.",
+      "narration": "When you choose an on-device model, the conversation can stay on the headset.",
+      "minSeconds": 6.5
+    },
+    {
+      "ref": "a-room",
+      "caption": "Place the Companion in the room with you.",
+      "narration": "Enter the spatial stage and place the Companion in the room with you.",
+      "minSeconds": 6.5
+    },
+    {
+      "ref": "close",
+      "caption": "ci.computer",
+      "cta": "Meet Spatial Companion",
+      "tagline": "UnCloud your life.",
+      "url": "ci.computer",
+      "narration": "Meet Spatial Companion at ci dot computer. UnCloud your life.",
+      "minSeconds": 6.5
     }
   ]
 }
