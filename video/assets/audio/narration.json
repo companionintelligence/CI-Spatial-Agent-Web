@@ -4,8 +4,8 @@
   "voice": "en-GB-SoniaNeural",
   "scenes": {
     "one-turn": {
-      "text": "Speak once and see the reply become voice, expression, and motion.",
-      "seconds": 5.014,
+      "text": "Type a message. The reply lands in the log, and the same reply drives the mouth, the face and a body clip.",
+      "seconds": 7.263,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -13,8 +13,8 @@
       }
     },
     "close": {
-      "text": "Meet Spatial Companion at ci dot computer. UnCloud your life.",
-      "seconds": 5.616,
+      "text": "Spatial Companion, from Companion Intelligence. UnCloud your life.",
+      "seconds": 5.812,
       "prosody": {
         "rate": "-8%",
         "pitch": "-2Hz",
@@ -22,8 +22,8 @@
       }
     },
     "first-run": {
-      "text": "Choose how your Companion connects before the first conversation begins.",
-      "seconds": 4.645,
+      "text": "It asks for a microphone once, on the first load. Skip it, and type instead.",
+      "seconds": 5.855,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -31,8 +31,8 @@
       }
     },
     "quiet": {
-      "text": "The interface keeps the character central and the controls within reach.",
-      "seconds": 4.547,
+      "text": "Hide the panels and what is left is a face and one line to type into.",
+      "seconds": 4.629,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -40,8 +40,8 @@
       }
     },
     "your-model": {
-      "text": "Choose an on-device model, your Ollama endpoint, or another configured provider.",
-      "seconds": 5.382,
+      "text": "Point it at your own Ollama, or an OpenAI-compatible endpoint you run, or a proxy of your choosing.",
+      "seconds": 6.631,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -49,8 +49,8 @@
       }
     },
     "in-the-tab": {
-      "text": "When you choose an on-device model, the conversation can stay on the headset.",
-      "seconds": 4.767,
+      "text": "Or pick on-device, and one of the five providers runs the model inside the browser tab itself.",
+      "seconds": 6.14,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
@@ -58,11 +58,56 @@
       }
     },
     "a-room": {
-      "text": "Enter the spatial stage and place the Companion in the room with you.",
-      "seconds": 4.143,
+      "text": "Put a room around it, and the camera steps back far enough to bring the whole body into frame.",
+      "seconds": 5.62,
       "prosody": {
         "rate": "-3%",
         "pitch": "+0Hz",
+        "volume": "+0%"
+      }
+    },
+    "already-there": {
+      "text": "No account, no sign-in, nothing in the log. There is just something on the other side of the screen, already awake.",
+      "seconds": 7.589,
+      "prosody": {
+        "rate": "-3%",
+        "pitch": "+0Hz",
+        "volume": "+0%"
+      }
+    },
+    "pain-text-box": {
+      "text": "You have been talking to this thing for a year. You have never once looked at it, because there has never been anything to look at.",
+      "seconds": 7.38,
+      "prosody": {
+        "rate": "-5%",
+        "pitch": "-1Hz",
+        "volume": "+0%"
+      }
+    },
+    "quit": {
+      "text": "Giving an assistant a face usually means a game engine, a character rig, and a bill that runs by the minute. Most people quit right about here.",
+      "seconds": 9.133,
+      "prosody": {
+        "rate": "-5%",
+        "pitch": "-1Hz",
+        "volume": "+0%"
+      }
+    },
+    "title": {
+      "text": "This one is a browser tab.",
+      "seconds": 2.309,
+      "prosody": {
+        "rate": "-6%",
+        "pitch": "-2Hz",
+        "volume": "+0%"
+      }
+    },
+    "what-stays-yours": {
+      "text": "Five ways to connect a model, a clip library of forty-seven, and a voice that needs no backend at all. None of it needs an account.",
+      "seconds": 8.529,
+      "prosody": {
+        "rate": "-5%",
+        "pitch": "-1Hz",
         "volume": "+0%"
       }
     }
