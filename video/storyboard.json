@@ -643,7 +643,11 @@
       "_orderNote": "Restored before `close`. The tally is the film's only statement of what the thing costs and what it does not ask for, and #165 dropped it, so the cut went from a diorama straight to a sign-off with the ownership argument never made. Its chips and its read are the library's, unchanged: Monthly fee $0, Backend required none, Clip library 47, Model providers 5. It dissolves in from `a-room` and `close` cuts out of it, both as authored."
     },
     {
-      "ref": "close"
+      "ref": "close",
+      "url": "ci.computer/download",
+      "cta": "Meet Spatial Companion",
+      "tagline": "UnCloud your life.",
+      "narration": "Meet Spatial Companion at ci dot computer slash download. UnCloud your life."
     }
   ]
 }
