@@ -17,8 +17,9 @@
     "wire": "Wiring it up"
   },
   "media": {
-    "music": "assets/media/ci-campaign-bed.mp3",
-    "musicLufs": -22
+    "music": "assets/media/ci-campaign-bed-110.mp3",
+    "musicLufs": -22,
+    "_mediaNote": "THE 65.374s BED IS SHORTER THAN THIS FILM AND THE KIT DOES NOT LOOP IT. `build` sizes the bgm slot to the film's length; the media itself just runs out, so the last eleven seconds of a 76-second cut — `what-stays-yours` and the whole sign-off — would have played dry, with no error and no warning.\n\n`ci-campaign-bed-110.mp3` is the same bed crossfaded into itself and cut at 110s. The join uses `c1=qsin:c2=qsin`, NOT the `tri` the house recipe suggests, and the difference is measurable rather than cosmetic: the source track fades itself out over its last ~1.4s (t=64s reads -43.1 dB against a -18.5 dB body), so a 5s crossfade at 60.4s is mixing a fade-out into a fade-in. Under `tri` the join dipped to -22.4 dB, about 4 dB under the bed's own level; under equal-power `qsin` the worst point is -19.6 dB, within 1 dB of the body. Sampled every 2s across 55-72s.\n\nIntegrated loudness is -16.8 LUFS against the source's -16.6, so `musicGain` computes the same trim it always did. 110s leaves headroom for a longer re-cut; the kit fades the bed out over 1.6s at the end of the film regardless of how much bed is left."
   },
   "scenes": [
     {
@@ -136,12 +137,13 @@
               "h": 0.538
             },
             "portrait": {
-              "x": 0.096,
-              "y": 0.235,
-              "w": 0.738,
-              "h": 0.738
+              "x": 0.13,
+              "y": 0.2805,
+              "w": 0.67,
+              "h": 0.67
             }
           },
+          "_portraitRefitNote": "THE PORTRAIT RECTANGLE WAS RE-DERIVED ON 2026-08-13, AND THE NOTE BELOW IS WHY IT HAD TO BE.\n\nThat note reasons from `1.290323 / w` in landscape and a 0.738 floor in portrait, and both are now half the calculation. The kit's focus geometry gained a HEIGHT coefficient — landscape `min(1.290323/w, 1.145758/h)`, portrait `min(1.398964/w, 1.227306/h)` — and height binds sooner than width, by about 13%. A square rectangle therefore no longer lands the window the note computed: `0.738 x 0.738` asks for 1.663, not 1.895, and yields a 0.838 window rather than 0.738.\n\nThe consequence here was exactly the defect the note says it backed out of. A 0.838 window cannot start at y 0.235 — 0.235 + 0.838 > 1 — so it slid up to 0.162, back inside the empty-log panel, and `ci-video focus-preview` shows the end frame slicing the log's own paragraph at both edges: \"othing here yet. Say hello, or type below — the whole / onversation stays on this machine.\" The note's whole point was that no window under 1.0 can contain that panel, so it must be cleared instead.\n\n0.67 square at (0.13, 0.2805) asks for 1.832 and gets it, for a 0.760 window. 0.760 is the largest window whose top can sit below the log panel's bottom edge (0.228) without the bottom running off the plate: it lands at y 0.239, clearing the panel by 0.011, and the window centre stays on the head centre (0.465). Reconstructed and looked at — a clean bust, the message input legible, the control dock's top row above the caption band, and no fragment of the log.\n\nThe landscape rectangle is unchanged. It now yields 0.606 rather than the 0.538 the note claims, which is looser than intended but frames the same clean bust with the chat rail outside it; verified in the same pass.",
           "_focusNote": "THE PRESENCE BEAT, AND IT HAD NO SUBJECT. This shot declared `push-in` with no `focus`, which is the kit's 1.045 linear creep — 0.75%/second, under the threshold of noticing. The scene whose whole argument is \"it is already looking at you\" was a full-page screenshot being held.\n\nThe narration lands in this order: no account, no sign-in, nothing in the log — and then the presence. So the move starts wide, where the empty Chat Log rail is legible and does the arguing, and ends on the face. That is the shot-size change, and it also puts the punchline where the last frame is.\n\nLandscape 0.538 square at (0.231, 0.151). 0.538 is the FLOOR — 1.290323/0.538 = 2.398, a hair under MAX_SCALE, so the rectangle is still read and the window is 53.8% of the plate, the tightest 16:9 framing the grammar allows. Centred on the head (0.5, 0.42), measured off the plate: hair crown y 0.271, chin y 0.556, temples x 0.441..0.559. Reconstructed end frame checked: a clean bust, nothing sliced, and the chat rail (x 0.823..1.0) falls outside the window rather than being cut through.\n\nPORTRAIT IS NOT THE SAME RECTANGLE, and the reason is a defect I hit and backed out of. The obvious mirror — the 0.738 window centred on the face — starts at y 0.031 and slices the empty-log paragraph through the middle of its glyphs at BOTH edges: \"...hing here yet\" / \"...ersation stays on this machine.\" The log is full-bleed at 360px, so no window under 1.0 can contain it. Dropped to y 0.235, just below the log panel's bottom edge (0.228), so the log leaves frame cleanly instead of being cut in half. x stays 0.096 to put the window centre on the head centre (0.465). The control dock then sits in the lower third, and the collapse chevron in the bottom-left corner is clipped — it is at y 0.955, under the caption scrim, and is the only thing given up.",
           "capture": {
             "path": "/",
@@ -382,12 +384,13 @@
               "h": 0.538
             },
             "portrait": {
-              "x": 0.031,
-              "y": 0,
-              "w": 0.738,
-              "h": 0.738
+              "x": 0.139,
+              "y": 0.093,
+              "w": 0.722,
+              "h": 0.722
             }
           },
+          "_portraitRefitNote": "RE-DERIVED 2026-08-13 BECAUSE THE 9:16 FRAME WAS SLICING THE DIALOG DOWN ITS RIGHT EDGE.\n\nSame root cause as the one written up on `hud-shell`: the kit's focus scale now takes the min of a width and a HEIGHT coefficient, so `0.738 x 0.738` no longer buys the 0.738 window this rectangle was drawn against — it buys 0.838. A 0.838 window centred on the rectangle's centre (x 0.4) runs -0.019..0.819, clamps to the left edge at 0.002..0.840, and the Ollama dialog's content spans x 0.126..0.874 of the phone plate. Everything past 0.840 was cut off at the canvas edge: the provider select's chevron and both Behavior toggles, sliced vertically. A control cut in half at the frame edge reads as a broken render, and neither `check` nor the layout gate has anything to say about it.\n\n0.722 square at (0.139, 0.093) gives a 0.820 window at x 0.09..0.91 and y 0.093..0.913, which contains the whole dialog with margin on both sides. The y is 0.049 lower than centring implies because the window is offset down the plate by half the caption allowance; without that correction the \"Settings\" header sat above the frame. Reconstructed with `ci-video focus-preview` and looked at: header complete, `http://localhost:11434` and `gemma3:1b` legible in the upper half, every toggle whole, the caption band over the GRAPHICS row.\n\nThe pointer at (0.496, 0.330) is well inside the new window; `check` re-resolves all eight pointers and passes.\n\nLANDSCAPE IS DELIBERATELY LEFT ALONE. It yields a 0.606 window rather than the 0.538 the note below computes, so the dialog sits smaller and right of centre with dead space to its left. That is weaker composition, not a defect — nothing is cut — and re-centring every landscape rectangle in the fleet is a separate pass against the kit change, not something to do in one repo.",
           "_focusNote": "A LOOSER RECT THAN `settings-on-device`, AND IT HAS TO BE LOOSER.\n\nThese two scenes are the same dialog a beat apart, and only the second had a focus — so the pair cut from a wide frame, where the panel sits in the middle third of a 3840px plate, straight to a close-up of the same panel. Matching them was the point of adding this.\n\nThe obvious move — copy `settings-on-device`'s 0.6 square at (0.2, 0.045) — is WRONG here, and the focus-preview shows why in one frame: it slices the word 'Settings' in half along the top edge. The dialog is vertically centred, and the Ollama panel carries a Server URL field that the WebLLM panel does not, so it is taller and its header sits HIGHER in the plate. The same rectangle lands below it.\n\n0.36 x 0.45 at (0.32, 0.02) instead. That asks for 2.22x and gets 2.4x — CLAMPED by MAX_SCALE, so the window lands at 53.8% of the plate rather than the 45% requested, i.e. slightly looser than asked. Checked rather than assumed, and the looser framing is the better one: the dialog's rounded top corner stays in shot, so it reads as a panel rather than as a slice. It frames the dialog top through the Model field — the provider, the endpoint and the model name, which is the whole claim of the beat — and leaves BEHAVIOR, GRAPHICS and the Save/Cancel footer outside. Verified against `ci-video focus-preview`, not computed and trusted.\n\nNo re-capture needed: `focus` is a camera move the builder applies to the committed plate, not a capture-time crop."
         }
       ]
@@ -426,12 +429,13 @@
               "h": 0.538
             },
             "portrait": {
-              "x": 0.031,
-              "y": 0,
-              "w": 0.738,
-              "h": 0.738
+              "x": 0.1655,
+              "y": 0.12,
+              "w": 0.669,
+              "h": 0.669
             }
           },
+          "_portraitRefitNote": "RE-DERIVED 2026-08-13, same fault and same cause as `settings-panel` — see the long note there. The 0.738 square now buys a 0.838 window, it clamped to the left edge, and the right side of the dialog was cut off at the canvas: the provider select's chevron and both Behavior toggles.\n\nThis dialog is SHORTER than the Ollama one, because `mlc` has no Server URL row, so it takes a tighter rectangle than its neighbour: 0.669 square at (0.1655, 0.12), a 0.760 window at x 0.12..0.88 / y 0.12..0.88. Checked in `focus-preview`: \"Settings\", CONNECTION, `On-device (WebLLM)` and `Llama-3.2-3B-Instruct-q4f16_1-MLC` all complete and in the upper half, every toggle whole, Save and Cancel in shot, the caption band over the GRAPHICS row.\n\nWHAT THIS GIVES UP, STATED PLAINLY. The `_focusNote` below kept the GRAPHICS block out of frame because the app's own scroll container clips \"WebGPU rendering\" at 360x640, and the mlc dialog cuts mid-row where the Ollama one happens to cut at a divider. There is no rectangle that both contains the dialog's width and excludes that row: the content is 0.748 of the plate wide, the portrait window floor is 0.738, and the window is square. Between a control sliced at the canvas edge and the app's own scroll fade, the app's fade is the honest frame — it is what a user at that width sees. The clipping is still the product's, is still worth fixing in the product, and is not masked here.",
           "_captureNote": "Establishes onboarding ITSELF (the eval below), for the reason written up on datacenter-diorama: shot order is not a declared dependency and `--only` does not replay it. Selecting `mlc` is the point of the frame, not decoration — FIELD_MAP in SettingsPanel.tsx gives mlc a modelKey and NO urlKey, so the Server URL row disappears and the dialog is visibly a different shape from the Ollama one in `connection`. Nothing is typed here: the model shown is the app's own default (llmConfig.ts defaultLLMConfig.mlc_model), which is the honest thing to film.",
           "capture": {
             "path": "/",
@@ -599,50 +603,51 @@
   "_honestyNote": "WHAT THIS FILM CLAIMS, AND WHAT HAD TO BE TRUE FIRST.\n\n1. THE VOICE — SETTLED ON MAIN, NOT HERE. The previous cut opened on 'An AI with a face, a voice and a body' while a stock install was mute: ttsConfig defaulted `mode` to 'pocket' at localhost:8000, a server this repo does not ship or start. This branch originally carried its own fix (fall back to speechSynthesis when the backend is unreachable). #157 then landed on main with a better one — it moves the DEFAULT to 'browser' and routes generation and playback through a single effectiveMode() so the two can never disagree — and this branch now takes main's implementation wholesale. The claim is true of every install, so the title card carries it again.\n\n2. THE COUNTS. Verified in animationClips.ts: 6 VRMA + 34 GLB + 7 feminine = 47 clips, and 5 providers in SettingsPanel. But NO SINGLE AVATAR LOADS ALL 47 — a VRM gets 6, a GLB rig 34 — so the chip says 'Clip library' and the narration says 'library'. It must never be phrased as what the avatar on screen can do. EnvironmentPreset is 'none' | 'datacenter-1970s': one optional room plus the plain studio, filmed and worded as one room.\n\n3. THE A-POSE IS A CAPTURE ARTEFACT, AND NOT THE ONE ANYONE EXPECTED. Measured on ANGLE/Metal, asserted from the page: the rig IS live (7 distinct canvas frames across 24s, 46-58 fps). At deviceScaleFactor 1 the avatar leaves bind pose and is in a natural arms-down idle from about 4s. At the capture's dsf 3 the arms stop at 35-40 degrees and do NOT come down at 6s, 12s, 20s, 30s or 45s — same build, same browser, only the scale factor differs. So a USER does not see it and every committed plate does. Root cause not found; recorded in capture.config.mjs hazard 12b rather than guessed at, and left visible in the film rather than cropped around. The cut claims a body.\n\n4. PROP_NEEDS_REEXPORT is untouched. It excludes props whose GLB does not contain the machine its filename claims. The restage on this branch also found WHY four other props render flat — the .blend-sourced ones lost every texture in a lossy re-export — which is written up in docs/DIORAMA.md and needs a Sketchfab login to fix.\n\n5. THE SHOTS ARE PINNED NOW, and an earlier revision of this note said the opposite. It claimed these shots could not be byte-stable because the avatar is a live render loop, and measured 9/18 differing between two identical runs to prove it. #155 then landed on main and did the thing that note had ruled out: it stops the scene rather than tolerating or masking it, via window.__CI_CAPTURE_MODE__ (see services/capture/captureMode.ts), pinning the blink schedule, the diorama's indicator lamps and the pose. That machinery is merged in here, and the lamp pin was re-derived for this branch's lower lamp levels rather than copied — see the merge note in DatacenterDiorama.tsx.",
   "master": [
     {
-      "ref": "one-turn",
-      "chapter": "ftue",
-      "caption": "Speak once. See the reply become voice and motion.",
-      "narration": "Speak once and see the reply become voice, expression, and motion.",
-      "minSeconds": 7
+      "ref": "pain-text-box",
+      "_orderNote": "THE OPENING WAS AUTHORED IN #156, NARRATED, AND THEN LEFT OUT OF THE FILM.\n\n#165 introduced this `master` array and selected seven beats out of twelve. It dropped the whole three-move opening — the pain, the price, the title — and started the film on `one-turn`, a chat screenshot, under a voice-over promising \"voice, expression, and motion\". An embodied-AI film has exactly one emotional hook, which is the face, and the cut spent its first eleven seconds on a chat log and a permission modal before showing one.\n\nThe library scenes were never touched by #165 and are still the good copy, so this is a restore rather than a rewrite: every line below is the text `scenes[]` already carries, and every mp3 for the four restored cards is the one #156/#160 recorded. Only `already-there` needed a line changed, and its note says why.\n\nThe argument now runs: you have talked to it for a year and never seen it -> a face normally costs a game engine and a rig -> Spatial Companion -> here is the face."
+    },
+    {
+      "ref": "quit"
+    },
+    {
+      "ref": "title"
+    },
+    {
+      "ref": "already-there",
+      "transition": "dissolve",
+      "narration": "No account, no sign-in, nothing in the log. There is just something on the other side of the screen, already awake.",
+      "_orderNote": "THE PAYOFF OF THE TITLE CARD, AND THE ONLY LINE IN THIS PASS THAT IS NOT THE LIBRARY'S OWN.\n\nThe library line reads \"PAST THE MODAL there is no account, no sign-in and nothing in the log. There is just something on the other side of IT, already awake.\" Both halves are anchored to `first-run`, which used to run before this scene. Here it runs after — the face has to arrive on the title card, not four seconds later behind a blurred permission dialog — so the opening clause became a forward reference to a modal nobody has seen yet, and the \"it\" it hangs on had no antecedent. Substance, cadence and the best clause are kept verbatim; \"of it\" becomes \"of the screen\", which is what the pronoun was doing anyway.\n\nTRANSITION OVERRIDE, AND IT IS THE RULE `your-model` WROTE DOWN. The library scene cuts, because it used to follow `first-run` and a cross-dissolve between two shots of the same app shell is a double-exposure ghost. It now follows `title` — a static intro card that holds for about a second after its two-second read — and a cut would leave that hold uncovered. `your-model`'s `_transitionNote` names this exact boundary as one of the two that must stay dissolving. So: dissolve in, and the name of the product fades into the face it is naming."
     },
     {
       "ref": "first-run",
-      "caption": "Choose how your Companion connects before the first conversation.",
-      "narration": "Choose how your Companion connects before the first conversation begins.",
-      "minSeconds": 6.5
+      "transition": "cut",
+      "_orderNote": "MOVED FROM BEAT 2 TO BEAT 5, BEHIND THE FACE.\n\nThe plate is a small dialog over a heavily blurred avatar: the darkest, lowest-information frame in the repo, and #165 ran it second, immediately after a promise of voice and expression. It is a real FTUE beat and stays in the film, but it cannot be the film's first look at the product.\n\nIts library caption and narration also come back, because #165's overrides were wrong about their own frame — \"Choose how your Companion connects before the first conversation\" over a dialog that reads \"Enable Microphone / For voice interaction, we need permission to access your microphone. You can skip and use text chat instead.\" The line is what made a reviewer of the rendered cut describe this beat as a connection-settings screen.\n\nRunning it after `already-there` is a one-step step back in time, and the line flags it: \"on the first load\". `cut`, not the library's dissolve — this and `already-there` are the same app shell with and without a modal over it, which is precisely the pair that ghosts."
     },
     {
-      "ref": "quiet",
-      "caption": "The controls stay quiet until you need them.",
-      "narration": "The interface keeps the character central and the controls within reach.",
-      "minSeconds": 6.5
+      "ref": "one-turn"
     },
     {
-      "ref": "your-model",
-      "caption": "Choose the AI endpoint you want to use.",
-      "narration": "Choose an on-device model, your Ollama endpoint, or another configured provider.",
-      "minSeconds": 7
+      "ref": "quiet"
     },
     {
-      "ref": "in-the-tab",
-      "caption": "An on-device model can keep the conversation on the headset.",
-      "narration": "When you choose an on-device model, the conversation can stay on the headset.",
-      "minSeconds": 6.5
+      "ref": "your-model"
     },
     {
-      "ref": "a-room",
-      "caption": "Place the Companion in the room with you.",
-      "narration": "Enter the spatial stage and place the Companion in the room with you.",
-      "minSeconds": 6.5
+      "ref": "in-the-tab"
+    },
+    {
+      "ref": "a-room"
+    },
+    {
+      "ref": "what-stays-yours",
+      "_orderNote": "Restored before `close`. The tally is the film's only statement of what the thing costs and what it does not ask for, and #165 dropped it, so the cut went from a diorama straight to a sign-off with the ownership argument never made. Its chips and its read are the library's, unchanged: Monthly fee $0, Backend required none, Clip library 47, Model providers 5. It dissolves in from `a-room` and `close` cuts out of it, both as authored."
     },
     {
       "ref": "close",
-      "caption": "ci.computer",
+      "url": "ci.computer/download",
       "cta": "Meet Spatial Companion",
       "tagline": "UnCloud your life.",
-      "url": "ci.computer",
-      "narration": "Meet Spatial Companion at ci dot computer. UnCloud your life.",
-      "minSeconds": 6.5
+      "narration": "Meet Spatial Companion at ci dot computer slash download. UnCloud your life."
     }
   ]
 }
