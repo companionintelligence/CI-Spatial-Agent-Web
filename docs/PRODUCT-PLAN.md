@@ -13,28 +13,29 @@ Apple Vision Pro, and in any WebGPU/WebGL browser or iPad. It is the **face** of
 the surface where the appliance's private memory and local models become a person you can look at
 and speak with.
 
-This plan takes the app from "impressive demo" to "shippable product on three channels" in three
-moves:
+This plan takes the app from "impressive demo" to a trusted virtual-being platform in four moves:
 
-1. **Foundation (done — this rework).** Runtime-configurable LLM connection, a same-origin backend
-   proxy (BFF), canonical CI branding, a native animation pipeline, and a real automated test suite.
-   The app is now a clean CI-Marketplace container.
-2. **Connected companion (Q3 2026).** Wire the avatar to CI-Server (Companion Memory) so it *knows
-   you*, harden the connection/onboarding UX, and ship to the CI-Marketplace as the flagship
-   appliance experience.
-3. **Perception & presence (Q4 2026 → 2027).** Passthrough camera vision, gaze, locomotion, agent
-   tools, and personalization — realizing the "CI Embodied Companion" north-star on the open WebXR
-   stack, then App Store / Quest distribution.
+1. **Code foundation present; product gate incomplete.** Runtime-configurable LLM connection, a
+   same-origin BFF, canonical CI branding, a native animation pipeline, and a broad automated test
+   suite are in the current source. The strict embodied journey, memory contract, privacy controls,
+   and sustained XR evidence are not yet release-ready.
+2. **Trustworthy Companion Loop (Q3 2026).** Connect CI-Server (Companion Memory), make continuity
+   explainable and deletable, and prove that voice, interruption, face, body, and recovery work in
+   the canonical web/XR journey.
+3. **Perception & presence (Q4 2026 → 2027).** Add grounded vision, gaze, locomotion, and in-world
+   interaction only after the trust loop passes its alpha gates.
+4. **Safe agency and scale (2027).** Add typed tools, consented multi-step actions, personalization,
+   and cross-channel distribution behind visible receipts, cancellation, and performance gates.
 
-The strategic bet: **the companion is the product; the appliance is the moat.** Everyone can ship a
-chat avatar; only CI can ship one that runs entirely on your own device, remembers your life
-privately, and lives in your space.
+The strategic bet: **the companion is the product; trust is the moat.** Everyone can ship a chat
+avatar. CI can ship one that runs on the owner's device, remembers with evidence and control, and
+lives reliably in the owner's space.
 
 ---
 
 ## 2. Where we are today (post-rework baseline)
 
-**Shipped in this rework (PR #88):**
+**Present in the current code baseline:**
 
 | Area | State |
 |------|-------|
@@ -46,11 +47,15 @@ privately, and lives in your space.
 | XR | WebXR AR + VR sessions (Quest / Vision Pro / XREAL) + browser/iPad fallback |
 | Brand | Canonical CI teal tokens + Montserrat |
 | Distribution | GHCR images + **CI-Marketplace manifest** (runtipi) |
-| Quality | vitest (services + proxy + components) + Storybook; Playwright E2E |
+| Quality | 38 test files / 624 passing tests on the clean layout worktree; L3/L5 harness coverage; strict L4 embodiment assertions still skipped |
 
-**What's still missing (the product gaps):** it doesn't yet *remember* you (no CI-Server memory
-wiring), can't *see* (no passthrough/vision), can't *move* (idle/gesture only), has no agent
-**tools**, and no personalization. These are the roadmap.
+**What is still missing or unproven:** the canonical client does not yet have CI-Server memory
+wiring or memory provenance/forget controls; the BFF has no launched tool registry; the vanilla
+client's memory/perception/tools are a separate reference surface; strict canonical-app embodiment
+assertions are skipped; and there is no release-gated 20-turn browser soak or sustained on-device XR
+performance run. The current source already includes important liveness corrections, including a
+continuous render loop and guarded TTS barge-in; the older animation review must be reconciled with
+source before it is used as a current defect list.
 
 ---
 
@@ -84,7 +89,8 @@ Hub inference. It is the demo that sells the appliance.
    ambient presence.
 2. **Vision Pro / Quest early adopters.** Spatial-computing enthusiasts who want a resident AI
    character. Use: an in-room companion, spatial dashboards, voice control.
-3. **Developers / integrators.** The BFF + tool registry make it a reference embodiment for CI apps.
+3. **Developers / integrators.** The BFF and the staged vanilla client make it a reference
+   embodiment for CI apps; the canonical tool registry remains a Phase 3 deliverable.
 4. **Prospects / demos (GTM).** The browser build at a public URL is the top-of-funnel proof.
 
 ---
@@ -93,48 +99,77 @@ Hub inference. It is the demo that sells the appliance.
 
 Ratings: **P0** must-have · **P1** high-value · **P2** differentiator.
 
-### Phase 0 — Stabilize & ship ✅ (this rework, Q3 2026)
-Runtime config, BFF, branding, animation refactor, tests, marketplace manifest. *Done in PR #88.*
+### Phase 0 — Foundation & evidence alignment (code present; product gate incomplete)
 
-### Phase 1 — Connected Companion (Q3 2026) — "it knows me"
-- **P0 · CI-Server memory integration.** Implement the `ci-server` BFF adapter (auth + chat +
-  retrieval) so the companion answers from the owner's private memory. This is the single most
-  important feature — it's what no competitor can copy. *(Builds directly on the stubbed
-  `apps/proxy/src/upstreams/ciServer.ts`.)*
-- **P0 · Provider/connection config UX + diagnostics.** A first-run connection wizard and a
-  diagnostics panel (Ollama reachable? model pulled? memory connected?) surfacing `/api/health`.
-- **P0 · Onboarding polish.** Mic permission, model pull guidance, and a "say hi" moment.
-- **P1 · Spatial audio for the voice.** Position TTS at the avatar's head in XR.
-- **P1 · Response pacing controls.** Latency/interruptibility tuning already partially present.
-- **Exit criteria:** an appliance owner installs from the Marketplace, and within 5 minutes the
-  companion answers a question about their own data, hands-free, in the browser and on Quest.
+Runtime config, BFF, branding, animation refactor, marketplace packaging, unit coverage, and the
+visual harness are present. Before calling this phase done, reconcile
+`docs/ANIMATION-SYSTEM-REVIEW.md` and `docs/TESTING-PIPELINE.md` with the current source, and add
+the missing canonical-app embodiment probe. The clean baseline currently passes 38 test files / 624
+tests and the recursive build; that is strong foundation evidence, not a complete Being Test pass.
+
+### Phase 1 — Trustworthy Companion Loop (Q3 2026) — "it knows me and doesn't pretend"
+
+- **P0 · CI-Server memory contract.** Implement the `ci-server` BFF adapter (session/auth, chat,
+  retrieval, timeout, and streaming) from the stub in `apps/proxy/src/upstreams/ciServer.ts`.
+  Every memory-grounded claim must carry a source identifier and confidence/uncertainty state.
+- **P0 · Connection and five-minute activation.** Ship a first-run wizard, `/api/health` diagnostics,
+  provider/model guidance, microphone consent, and a "say hi" moment. Measure p90 install → first
+  grounded spoken answer, not install → generic chat.
+- **P0 · Embodied recovery gate.** Keep the current continuous render and TTS barge-in fixes under
+  regression coverage; add canonical-app assertions for active clip, emotion, viseme activity,
+  interruption, avatar switching, and recovery. Resolve the highest-impact remaining gaze, face
+  reset, and avatar-switch defects before adding more animation features.
+- **P0 · Memory privacy controls.** Make retention explicit; let the owner inspect why a memory was
+  used, see uncertainty, approve or reject retention, stop a turn/tool request, and forget/delete a
+  memory. Telemetry opt-out is a separate control and does not satisfy this requirement.
+- **P0 · Reliability evidence.** Run a 20-turn browser soak and a sustained Quest/XR session with
+  no frozen animation, dead speech, stale identity, runaway memory, unsafe request, or unbounded
+  client cost. Keep the existing 72-FPS Quest target as a release gate.
+- **P1 · Spatial audio and response pacing.** Position TTS at the avatar's head in XR and expose
+  latency/interruptibility behavior as a tested policy.
+- **Exit criteria:** p90 first grounded spoken answer ≤ 5 minutes; 50/50 interruption trials stop
+  audio and mouth motion without orphaned speech; 20 turns complete with source-labelled memory
+  claims; delete is observable in the next follow-up; canonical browser and target XR pass the
+  release evidence run.
 
 ### Phase 2 — Perception & Presence (Q4 2026) — "it sees and shares my space"
-- **P2 · Passthrough camera vision.** Meta Quest passthrough / WebXR camera access → frames routed
-  through the BFF to a local VLM (e.g. Qwen-VL / LLaMA-vision) for "what am I looking at?". The
-  north-star's headline capability; the BFF's multi-upstream design already anticipates a VLM route.
-- **P1 · Gaze & attention.** Extend `emote/gazeService` to eye/head tracking input; the avatar
-  looks where you look.
-- **P1 · Locomotion & richer animation.** Add walk/turn clips and (optionally) `@davidcks/r3f-vrm`
-  for Mixamo FBX retargeting; the animation refactor makes additive layering tractable.
+
+- **P1 · Grounded passthrough vision.** Quest passthrough / WebXR camera access → local VLM through
+  the BFF, with visible capture state, evidence/uncertainty, refusal when the frame is unusable, and
+  a deletion boundary for captured frames. “What am I looking at?” must be a real turn, not a mode
+  switch that strands the user in a demo.
+- **P1 · Gaze & attention.** Extend `emote/gazeService` to eye/head tracking input and cover GLB
+  and VRM rig contracts with real-app tests; the avatar should look where the user looks and recover
+  when tracking is lost.
+- **P1 · Locomotion & richer animation.** Add walk/turn clips and retargeting only with the same
+  interruption, body-state, and performance gates as speech.
 - **P1 · In-world XR chat panel & scene actions.** Recenter/scale/enter already exist; make the
-  chat and controls spatial.
-- **Exit criteria:** on Quest 3 passthrough, ask "what's on my desk?" and get a grounded answer;
-  the avatar walks to and faces you.
+  chat, consent, privacy, and action-result controls spatial and legible.
+- **Exit criteria:** on Quest 3 passthrough, a seeded desk task returns a grounded answer with an
+  evidence indicator; unsupported views are acknowledged; the avatar faces the user after tracking
+  changes; and the target device sustains the agreed frame-rate gate.
 
-### Phase 3 — Agentic Depth (Q1 2027) — "it can act and it's mine"
-- **P0 · Tool registry & agent actions.** Let the companion call CI apps/tools (calendar, home,
-  marketplace apps) through a typed registry via the BFF.
-- **P1 · Structured memory with privacy controls.** User-visible memory with per-item consent.
-- **P2 · Avatar personalization.** Swap VRM models, outfits, voices, personality presets (the
-  animation personality system already exists).
-- **P1 · Agent modes & prompt templates.** Task-scoped behaviors.
-- **Exit criteria:** the companion completes a multi-step task ("add this to my list and remind me")
-  and the user can pick its face and voice.
+### Phase 3 — Safe Agency & Personalization (Q1–Q2 2027) — "it can act and it's mine"
 
-### Phase 4 — Performance & Scale (continuous, from Q4 2026)
+- **P0 · Typed tool registry & action receipts.** Let the companion call CI apps/tools through a
+  versioned BFF registry only after user confirmation for side effects. Show a plan, scope, progress,
+  cancellation, timeout, and visible result receipt; never convert a text suggestion into a hidden
+  side effect.
+- **P1 · Cross-channel memory policy.** Extend the Phase 1 source/consent/delete model across Hub,
+  browser, and XR clients; preserve provenance when context moves between channels.
+- **P2 · Avatar personalization.** Swap VRM models, outfits, voices, and personality presets only
+  after the identity/continuity tests prove that a model change does not strand memory or embodiment.
+- **P1 · Agent modes & prompt templates.** Task-scoped behaviors with explicit boundaries and a
+  visible return to companion mode.
+- **Exit criteria:** the companion completes a seeded multi-step task with confirmation before each
+  side effect, produces a visible receipt, recovers from a tool failure, and lets the user change
+  face/voice without stale identity or lost controls.
+
+### Phase 4 — Performance & Scale (cross-cutting from Q3 2026)
+
 - **P1 · Runtime quality slider + auto-throttle**, **foveated rendering + LOD**, **performance HUD**,
-  **regression tests** (all already in the repo roadmap). Critical for standalone-headset framerate.
+  and **release regression tests**. These are not a late cleanup: they gate every browser/XR alpha
+  and every new perception/tool capability.
 
 ---
 
@@ -142,13 +177,24 @@ Runtime config, BFF, branding, animation refactor, tests, marketplace manifest. 
 
 - **BFF is the integration spine.** Every capability above (memory, vision, tools) is a new
   `UpstreamAdapter` or route in `apps/proxy` — one seam, uniformly tested and streamed. Prioritize
-  hardening it (auth, retries, observability) before piling features on.
-- **CI-Server contract.** Define and version the Server chat/retrieval/memory API; the companion is
-  its first serious consumer. Coordinate via CI-Engineering.
-- **Two-image container.** Keep the SPA + proxy split; add a healthcheck and (later) a VLM route.
-- **Testing debt to retire next:** R3F scene/agent story coverage (`@react-three/test-renderer`),
-  device-matrix E2E on Quest/AVP, and performance-regression gates.
-- **Known cleanups:** none blocking; the three-vrm `tslFn` warning was cosmetic and is suppressed.
+  auth/session boundaries, timeouts, cancellation, retries, safe tool receipts, and observability
+  before piling features on.
+- **CI-Server contract.** Define and version the Server chat/retrieval/memory API with source ids,
+  confidence/uncertainty, retention consent, forget/delete, and post-delete behavior. The companion
+  is its first serious consumer; coordinate the contract through CI-Engineering.
+- **Canonical versus vanilla client.** `apps/vanilla-client` currently contains a useful independent
+  memory/perception/tool prototype. Share contracts before promoting those capabilities to the
+  canonical React/BFF product; until then, label it as a reference surface rather than counting it
+  as shipped platform functionality.
+- **Two-image container.** Keep the SPA + proxy split; add a healthcheck and later a VLM route, with
+  explicit data-retention boundaries for audio, camera frames, prompts, and memory events.
+- **Testing debt to retire next:** reconcile stale animation/testing docs; add a non-production
+  embodiment debug contract; cover avatar switching, gaze, face reset, interruption recovery, and
+  real-app L4 assertions; then add a 20-turn browser soak, Quest/AVP device matrix, and performance
+  regression gates.
+- **Known cleanups:** source-level liveness fixes are present, but the old review still reports them
+  as defects. Documentation drift is a release blocker until the evidence ledger and current source
+  agree.
 
 ---
 
@@ -167,29 +213,41 @@ Runtime config, BFF, branding, animation refactor, tests, marketplace manifest. 
 ### 7.2 Launch phases
 | Stage | When | Gate | Audience |
 |-------|------|------|----------|
-| **Private alpha** | Now → end Q3 2026 | Phase 1 memory + onboarding | Owner + insiders on the fleet |
-| **Marketplace beta** | Q4 2026 | Screenshot gate, diagnostics, spatial audio | CI appliance owners |
+| **Private alpha** | Now → end Q3 2026 | Trustworthy Companion Loop: memory contract, controls, embodied recovery, 20-turn/XR evidence | Owner + insiders on the fleet |
+| **Marketplace beta** | Q4 2026 | Screenshot gate, diagnostics, privacy controls, spatial audio, release evidence | CI appliance owners |
 | **Public web demo** | Q4 2026 | Perf pass, brand polish | Prospects, spatial-computing community |
 | **Vision Pro / Quest** | Q1–Q2 2027 | Store review, privacy policy, perf | XR early adopters |
 | **GA across channels** | 2027 | Tools + personalization | All CI users |
 
 ### 7.3 Positioning & messaging
 - **Hook:** "Your AI, embodied — private, in your space."
-- **Proof points:** runs locally (no cloud), remembers *your* life (CI memory), *sees* your room
-  (passthrough), lives in AR/VR *and* the browser.
+- **Proof points after the relevant gates pass:** runs locally (no cloud claim unless the deployment
+  proves it), remembers *your* life with sources and control, sees your room with visible grounding,
+  and lives in AR/VR and the browser without losing voice or identity.
 - **Assets:** a 30–60s spatial demo reel (Quest passthrough + Vision Pro), a browser try-it link, a
   one-pager, and marketplace screenshots. (Route through the `ci-marketing` skills / CI brand kit.)
 
 ### 7.4 Metrics / KPIs
-- **Activation:** install → first successful voice answer (< 5 min target).
-- **Memory value:** % of sessions asking a memory-grounded question.
+- **Activation:** p90 install → first grounded spoken answer (≤ 5 min target).
+- **Continuity trust:** % of memory claims with source/uncertainty labels; seeded contradiction rate;
+  post-delete recurrence rate (target zero).
 - **Retention:** weekly returning companions per appliance.
 - **Presence:** XR-session share vs. browser; median session length in XR.
-- **Performance:** median FPS on Quest 3 (target ≥ 72) and AVP; TTS first-breath latency.
+- **Embodiment:** interruption success across 50 trials; orphaned mouth-motion count; recovery time;
+  L4 canonical-app pass rate.
+- **Performance:** sustained Quest 3 FPS (target ≥ 72) and AVP; TTS first-breath and stop latency;
+  20-turn browser/XR soak failure rate.
+- **Agency safety:** confirmation rate before side effects, visible receipt rate, cancellation success,
+  and tool timeout recovery.
 - **Funnel:** web-demo → appliance-owner conversions.
 
 ### 7.5 Pre-launch checklist (per channel)
 - [ ] CI-Server memory adapter live and demoable (Phase 1)
+- [ ] Source ids, confidence/uncertainty, consent, inspect, forget/delete, and post-delete behavior verified
+- [ ] Canonical-app embodiment assertions live; no strict Being Test is hidden behind `test.skip`
+- [ ] 50 interruption trials plus 20-turn browser and sustained XR soak recorded
+- [ ] Current animation/testing docs reconciled with the source and test results
+- [ ] Canonical BFF tool registry has confirmation, cancellation, timeout, and visible result receipts
 - [ ] Marketplace screenshot gate captured on a CI OS device (fleet QA)
 - [ ] Both GHCR images published + pinned
 - [ ] Privacy policy URL (mic + camera + memory data handling)
@@ -203,10 +261,10 @@ Runtime config, BFF, branding, animation refactor, tests, marketplace manifest. 
 
 | Quarter | Milestone |
 |---------|-----------|
-| **Q3 2026** | ✅ Foundation (PR #88) · CI-Server memory adapter · onboarding + diagnostics · **private alpha** |
-| **Q4 2026** | Spatial audio · perf pass · **Marketplace beta** · **public web demo** · passthrough-vision spike |
-| **Q1 2027** | Tool registry · gaze + locomotion · **Vision Pro submission** · personalization v1 |
-| **Q2 2027** | Quest Store · structured memory + privacy controls · **cross-channel GA** |
+| **Q3 2026** | Foundation/evidence alignment · CI-Server trust contract · onboarding + controls · **private alpha gate** |
+| **Q4 2026** | Spatial audio · on-device perf evidence · **Marketplace beta** · **public web demo** · grounded-vision spike |
+| **Q1 2027** | Confirmed tool registry · gaze + locomotion · **Vision Pro submission** · personalization v1 |
+| **Q2 2027** | Quest Store · cross-channel memory policy · safe agency hardening · **cross-channel GA** |
 
 ---
 
@@ -215,22 +273,31 @@ Runtime config, BFF, branding, animation refactor, tests, marketplace manifest. 
 | Risk | Impact | Mitigation |
 |------|--------|-----------|
 | CI-Server memory API not ready | Blocks the core differentiator | Prioritize the Server contract now; ship provider-config value in parallel |
+| Product claims outrun evidence | Users experience a demo, not a being | Make the six Being Tests and source-linked evidence the alpha release gate |
+| Stale review/test documentation | A fixed path looks broken while real gaps stay hidden | Reconcile docs in the same change as every critical fix and record the command/result |
+| Divergent vanilla and canonical clients | Memory/tools behave differently by surface | Share versioned contracts or label the vanilla client experimental until convergence |
 | Standalone-headset performance | XR feels bad → churn | Phase 4 perf work early; quality slider + auto-throttle; test on-device |
 | WebXR passthrough-camera limits | Vision feature slips | Spike early; fall back to device-native camera bridges where WebXR can't |
 | App Store review (privacy, mic/camera) | Delays AVP/Quest launch | Privacy policy + on-device story up front; TestFlight/App Lab beta first |
 | Model RAM on appliances | Crashes on install | Default to small models (gemma3:1b); RAM-aware model picker; clear guidance |
-| Scope creep across 4 phases | Nothing ships | Hard exit criteria per phase; Marketplace beta is the forcing function |
+| Scope creep across 4 phases | Nothing ships | Ship the Trustworthy Companion Loop first; make vision/tools prove the same gates |
 
 ---
 
 ## 10. Immediate next actions (next 2–4 weeks)
 
-1. **Merge PR #88** and the CI-Marketplace app PR; publish both GHCR images.
-2. **Capture the Marketplace screenshot** on a CI OS device (fleet QA) to unblock deployment.
-3. **Spec the CI-Server memory/chat API** with CI-Engineering; implement `ciServer.ts`.
-4. **Build the connection wizard + diagnostics** panel over `/api/health`.
-5. **Record a demo reel** (Quest passthrough + Vision Pro) and stand up the branded web try-it link.
+1. **Reconcile the evidence docs** with the current source: close stale C1/C2/H2 claims, record remaining
+   gaze/face/avatar-switch risks, and make the L4 gap explicit.
+2. **Spec the CI-Server trust contract** with CI-Engineering; implement `ciServer.ts` with provenance,
+   uncertainty, consent, forget/delete, cancellation, and health diagnostics.
+3. **Build the connection wizard + diagnostics** panel over `/api/health`, then run the seeded
+   five-minute first-conversation journey in the canonical browser surface.
+4. **Add canonical embodiment instrumentation and gates:** avatar switch, gaze/face recovery,
+   interruption, 20-turn soak, and Quest/XR performance evidence.
+5. **Only after the loop passes,** capture the Marketplace screenshot/demo reel and publish the public
+   try-it story; do not market unverified memory, vision, or tool behavior as shipped.
 
 > The companion is closer than it looks: the hard infrastructure (embodiment, voice, local LLM,
-> runtime config, distribution) now exists. The remaining work is **connecting it to memory, giving
-> it sight, and letting it act** — and telling that story on three screens.
+> runtime config, distribution) now exists. The remaining work is **making trust observable and
+> recoverable, connecting it to memory with control, then giving it sight and safe agency** — and
+> telling only the part of that story the release evidence can support.

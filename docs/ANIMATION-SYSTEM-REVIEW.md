@@ -9,6 +9,15 @@ severity partially uncertain._
 
 **Counts:** 2 critical · 12 high · 29 medium · 16 low
 
+> **Current-source reconciliation (2026-08-16):** This review describes the
+> pre-`origin/main` baseline that it inspected. The current source has since
+> remediated the former C1/C2/H2/H3 paths: `Scene3D` keeps the continuous render
+> loop, TTS tracks and stops the active audio source with generation guards, and
+> the barge-in path resets visemes. The regression tests for those fixes pass on
+> the clean layout worktree. Treat the findings below as historical evidence or
+> a backlog requiring re-verification; do not copy their old line numbers into a
+> current release report.
+
 ## CRITICAL (2)
 
 ### C1. Barge-in during TTS playback corrupts nextExpectedId, permanently silencing all subsequent speech until another barge-in

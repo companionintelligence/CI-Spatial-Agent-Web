@@ -140,9 +140,10 @@ app ships, a clip is a faithful record of production behavior — not a mock. Ad
   `playwright.config.capture.ts`): each boots the real app in offline `script` mode and
   asserts avatar boot → user turn → visible reply bubble → multi-turn/barge-in. Strict
   embodiment (specific gesture, lip-sync frames, expression delta, barge-in halt) is
-  parked in documented `test.skip`s — not observable from the real app, which runs
-  `frameloop="demand"` without `preserveDrawingBuffer` and exposes no service state on
-  `window`. The L3/L5 harness is the surface instrumented for rig motion.
+  parked in documented `test.skip`s — not observable from the real app, which keeps
+  R3F's continuous render loop but exposes no service state/debug contract on `window`.
+  The L3/L5 harness is the surface instrumented for rig motion; the next gate is to
+  expose a non-production embodiment probe for the canonical app as well.
 - **L5** — render matrix live (`tests/render-matrix.spec.ts`): all 25 catalog keys
   (14 GLB incl. HumGen Aria + 10 VRM; 24 unique files) load on the WebGL renderer via the
   harness — asserts `__avatarLoaded`, no page error, non-zero canvas. Green on headless
