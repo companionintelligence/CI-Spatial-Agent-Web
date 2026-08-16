@@ -115,6 +115,13 @@ tests and the recursive build; that is strong foundation evidence, not a complet
 - **P0 · Connection and five-minute activation.** Ship a first-run wizard, `/api/health` diagnostics,
   provider/model guidance, microphone consent, and a "say hi" moment. Measure p90 install → first
   grounded spoken answer, not install → generic chat.
+- **P0 · Connection truth surface.** Test chat, TTS, and CI-Server separately before the first
+  answer; show reachable/unreachable, memory empty/grounded, and the next recovery action in the
+  onboarding/settings flow. The health endpoint must drive a user decision, not sit as an unused
+  diagnostic route.
+- **P0 · Demo/production separation.** Keep scripted responses for deterministic demos and tests,
+  but do not silently use `llm_provider: 'script'` or directed fallback responses as evidence of a
+  connected private-memory companion. A failed proxy turn must become a visible connection state.
 - **P0 · Embodied recovery gate.** Keep the current continuous render and TTS barge-in fixes under
   regression coverage; add canonical-app assertions for active clip, emotion, viseme activity,
   interruption, avatar switching, and recovery. Resolve the highest-impact remaining gaze, face
@@ -182,6 +189,10 @@ tests and the recursive build; that is strong foundation evidence, not a complet
 - **CI-Server contract.** Define and version the Server chat/retrieval/memory API with source ids,
   confidence/uncertainty, retention consent, forget/delete, and post-delete behavior. The companion
   is its first serious consumer; coordinate the contract through CI-Engineering.
+- **Conversation event contract.** Extend the normalized BFF request/event types beyond
+  messages/chunk/done/error to carry owner/session context, memory evidence, uncertainty,
+  retention decisions, and action-confirmation requirements. A successful UI turn must mean a
+  connected provider answered, not that a demo fallback rendered text.
 - **Canonical versus vanilla client.** `apps/vanilla-client` currently contains a useful independent
   memory/perception/tool prototype. Share contracts before promoting those capabilities to the
   canonical React/BFF product; until then, label it as a reference surface rather than counting it
@@ -228,7 +239,8 @@ tests and the recursive build; that is strong foundation evidence, not a complet
   one-pager, and marketplace screenshots. (Route through the `ci-marketing` skills / CI brand kit.)
 
 ### 7.4 Metrics / KPIs
-- **Activation:** p90 install → first grounded spoken answer (≤ 5 min target).
+- **Activation:** p90 install → first grounded spoken answer (≤ 5 min target); zero cases where a
+  scripted fallback is counted as connected activation.
 - **Continuity trust:** % of memory claims with source/uncertainty labels; seeded contradiction rate;
   post-delete recurrence rate (target zero).
 - **Retention:** weekly returning companions per appliance.

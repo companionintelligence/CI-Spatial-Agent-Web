@@ -1,6 +1,6 @@
 # Product-plan Gauntlet Status
 
-Status: round 0 complete; product-plan revision 1 recorded
+Status: round 1 source/contract critic complete; browser capture pending user-selected browser
 
 ## Goal
 
@@ -54,11 +54,27 @@ reliability.
 - `apps/vanilla-client` is recorded as a reference/prototype surface until its
   memory, perception, and tool contracts converge with the canonical client.
 
+## Round 1 — activation and continuity contract
+
+- Critic record: [`ROUND-1-ACTIVATION.md`](ROUND-1-ACTIVATION.md)
+- Scope: canonical app onboarding, LLM readiness/fallback behavior, BFF health,
+  and the normalized conversation contract
+- Score: **0 full passes, 2 partials, 4 fails/unproven**
+- Largest new finding: the current flow optimizes **time-to-chat**, not
+  time-to-trusted-answer. `script` is the default fallback, `/api/health` is not
+  surfaced in the web journey, and proxy failure is not consistently visible.
+- Product-plan revision: added a connection truth surface, explicit
+  demo/production separation, and a zero-tolerance metric for counting scripted
+  fallback as connected activation.
+- Browser evidence: **not captured**. Product Design's browser guardrail
+  requires a user-selected browser; no browser preference is saved or selected
+  in this task. The next step is a six-state canonical flow capture after that
+  selection, not a claim of visual UX audit completion.
+
 ## Next test
 
-Run the revised first-conversation journey on the canonical web surface in a
-user-selected browser with a seeded private-memory fixture. Capture the
+Select the browser surface, then run the revised first-conversation journey on
+the canonical web surface with a seeded private-memory fixture. Capture the
 disconnected, connected-but-empty, grounded-answer, interrupted-answer,
-memory-delete, and post-delete follow-up states. Do not add vision or
-autonomous tools to the launch story until that journey passes the same six-test
-scorecard.
+memory-delete, and post-delete follow-up states. Do not add vision or autonomous
+tools to the launch story until that journey passes the same six-test scorecard.
