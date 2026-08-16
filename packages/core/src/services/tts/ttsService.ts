@@ -74,23 +74,14 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   // speech (C1).
   const activeSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const activeContextRef = useRef<AudioContext | null>(null)
+  const analyserNodeRef = useRef<AnalyserNode | null>(null)
+  const currentSpeechTextRef = useRef<string>('')
+  const currentSpeechDurationRef = useRef<number>(0)
+  const playbackStartTimeRef = useRef<number>(0)
   const generationRef = useRef(0)
   // Once the Pocket TTS server proves unreachable (network-level failure), stop
-  // hammering it for every message — one warning, then degrade for the session.
+  // hammering it for every message — degrade to silent text chat with one warning.
   const pocketUnreachable = useRef(false)
-  // What that degrade lands on. It used to be silence, which meant an opted-in
-  // backend that simply wasn't running turned the avatar mute with only a console
-  // warning to say why. Fall back to the browser's own speechSynthesis instead:
-  // it needs nothing installed, so the one thing the product always keeps is a
-  // voice. Set once, session-scoped, and it only ever moves in this direction.
-  const degradedToBrowser = useRef(false)
-  // The mode actually in force right now — the configured one until a backend has
-  // failed, then 'browser'. Every branch below reads this rather than config.mode,
-  // so generation and playback can never disagree about which path a message is on.
-  const effectiveMode = useCallback(
-    () => (degradedToBrowser.current ? 'browser' : config.mode),
-    [config.mode]
-  )
 
   // Initialize worker for local TTS
   const getOrCreateWorker = useCallback(() => {
@@ -100,7 +91,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     return workerRef.current
   }, [])
 
-  const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer): Promise<void> => {
+  const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer, speechText?: string): Promise<void> => {
     return new Promise((resolve, reject) => {
       const audioContext = new AudioContext()
 
@@ -109,19 +100,39 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         .then((decodedAudio) => {
           const source = audioContext.createBufferSource()
           const gainNode = audioContext.createGain()
-          
+          let analyser: AnalyserNode | null = null
+          if (typeof audioContext.createAnalyser === 'function') {
+            try {
+              analyser = audioContext.createAnalyser()
+              analyser.fftSize = 256
+              analyser.smoothingTimeConstant = 0.8
+            } catch {
+              analyser = null
+            }
+          }
+
           // Use global volume if available, otherwise use config volume
           const volume = window.globalTTSVolume ?? config.volume
           gainNode.gain.value = volume
-          
+
           source.buffer = decodedAudio
           source.connect(gainNode)
-          gainNode.connect(audioContext.destination)
+          if (analyser) {
+            gainNode.connect(analyser)
+            analyser.connect(audioContext.destination)
+          } else {
+            gainNode.connect(audioContext.destination)
+          }
 
-          // Register as the active source so a barge-in (stopSpeaking) can stop it
-          // mid-playback (H4). Cleared on natural end below.
+          // Register as active so barge-in can stop it and avatar dynamics can read FFT
           activeSourceRef.current = source
           activeContextRef.current = audioContext
+          analyserNodeRef.current = analyser
+          playbackStartTimeRef.current = audioContext.currentTime ?? 0
+          currentSpeechDurationRef.current = decodedAudio?.duration ?? 0
+          if (speechText) {
+            currentSpeechTextRef.current = speechText
+          }
 
           source.onended = () => {
             if (activeSourceRef.current === source) {
@@ -244,10 +255,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         formData.append('voice_url', voice)
       }
 
-      // Already proved unreachable earlier this session: don't retry the socket,
-      // just speak it with the browser voice.
       if (pocketUnreachable.current) {
-        return generateBrowserAudio(message)
+        throw new Error('POCKET_TTS_UNREACHABLE')
       }
 
       let response: Response
@@ -258,17 +267,13 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         })
       } catch {
         // Network-level failure (server not running / wrong host). Remember it so
-        // the rest of the session degrades quietly instead of erroring per message,
-        // and degrade to the browser's own voice rather than to silence.
+        // the rest of the session degrades quietly instead of erroring per message.
         pocketUnreachable.current = true
-        degradedToBrowser.current = true
         console.warn(
-          `TTS: Pocket TTS server unreachable at ${serverUrl}; falling back to the ` +
-            'browser speech synthesiser for the rest of this session. Run a Pocket TTS ' +
-            'server there or set VITE_POCKET_TTS_URL to keep the higher-quality voice.'
+          `TTS: Pocket TTS server unreachable at ${serverUrl}; speech is disabled. ` +
+            'Run a Pocket TTS server there, set VITE_POCKET_TTS_URL, or set VITE_TTS_MODE=browser.'
         )
-        // Speak this message on the fallback path instead of dropping it.
-        return generateBrowserAudio(message)
+        throw new Error('POCKET_TTS_UNREACHABLE')
       }
 
       if (!response.ok) {
@@ -277,7 +282,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       message.audio = await response.arrayBuffer()
     },
-    [config.pocketTts?.serverUrl, config.pocketTts?.voice, generateBrowserAudio]
+    [config.pocketTts?.serverUrl, config.pocketTts?.voice]
   )
 
   // Generate audio for a specific message
@@ -287,25 +292,28 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       console.log(`Generating audio for message ${message.id}`)
 
       try {
-        const mode = effectiveMode()
-        if (mode === 'remote') {
+        if (config.mode === 'remote') {
           await generateRemoteAudio(message)
-        } else if (mode === 'browser') {
+        } else if (config.mode === 'browser') {
           await generateBrowserAudio(message)
-        } else if (mode === 'local') {
+        } else if (config.mode === 'local') {
           await generateLocalAudio(message)
-        } else if (mode === 'pocket') {
+        } else if (config.mode === 'pocket') {
           await generatePocketAudio(message)
         }
         message.status = 'ready'
       } catch (error) {
         const errMessage = error instanceof Error ? error.message : 'Unknown error'
-        console.error(`Error generating audio for message ${message.id}:`, error)
+        // The unreachable-server case is already warned about once; don't spam
+        // the console for every queued message.
+        if (errMessage !== 'POCKET_TTS_UNREACHABLE') {
+          console.error(`Error generating audio for message ${message.id}:`, error)
+        }
         message.status = 'error'
         message.error = errMessage
       }
     },
-    [effectiveMode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
+    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
   )
 
   // Process the queue sequentially
@@ -340,13 +348,15 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         // If message is not ready after generation, skip for now
         if (nextMessage.status !== 'ready') {
           if (nextMessage.status === 'error') {
-            console.warn(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
+            if (nextMessage.error !== 'POCKET_TTS_UNREACHABLE') {
+              console.warn(`Skipping message ${nextMessage.id} due to error:`, nextMessage.error)
+            }
             messageQueue.current = messageQueue.current.filter((msg) => msg.id !== nextMessage.id)
             nextExpectedId.current = nextMessage.id + 1
             continue
           } else if (nextMessage.status === 'generating') {
             // For local and pocket modes, wait a bit for generation to complete
-            if (effectiveMode() === 'local' || effectiveMode() === 'pocket') {
+            if (config.mode === 'local' || config.mode === 'pocket') {
               await new Promise((resolve) => setTimeout(resolve, 100))
               continue
             }
@@ -367,7 +377,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
         try {
           // Handle different TTS modes for playback
-          if (effectiveMode() === 'browser') {
+          if (config.mode === 'browser') {
             await new Promise<void>((resolve, reject) => {
               const utterance = new SpeechSynthesisUtterance(nextMessage.text)
               utterance.rate = config.speed
@@ -412,10 +422,14 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               utterance.onend = () => resolve()
               utterance.onerror = (event) => reject(new Error(`Browser TTS Error: ${event.error}`))
 
+              currentSpeechTextRef.current = nextMessage.text
+              currentSpeechDurationRef.current = nextMessage.text.length * 0.065
+              playbackStartTimeRef.current = performance.now() / 1000
+
               speechSynthesis.speak(utterance)
             })
           } else if (nextMessage.audio && nextMessage.audio.byteLength > 0) {
-            await playAudioBuffer(nextMessage.audio)
+            await playAudioBuffer(nextMessage.audio, nextMessage.text)
           }
         } catch (playbackError) {
           console.error(`Error playing message ${nextMessage.id}:`, playbackError)
@@ -436,11 +450,13 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       // Call onSpeechEnd only when queue is empty (and this loop is still current).
       if (generationRef.current === myGeneration && onSpeechEnd && messageQueue.current.length === 0) {
+        currentSpeechTextRef.current = ''
         onSpeechEnd()
       }
     } catch (error) {
       console.error('Queue processing error:', error)
       if (generationRef.current === myGeneration && onSpeechEnd) {
+        currentSpeechTextRef.current = ''
         onSpeechEnd()
       }
     } finally {
@@ -455,7 +471,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     config.speed,
     config.pitch,
     config.volume,
-    effectiveMode,
+    config.mode,
     onSpeechStart,
     playAudioBuffer,
     onSpeechEnd
@@ -481,7 +497,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       console.log(`Queued message ${messageId}:`, cleanedText.substring(0, 50))
 
       // For local and pocket modes, start generating all pending messages immediately
-      if (effectiveMode() === 'local' || effectiveMode() === 'pocket') {
+      if (config.mode === 'local' || config.mode === 'pocket') {
         const allPendingMessages = messageQueue.current.filter((msg) => msg.status === 'pending')
         allPendingMessages.forEach((message) => {
           generateAudioForMessage(message) // Don't await - let them generate in parallel
@@ -495,7 +511,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       return messageId
     },
-    [processQueue, effectiveMode, generateAudioForMessage]
+    [processQueue, config.mode, generateAudioForMessage]
   )
 
   const stopSpeaking = useCallback(() => {
@@ -514,6 +530,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     const active = activeSourceRef.current
     activeSourceRef.current = null
     activeContextRef.current = null
+    currentSpeechTextRef.current = ''
+    currentSpeechDurationRef.current = 0
+    playbackStartTimeRef.current = 0
+
     if (active) {
       try {
         active.stop()
@@ -567,6 +587,18 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     }
   }, [])
 
+  const getAnalyser = useCallback((): AnalyserNode | undefined => {
+    return analyserNodeRef.current ?? undefined
+  }, [])
+
+  const getCurrentSpeechInfo = useCallback(() => {
+    return {
+      text: currentSpeechTextRef.current,
+      duration: currentSpeechDurationRef.current,
+      startTime: playbackStartTimeRef.current,
+      audioContext: activeContextRef.current
+    }
+  }, [])
 
   const state = useMemo(() => ({
     isSpeaking: isProcessing.current,
@@ -578,9 +610,11 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       speak,
       stopSpeaking,
       playAudioBuffer,
-      getQueueStatus
+      getQueueStatus,
+      getAnalyser,
+      getCurrentSpeechInfo
     }),
-    [speak, stopSpeaking, playAudioBuffer, getQueueStatus]
+    [speak, stopSpeaking, playAudioBuffer, getQueueStatus, getAnalyser, getCurrentSpeechInfo]
   )
 
   return useMemo(

@@ -27,8 +27,10 @@
     "test:audio": "playwright test tests/audio.spec.ts",
     "test:animation": "playwright test tests/animation.spec.ts",
     "test:l5": "playwright test -c playwright.config.capture.ts tests/render-matrix.spec.ts",
+    "test:visual": "playwright test -c playwright.config.capture.ts tests/avatar-visual-matrix.spec.ts",
     "test:l4": "playwright test -c playwright.config.capture.ts tests/scenarios",
     "test:capture": "playwright test -c playwright.config.capture.ts",
+    "generate:avatar-media": "node scripts/generate-avatar-video.mjs",
     "test:report": "playwright show-report playwright-report"
   },
   "devDependencies": {

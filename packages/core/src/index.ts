@@ -22,7 +22,16 @@ export type { VADConfig } from './services/vad/vadConfig'
 // Services - Visemes (skip WhisperData to avoid duplicate)
 export { visemesSequence, convertToVRMTarget } from './services/visemes/visemesService'
 export { useVisemeService } from './services/visemes/useVisemeService'
+export { AudioLipSync } from './services/visemes/audioLipSync'
+export type { AudioLipSyncState } from './services/visemes/audioLipSync'
+export { PhonemeTimingEngine, blendAudioAndText } from './services/visemes/phonemeTiming'
+export { ARKIT_LIP_SYNC_TARGETS, VISEME_WEIGHTS, getVisemeForChar, getVisemeWeights } from './services/visemes/visemeTable'
+export type { VisemeId, VisemeWeights } from './services/visemes/visemeTable'
 export type { VisemeState, VisemeTarget, VRMVisemeTarget, VisemeSequenceItem } from './services/visemes/visemeTypes'
+
+// Services - Emote & Dynamics
+export { AvatarDynamicsEngine } from './services/emote/avatarDynamics'
+export type { DynamicsOutput, DynamicsUpdateParams } from './services/emote/avatarDynamics'
 
 // Services - Emote
 export {

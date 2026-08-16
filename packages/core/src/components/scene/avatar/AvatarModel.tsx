@@ -13,7 +13,6 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 import { AvatarOptions } from './AvatarOptions'
 import { Vector3 } from 'three'
-import { getCaptureMode } from '../../../services/capture/captureMode'
 import {
   VRMA_CLIPS,
   GLB_ALL_CLIPS,
@@ -26,7 +25,12 @@ import {
 import type { useAnimationService } from '../../../services/animation/useAnimationService'
 import type { useEmoteService } from '../../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../../services/visemes/useVisemeService'
+import type { useTTSService } from '../../../services/tts/ttsService'
 import type { AnimationClip } from '../../../services/animation/animationTypes'
+import { AudioLipSync } from '../../../services/visemes/audioLipSync'
+import { PhonemeTimingEngine, blendAudioAndText } from '../../../services/visemes/phonemeTiming'
+import { ARKIT_LIP_SYNC_TARGETS, type VisemeWeights } from '../../../services/visemes/visemeTable'
+import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
@@ -45,6 +49,7 @@ interface AvatarModelProps {
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
+  ttsService?: ReturnType<typeof useTTSService>
   onHeadLocated?: (target: [number, number, number], position: [number, number, number]) => void
   /** Metres to park the camera in front of the located head bone. Default 0.5 — the bust
    *  framing the studio viewport has always used. Environments that need the room in shot
@@ -148,7 +153,16 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D 
   return { actions, mixer, animations: allAnimations }
 }
 
-const AvatarModelComponent = ({ visemeService, emoteService, animationService, onHeadLocated, cameraDistance = 0.5, cameraTargetDrop = 0, webGPUEnabled }: AvatarModelProps) => {
+const AvatarModelComponent = ({
+  visemeService,
+  emoteService,
+  animationService,
+  ttsService,
+  onHeadLocated,
+  cameraDistance = 0.5,
+  cameraTargetDrop = 0,
+  webGPUEnabled
+}: AvatarModelProps) => {
   const { camera: viewerCamera } = useThree()
 
   const [state] = useSimpleStore(AvatarState)
@@ -157,89 +171,45 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
   const startupPlayedRef = useRef<boolean>(false)
   const [isAvatarVisible, setIsAvatarVisible] = useState<boolean>(false)
 
-  // Null in every normal run. Set only when the product-video pipeline is
-  // photographing the app — see services/capture/captureMode.ts. Read once:
-  // the harness installs it before first render and it never changes after.
-  const captureMode = useMemo(() => getCaptureMode(), [])
-
-  // Capture mode only: flipped true the first frame the pinned pose has been
-  // written to the rig, so the camera placement below can wait for it. See the
-  // head-bone effect for why that ordering is the difference between a
-  // reproducible frame and a bimodal one.
-  const [capturePosePinned, setCapturePosePinned] = useState<boolean>(false)
-  const capturePosePinnedRef = useRef<boolean>(false)
-  const vrmRotatedRef = useRef<boolean>(false)
+  // Real-time Audio Lip Sync and Autonomous Dynamics engines
+  const lipSyncRef = useRef<AudioLipSync | null>(null)
+  const phonemeEngineRef = useRef<PhonemeTimingEngine>(new PhonemeTimingEngine())
+  const dynamicsEngineRef = useRef<AvatarDynamicsEngine>(new AvatarDynamicsEngine())
+  const prevWeightsRef = useRef<VisemeWeights | null>(null)
+  const lastTextRef = useRef<string>('')
 
   const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled } = state
 
   const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
     loader.register((parser: GLTFParser) => {
       const mtoonMaterialPlugin = new MToonMaterialLoaderPlugin(parser, {
+        materialType: MToonNodeMaterial
+      })
 
-        // set the material type to MToonNodeMaterial
-        materialType: MToonNodeMaterial,
-    
-      });
-
-      return new VRMLoaderPlugin(parser , webGPUEnabled ? {
-        mtoonMaterialPlugin
-      } : undefined)
+      return new VRMLoaderPlugin(parser, webGPUEnabled ? { mtoonMaterialPlugin } : undefined)
     })
   })
 
   const isVRM = selectedModel.toLowerCase().endsWith('.vrm')
-
   const vrm = isVRM ? (gltf.userData.vrm as VRM) : undefined
 
-  // Skeleton-appropriate animation catalog + named roles for this avatar. Female GLB
-  // avatars (filename carries the gender) get the feminine motion set — feminine
-  // idle/talking/dance instead of the unisex male-mocap ones.
   const isFeminine = /female|woman/i.test(selectedModel)
   const avatarCatalog = getAvatarCatalog(isVRM, isFeminine)
   const idleClip = getIdleClip(avatarCatalog)
   const greetClip = getGreetClip(avatarCatalog)
   const avatarScene = isVRM ? vrm?.scene : gltf.scene
   const avatarRef = useRef<THREE.Object3D>(null)
-  
-  
-  // Only for setup: position the camera along the forward of the face of the avatar once, when avatar loads
-  // TODO : very manual and hardcoded, must standarize avatar input 
+
+  // Position camera on head
   useEffect(() => {
     if (!avatarRef.current || !viewerCamera) return
-
-    // The camera is parked relative to the HEAD BONE's world position, and a
-    // bone's world position is a function of the CURRENT POSE. This effect keys
-    // on the avatar object mounting, which races the first mixer update: run it
-    // before the pose is applied and the head is measured in the bind pose, run
-    // it after and it is measured in the idle. The two land a few millimetres
-    // apart, the camera moves with them, and the whole frame shifts by a
-    // fraction of a pixel — which is invisible to look at and shows up in a byte
-    // comparison as a broad wash of 1-3/255 differences across everything.
-    //
-    // Measured: with the pose pinned but this effect left racing, three captures
-    // produced TWO distinct results per shot rather than a spread — runs 1 and 3
-    // identical, run 2 different — which is the signature of a coin flip, not of
-    // accumulating drift. Under capture mode we therefore wait for the pinned
-    // pose before measuring, so the head is always found in the same place.
-    if (captureMode && !capturePosePinned) return
-
-    // Try to find the head or face bone/node
     let head: THREE.Object3D | null = null
 
-    // VRM: try to use humanoid bone
     if (isVRM && vrm?.humanoid) {
       const normalizedBone = vrm.humanoid.getRawBone('head')
       head = normalizedBone?.node ?? null
-      // Guarded because capture mode can run this effect a second time (once the
-      // pose is pinned): rotateVRM0 mutates the model, so a second call would
-      // rotate an already-corrected VRM0 avatar through another 180 degrees.
-      if (!vrmRotatedRef.current) {
-        VRMUtils.rotateVRM0(vrm) // only works for vrm 0.0
-        vrmRotatedRef.current = true
-      }
-
+      VRMUtils.rotateVRM0(vrm)
     } else {
-      // GLB: try to find a bone named "head"
       avatarRef.current?.traverse((child) => {
         if (
           !head &&
@@ -252,52 +222,33 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
       })
     }
 
-    // Fallback: search for a node with "head" or "face" in the name
-    
-    // If found, position the camera in front of the head (only once, for setup)
     if (head && avatarRef.current) {
-      // Get world position of the head
-      console.log('head', avatarRef.current ,vrm)
       const headWorldPos = new Vector3()
       head.getWorldPosition(headWorldPos)
-      // Get the avatar's forward direction in world space (-Z in local space)
       const avatarWorldQuat = new THREE.Quaternion()
       avatarRef.current.getWorldQuaternion(avatarWorldQuat)
-      const avatarForward = new Vector3(0, 0, isVRM ? -1 : 1)  .applyQuaternion(avatarWorldQuat).normalize()
+      const avatarForward = new Vector3(0, 0, isVRM ? -1 : 1).applyQuaternion(avatarWorldQuat).normalize()
 
-      // Set camera target on the head, optionally dropped to pitch the camera down.
       const cameraTarget = headWorldPos
         .clone()
         .add(new Vector3(0, -cameraTargetDrop, 0))
         .toArray() as [number, number, number]
 
-      // Set camera position a certain distance in front of the head, along the avatar's
-      // forward vector. 0.5 m — a bust — is the default and stays the default: it is what
-      // every committed screenshot and the whole studio viewport is framed on.
-      //
-      // It is also, on its own, why an environment cannot be seen. At 0.5 m a 50° vertical
-      // FOV subtends about 0.9 m of width; the diorama's back wall of machines is 5 m away
-      // and 8 m wide, so none of it can be in shot at any exposure. `cameraDistance` is
-      // therefore a prop, set per environment by Scene3D, rather than a constant.
       const cameraPos = headWorldPos.clone().add(avatarForward.multiplyScalar(cameraDistance))
       const cameraPosition = cameraPos.toArray() as [number, number, number]
 
       onHeadLocated?.(cameraTarget, cameraPosition)
-      if(isVRM) avatarRef.current.position.x += .2  // hardcoded adjustment for now
+      if (isVRM) avatarRef.current.position.x += 0.2
     }
-    // Only run on initial avatar load — plus, under capture mode, once more the
-    // moment the pinned pose exists, which is the run this one is placed from.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [avatarRef.current, capturePosePinned])
+  }, [avatarRef.current])
 
   // Load external animations from animationClips.ts
   const { actions, mixer } = useExternalAnimations(avatarRef, vrm)
+
   // Setup animation service with R3F
   useEffect(() => {
     if (!avatarScene || !animationService || !actions || !mixer || !animationsEnabled) return
 
-    // Setup the animation service with R3F actions and mixer
-    // Filter out null actions
     const validActions: Record<string, THREE.AnimationAction> = {}
     Object.entries(actions).forEach(([name, action]) => {
       if (action) {
@@ -306,35 +257,6 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     })
 
     animationService.actions.setup(validActions, mixer, avatarRef.current || undefined, idleClip, avatarCatalog)
-
-  console.log(`Animation service setup with ${Object.keys(actions).length} animations`)
-
-    // Reveal the avatar once the mixer is actually DRIVING the rig — not after a
-    // fixed 100 ms guess.
-    //
-    // The old line's comment ("Make avatar visible after idle animation is
-    // applied") described the right intent; 100 ms was the wrong way to get it.
-    // Until some action has advanced past its first frame the rig sits in its
-    // bind pose — arms straight out from the shoulders, fingers splayed — and
-    // that timer routinely fired inside that window, so the avatar's FIRST
-    // painted frame was a mannequin. It is not a small window:
-    // useExternalAnimations resolves its 47 clip files through useLoader inside
-    // a .map, so suspend-react throws on the first uncached entry and they land
-    // one per render pass rather than in parallel. Measured on an M2 Max the
-    // first clip starts driving 1.2-2.5 s after the model itself resolves.
-    //
-    // Polling the actions is what makes this self-correcting on slow machines
-    // instead of needing a bigger magic number. The timeout is a floor, not the
-    // mechanism: if animation never starts the avatar still appears, because a
-    // static avatar beats no avatar.
-    // Capture mode holds a constant pose (see the useFrame below), so "is the
-    // mixer driving the rig yet" is not a question worth waiting on — the rig is
-    // never in its bind pose here, and polling for motion that has deliberately
-    // been switched off would just spend the 6 s timeout on every shot.
-    if (captureMode) {
-      setIsAvatarVisible(true)
-      return
-    }
 
     let raf = 0
     const startedAt = performance.now()
@@ -353,160 +275,110 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
     return () => cancelAnimationFrame(raf)
   }, [animationsEnabled, animationService, actions, mixer])
 
+  // Discover all morph targets (ARKit 52, Oculus Visemes, Emotes)
   useEffect(() => {
-    if (!avatarScene || !visemesEnabled || !visemeService) return
+    if (!avatarScene) return
 
-    if (isVRM && vrm) {
-      // VRM expression manager route
-      visemeService.actions.setupForVRM(vrm)
-      console.log('Viseme service wired to VRM expressionManager')
-    } else {
-      // GLB morph target route
-      const morphTargets: { morphTargetInfluences: number[] }[] = []
-      const dictionary: Record<string, number[]> = {}
+    const morphTargets: THREE.Mesh[] = []
+    const visemeDict: Record<string, number[]> = {}
+    const emoteDict: Record<string, number[]> = {}
+    const bones: Record<string, THREE.Bone> = {}
 
-      avatarScene.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.morphTargetDictionary && child.morphTargetInfluences) {
-          morphTargets.push(child as THREE.Mesh & { morphTargetInfluences: number[] })
-          Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
-            if (name.startsWith('viseme_')) {
-              if (!dictionary[name]) dictionary[name] = []
-              dictionary[name].push(index)
-            }
-          })
-        }
-      })
+    avatarScene.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.morphTargetDictionary && child.morphTargetInfluences) {
+        morphTargets.push(child)
+        Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
+          if (name.startsWith('viseme_') || ARKIT_LIP_SYNC_TARGETS.includes(name as any) || name === 'jawOpen' || name === 'mouthOpen') {
+            if (!visemeDict[name]) visemeDict[name] = []
+            visemeDict[name].push(index)
+          }
 
-      morphTargetsRef.current = morphTargets as THREE.Mesh[]
-      if (morphTargets.length > 0 && Object.keys(dictionary).length > 0) {
-        visemeService.actions.setupForMorphTargets(morphTargets, dictionary)
-      }
-    }
-  }, [avatarScene, visemesEnabled, visemeService, isVRM, vrm])
-
-  // Setup emote service integration
-  useEffect(() => {
-    if (!avatarScene || !emotesEnabled || !emoteService) return
-
-    let bones: Record<string, THREE.Bone> = {}
-
-    if (isVRM && vrm) {
-      // VRM expression manager route
-      emoteService.actions.setupForVRM(vrm)
-      console.log('emote service wired to VRM expressionManager')
-
-      // Get bones from VRM humanoid if available
-      if (vrm.humanoid) {
-        // Map VRM humanoid bones to THREE.Bone references
-        Object.entries(vrm.humanoid?.humanBones ?? {}).forEach(([name, boneNode]) => {
-          if (boneNode?.node) {
-            bones[name] = boneNode.node as THREE.Bone
+          if (
+            name.includes('eye') ||
+            name.includes('brow') ||
+            name.includes('mouth') ||
+            name.includes('nose') ||
+            name.includes('cheek') ||
+            name.includes('jaw') ||
+            name.includes('Blink')
+          ) {
+            if (!emoteDict[name]) emoteDict[name] = []
+            emoteDict[name].push(index)
           }
         })
       }
-    } else {
-      const morphTargets: { morphTargetInfluences: number[] }[] = []
-      const emoteDictionary: Record<string, number[]> = {}
-      bones = {}
 
-      // Collect morphable meshes for facial expressions
-      avatarScene.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.morphTargetDictionary && child.morphTargetInfluences) {
-          const meshWithMorphTargets = child as THREE.Mesh & { morphTargetInfluences: number[] }
-          morphTargets.push(meshWithMorphTargets)
-
-          // Map morph targets for emotional expressions
-          Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
-            // Include all relevant facial expression morph targets
-            if (
-              name.includes('eye') ||
-              name.includes('brow') ||
-              name.includes('mouth') ||
-              name.includes('nose') ||
-              name.includes('cheek') ||
-              name.includes('jaw')
-            ) {
-              if (!emoteDictionary[name]) {
-                emoteDictionary[name] = []
-              }
-              emoteDictionary[name].push(index)
-            }
-          })
-        }
-
-        // Collect bones for head/gaze control
-        if (child instanceof THREE.Bone) {
-          bones[child.name] = child
-        }
-      })
-
-      bonesRef.current = bones
-
-      // Setup emote service with morph targets and bones
-      if (morphTargets.length > 0 && Object.keys(emoteDictionary).length > 0) {
-        emoteService.actions.setupForMorphTargets(morphTargets, emoteDictionary)
+      if (child instanceof THREE.Bone) {
+        bones[child.name] = child
       }
-
-      // Provide avatar references for gaze and head control
-    }
-
-    // Register canonical gaze-bone aliases. The gaze service looks up lowercase logical names
-    // ('neck','spine2','spine','leftEye','rightEye') + capital 'Head'. VRM humanoid supplies
-    // lowercase names, but GLB/Mixamo/RPM rigs register raw names ('Neck','Spine2','Head'), so
-    // neck/eye gaze was DEAD on every GLB avatar (incl. the default, Greg). Alias both ways.
-    const findBone = (...names: string[]): THREE.Bone | undefined => {
-      for (const n of names) {
-        if (bones[n]) return bones[n]
-        const lc = n.toLowerCase()
-        const hit = Object.keys(bones).find((k) => k.toLowerCase() === lc || k.toLowerCase() === 'mixamorig' + lc)
-        if (hit) return bones[hit]
-      }
-      return undefined
-    }
-    const alias = (canonical: string, ...cands: string[]) => {
-      const b = findBone(canonical, ...cands)
-      if (b) bones[canonical] = b
-    }
-    alias('neck', 'Neck')
-    alias('spine2', 'Spine2', 'chest', 'upperChest', 'Chest', 'UpperChest')
-    alias('spine', 'Spine')
-    alias('head', 'Head')
-    alias('leftEye', 'LeftEye', 'eye_L')
-    alias('rightEye', 'RightEye', 'eye_R')
-    if (bones.head && !bones.Head) bones.Head = bones.head // gaze eye-fallback reads capital 'Head'
-
-    emoteService.actions.setAvatarReferences({
-      bones,
-      node: avatarRef.current ?? undefined,
-      camera: viewerCamera // Camera will be set by the scene
     })
-  }, [avatarScene, emotesEnabled, emoteService])
-  // Animation service will handle its own initialization
-  
-  useEffect(() => { 
+
+    morphTargetsRef.current = morphTargets
+    bonesRef.current = bones
+
+    if (isVRM && vrm) {
+      if (visemesEnabled && visemeService) {
+        visemeService.actions.setupForVRM(vrm)
+      }
+      if (emotesEnabled && emoteService) {
+        emoteService.actions.setupForVRM(vrm)
+      }
+    } else {
+      if (visemesEnabled && visemeService && morphTargets.length > 0) {
+        visemeService.actions.setupForMorphTargets(
+          morphTargets as unknown as { morphTargetInfluences: number[] }[],
+          visemeDict
+        )
+      }
+      if (emotesEnabled && emoteService && morphTargets.length > 0) {
+        emoteService.actions.setupForMorphTargets(
+          morphTargets as unknown as { morphTargetInfluences: number[] }[],
+          emoteDict
+        )
+      }
+    }
+
+    if (emotesEnabled && emoteService) {
+      const findBone = (...names: string[]): THREE.Bone | undefined => {
+        for (const n of names) {
+          if (bones[n]) return bones[n]
+          const lc = n.toLowerCase()
+          const hit = Object.keys(bones).find((k) => k.toLowerCase() === lc || k.toLowerCase() === 'mixamorig' + lc)
+          if (hit) return bones[hit]
+        }
+        return undefined
+      }
+      const alias = (canonical: string, ...cands: string[]) => {
+        const b = findBone(canonical, ...cands)
+        if (b) bones[canonical] = b
+      }
+      alias('neck', 'Neck')
+      alias('spine2', 'Spine2', 'chest', 'upperChest', 'Chest', 'UpperChest')
+      alias('spine', 'Spine')
+      alias('head', 'Head')
+      alias('leftEye', 'LeftEye', 'eye_L')
+      alias('rightEye', 'RightEye', 'eye_R')
+      if (bones.head && !bones.Head) bones.Head = bones.head
+
+      emoteService.actions.setAvatarReferences({
+        bones,
+        node: avatarRef.current ?? undefined,
+        camera: viewerCamera
+      })
+    }
+  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera])
+
+  // Startup animation sequence
+  useEffect(() => {
     if (!animationsEnabled || !emotesEnabled) return
-    if (!avatarScene || !actions || !mixer  ) return
+    if (!avatarScene || !actions || !mixer) return
     if (!emoteService || !animationService) return
     if (startupPlayedRef.current) return
-    if (!isAvatarVisible) return // Wait until avatar is visible
+    if (!isAvatarVisible) return
 
-    // Capture mode: the looping idle, immediately, and nothing else. The greet
-    // is skipped deliberately — it is a one-shot that blends into the idle over
-    // 2 s, so for as long as it is unwinding the pose depends on how long the
-    // clips took to load, which is exactly the coupling that made the committed
-    // shots irreproducible. No emote either: 'happy' drives the face, and the
-    // face is where the largest run-to-run differences were.
-    if (captureMode) {
-      animationService.actions.performAction({ clip: idleClip, loopCount: Infinity, blendTime: 0 })
-      startupPlayedRef.current = true
-      return
-    }
-
-    // Mark startup as played to prevent re-execution
     const startupTimer = setTimeout(() => {
       emoteService.actions.performAction({ emotion: 'happy', relaxTime: greetClip.duration })
 
-      // Greet, then blend to the looping idle — clips chosen for this avatar's skeleton.
       animationService.actions.performAction({
         clip: greetClip,
         immediate: true,
@@ -520,136 +392,218 @@ const AvatarModelComponent = ({ visemeService, emoteService, animationService, o
         blendTime: 2000
       })
       startupPlayedRef.current = true
-
     }, 500)
+
     return () => clearTimeout(startupTimer)
+  }, [animationsEnabled, animationService, actions, mixer, emoteService, isAvatarVisible, greetClip, idleClip])
 
-    // Startup animation sequence
-      // First play the surprise_greet animation
-     
-
-
-  }, [animationsEnabled, animationService, actions, mixer, emoteService, isAvatarVisible])
-
-
-  useFrame((_, delta) => {
-    // ── CAPTURE MODE: hold one frame, forever ────────────────────────────────
-    //
-    // Everything below this block advances the avatar by `delta`, which is wall
-    // clock, which is what makes two captures of the same UI differ. Here the
-    // pose is written absolutely instead of accumulated, so it does not depend
-    // on the frame rate, on how long the 47 clip files took to load, or on how
-    // busy the machine was — only on captureMode.poseTime.
-    //
-    // timeScale 0 is what makes it hold. The mixer belongs to drei's
-    // useAnimations, which ticks it in its OWN useFrame (see the note in
-    // animationService.update), so this callback cannot be the last word on
-    // mixer time: whatever we set here would be advanced by drei's update
-    // afterwards. Zeroing the time scale makes that update a no-op and leaves
-    // the action time we write below standing.
-    //
-    // Emotes, visemes and spring bones are all skipped: blink and gaze are the
-    // highest-amplitude drift in the whole shoot, and spring bones are an
-    // iterative integrator whose output depends on the step sizes it was fed.
-    if (captureMode) {
-      if (mixer) mixer.timeScale = 0
-      let pinned = false
-      for (const action of Object.values(actions)) {
-        if (action?.isRunning()) {
-          action.time = captureMode.poseTime
-          pinned = true
-        }
-      }
-      mixer?.update(0)
-
-      // Tell the camera placement that the rig is now in its final pose. Via a
-      // ref so this is a single setState on the first pinned frame rather than
-      // one per frame — a setState in useFrame that ran every frame would
-      // re-render the avatar sixty times a second for the length of the shoot.
-      if (pinned && !capturePosePinnedRef.current) {
-        capturePosePinnedRef.current = true
-        setCapturePosePinned(true)
-      }
-      return
-    }
-
+  // 60 FPS Render & Animation Loop: Lip-sync + Autonomous Vitality + Animations
+  useFrame((threeState, delta) => {
+    if (typeof document !== 'undefined' && document.hidden) return
     if (isVRM && vrm) vrm.expressionManager?.update()
-    // Update animation service using R3F integration
-    if (animationsEnabled && animationService) {
-      animationService.actions.update(delta)
+
+    // 1. Audio-Driven Lip Sync
+    const analyser = ttsService?.actions.getAnalyser()
+    if (analyser && (!lipSyncRef.current || (lipSyncRef.current as unknown as { analyser: AnalyserNode }).analyser !== analyser)) {
+      lipSyncRef.current = new AudioLipSync(analyser)
     }
 
-    // Update visemes for lip sync
-    if (visemesEnabled && visemeService) {
-      visemeService.actions.update(delta)
-      visemeService.actions.applyToRig(delta)
-    }
+    const audioState = lipSyncRef.current?.update() ?? null
 
-    // Update emotes for facial expressions and behaviors
-    if (emotesEnabled && emoteService) {
-      emoteService.actions.update(delta)
-
-      if (isVRM && vrm) {
-        emoteService.actions.applyToVRM(vrm)
+    // 2. Phoneme / Text Viseme Schedule
+    const speechInfo = ttsService?.actions.getCurrentSpeechInfo()
+    const currentText = speechInfo?.text ?? ''
+    if (currentText !== lastTextRef.current) {
+      lastTextRef.current = currentText
+      if (currentText.length > 0) {
+        phonemeEngineRef.current.setUtterance(currentText, speechInfo?.duration)
       } else {
-        // Apply to morph targets if available
-        if (morphTargetsRef.current.length > 0) {
-          const dictionary = emoteService.state.emote.dictionary
-          if (dictionary) {
-            // Filter to only meshes with morph targets
-            const validMorphs = morphTargetsRef.current.filter((mesh) => mesh.morphTargetInfluences !== undefined) as {
-              morphTargetInfluences: number[]
-            }[]
+        phonemeEngineRef.current.clear()
+      }
+    }
 
-            if (validMorphs.length > 0) {
-              emoteService.actions.applyToMorphTargets(validMorphs, dictionary)
+    let timedViseme: VisemeWeights | null = null
+    if (speechInfo && currentText.length > 0 && speechInfo.startTime > 0) {
+      const ctx = speechInfo.audioContext
+      const currentTime = ctx ? ctx.currentTime : performance.now() / 1000
+      const playbackTime = currentTime - speechInfo.startTime
+      timedViseme = phonemeEngineRef.current.getActiveViseme(playbackTime)
+    }
+
+    // 3. Blend Audio & Text into Viseme Weights
+    if (audioState || timedViseme) {
+      const weights = blendAudioAndText(
+        audioState || { energy: 0, lowBand: 0, midBand: 0, highBand: 0, isSpeaking: false },
+        timedViseme,
+        prevWeightsRef.current,
+        0.35
+      )
+      prevWeightsRef.current = weights
+
+      if (isVRM && vrm?.expressionManager) {
+        const vrmMap: Record<string, number> = {
+          aa: Math.max(weights.jawOpen, 0),
+          ee: Math.max(weights.mouthSmileLeft, weights.mouthStretchLeft, 0),
+          ih: Math.max(weights.mouthShrugUpper, weights.mouthStretchRight, 0),
+          oh: Math.max(weights.mouthFunnel, 0),
+          ou: Math.max(weights.mouthPucker, weights.mouthRollLower, 0)
+        }
+        for (const [exp, val] of Object.entries(vrmMap)) {
+          try {
+            vrm.expressionManager.setValue(exp, Math.min(1, Math.max(0, val)))
+          } catch {}
+        }
+      } else if (morphTargetsRef.current.length > 0) {
+        for (const mesh of morphTargetsRef.current) {
+          if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
+          for (const key of ARKIT_LIP_SYNC_TARGETS) {
+            const idx = mesh.morphTargetDictionary[key]
+            if (idx !== undefined) {
+              mesh.morphTargetInfluences[idx] = weights[key]
             }
+          }
+          if (mesh.morphTargetDictionary['viseme_aa'] !== undefined) {
+            const oculusMap: Record<string, number> = {
+              viseme_aa: weights.jawOpen,
+              viseme_E: weights.mouthSmileLeft,
+              viseme_I: weights.mouthStretchLeft,
+              viseme_O: weights.mouthFunnel,
+              viseme_U: weights.mouthPucker,
+              viseme_PP: weights.mouthClose,
+              viseme_FF: weights.mouthRollLower,
+              viseme_TH: weights.tongueOut,
+              viseme_DD: weights.mouthShrugUpper,
+              viseme_kk: weights.mouthShrugLower,
+              viseme_CH: weights.mouthFunnel * 0.5,
+              viseme_SS: weights.mouthSmileRight,
+              viseme_nn: weights.mouthPressLeft,
+              viseme_RR: weights.mouthFunnel * 0.3
+            }
+            for (const [oKey, val] of Object.entries(oculusMap)) {
+              const oIdx = mesh.morphTargetDictionary[oKey]
+              if (oIdx !== undefined) {
+                mesh.morphTargetInfluences[oIdx] = val
+              }
+            }
+          }
+          if (mesh.morphTargetDictionary['jawOpen'] !== undefined) {
+            mesh.morphTargetInfluences[mesh.morphTargetDictionary['jawOpen']] = weights.jawOpen
+          }
+          if (mesh.morphTargetDictionary['mouthOpen'] !== undefined) {
+            mesh.morphTargetInfluences[mesh.morphTargetDictionary['mouthOpen']] = weights.jawOpen
           }
         }
       }
     }
 
-    // Advance VRM spring bones (hair / cloth / accessory secondary motion) AFTER the body
-    // pose is applied this frame. This is the cheapest "alive" cue and was previously never
-    // ticked (nothing called vrm.update / springBoneManager.update). We drive springBoneManager
-    // directly rather than vrm.update(delta) so humanoid.update() can't overwrite the gaze
-    // service's direct neck-bone control on VRM avatars.
+    // 4. Autonomous Facial Vitality Dynamics (Blinking, Saccades, Acoustic Brows)
+    const isSpeaking = audioState?.isSpeaking ?? false
+    const dynamics = dynamicsEngineRef.current.update({
+      elapsedTime: threeState.clock.getElapsedTime(),
+      delta,
+      pointerX: threeState.pointer.x,
+      pointerY: threeState.pointer.y,
+      audioState,
+      conversationState: isSpeaking ? 'speaking' : 'idle'
+    })
+
+    if (morphTargetsRef.current.length > 0) {
+      for (const mesh of morphTargetsRef.current) {
+        if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
+        for (const [key, val] of Object.entries(dynamics.blendshapes)) {
+          const idx = mesh.morphTargetDictionary[key]
+          if (idx !== undefined) {
+            mesh.morphTargetInfluences[idx] = val
+          }
+        }
+        if (dynamics.blendshapes.eyeBlinkLeft > 0) {
+          if (mesh.morphTargetDictionary['Blink'] !== undefined) {
+            mesh.morphTargetInfluences[mesh.morphTargetDictionary['Blink']] = dynamics.blendshapes.eyeBlinkLeft
+          }
+          if (mesh.morphTargetDictionary['eyesClosed'] !== undefined) {
+            mesh.morphTargetInfluences[mesh.morphTargetDictionary['eyesClosed']] = dynamics.blendshapes.eyeBlinkLeft
+          }
+        }
+      }
+    }
+
+    if (isVRM && vrm?.expressionManager) {
+      if (dynamics.blendshapes.eyeBlinkLeft > 0) {
+        try {
+          vrm.expressionManager.setValue('blink', dynamics.blendshapes.eyeBlinkLeft)
+        } catch {}
+      }
+    }
+
+    // 5. Update animation service
+    if (animationsEnabled && animationService) {
+      animationService.actions.update(delta)
+    }
+
+    // 6. Update viseme service (Whisper/legacy)
+    if (visemesEnabled && visemeService) {
+      visemeService.actions.update(delta)
+      visemeService.actions.applyToRig(delta)
+    }
+
+    // 7. Update emote service
+    if (emotesEnabled && emoteService) {
+      emoteService.actions.update(delta)
+      if (isVRM && vrm) {
+        emoteService.actions.applyToVRM(vrm)
+      } else if (morphTargetsRef.current.length > 0) {
+        const dictionary = emoteService.state.emote.dictionary
+        if (dictionary) {
+          const validMorphs = morphTargetsRef.current.filter((mesh) => mesh.morphTargetInfluences !== undefined) as {
+            morphTargetInfluences: number[]
+          }[]
+          if (validMorphs.length > 0) {
+            emoteService.actions.applyToMorphTargets(validMorphs, dictionary)
+          }
+        }
+      }
+    }
+
+    // 8. VRM spring bones
     if (isVRM && vrm) vrm.springBoneManager?.update(delta)
   })
 
-  const handleAvatarClick = useCallback((event: ThreeEvent<MouseEvent>) => {
-    event.stopPropagation()
-    if (animationService && emoteService) {
-      const randomAction = getRandomClip('action', avatarCatalog) as AnimationClip
-      emoteService.actions.performAction({
-        emotion: 'happy',
-        relaxTime: Math.max(0, randomAction.duration - 1000)
-      })
+  const handleAvatarClick = useCallback(
+    (event: ThreeEvent<MouseEvent>) => {
+      event.stopPropagation()
+      if (animationService && emoteService) {
+        const randomAction = getRandomClip('action', avatarCatalog) as AnimationClip
+        emoteService.actions.performAction({
+          emotion: 'happy',
+          relaxTime: Math.max(0, randomAction.duration - 1000)
+        })
 
-      animationService.actions.performAction({
-        clip: randomAction,
-        immediate: true,
-        loopCount: 1,
-        blendTime: 1000
-      })
+        animationService.actions.performAction({
+          clip: randomAction,
+          immediate: true,
+          loopCount: 1,
+          blendTime: 1000
+        })
 
-      animationService.actions.performAction({
-        clip: idleClip,
-        loopCount: Infinity,
-        blendTime: 1000
-      })
-    }
-  }, [animationService, emoteService, avatarCatalog, idleClip])
+        animationService.actions.performAction({
+          clip: idleClip,
+          loopCount: Infinity,
+          blendTime: 1000
+        })
+      }
+    },
+    [animationService, emoteService, avatarCatalog, idleClip]
+  )
 
-  
   return (
-    <primitive 
-      ref={avatarRef} 
+    <primitive
+      ref={avatarRef}
       object={avatarScene as THREE.Object3D}
       onClick={handleAvatarClick}
       visible={isAvatarVisible}
     />
-  )}
+  )
+}
 
 // Memoize so unrelated parent re-renders don't churn the (expensive) avatar.
 const AvatarModelMemo = memo(AvatarModelComponent)

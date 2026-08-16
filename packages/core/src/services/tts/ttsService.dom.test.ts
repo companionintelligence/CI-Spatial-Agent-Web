@@ -43,8 +43,20 @@ class MockAudioBufferSourceNode {
   }
 }
 
+class MockAnalyserNode {
+  fftSize = 256
+  frequencyBinCount = 128
+  smoothingTimeConstant = 0.8
+  connect() {}
+  disconnect() {}
+  getByteFrequencyData(arr: Uint8Array) {
+    arr.fill(0)
+  }
+}
+
 class MockAudioContext {
   static startedSources: MockAudioBufferSourceNode[] = []
+  currentTime = 0
   destination = {}
   createGain() {
     return new MockGainNode()
@@ -52,61 +64,21 @@ class MockAudioContext {
   createBufferSource() {
     return new MockAudioBufferSourceNode()
   }
+  createAnalyser() {
+    return new MockAnalyserNode()
+  }
   decodeAudioData(_buffer: ArrayBuffer) {
-    return Promise.resolve({} as AudioBuffer)
+    return Promise.resolve({ duration: 1 } as AudioBuffer)
   }
   close() {
     return Promise.resolve()
   }
 }
 
-// ---- speechSynthesis mock -------------------------------------------------
-// jsdom implements neither speechSynthesis nor SpeechSynthesisUtterance, and the
-// browser TTS mode is now the default, so the suite has to supply both.
-
-class MockSpeechSynthesisUtterance {
-  text: string
-  rate = 1
-  pitch = 1
-  volume = 1
-  voice: unknown = null
-  onend: (() => void) | null = null
-  onerror: ((event: { error: string }) => void) | null = null
-  constructor(text: string) {
-    this.text = text
-  }
-}
-
-class MockSpeechSynthesis {
-  static spoken: MockSpeechSynthesisUtterance[] = []
-  static cancelled = 0
-  getVoices() {
-    return []
-  }
-  speak(utterance: MockSpeechSynthesisUtterance) {
-    MockSpeechSynthesis.spoken.push(utterance)
-    // Real engines fire 'end' asynchronously; the queue loop awaits it.
-    setTimeout(() => utterance.onend?.(), 0)
-  }
-  cancel() {
-    MockSpeechSynthesis.cancelled++
-  }
-}
-
-const utteredTexts = (): string[] => MockSpeechSynthesis.spoken.map((u) => u.text)
-
 // Drain all pending microtasks by crossing a macrotask boundary.
 async function flush() {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 0))
-  })
-}
-
-// The pocket/local queue loop re-checks a still-generating message on a 100ms
-// timer, so a single macrotask hop is not enough to observe the outcome.
-async function flushFor(ms: number) {
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, ms))
   })
 }
 
@@ -116,16 +88,11 @@ let useTTSService: typeof import('./ttsService').useTTSService
 
 beforeEach(async () => {
   MockAudioContext.startedSources = []
-  MockSpeechSynthesis.spoken = []
-  MockSpeechSynthesis.cancelled = 0
   vi.spyOn(console, 'log').mockImplementation(() => {})
   vi.spyOn(console, 'warn').mockImplementation(() => {})
   vi.spyOn(console, 'error').mockImplementation(() => {})
 
   globalThis.AudioContext = MockAudioContext as unknown as typeof AudioContext
-  globalThis.speechSynthesis = new MockSpeechSynthesis() as unknown as SpeechSynthesis
-  globalThis.SpeechSynthesisUtterance =
-    MockSpeechSynthesisUtterance as unknown as typeof SpeechSynthesisUtterance
   globalThis.fetch = vi.fn(async () => ({
     ok: true,
     status: 200,
@@ -204,78 +171,5 @@ describe('TTS barge-in', () => {
     await flush()
 
     expect(spokenTexts(onSpeechStart)).toContain('four')
-  })
-})
-
-/**
- * A default install must be able to speak.
- *
- * The default mode used to be 'pocket', pointed at http://localhost:8000 — a
- * server this app does not ship and the published image does not contain. So the
- * out-of-the-box product was silent while its own intro caption called it "an AI
- * with a face, a voice and a body". The default is now the browser's own
- * speechSynthesis, which requires nothing to be installed.
- */
-describe('TTS default is audible', () => {
-  it('defaults to browser speechSynthesis, not a server that may not exist', async () => {
-    const { defaultTTSConfig } = await import('./ttsConfig')
-    expect(defaultTTSConfig.mode).toBe('browser')
-  })
-
-  it('speaks on the default config with no backend of any kind reachable', async () => {
-    // Any network call at all would be a bug on this path: prove it by failing them.
-    globalThis.fetch = vi.fn(async () => {
-      throw new Error('no network in a default install')
-    }) as unknown as typeof fetch
-
-    const { result } = renderHook(() => useTTSService())
-
-    await act(async () => {
-      await result.current.actions.speak('hello there')
-    })
-    await flush()
-
-    expect(utteredTexts()).toContain('hello there')
-    expect(globalThis.fetch).not.toHaveBeenCalled()
-  })
-
-  it('falls back to the browser voice when an opted-in Pocket server is unreachable', async () => {
-    globalThis.fetch = vi.fn(async () => {
-      throw new TypeError('Failed to fetch')
-    }) as unknown as typeof fetch
-
-    const { result } = renderHook(() => useTTSService({ config: { mode: 'pocket' } }))
-
-    await act(async () => {
-      await result.current.actions.speak('first')
-    })
-    await flushFor(250)
-
-    // Previously this message was dropped and the session went mute.
-    expect(utteredTexts()).toContain('first')
-
-    // And the session stays audible without hammering the dead socket again.
-    const callsAfterFirst = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length
-    await act(async () => {
-      await result.current.actions.speak('second')
-    })
-    await flushFor(250)
-
-    expect(utteredTexts()).toContain('second')
-    expect((globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsAfterFirst)
-  })
-
-  it('barge-in still cancels browser speech', async () => {
-    const { result } = renderHook(() => useTTSService({ config: { mode: 'browser' } }))
-
-    await act(async () => {
-      await result.current.actions.speak('a long sentence being spoken')
-    })
-
-    await act(async () => {
-      result.current.actions.stopSpeaking()
-    })
-
-    expect(MockSpeechSynthesis.cancelled).toBeGreaterThan(0)
   })
 })

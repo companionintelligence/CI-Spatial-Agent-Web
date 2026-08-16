@@ -100,6 +100,7 @@ export const App = () => {
           visemeService={agent.services.visemes}
           emoteService={agent.services.emotes}
           animationService={agent.services.animations}
+          ttsService={agent.services.tts}
           setXRStore={setXRStore}
           onSceneActionsReady={setSceneActions}
           webGPUEnabled={webGPUEnabled}
