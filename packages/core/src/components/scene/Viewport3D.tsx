@@ -5,6 +5,7 @@ import type { SceneConfig } from './sceneTypes'
 import type { useAnimationService } from '../../services/animation/useAnimationService'
 import type { useEmoteService } from '../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../services/visemes/useVisemeService'
+import type { useTTSService } from '../../services/tts/ttsService'
 import { Scene3D, type SceneActions } from './Scene3D'
 
 interface viewport3DProps {
@@ -12,6 +13,7 @@ interface viewport3DProps {
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
+  ttsService?: ReturnType<typeof useTTSService>
   setXRStore?: (store: XRStore) => void
   onSceneActionsReady?: (actions: SceneActions) => void
   webGPUEnabled: boolean
@@ -22,6 +24,7 @@ const viewport3DComponent = ({
   visemeService,
   emoteService,
   animationService,
+  ttsService,
   setXRStore,
   onSceneActionsReady,
   webGPUEnabled
@@ -55,6 +58,7 @@ const viewport3DComponent = ({
           visemeService={visemeService}
           emoteService={emoteService}
           animationService={animationService}
+          ttsService={ttsService}
           setXRStore={setXRStore}
           onSceneActionsReady={onSceneActionsReady}
           webGPUEnabled={webGPUEnabled}

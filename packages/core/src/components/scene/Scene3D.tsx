@@ -7,9 +7,9 @@ import type { SceneConfig } from './sceneTypes'
 import type { useAnimationService } from '../../services/animation/useAnimationService'
 import type { useEmoteService } from '../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../services/visemes/useVisemeService'
+import type { useTTSService } from '../../services/tts/ttsService'
 import { AvatarModel } from './avatar/AvatarModel'
 import { DatacenterDiorama } from './environment/DatacenterDiorama'
-import { MachineRoomEnvironment } from './environment/MachineRoomEnvironment'
 import { GraphicsFallback } from './GraphicsFallback'
 import { useRendererConfig } from './rendering/useRendererConfig'
 import { configureRenderer, createWebGLContext } from './rendering/RendererConfig'
@@ -32,22 +32,16 @@ import { XREnhancements } from './rendering/XREnhancements'
  *   had a single AABB corner inside the frustum. 2.4 m brings the back wall of machines,
  *   both side walls and the terminal row into shot and still keeps the avatar a mid-shot.
  *
- * `iblIntensity` — how much of the environment map reaches the scene.
- *   THE TWO ENVIRONMENTS NO LONGER SHARE A MAP, so this number is not on a common scale and
- *   the two entries below cannot be compared. `none` keeps drei's `studio` HDRI, a bright
- *   white lightbox: the right key for a bust floating on a dark HUD, and overwhelming inside
- *   a room, where MEASURED it was supplying nearly all the diorama's light — at intensity 1
- *   the cabinets clipped to (255,255,192) and the floor, a #0a1418 plane, rendered at
- *   (169,182,195), brighter than anything else in frame. `datacenter-1970s` now generates its
- *   own map from the room it is standing in (MachineRoomEnvironment), which is mostly dark
- *   with four bright ceiling strips in it, so it takes a much larger multiplier to do a much
- *   more specific job.
- *   NOTE this is scene.environmentIntensity, not material.envMapIntensity. An earlier pass
- *   measured envMapIntensity as a no-op — setting it to 0 on every diorama material changed
- *   the floor by nothing at all (156,169,181 -> 156,169,181) — and concluded the knob was
- *   dead. It was dead because the map was a featureless white box: scaling a constant
- *   reflection by anything still leaves a constant. Against a map with four strips in it,
- *   per-material envMapIntensity is the strongest control the props have (SURFACE_FINISH).
+ * `iblIntensity` — how much of the `studio` HDRI reaches the scene.
+ *   The studio preset is a bright white lightbox. It is the right key for a bust floating
+ *   on a dark HUD, and it is overwhelming inside a room: MEASURED, it was supplying nearly
+ *   all the diorama's light. At intensity 1 the machine cabinets clipped to (255,255,192)
+ *   and the floor — a #0a1418 plane — rendered at (169,182,195), brighter than anything
+ *   else in frame and directly behind the chat input and the control dock. Dropping the
+ *   IBL to 0 took the same floor pixel to (31,34,35) and un-clipped the cabinets.
+ *   NOTE this is scene.environmentIntensity, not material.envMapIntensity: measured,
+ *   setting envMapIntensity to 0 on every diorama material changed the floor by nothing
+ *   at all (156,169,181 -> 156,169,181). Tuning that number is tuning a no-op.
  *
  * `rigScale` — multiplier on the four studio directionals and the ambient below.
  *   They are a product-shot rig aimed at a floating figure; at full strength inside a room
@@ -91,57 +85,13 @@ const ENVIRONMENT_LOOK: Record<NonNullable<SceneConfig['environment']>, Environm
     iblIntensity: 1,
     rigScale: 1
   },
-  /**
-   * Restaged for the product film. What moved, and why:
-   *
-   * `cameraDistance` 2.4 -> 2.75. The room used to be almost entirely far behind the avatar,
-   *   so pulling back only bought more empty floor. Now that the machine ranks start 1.45 m
-   *   behind him and run out to the wall, the extra 0.35 m buys the FIRST cabinet of each
-   *   aisle row on both sides of frame — which is what makes it read as a row rather than as
-   *   one box. Much further and the avatar stops being the subject.
-   *
-   * `portraitCameraDistance` 3.6 -> 3.3, i.e. the OPPOSITE direction, and that is the point.
-   *   three's PerspectiveCamera holds the VERTICAL fov fixed and derives the horizontal one
-   *   from aspect, so at 360x640 the frame is only +/-0.262*d wide against +/-0.830*d in
-   *   landscape — a third as much. The old value was compensating for a room whose content
-   *   was all at the edges; with the ranks now flanking the aisle close in, 3.6 m only shrank
-   *   the avatar to buy width the 9:16 frame cannot use. At 3.3 m the aisle rows still enter
-   *   frame either side of him and he stays a readable figure.
-   *
-   * `cameraTargetDrop` 0.28 -> 0.38. The composition gained a floor: the desk immediately
-   *   behind him, and the raised-floor aisle running away under the ranks. Pitching further
-   *   down puts the desktop and the near cabinets in frame instead of spending the top third
-   *   on ceiling.
-   *
-   * `portraitCameraTargetDrop` 0.1 -> 0.45, much the largest move here, because 9:16 had the
-   *   worst version of the problem: measured on frame, the band between the chat panel and
-   *   the tops of the machines was empty back wall for most of the upper half. Pitching down
-   *   lifts the room up into it. 0.5 was too far — it pushed the avatar's head under the
-   *   chat log — so this sits just below that.
-   *
-   * `iblIntensity` 0.22 -> 1, AND THAT IS NOT A TWENTYFOLD BRIGHTENING — the map underneath it
-   *   changed. 0.14, then 0.22, were both fractions of drei's `studio` HDRI, a white lightbox
-   *   so bright inside a room that the only sane setting was "barely any". The environment is
-   *   now generated from this room (MachineRoomEnvironment): a dark shell with four ceiling
-   *   troffers, a warm patch over the desk and the teal rim. There is nothing in it that wants
-   *   attenuating, so it runs at full strength and the fraction moves to where it belongs —
-   *   per material, on SURFACE_FINISH.envMapIntensity, where glass can take 2.2 and paper 0.3.
-   *   MEASURED across the frame at 1: the outer ranks stay legible, the 3350 and 2401 no longer
-   *   clip (their brightest pixel went 230 -> 176), and the ceiling strips still read as the
-   *   source of the light rather than as a wash.
-   *
-   * `rigScale` 0.42 -> 0.55. The four studio directionals are a product-shot rig aimed at a
-   *   floating figure. Kept low enough that the diorama's own light is still what you read,
-   *   raised enough that the avatar's front separates from a room that is now much brighter
-   *   behind him — at 0.42 against the new ceiling he went to silhouette.
-   */
   'datacenter-1970s': {
-    cameraDistance: 2.75,
-    portraitCameraDistance: 3.3,
-    cameraTargetDrop: 0.38,
-    portraitCameraTargetDrop: 0.45,
-    iblIntensity: 1,
-    rigScale: 0.46
+    cameraDistance: 2.4,
+    portraitCameraDistance: 3.6,
+    cameraTargetDrop: 0.28,
+    portraitCameraTargetDrop: 0.1,
+    iblIntensity: 0.14,
+    rigScale: 0.42
   }
 }
 
@@ -150,6 +100,7 @@ interface Scene3DProps {
   visemeService?: ReturnType<typeof useVisemeService>
   emoteService?: ReturnType<typeof useEmoteService>
   animationService?: ReturnType<typeof useAnimationService>
+  ttsService?: ReturnType<typeof useTTSService>
   setXRStore?: (store: XRStore) => void
   onSceneActionsReady?: (actions: SceneActions) => void
   webGPUEnabled: boolean
@@ -166,6 +117,7 @@ const SceneContent = ({
   visemeService,
   emoteService,
   animationService,
+  ttsService,
   store,
   webGPUEnabled,
   quality,
@@ -283,14 +235,7 @@ const SceneContent = ({
         color={0xffffff}
       />
 
-      {/* The image-based light. Two different sources, because the two environments want two
-          different things reflected in them — see MachineRoomEnvironment for the argument. The
-          plain viewport keeps the studio lightbox it has always had, byte for byte. */}
-      {sceneConfig.environment === 'datacenter-1970s' ? (
-        <MachineRoomEnvironment intensity={look.iblIntensity} />
-      ) : (
-        <Environment preset="studio" background={false} environmentIntensity={look.iblIntensity} />
-      )}
+      <Environment preset="studio" background={false} environmentIntensity={look.iblIntensity} />
 
       {/* XR enhancements for VR/AR */}
       <XREnhancements enabled={true} showGrid={false} />
@@ -301,6 +246,7 @@ const SceneContent = ({
           visemeService={visemeService}
           emoteService={emoteService}
           animationService={animationService}
+          ttsService={ttsService}
           onHeadLocated={handleHeadLocated}
           cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
           cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
@@ -309,17 +255,16 @@ const SceneContent = ({
       </group>
 
       {/* Post-processing effects for enhanced visuals */}
-      <PostProcessing
+      <PostProcessing 
         enabled={true}
         quality={quality?.useShadows ? 'high' : quality?.useFXAA ? 'medium' : 'low'}
         isMobile={capabilities ? !capabilities.isDesktop : false}
-        ao={sceneConfig.environment === 'datacenter-1970s'}
       />
     </XR>
   )
 }
 
-const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, setXRStore, onSceneActionsReady, webGPUEnabled }: Scene3DProps) => {
+const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, ttsService, setXRStore, onSceneActionsReady, webGPUEnabled }: Scene3DProps) => {
   const store = createXRStore()
   const { capabilities, quality, isLoading } = useRendererConfig()
   const worldGroupRef = useRef<THREE.Group>(null)
@@ -400,6 +345,7 @@ const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationS
           visemeService={visemeService}
           emoteService={emoteService}
           animationService={animationService}
+          ttsService={ttsService}
           store={store}
           webGPUEnabled={webGPUEnabled}
           quality={quality}
