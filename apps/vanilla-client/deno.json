@@ -1,0 +1,18 @@
+{
+  "nodeModulesDir": "auto",
+  "tasks": {
+    "dev": "deno run -A npm:vite",
+    "build": "deno run -A npm:vite build",
+    "preview": "deno run -A npm:vite preview",
+    "capture": "deno run -A tools/listing-capture/capture.mjs",
+    "capture-gif": "deno run -A tools/listing-capture/capture-gif.mjs"
+  },
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "deno.ns", "esnext"]
+  },
+  "exclude": [
+    "dist/",
+    ".capture/",
+    "server/"
+  ]
+}
