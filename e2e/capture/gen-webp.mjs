@@ -17,7 +17,7 @@ import { writeGalleryReadme } from './gallery-md.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, '..', '..')
-const BASE = process.env.BASE || 'http://localhost:5199'
+const BASE = process.env.BASE || 'http://127.0.0.1:5178'
 const OUT = join(repoRoot, 'docs', 'visual-tests')
 const TMP = join(repoRoot, '.tmp', 'webp-frames')
 const onlyArg = (process.argv.find((a) => a.startsWith('--only=')) || '').slice('--only='.length)
@@ -240,7 +240,16 @@ async function captureBlends(browser, results) {
  * stage bounds the blast radius, and a crashed stage doesn't take the rest down.
  */
 async function stage(label, fn, results) {
-  const browser = await chromium.launch()
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--use-gl=angle',
+      '--use-angle=metal',
+      '--enable-gpu-rasterization',
+      '--enable-webgl',
+      '--allow-insecure-localhost'
+    ]
+  })
   try {
     await fn(browser)
   } catch (e) {
