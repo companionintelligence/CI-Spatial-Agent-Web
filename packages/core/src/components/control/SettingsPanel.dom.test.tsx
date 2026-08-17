@@ -1,7 +1,11 @@
-import { describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { render, screen, waitFor } from '@testing-library/react'
 
 import { SettingsPanel } from './SettingsPanel'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 /**
  * Regression cover for the settings dialog's scroll structure.
@@ -48,5 +52,45 @@ describe('SettingsPanel layout', () => {
   it('renders nothing when closed', () => {
     render(<SettingsPanel isOpen={false} onClose={vi.fn()} />)
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('exposes chat, memory, and voice reachability after a health check', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 'degraded',
+        upstream: 'ollama',
+        model: 'gemma3:1b',
+        reachable: true,
+        memory: { configured: false, reachable: false },
+        tts: {
+          upstream: 'cosyvoice',
+          model: 'Fun-CosyVoice3-0.5B',
+          voice: '中文女',
+          reachable: false
+        }
+      })
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<SettingsPanel isOpen onClose={vi.fn()} />)
+    await screen.findByRole('button', { name: 'Check connection' })
+    expect(screen.getByRole('status')).toHaveTextContent('Not checked yet.')
+
+    screen.getByRole('button', { name: 'Check connection' }).click()
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Chat is reachable, but voice is unavailable.')
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Chat: reachable')
+    expect(screen.getByRole('status')).toHaveTextContent('Memory: not configured')
+    expect(screen.getByRole('status')).toHaveTextContent('TTS: unreachable')
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/health',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: { accept: 'application/json' }
+      })
+    )
   })
 })

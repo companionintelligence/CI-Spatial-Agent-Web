@@ -19,13 +19,19 @@ healthRoutes.get('/health', async (c) => {
 
   const ttsAdapter = selectTtsUpstream(cfg)
   const ttsProbe = await ttsAdapter.health()
+  const memoryConfigured = cfg.upstream === 'ci-server'
 
   return c.json({
-    status: 'ok',
+    status: probe.ok && ttsProbe.ok ? 'ok' : 'degraded',
     upstream: adapter.name,
     model,
     reachable: probe.ok,
     detail: probe.detail,
+    memory: {
+      configured: memoryConfigured,
+      reachable: memoryConfigured && probe.ok,
+      detail: memoryConfigured ? probe.detail : 'CI-Server is not selected'
+    },
     tts: {
       upstream: ttsAdapter.name,
       model: cfg.ttsModel,

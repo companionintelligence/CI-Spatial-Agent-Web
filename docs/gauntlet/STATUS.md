@@ -1,6 +1,6 @@
 # Product-plan Gauntlet Status
 
-Status: round 1 source/contract critic complete; browser capture pending user-selected browser
+Status: round 1 builder pass complete; browser capture pending user-selected browser
 
 ## Goal
 
@@ -71,9 +71,28 @@ reliability.
   in this task. The next step is a six-state canonical flow capture after that
   selection, not a claim of visual UX audit completion.
 
+## Round 1 — builder pass
+
+- Builder record: [`ROUND-1-BUILDER.md`](ROUND-1-BUILDER.md)
+- Decision: make the existing health seam honest and user-visible before
+  treating a response as a connected companion turn.
+- Implemented: `/api/health` now reports `ok` versus `degraded` and a separate
+  memory configuration/reachability block; Settings exposes a **Connection
+  truth** check for chat, memory, and TTS; proxy failures become visible
+  backend-failure responses.
+- Verification: **38 test files / 625 tests passed**, focused DOM/proxy checks
+  passed, and the recursive build passed. Existing chunk-size, Browserslist,
+  lint-warning, and unrelated core-lint-error baselines remain documented in
+  the builder record.
+- Re-critique boundary: this closes the unused/overstated health diagnostic,
+  but not first-run gating, CI-Server memory, provenance, privacy/delete, or
+  browser/XR evidence. The Being Test score remains **0 full passes, 2
+  partials, 4 fails/unproven** until those are independently tested.
+
 ## Next test
 
-Select the browser surface, then run the revised first-conversation journey on
+Run an independent source critic against the builder result, then select the
+browser surface and run the revised first-conversation journey on
 the canonical web surface with a seeded private-memory fixture. Capture the
 disconnected, connected-but-empty, grounded-answer, interrupted-answer,
 memory-delete, and post-delete follow-up states. Do not add vision or autonomous

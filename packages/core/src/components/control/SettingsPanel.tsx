@@ -20,6 +20,28 @@ interface SettingsPanelProps {
   onClose: () => void
 }
 
+interface HealthPayload {
+  status: 'ok' | 'degraded'
+  upstream: string
+  model: string
+  reachable: boolean
+  detail?: string
+  memory?: {
+    configured: boolean
+    reachable: boolean
+    detail?: string
+  }
+  tts?: {
+    upstream: string
+    model: string
+    voice: string
+    reachable: boolean
+    detail?: string
+  }
+}
+
+type HealthState = 'idle' | 'checking' | 'healthy' | 'degraded' | 'error'
+
 /** A labeled on/off switch row, token-styled. */
 function ToggleRow({
   label,
@@ -114,6 +136,9 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
   const [url, setUrl] = useState('')
   const [model, setModel] = useState('')
+  const [healthState, setHealthState] = useState<HealthState>('idle')
+  const [health, setHealth] = useState<HealthPayload | null>(null)
+  const [healthError, setHealthError] = useState<string | null>(null)
 
   const fields = FIELD_MAP[provider]
 
@@ -153,6 +178,39 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     LLMSettingsState.set(resolveLLMConfig(runtime, {}))
     onClose()
   }, [onClose])
+
+  const checkConnection = useCallback(async () => {
+    setHealthState('checking')
+    setHealthError(null)
+
+    try {
+      if (typeof fetch !== 'function') {
+        throw new Error('Connection checks are unavailable in this environment')
+      }
+
+      const response = await fetch('/api/health', {
+        cache: 'no-store',
+        headers: { accept: 'application/json' }
+      })
+      if (!response.ok) {
+        throw new Error(`Health check failed (${response.status})`)
+      }
+
+      const payload = (await response.json()) as HealthPayload
+      setHealth(payload)
+      if (!payload.reachable) {
+        setHealthState('error')
+      } else if (payload.tts && !payload.tts.reachable) {
+        setHealthState('degraded')
+      } else {
+        setHealthState('healthy')
+      }
+    } catch (error) {
+      setHealth(null)
+      setHealthState('error')
+      setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
+    }
+  }, [])
 
   const modelOptions = useMemo(() => COMMON_OLLAMA_MODELS, [])
 
@@ -335,6 +393,77 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
             </datalist>
           </div>
         )}
+
+        <div
+          style={{
+            marginBottom: '1.25rem',
+            padding: '0.75rem',
+            borderRadius: 'var(--radius-md)',
+            border: '0.0625rem solid var(--border)',
+            background: 'color-mix(in srgb, var(--popover) 75%, transparent)'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              marginBottom: '0.45rem'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--card-foreground)' }}>
+                Connection truth
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+                Check chat, memory, and voice before your first answer.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void checkConnection()}
+              disabled={healthState === 'checking'}
+              style={{
+                flexShrink: 0,
+                border: '0.0625rem solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                color: 'var(--card-foreground)',
+                padding: '0.45rem 0.6rem',
+                fontSize: '0.75rem',
+                cursor: healthState === 'checking' ? 'wait' : 'pointer',
+                opacity: healthState === 'checking' ? 0.65 : 1
+              }}
+            >
+              {healthState === 'checking' ? 'Checking…' : 'Check connection'}
+            </button>
+          </div>
+
+          <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
+            {healthState === 'idle' && 'Not checked yet.'}
+            {healthState === 'checking' && 'Checking the configured services…'}
+            {healthState === 'healthy' && 'Chat and voice are reachable.'}
+            {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
+            {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
+            {health && (
+              <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
+                <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>
+                <div>
+                  Memory:{' '}
+                  {health.memory
+                    ? health.memory.configured
+                      ? health.memory.reachable
+                        ? 'connected'
+                        : 'configured but unreachable'
+                      : 'not configured'
+                    : 'not reported'}
+                </div>
+                <div>TTS: {health.tts ? (health.tts.reachable ? 'reachable' : 'unreachable') : 'not reported'}</div>
+              </div>
+            )}
+          </div>
+        </div>
 
         <SectionHeader icon={<SlidersHorizontal size={13} aria-hidden />}>Behavior</SectionHeader>
         <ToggleRow

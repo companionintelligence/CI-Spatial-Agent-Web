@@ -235,14 +235,14 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       // If model is loading or not ready, use directed responses as fallback
       if (state.loading || !state.ready) {
         console.log('LLM: Model not ready, using directed responses as fallback')
-        
+
         if (onStatus) {
           onStatus({
             color: 'loading',
             text: state.loading ? 'Model loading, using fallback responses...' : 'Model not ready, using fallback responses...'
           })
         }
-        
+
         setState((prev) => ({ ...prev, _latest_interrupt: request.interrupt }))
 
         const baseParams = {
@@ -353,7 +353,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
             llmModel: config.proxy_model
           })
           if (!result.success && result.error) {
-            console.error('LLM: Proxy reasoning failed:', result.error)
+            surfaceBackendFailure('Proxy', result.error)
           }
         } else if (config.llm_provider === 'ollama' && config.ollama_model) {
           const result = await llmOllama({
