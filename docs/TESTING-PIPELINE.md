@@ -99,7 +99,8 @@ motion a reviewable artifact.
 apps/web/harness.html  ─ dedicated capture page (no chat/control UI)
 apps/web/src/harness/AvatarHarness.tsx
     └─ window.__harness = { selectAvatar, playAnimation, playCategory,
-                            setEmote, speak, setShot }         # reuses the REAL services
+                            setEmote, speak, speechInfo, audioMetrics,
+                            faceSnapshot, setShot }             # reuses the REAL services
 e2e/capture/gen-webp.mjs  ─ Playwright drives __harness, screenshots frames,
                             img2webp encodes → docs/visual-tests/*.webp + manifest.json
 ```
@@ -112,9 +113,23 @@ BASE=http://localhost:5199 node e2e/capture/gen-webp.mjs   # writes docs/visual-
 # open docs/visual-tests/index.html to review the gallery
 ```
 
-Because the harness mounts the same `AvatarModel` + viseme/emote/animation services the
-app ships, a clip is a faithful record of production behavior — not a mock. Add a row to
+Because the harness mounts the same `AvatarModel` + viseme/emote/animation/TTS path the
+app ships, a clip is a faithful record of production behavior — not a mock. Speech uses
+deterministic decoded PCM with zero output volume, so the browser still exercises the
+real analyser and lip-sync path without requiring a network voice server. Add a row to
 `MATRIX` to cover a new avatar/behavior; captions + sizes land in `manifest.json`.
+
+For a render-level speech proof, run the focused Playwright gate:
+
+```bash
+CAPTURE_PORT=5200 CAPTURE_BASE_URL=http://127.0.0.1:5200 \
+  pnpm exec playwright test -c playwright.config.capture.ts \
+  tests/avatar-visual-matrix.spec.ts --grep 'Avatar \\[Greg\\]|Avatar \\[Erik\\]'
+```
+
+The gate waits until the rendered scene reports both analyser energy and a non-zero
+mouth target (`jawOpen` for GLB, `aa/ee/ih/oh/ou` for VRM). A queued utterance alone is
+not considered a passing lip-sync result.
 
 > **Regression use:** commit a curated hero set; regenerate on demand. For pixel-diff
 > gating later, freeze fps/seed and diff against a committed baseline (out of scope v1;
@@ -135,7 +150,8 @@ app ships, a clip is a faithful record of production behavior — not a mock. Ad
 
 - **L1** — 81 tests green; expanding viseme/emote/blend/integration coverage.
 - **L2** — Storybook up (chat/controls/settings/toggles); adding viseme/emote/blend panels.
-- **L3** — harness + `gen-webp.mjs` live; hero set in `docs/visual-tests/`.
+- **L3** — harness + `gen-webp.mjs` live; hero set in `docs/visual-tests/`; the
+  production decoded-audio path is covered by `speechInfo`/`audioMetrics`/`faceSnapshot`.
 - **L4** — hospitality/retail/education specs live (`tests/scenarios/*.spec.ts`, run via
   `playwright.config.capture.ts`): each boots the real app in offline `script` mode and
   asserts avatar boot → user turn → visible reply bubble → multi-turn/barge-in. Strict
@@ -144,7 +160,8 @@ app ships, a clip is a faithful record of production behavior — not a mock. Ad
   R3F's continuous render loop but exposes no service state/debug contract on `window`.
   The L3/L5 harness is the surface instrumented for rig motion; the next gate is to
   expose a non-production embodiment probe for the canonical app as well.
-- **L5** — render matrix live (`tests/render-matrix.spec.ts`): all 25 catalog keys
+- **L5** — render matrix live (`tests/render-matrix.spec.ts` plus
+  `tests/avatar-visual-matrix.spec.ts`): all 25 catalog keys
   (14 GLB incl. HumGen Aria + 10 VRM; 24 unique files) load on the WebGL renderer via the
   harness — asserts `__avatarLoaded`, no page error, non-zero canvas. Green on headless
   SwiftShader.

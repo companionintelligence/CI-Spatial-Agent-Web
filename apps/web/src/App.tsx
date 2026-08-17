@@ -4,6 +4,8 @@ import { useSimpleStore } from '@hexafield/simple-store/react'
 
 import {
   Viewport3D,
+  AvatarCaptionOverlay,
+  AvatarStatusPill,
   ChatOverlay,
   ChatPanel,
   LogoOverlay,
@@ -22,7 +24,8 @@ import {
   useHasWebGPU,
   type SceneActions,
   type EnvironmentPreset,
-  type ActivationState
+  type ActivationState,
+  type AvatarConversationStatus
 } from '@ci-avatar/core'
 
 // Module-local: only `App` is imported from this file (see main.tsx).
@@ -86,6 +89,40 @@ export const App = () => {
 
   const hasWebGPU = useHasWebGPU()
   const webGPUEnabled = appState.webGPUEnabled && hasWebGPU
+  const [voiceStatus, setVoiceStatus] = useState<AvatarConversationStatus>('idle')
+  const [voiceCaption, setVoiceCaption] = useState('')
+  const [voiceAnalyser, setVoiceAnalyser] = useState<AnalyserNode | undefined>(undefined)
+
+  // TTS uses refs for frame-rate-sensitive state, so poll the small presentation
+  // surface instead of forcing the render loop to become React stateful.
+  useEffect(() => {
+    const updateVoiceSurface = () => {
+      const speechInfo = agent.services.tts.actions.getCurrentSpeechInfo()
+      const isSpeaking = Boolean(speechInfo.text)
+      const nextStatus: AvatarConversationStatus = isSpeaking
+        ? 'speaking'
+        : agent.state.llmLoading
+          ? 'loading'
+          : agent.state.llmThinking
+            ? 'thinking'
+            : agent.state.vadIsListening || agent.state.sttIsListening
+              ? 'listening'
+              : 'idle'
+      setVoiceStatus(nextStatus)
+      setVoiceAnalyser(agent.services.tts.actions.getAnalyser())
+      setVoiceCaption(isSpeaking ? speechInfo.text : agent.state.currentTranscript)
+    }
+    updateVoiceSurface()
+    const timer = window.setInterval(updateVoiceSurface, 100)
+    return () => window.clearInterval(timer)
+  }, [
+    agent.services.tts.actions,
+    agent.state.currentTranscript,
+    agent.state.llmLoading,
+    agent.state.llmThinking,
+    agent.state.sttIsListening,
+    agent.state.vadIsListening
+  ])
 
   useEffect(() => {
     const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
@@ -118,6 +155,25 @@ export const App = () => {
           setXRStore={setXRStore}
           onSceneActionsReady={setSceneActions}
           webGPUEnabled={webGPUEnabled}
+        />
+        <AvatarStatusPill
+          status={voiceStatus}
+          analyser={voiceAnalyser}
+          micError={!agent.state.sttAllowed ? 'Microphone access is unavailable' : null}
+          onPillClick={() => {
+            agent.actions.toggleMicrophone(true)
+            agent.actions.startVADListening()
+          }}
+          onStopClick={() => {
+            agent.actions.stopSpeaking()
+            agent.actions.stopVADListening()
+            agent.actions.toggleMicrophone(false)
+          }}
+        />
+        <AvatarCaptionOverlay
+          visible={voiceStatus === 'listening' || voiceStatus === 'speaking'}
+          text={voiceCaption}
+          speaker={voiceStatus === 'listening' ? 'user' : 'avatar'}
         />
         <LogoOverlay />
         <ChatOverlay config={appState} agent={agent} />

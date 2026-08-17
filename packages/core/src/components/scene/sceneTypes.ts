@@ -1,5 +1,7 @@
 import { ANIMATION_CLIPS } from "../../services/animation/config/animationClips"
 import { AvatarOptions } from "./avatar/AvatarOptions"
+import type { AvatarLightingPreset } from '../avatar/AvatarLightingRig'
+import type { AvatarSizePreset } from '../avatar/avatarSizing'
 import type { EnvironmentPreset } from "./environment/environmentTypes"
 
 export interface SceneConfig {
@@ -13,6 +15,10 @@ export interface SceneConfig {
   /** Which built environment (if any) surrounds the avatar. Defaults to 'none' — the
    *  plain studio viewport — so existing callers are unaffected. */
   environment?: EnvironmentPreset
+  /** Optional standalone lighting preset for embeds and product-shot scenes. */
+  lightingPreset?: AvatarLightingPreset
+  /** Optional scale preset for the avatar inside the scene. */
+  avatarSize?: AvatarSizePreset
 }
 
 export interface AvatarConfig {

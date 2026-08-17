@@ -7,6 +7,7 @@ export type { ActivationState, LLMConfig, LLMProvider } from './services/llm/con
 // Services - TTS (WhisperData is also in visemes, use tts version as canonical)
 export { useTTSService } from './services/tts/ttsService'
 export { defaultTTSConfig } from './services/tts/ttsConfig'
+export { createSyntheticSpeechWav, syntheticSpeechDuration } from './services/tts/syntheticSpeech'
 export type { TTSConfig, WhisperData } from './services/tts/ttsConfig'
 
 // Services - STT
@@ -67,6 +68,14 @@ export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel, AvatarState } from './components/scene/avatar/AvatarModel'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
+export { AvatarStatusPill } from './components/avatar/AvatarStatusPill'
+export type { AvatarStatusPillProps, AvatarConversationStatus } from './components/avatar/AvatarStatusPill'
+export { AvatarCaptionOverlay } from './components/avatar/AvatarCaptionOverlay'
+export type { AvatarCaptionOverlayProps } from './components/avatar/AvatarCaptionOverlay'
+export { AvatarLightingRig } from './components/avatar/AvatarLightingRig'
+export type { AvatarLightingPreset } from './components/avatar/AvatarLightingRig'
+export { AVATAR_SIZE_SCALES, resolveAvatarScale } from './components/avatar/avatarSizing'
+export type { AvatarSizePreset } from './components/avatar/avatarSizing'
 export type { SceneActions } from './components/scene/Scene3D'
 // Re-exported so consumers that don't depend on @react-three/xr directly (apps/vision-pro)
 // can still type the store that ControlOverlay/Viewport3D require.

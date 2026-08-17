@@ -74,6 +74,26 @@ async function verifyAnimationMovement(page: Page, samples = 3, intervalMs = 250
   return deltas > 0
 }
 
+async function waitForRenderedSpeech(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const h = (window as unknown as {
+        __harness?: {
+          speechInfo(): { hasAnalyser: boolean }
+          audioMetrics(): { mean: number; peak: number }
+          faceSnapshot(): { jawOpen: number; vrmMouth: number }
+        }
+      }).__harness
+      if (!h) return false
+      const speech = h.speechInfo()
+      const audio = h.audioMetrics()
+      const face = h.faceSnapshot()
+      return speech.hasAnalyser && (audio.mean > 0 || audio.peak > 0) && (face.jawOpen > 0.05 || face.vrmMouth > 0.05)
+    },
+    { timeout: 15_000, polling: 100 }
+  )
+}
+
 test.describe('Avatar Visual & Animation Matrix', () => {
   test('Roster agreement: AvatarOptions matches harness list', async ({ page }) => {
     const errors = await waitForHarness(page, AVATAR_KEYS[0])
@@ -114,10 +134,10 @@ test.describe('Avatar Visual & Animation Matrix', () => {
 
       // 5. Test speech lip-sync trigger
       await page.evaluate(() => {
-        const h = (window as unknown as { __harness?: { speak(t: string): boolean } }).__harness
+        const h = (window as unknown as { __harness?: { speak(t: string): Promise<number | null> | boolean } }).__harness
         h?.speak('Hello world')
       })
-      await page.waitForTimeout(500)
+      await waitForRenderedSpeech(page)
 
       // 6. Capture visual reference screenshot
       const shotPath = join(SHOTS_DIR, `${name.toLowerCase()}-verified.png`)

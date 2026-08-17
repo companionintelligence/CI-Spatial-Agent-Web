@@ -5,7 +5,7 @@ import { createVRMAnimationClip, VRMAnimation, VRMAnimationLoaderPlugin } from '
 import { useAnimations, useGLTF } from '@react-three/drei'
 import { useFrame, useLoader, useThree } from '@react-three/fiber'
 import type { ThreeEvent } from '@react-three/fiber'
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/Addons.js'
 import type { GLTFParser } from 'three/examples/jsm/Addons.js'
@@ -36,6 +36,7 @@ import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
 // no morph targets — body-animation only — so it's no longer the default.
 const AVATAR_MODEL = AvatarOptions.Greg
+const avatarOwners = new WeakMap<THREE.Object3D, symbol>()
 
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
@@ -168,6 +169,13 @@ const AvatarModelComponent = ({
   const [state] = useSimpleStore(AvatarState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
+  const avatarOwnerTokenRef = useRef<symbol | undefined>(undefined)
+  if (!avatarOwnerTokenRef.current) avatarOwnerTokenRef.current = Symbol('AvatarModel')
+  const ttsServiceRef = useRef(ttsService)
+  ttsServiceRef.current = ttsService
+  const previousBoneOffsetsRef = useRef<Record<string, { x: number; y: number; z: number }>>({})
+  const sceneBaseRotationRef = useRef<THREE.Euler | null>(null)
+  const sceneBasePositionYRef = useRef<number | null>(null)
   const startupPlayedRef = useRef<boolean>(false)
   const [isAvatarVisible, setIsAvatarVisible] = useState<boolean>(false)
 
@@ -199,6 +207,19 @@ const AvatarModelComponent = ({
   const greetClip = getGreetClip(avatarCatalog)
   const avatarScene = isVRM ? vrm?.scene : gltf.scene
   const avatarRef = useRef<THREE.Object3D>(null)
+
+  // R3F subscriptions can briefly outlive a suspended/retried avatar render.
+  // Mark the committed scene owner so an obsolete callback cannot mutate the
+  // current avatar or win the audio-lip-sync write for a frame.
+  useLayoutEffect(() => {
+    const object = avatarRef.current
+    const owner = avatarOwnerTokenRef.current
+    if (!object || !owner) return
+    avatarOwners.set(object, owner)
+    return () => {
+      if (avatarOwners.get(object) === owner) avatarOwners.delete(object)
+    }
+  }, [avatarScene])
 
   // Position camera on head
   useEffect(() => {
@@ -314,7 +335,51 @@ const AvatarModelComponent = ({
     })
 
     morphTargetsRef.current = morphTargets
+
+    const findBone = (...names: string[]): THREE.Bone | undefined => {
+      for (const n of names) {
+        if (bones[n]) return bones[n]
+        const lc = n.toLowerCase().replace(/[^a-z0-9]/g, '')
+        const hit = Object.keys(bones).find((k) => {
+          const normalized = k.toLowerCase().replace(/[^a-z0-9]/g, '')
+          return normalized === lc || normalized === 'mixamorig' + lc
+        })
+        if (hit) return bones[hit]
+      }
+      return undefined
+    }
+    const alias = (canonical: string, ...cands: string[]) => {
+      const bone = findBone(canonical, ...cands)
+      if (bone) bones[canonical] = bone
+    }
+    alias('neck', 'Neck')
+    alias('spine', 'Spine')
+    alias('spine1', 'Spine1', 'Chest')
+    alias('spine2', 'Spine2', 'chest', 'upperChest', 'UpperChest')
+    alias('head', 'Head')
+    alias('leftEye', 'LeftEye', 'eye_L')
+    alias('rightEye', 'RightEye', 'eye_R')
+    alias('leftShoulder', 'LeftShoulder')
+    alias('rightShoulder', 'RightShoulder')
+    alias('leftArm', 'LeftArm')
+    alias('rightArm', 'RightArm')
+    alias('leftForeArm', 'LeftForeArm', 'LeftLowerArm')
+    alias('rightForeArm', 'RightForeArm', 'RightLowerArm')
+    alias('leftHand', 'LeftHand')
+    alias('rightHand', 'RightHand')
+    if (bones.head && !bones.Head) bones.Head = bones.head
+    if (bones.neck && !bones.Neck) bones.Neck = bones.neck
+    if (bones.spine2 && !bones.Spine2) bones.Spine2 = bones.spine2
+
     bonesRef.current = bones
+    previousBoneOffsetsRef.current = {}
+    sceneBaseRotationRef.current = avatarScene.rotation.clone()
+    sceneBasePositionYRef.current = avatarScene.position.y
+    for (const bone of Object.values(bones)) {
+      if (!bone.userData.initialRotation) {
+        bone.userData.initialRotation = bone.rotation.clone()
+      }
+    }
 
     if (isVRM && vrm) {
       if (visemesEnabled && visemeService) {
@@ -339,27 +404,6 @@ const AvatarModelComponent = ({
     }
 
     if (emotesEnabled && emoteService) {
-      const findBone = (...names: string[]): THREE.Bone | undefined => {
-        for (const n of names) {
-          if (bones[n]) return bones[n]
-          const lc = n.toLowerCase()
-          const hit = Object.keys(bones).find((k) => k.toLowerCase() === lc || k.toLowerCase() === 'mixamorig' + lc)
-          if (hit) return bones[hit]
-        }
-        return undefined
-      }
-      const alias = (canonical: string, ...cands: string[]) => {
-        const b = findBone(canonical, ...cands)
-        if (b) bones[canonical] = b
-      }
-      alias('neck', 'Neck')
-      alias('spine2', 'Spine2', 'chest', 'upperChest', 'Chest', 'UpperChest')
-      alias('spine', 'Spine')
-      alias('head', 'Head')
-      alias('leftEye', 'LeftEye', 'eye_L')
-      alias('rightEye', 'RightEye', 'eye_R')
-      if (bones.head && !bones.Head) bones.Head = bones.head
-
       emoteService.actions.setAvatarReferences({
         bones,
         node: avatarRef.current ?? undefined,
@@ -399,11 +443,14 @@ const AvatarModelComponent = ({
 
   // 60 FPS Render & Animation Loop: Lip-sync + Autonomous Vitality + Animations
   useFrame((threeState, delta) => {
+    const object = avatarRef.current
+    if (!object || avatarOwners.get(object) !== avatarOwnerTokenRef.current) return
     if (typeof document !== 'undefined' && document.hidden) return
     if (isVRM && vrm) vrm.expressionManager?.update()
 
     // 1. Audio-Driven Lip Sync
-    const analyser = ttsService?.actions.getAnalyser()
+    const liveTtsService = ttsServiceRef.current
+    const analyser = liveTtsService?.actions.getAnalyser()
     if (analyser && (!lipSyncRef.current || (lipSyncRef.current as unknown as { analyser: AnalyserNode }).analyser !== analyser)) {
       lipSyncRef.current = new AudioLipSync(analyser)
     }
@@ -411,7 +458,7 @@ const AvatarModelComponent = ({
     const audioState = lipSyncRef.current?.update() ?? null
 
     // 2. Phoneme / Text Viseme Schedule
-    const speechInfo = ttsService?.actions.getCurrentSpeechInfo()
+    const speechInfo = liveTtsService?.actions.getCurrentSpeechInfo()
     const currentText = speechInfo?.text ?? ''
     if (currentText !== lastTextRef.current) {
       lastTextRef.current = currentText
@@ -497,7 +544,8 @@ const AvatarModelComponent = ({
     }
 
     // 4. Autonomous Facial Vitality Dynamics (Blinking, Saccades, Acoustic Brows)
-    const isSpeaking = audioState?.isSpeaking ?? false
+    const nativeSpeechActive = Boolean(speechInfo?.text || analyser)
+    const isSpeaking = Boolean(audioState?.isSpeaking || speechInfo?.text)
     const dynamics = dynamicsEngineRef.current.update({
       elapsedTime: threeState.clock.getElapsedTime(),
       delta,
@@ -535,13 +583,31 @@ const AvatarModelComponent = ({
       }
     }
 
+    // Remove the previous frame's procedural offsets before the animation mixer
+    // advances. This preserves authored gesture motion while keeping procedural
+    // posture additive and non-accumulating.
+    for (const [name, offset] of Object.entries(previousBoneOffsetsRef.current)) {
+      const bone =
+        bonesRef.current[name] ??
+        bonesRef.current[name.toLowerCase()] ??
+        Object.entries(bonesRef.current).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+      if (!bone) continue
+      bone.rotation.x -= offset.x
+      bone.rotation.y -= offset.y
+      bone.rotation.z -= offset.z
+    }
+    previousBoneOffsetsRef.current = {}
+
     // 5. Update animation service
     if (animationsEnabled && animationService) {
       animationService.actions.update(delta)
     }
 
     // 6. Update viseme service (Whisper/legacy)
-    if (visemesEnabled && visemeService) {
+    // When TTS is driving the real renderer, its analyser + timed text path owns
+    // the mouth. The legacy sequence service remains available for non-TTS
+    // consumers, but must not overwrite audio-driven morphs in the same frame.
+    if (visemesEnabled && visemeService && !nativeSpeechActive) {
       visemeService.actions.update(delta)
       visemeService.actions.applyToRig(delta)
     }
@@ -564,7 +630,88 @@ const AvatarModelComponent = ({
       }
     }
 
-    // 8. VRM spring bones
+    // Emote targets and audio targets share mouth keys on ARKit/Oculus rigs.
+    // Re-apply the native speech result after emotes so a happy/surprised
+    // reaction cannot flatten the actual spoken mouth in the same render frame.
+    const nativeSpeechWeights = nativeSpeechActive ? prevWeightsRef.current : null
+    if (nativeSpeechWeights) {
+      if (isVRM && vrm?.expressionManager) {
+        const vrmMap: Record<string, number> = {
+          aa: Math.max(nativeSpeechWeights.jawOpen, 0),
+          ee: Math.max(nativeSpeechWeights.mouthSmileLeft, nativeSpeechWeights.mouthStretchLeft, 0),
+          ih: Math.max(nativeSpeechWeights.mouthShrugUpper, nativeSpeechWeights.mouthStretchRight, 0),
+          oh: Math.max(nativeSpeechWeights.mouthFunnel, 0),
+          ou: Math.max(nativeSpeechWeights.mouthPucker, nativeSpeechWeights.mouthRollLower, 0)
+        }
+        for (const [expression, value] of Object.entries(vrmMap)) {
+          try {
+            vrm.expressionManager.setValue(expression, Math.min(1, Math.max(0, value)))
+          } catch {}
+        }
+      } else {
+        for (const mesh of morphTargetsRef.current) {
+          if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
+          for (const key of ARKIT_LIP_SYNC_TARGETS) {
+            const index = mesh.morphTargetDictionary[key]
+            if (index !== undefined) mesh.morphTargetInfluences[index] = nativeSpeechWeights[key]
+          }
+          const oculusMap: Record<string, number> = {
+            viseme_aa: nativeSpeechWeights.jawOpen,
+            viseme_E: nativeSpeechWeights.mouthSmileLeft,
+            viseme_I: nativeSpeechWeights.mouthStretchLeft,
+            viseme_O: nativeSpeechWeights.mouthFunnel,
+            viseme_U: nativeSpeechWeights.mouthPucker,
+            viseme_PP: nativeSpeechWeights.mouthClose,
+            viseme_FF: nativeSpeechWeights.mouthRollLower,
+            viseme_TH: nativeSpeechWeights.tongueOut,
+            viseme_DD: nativeSpeechWeights.mouthShrugUpper,
+            viseme_kk: nativeSpeechWeights.mouthShrugLower,
+            viseme_CH: nativeSpeechWeights.mouthFunnel * 0.5,
+            viseme_SS: nativeSpeechWeights.mouthSmileRight,
+            viseme_nn: nativeSpeechWeights.mouthPressLeft,
+            viseme_RR: nativeSpeechWeights.mouthFunnel * 0.3
+          }
+          for (const [key, value] of Object.entries(oculusMap)) {
+            const index = mesh.morphTargetDictionary[key]
+            if (index !== undefined) mesh.morphTargetInfluences[index] = value
+          }
+          if (mesh.morphTargetDictionary.jawOpen !== undefined) {
+            mesh.morphTargetInfluences[mesh.morphTargetDictionary.jawOpen] = nativeSpeechWeights.jawOpen
+          }
+          if (mesh.morphTargetDictionary.mouthOpen !== undefined) {
+            mesh.morphTargetInfluences[mesh.morphTargetDictionary.mouthOpen] = nativeSpeechWeights.jawOpen
+          }
+        }
+      }
+    }
+
+    // 8. Apply procedural body/neck offsets after authored animation and emotes.
+    // The resolver accepts canonical names, Mixamo names, and lower-case aliases.
+    for (const [name, offset] of Object.entries(dynamics.boneRotations)) {
+      const bone =
+        bonesRef.current[name] ??
+        bonesRef.current[name.toLowerCase()] ??
+        Object.entries(bonesRef.current).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+      if (!bone) continue
+      bone.rotation.x += offset.x
+      bone.rotation.y += offset.y
+      bone.rotation.z += offset.z
+      previousBoneOffsetsRef.current[name] = { ...offset }
+    }
+
+    if (avatarScene && !bonesRef.current.Head && !bonesRef.current.Spine2) {
+      const baseRotation = sceneBaseRotationRef.current
+      if (baseRotation) {
+        avatarScene.rotation.x = baseRotation.x + dynamics.sceneOffset.rotationX
+        avatarScene.rotation.y = baseRotation.y + dynamics.sceneOffset.rotationY
+        avatarScene.rotation.z = baseRotation.z + dynamics.sceneOffset.rotationZ
+      }
+      if (sceneBasePositionYRef.current !== null) {
+        avatarScene.position.y = sceneBasePositionYRef.current + dynamics.sceneOffset.positionY
+      }
+    }
+
+    // 9. VRM spring bones
     if (isVRM && vrm) vrm.springBoneManager?.update(delta)
   })
 

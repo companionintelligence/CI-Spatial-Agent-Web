@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 
 import { cleanText } from './textUtils'
 import { approximateWhisperDataFromText } from './whisperDataGenerator'
+import { createSyntheticSpeechWav } from './syntheticSpeech'
 import { type TTSConfig, type WhisperData, defaultTTSConfig } from './ttsConfig'
 
 // Workerized TTS using vits-web library
@@ -62,6 +63,8 @@ let globalId = 0
 export const useTTSService = (options: TTSServiceOptions = {}) => {
   const { config: configPartial = {}, onSpeechStart, onSpeechEnd } = options
   const config = useMemo(() => ({ ...defaultTTSConfig, ...configPartial }), [configPartial])
+  const [revision, setRevision] = useState(0)
+  const bumpRevision = useCallback(() => setRevision((value) => value + 1), [])
   const isProcessing = useRef(false)
   const messageQueue = useRef<QueuedMessage[]>([])
   const nextExpectedId = useRef(0)
@@ -97,7 +100,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
 
       audioContext
         .decodeAudioData(audioBuffer.slice(0))
-        .then((decodedAudio) => {
+        .then(async (decodedAudio) => {
+          if (audioContext.state === 'suspended' && typeof audioContext.resume === 'function') {
+            await audioContext.resume().catch(() => undefined)
+          }
           const source = audioContext.createBufferSource()
           const gainNode = audioContext.createGain()
           let analyser: AnalyserNode | null = null
@@ -116,29 +122,37 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           gainNode.gain.value = volume
 
           source.buffer = decodedAudio
-          source.connect(gainNode)
           if (analyser) {
-            gainNode.connect(analyser)
-            analyser.connect(audioContext.destination)
+            // Analyze before the output gain so volume=0 render probes still
+            // exercise the exact production lip-sync signal path.
+            source.connect(analyser)
+            analyser.connect(gainNode)
           } else {
-            gainNode.connect(audioContext.destination)
+            source.connect(gainNode)
           }
+          gainNode.connect(audioContext.destination)
 
           // Register as active so barge-in can stop it and avatar dynamics can read FFT
           activeSourceRef.current = source
           activeContextRef.current = audioContext
           analyserNodeRef.current = analyser
-          playbackStartTimeRef.current = audioContext.currentTime ?? 0
+          // AudioContext.currentTime may be exactly 0 on the first frame. The
+          // renderer uses >0 as the "timeline is active" guard, so keep the
+          // relative clock positive without changing its time domain.
+          playbackStartTimeRef.current = Math.max(audioContext.currentTime ?? 0, 0.000001)
           currentSpeechDurationRef.current = decodedAudio?.duration ?? 0
           if (speechText) {
             currentSpeechTextRef.current = speechText
           }
+          bumpRevision()
 
           source.onended = () => {
             if (activeSourceRef.current === source) {
               activeSourceRef.current = null
               activeContextRef.current = null
+              analyserNodeRef.current = null
             }
+            bumpRevision()
             resolve()
           }
 
@@ -149,7 +163,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           reject(error)
         })
     })
-  }, [config.volume])
+  }, [bumpRevision, config.volume])
 
   // Generate audio using browser speech synthesis
   const generateBrowserAudio = useCallback(async (_message: QueuedMessage) => {
@@ -161,6 +175,16 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     // Just mark as ready
     return Promise.resolve()
   }, [])
+
+  // Deterministic, dependency-free audio for rendered animation tests. It uses
+  // the same decoded-buffer/analyser path as remote and local TTS, unlike the
+  // legacy harness shortcut that only queued synthetic viseme weights.
+  const generateSyntheticAudio = useCallback(
+    async (message: QueuedMessage) => {
+      message.audio = createSyntheticSpeechWav(message.text)
+    },
+    []
+  )
 
   // Generate audio using local worker
   const generateLocalAudio = useCallback(
@@ -300,6 +324,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           await generateLocalAudio(message)
         } else if (config.mode === 'pocket') {
           await generatePocketAudio(message)
+        } else if (config.mode === 'synthetic') {
+          await generateSyntheticAudio(message)
         }
         message.status = 'ready'
       } catch (error) {
@@ -313,7 +339,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         message.error = errMessage
       }
     },
-    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio]
+    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio, generateSyntheticAudio]
   )
 
   // Process the queue sequentially
@@ -425,6 +451,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               currentSpeechTextRef.current = nextMessage.text
               currentSpeechDurationRef.current = nextMessage.text.length * 0.065
               playbackStartTimeRef.current = performance.now() / 1000
+              bumpRevision()
 
               speechSynthesis.speak(utterance)
             })
@@ -451,12 +478,14 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       // Call onSpeechEnd only when queue is empty (and this loop is still current).
       if (generationRef.current === myGeneration && onSpeechEnd && messageQueue.current.length === 0) {
         currentSpeechTextRef.current = ''
+        bumpRevision()
         onSpeechEnd()
       }
     } catch (error) {
       console.error('Queue processing error:', error)
       if (generationRef.current === myGeneration && onSpeechEnd) {
         currentSpeechTextRef.current = ''
+        bumpRevision()
         onSpeechEnd()
       }
     } finally {
@@ -474,7 +503,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     config.mode,
     onSpeechStart,
     playAudioBuffer,
-    onSpeechEnd
+    onSpeechEnd,
+    bumpRevision
   ])
 
   // Add message to queue and assign ID
@@ -508,10 +538,11 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       if (!isProcessing.current) {
         processQueue()
       }
+      bumpRevision()
 
       return messageId
     },
-    [processQueue, config.mode, generateAudioForMessage]
+    [processQueue, config.mode, generateAudioForMessage, bumpRevision]
   )
 
   const stopSpeaking = useCallback(() => {
@@ -530,10 +561,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     const active = activeSourceRef.current
     activeSourceRef.current = null
     activeContextRef.current = null
+    analyserNodeRef.current = null
     currentSpeechTextRef.current = ''
     currentSpeechDurationRef.current = 0
     playbackStartTimeRef.current = 0
-
     if (active) {
       try {
         active.stop()
@@ -563,7 +594,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     if (onSpeechEnd) {
       onSpeechEnd()
     }
-  }, [onSpeechEnd])
+    bumpRevision()
+  }, [bumpRevision, onSpeechEnd])
 
   // Cleanup worker on unmount
   useEffect(() => {
@@ -603,7 +635,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   const state = useMemo(() => ({
     isSpeaking: isProcessing.current,
     audioQueue: messageQueue.current.length
-  }), [isProcessing.current, messageQueue.current.length])
+  }), [revision])
 
   const actions = useMemo(
     () => ({

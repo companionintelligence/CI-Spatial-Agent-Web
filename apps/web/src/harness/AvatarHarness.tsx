@@ -14,7 +14,7 @@
  */
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Environment } from '@react-three/drei'
-import { Suspense, useEffect, useRef } from 'react'
+import { Suspense, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import {
   AvatarModel,
@@ -24,13 +24,14 @@ import {
   getRandomClip,
   useAnimationService,
   useEmoteService,
+  useTTSService,
   useVisemeService,
   type AnimationClip,
-  type EmotionType,
-  type WhisperData
+  type EmotionType
 } from '@ci-avatar/core'
 
 type Shot = 'face' | 'upper' | 'body'
+type TTSService = ReturnType<typeof useTTSService>
 
 declare global {
   interface Window {
@@ -84,14 +85,6 @@ function activeCatalog() {
   return getAvatarCatalog(isVRMSelected(), /female|woman/i.test(model))
 }
 
-/** Build evenly-timed whisper data from text so lip-sync plays without a real TTS. */
-function buildWhisper(text: string, msPerWord = 340): WhisperData {
-  const words = text.trim().split(/\s+/).filter(Boolean)
-  const wtimes = words.map((_, i) => i * msPerWord)
-  const wdurations = words.map(() => Math.round(msPerWord * 0.85))
-  return { words, wtimes, wdurations }
-}
-
 function CameraRig({ frameRef }: { frameRef: React.MutableRefObject<FrameState> }) {
   const { camera } = useThree()
   useFrame(() => {
@@ -122,6 +115,31 @@ function HarnessScene() {
   const visemes = useVisemeService()
   const emotes = useEmoteService()
   const animations = useAnimationService()
+  // The harness deliberately uses a silent synthetic TTS backend. It exercises
+  // the production decoded-audio -> analyser -> AudioLipSync -> AvatarModel path
+  // without depending on a network TTS server or browser SpeechSynthesis.
+  const tts = useTTSService({ config: { mode: 'synthetic', volume: 0 } })
+  const ttsRef = useRef(tts)
+  ttsRef.current = tts
+  // Keep the prop identity stable while forwarding every read and command to
+  // the current hook instance. AvatarModel runs from R3F's frame loop, so it
+  // should not depend on a React state object changing identity mid-utterance.
+  const ttsDriver = useMemo<TTSService>(
+    () => ({
+      get state() {
+        return ttsRef.current.state
+      },
+      actions: {
+        speak: (text) => ttsRef.current.actions.speak(text),
+        stopSpeaking: () => ttsRef.current.actions.stopSpeaking(),
+        playAudioBuffer: (audioBuffer, speechText) => ttsRef.current.actions.playAudioBuffer(audioBuffer, speechText),
+        getQueueStatus: () => ttsRef.current.actions.getQueueStatus(),
+        getAnalyser: () => ttsRef.current.actions.getAnalyser(),
+        getCurrentSpeechInfo: () => ttsRef.current.actions.getCurrentSpeechInfo()
+      }
+    }),
+    []
+  )
   const three = useThree()
 
   const frameRef = useRef<FrameState>({
@@ -215,8 +233,110 @@ function HarnessScene() {
 
       /** Drive lip-sync from text (synthetic whisper timing). */
       speak(text: string) {
-        visemes.actions.generateSequence(buildWhisper(text))
-        return true
+        visemes.actions.reset()
+        return tts.actions.speak(text)
+      },
+
+      /** Read the live speech driver used by the rendered AvatarModel. */
+      speechInfo() {
+        const info = tts.actions.getCurrentSpeechInfo()
+        const queue = tts.actions.getQueueStatus()
+        return {
+          text: info.text,
+          duration: info.duration,
+          startTime: info.startTime,
+          hasAnalyser: Boolean(tts.actions.getAnalyser()),
+          queueLength: queue.queueLength,
+          isProcessing: queue.isProcessing,
+          stateSpeaking: tts.state.isSpeaking,
+          stateQueue: tts.state.audioQueue
+        }
+      },
+
+      /** Sample the analyser so tests can prove the browser produced audio energy. */
+      audioMetrics() {
+        const analyser = tts.actions.getAnalyser()
+        if (!analyser) return { hasAnalyser: false, mean: 0, peak: 0 }
+        const data = new Uint8Array(analyser.frequencyBinCount)
+        analyser.getByteFrequencyData(data)
+        const peak = data.reduce((max, value) => Math.max(max, value), 0)
+        const mean = data.length > 0 ? data.reduce((sum, value) => sum + value, 0) / data.length : 0
+        return { hasAnalyser: true, mean, peak }
+      },
+
+      /** Snapshot live morphs and posture for render-level assertions. */
+      faceSnapshot() {
+        let maxMorph = 0
+        let jawOpen = 0
+        let blink = 0
+        let gaze = 0
+        let vrmMouth = 0
+        const mouth: Record<string, number> = {}
+        const boneRotations: Record<string, { x: number; y: number; z: number }> = {}
+        three.scene.traverse((object) => {
+          const mesh = object as THREE.Mesh
+          if (mesh.morphTargetInfluences && mesh.morphTargetDictionary) {
+            mesh.morphTargetInfluences.forEach((value) => {
+              maxMorph = Math.max(maxMorph, Math.abs(value))
+            })
+            for (const key of ['jawOpen', 'mouthOpen', 'viseme_aa']) {
+              const index = mesh.morphTargetDictionary[key]
+              if (index !== undefined) {
+                const value = mesh.morphTargetInfluences[index] ?? 0
+                mouth[key] = Math.max(mouth[key] ?? 0, value)
+                jawOpen = Math.max(jawOpen, value)
+              }
+            }
+            for (const key of ['eyeBlinkLeft', 'eyeBlinkRight', 'Blink', 'blink']) {
+              const index = mesh.morphTargetDictionary[key]
+              if (index !== undefined) blink = Math.max(blink, mesh.morphTargetInfluences[index] ?? 0)
+            }
+            for (const key of [
+              'eyeLookInLeft',
+              'eyeLookInRight',
+              'eyeLookOutLeft',
+              'eyeLookOutRight',
+              'eyeLookUpLeft',
+              'eyeLookUpRight',
+              'eyeLookDownLeft',
+              'eyeLookDownRight'
+            ]) {
+              const index = mesh.morphTargetDictionary[key]
+              if (index !== undefined) gaze = Math.max(gaze, mesh.morphTargetInfluences[index] ?? 0)
+            }
+          }
+          const bone = object as THREE.Bone
+          if (bone.isBone && ['Head', 'Neck', 'Spine2', 'LeftArm', 'RightArm'].includes(bone.name)) {
+            boneRotations[bone.name] = {
+              x: Number(bone.rotation.x.toFixed(4)),
+              y: Number(bone.rotation.y.toFixed(4)),
+              z: Number(bone.rotation.z.toFixed(4))
+            }
+          }
+        })
+        const expressionManager = visemes.state.viseme?.vrm?.expressionManager
+        if (expressionManager) {
+          for (const name of ['aa', 'ee', 'ih', 'oh', 'ou']) {
+            try {
+              vrmMouth = Math.max(vrmMouth, expressionManager.getValue(name) ?? 0)
+            } catch {
+              // Some VRM expression managers expose a name without a readable value.
+            }
+          }
+        }
+        return {
+          maxMorph: Number(maxMorph.toFixed(4)),
+          jawOpen: Number(jawOpen.toFixed(4)),
+          mouth: Object.fromEntries(Object.entries(mouth).map(([key, value]) => [key, Number(value.toFixed(4))])),
+          vrmMouth: Number(vrmMouth.toFixed(4)),
+          blink: Number(blink.toFixed(4)),
+          gaze: Number(gaze.toFixed(4)),
+          boneRotations,
+          speech: {
+            text: tts.actions.getCurrentSpeechInfo().text,
+            hasAnalyser: Boolean(tts.actions.getAnalyser())
+          }
+        }
       },
 
       /** Introspect the live animation mixer (for mixing/crossfade QA). */
@@ -307,7 +427,7 @@ function HarnessScene() {
       delete w.__harness
       w.__harnessReady = false
     }
-  }, [visemes, emotes, animations, three])
+    }, [visemes, emotes, animations, tts, three])
 
   return (
     <>
@@ -321,6 +441,7 @@ function HarnessScene() {
           visemeService={visemes}
           emoteService={emotes}
           animationService={animations}
+          ttsService={ttsDriver}
           onHeadLocated={(target, position) => {
             const head = new THREE.Vector3(...target)
             const forward = new THREE.Vector3(...position).sub(head)
@@ -339,6 +460,7 @@ export function AvatarHarness() {
   return (
     <div style={{ position: 'fixed', inset: 0, background: transparent ? 'transparent' : '#0a1416' }}>
       <Canvas
+        frameloop="always"
         gl={{ alpha: transparent, antialias: true, preserveDrawingBuffer: true }}
         camera={{ position: [0, 1.5, 2.5], fov: 30 }}
         dpr={[1, 2]}
