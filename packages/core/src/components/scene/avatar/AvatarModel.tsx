@@ -38,6 +38,26 @@ import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
 const AVATAR_MODEL = AvatarOptions.Greg
 const avatarOwners = new WeakMap<THREE.Object3D, symbol>()
 
+/**
+ * Keep an array returned by a fixed hook map stable when its members are stable.
+ *
+ * `useLoader` is intentionally called once per catalog item below, so the outer
+ * array is recreated by `.map()` on every render. Passing that fresh array to
+ * drei's `useAnimations` makes drei tear down every action and recreate the
+ * mixer whenever an unrelated avatar state field changes. That reset is visible
+ * as a snap back to idle during speech/emote updates.
+ */
+const useStableArray = <T,>(items: T[]): T[] => {
+  const stableRef = useRef(items)
+  if (
+    stableRef.current.length !== items.length ||
+    items.some((item, index) => stableRef.current[index] !== item)
+  ) {
+    stableRef.current = items
+  }
+  return stableRef.current
+}
+
 export const AvatarState = createSimpleStore({
   selectedModel: AVATAR_MODEL,
   visemesEnabled: true,
@@ -71,8 +91,8 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D 
   // Load BOTH catalogs every render (stable hook order); collect only the set that
   // matches the active avatar's skeleton below. VRMA → VRM avatars, GLB → GLB avatars.
   // GLB_ALL_CLIPS includes the feminine (F_*) set so female avatars can use it.
-  const vrmaClips = Object.values(VRMA_CLIPS)
-  const gltfClips = Object.values(GLB_ALL_CLIPS)
+  const vrmaClips = useMemo(() => Object.values(VRMA_CLIPS), [])
+  const gltfClips = useMemo(() => Object.values(GLB_ALL_CLIPS), [])
 
   // These two `.map`s call hooks in a callback, which rules-of-hooks flags. It is safe
   // here — and load-bearing: VRMA_CLIPS and GLB_ALL_CLIPS are module-level literals with
@@ -93,13 +113,18 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D 
   // eslint-disable-next-line react-hooks/rules-of-hooks -- fixed-length catalog, see above
   const gltfGLTFs = gltfClips.map((clip) => useGLTF(clip.path))
 
+  // The hook maps above must stay unconditional, but their container arrays do
+  // not need to change when the loaded resources do not. See useStableArray.
+  const stableVrmaGLTFs = useStableArray(vrmaGLTFs)
+  const stableGltfGLTFs = useStableArray(gltfGLTFs)
+
   // Collect all animations
   const allAnimations = useMemo(() => {
     const animations: THREE.AnimationClip[] = []
 
     if (vrm) {
       // Process VRMA
-      vrmaGLTFs.forEach((gltf, index) => {
+      stableVrmaGLTFs.forEach((gltf, index) => {
         const vrmAnimation: VRMAnimation | undefined = (gltf as { userData?: { vrmAnimations?: VRMAnimation[] } })
           .userData?.vrmAnimations?.[0]
 
@@ -125,7 +150,7 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D 
       })
     } else {
       // Process GLTF/GLB
-      gltfGLTFs.forEach((gltf, index) => {
+      stableGltfGLTFs.forEach((gltf, index) => {
         if (gltf.animations && gltf.animations.length > 0) {
           gltf.animations.forEach((animation) => {
             animation.name = gltfClips[index].name
@@ -146,7 +171,7 @@ export const useExternalAnimations = (avatarRef: React.RefObject<THREE.Object3D 
     updateAnimationDurations(animations)
 
     return animations
-  }, [vrmaGLTFs, gltfGLTFs, vrm])
+  }, [stableVrmaGLTFs, stableGltfGLTFs, vrm, vrmaClips, gltfClips])
 
   // Hook into R3F's animation system
 
@@ -442,6 +467,29 @@ const AvatarModelComponent = ({
   }, [animationsEnabled, animationService, actions, mixer, emoteService, isAvatarVisible, greetClip, idleClip])
 
   // 60 FPS Render & Animation Loop: Lip-sync + Autonomous Vitality + Animations
+  // This cleanup must run before drei's internal mixer subscriber. The mixer
+  // writes authored bone tracks during its own useFrame callback; removing last
+  // frame's additive posture after that write subtracts from the authored pose
+  // and makes gestures jump. A negative-priority subscriber gives the next
+  // mixer tick a clean authored base, while the main subscriber below applies
+  // this frame's procedural offsets after the mixer.
+  useFrame(() => {
+    const object = avatarRef.current
+    if (!object || avatarOwners.get(object) !== avatarOwnerTokenRef.current) return
+
+    for (const [name, offset] of Object.entries(previousBoneOffsetsRef.current)) {
+      const bone =
+        bonesRef.current[name] ??
+        bonesRef.current[name.toLowerCase()] ??
+        Object.entries(bonesRef.current).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
+      if (!bone) continue
+      bone.rotation.x -= offset.x
+      bone.rotation.y -= offset.y
+      bone.rotation.z -= offset.z
+    }
+    previousBoneOffsetsRef.current = {}
+  }, -1)
+
   useFrame((threeState, delta) => {
     const object = avatarRef.current
     if (!object || avatarOwners.get(object) !== avatarOwnerTokenRef.current) return
@@ -582,21 +630,6 @@ const AvatarModelComponent = ({
         } catch {}
       }
     }
-
-    // Remove the previous frame's procedural offsets before the animation mixer
-    // advances. This preserves authored gesture motion while keeping procedural
-    // posture additive and non-accumulating.
-    for (const [name, offset] of Object.entries(previousBoneOffsetsRef.current)) {
-      const bone =
-        bonesRef.current[name] ??
-        bonesRef.current[name.toLowerCase()] ??
-        Object.entries(bonesRef.current).find(([key]) => key.toLowerCase() === name.toLowerCase())?.[1]
-      if (!bone) continue
-      bone.rotation.x -= offset.x
-      bone.rotation.y -= offset.y
-      bone.rotation.z -= offset.z
-    }
-    previousBoneOffsetsRef.current = {}
 
     // 5. Update animation service
     if (animationsEnabled && animationService) {

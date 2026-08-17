@@ -106,6 +106,50 @@ test.describe('Avatar Visual & Animation Matrix', () => {
     expect(errors).toEqual([])
   })
 
+  test('Finite body gestures finish before the queued idle takes over', async ({ page }) => {
+    await waitForHarness(page, 'Greg')
+    await page.waitForTimeout(4_000) // let the startup greet and its queued idle settle
+
+    await page.evaluate(() => {
+      window.__harness?.playAnimation('Waving', { loopCount: 1, blendTime: 250 })
+    })
+
+    // A settled crossfade is not the end of a finite authored gesture.
+    await page.waitForTimeout(650)
+    const during = await page.evaluate(() => window.__harness?.debugActions())
+    expect(during?.current).toBe('Waving')
+
+    await page.waitForFunction(
+      () => window.__harness?.debugActions().current !== 'Waving',
+      { timeout: 8_000, polling: 100 }
+    )
+
+    const after = await page.evaluate(() => window.__harness?.debugActions())
+    expect(after?.current).toBe('idle-stable')
+  })
+
+  test('Avatar state changes do not rebuild the active mixer action', async ({ page }) => {
+    await waitForHarness(page, 'Greg')
+    await page.waitForTimeout(4_000) // let the startup greet and its queued idle settle
+
+    await page.evaluate(() => {
+      window.__harness?.playAnimation('Clapping', { loopCount: Infinity, blendTime: 250 })
+    })
+    await page.waitForTimeout(700)
+    const before = await page.evaluate(() => window.__harness?.debugActions())
+    const beforeTime = before?.live.find((action) => action.name === 'Clapping')?.t ?? 0
+    expect(before?.current).toBe('Clapping')
+    expect(beforeTime).toBeGreaterThan(0.2)
+
+    await page.evaluate(() => window.__harness?.setServices({ emotes: false }))
+    await page.waitForTimeout(250)
+
+    const after = await page.evaluate(() => window.__harness?.debugActions())
+    const afterTime = after?.live.find((action) => action.name === 'Clapping')?.t ?? 0
+    expect(after?.current).toBe('Clapping')
+    expect(afterTime).toBeGreaterThan(beforeTime)
+  })
+
   for (const name of AVATAR_KEYS) {
     test(`Avatar [${name}]: rigs, renders, animates, and lip-syncs`, async ({ page }) => {
       const errors = await waitForHarness(page, name)

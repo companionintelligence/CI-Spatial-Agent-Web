@@ -52,7 +52,9 @@ const transparent = params.get('bg') === 'transparent'
 
 const SHOTS: Record<Shot, { d: number; ty: number; cy: number; fov: number }> = {
   face: { d: 1.15, ty: -0.02, cy: 0.05, fov: 26 },
-  upper: { d: 1.55, ty: -0.4, cy: 0.05, fov: 27 },
+  // Keep the head, shoulders, and most expressive hand motion in frame during
+  // authored talking/waving clips instead of letting the close crop hide it.
+  upper: { d: 2.2, ty: -0.2, cy: 0.05, fov: 30 },
   // Body: camera pulled back with breathing room and held near-level with the look
   // target (mid-torso) — a high camera looking down foreshortens the neck and makes
   // shoulders read as hunched/raised.
@@ -206,8 +208,11 @@ function HarnessScene() {
         action.setEffectiveWeight(1)
         action.play()
         // Pin service state so the per-frame update() doesn't advance/queue over it.
-        st.currentClip = found
+        st.currentClip = { ...found, loopCount: Infinity, speed: 1 }
         st.isTransitioning = false
+        st.transitionProgress = 0
+        st.transitionDuration = 0
+        st.previousClipName = undefined
         if (st.queue) st.queue.length = 0
         st.cyclingState.cyclingEnabled = false
         return Math.round((action.getClip?.()?.duration ?? found.duration / 1000) * 1000)

@@ -28,10 +28,9 @@ stateDiagram-v2
     transition — immediate always plays now
   end note
   note right of Playing
-    queue drains whenever a transition
-    settles (not just on 'finished'),
-    so gestures behind an infinite idle
-    never stall
+    queues behind infinite idle drain after
+    the transition; finite gestures wait for
+    the mixer's 'finished' event
   end note
 ```
 
@@ -41,13 +40,14 @@ A performance is either **immediate** (plays now, crossfading from whatever is c
 **queued**. Queued items advance when:
 
 1. a **finite** clip fires the mixer `'finished'` event, **or**
-2. **any** transition settles and the queue is non-empty (`updateAnimation` drains it), **or**
+2. an **infinite** base clip's transition settles and the queue is non-empty (`updateAnimation` drains it), **or**
 3. personality **cycling** is enabled (off by default).
 
 > Rule 2 is the fix for *"mixing not working"*: previously a gesture queued behind an
 > **infinite** idle (which never fires `'finished'`) sat in the queue forever. Now the
-> update loop drains it, `immediate` performances interrupt cleanly, and re-triggering a
-> finite gesture replays it. Regression-tested in `animationService.node.test.ts`.
+> update loop drains that case, while finite gestures stay active until their authored
+> motion completes. Immediate performances interrupt cleanly, and re-triggering a finite
+> gesture replays it. Regression-tested in `animationService.node.test.ts`.
 
 ```mermaid
 sequenceDiagram
