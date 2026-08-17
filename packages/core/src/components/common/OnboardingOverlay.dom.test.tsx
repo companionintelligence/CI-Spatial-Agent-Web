@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { OnboardingOverlay } from './OnboardingOverlay'
 
@@ -33,7 +34,7 @@ describe('OnboardingOverlay connection truth', () => {
     )
 
     expect(screen.getByRole('status')).toHaveTextContent('Session: Unverified')
-    screen.getByRole('button', { name: 'Check connection' }).click()
+    await userEvent.click(screen.getByRole('button', { name: 'Check connection' }))
 
     await waitFor(() => expect(onActivationStateChange).toHaveBeenCalledWith('chat-only'))
     expect(screen.getByRole('status')).toHaveTextContent('Chat: reachable')

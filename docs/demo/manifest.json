@@ -1,0 +1,33 @@
+{
+  "generatedWith": "scripts/generate-system-demo.mjs",
+  "baseUrl": "http://127.0.0.1:5199",
+  "mode": "script / demo-only",
+  "audio": "silent capture; no live TTS claim",
+  "video": {
+    "webm": "docs/demo/ci-spatial-companion-system-demo.webm",
+    "mp4": "docs/demo/ci-spatial-companion-system-demo.mp4"
+  },
+  "stills": [
+    {
+      "file": "docs/demo/stills/01-onboarding-unverified.png",
+      "description": "Fresh onboarding with an unverified session"
+    },
+    {
+      "file": "docs/demo/stills/02-demo-ready.png",
+      "description": "Explicit deterministic demo mode after skipping voice setup"
+    },
+    {
+      "file": "docs/demo/stills/03-first-answer.png",
+      "description": "First scripted companion response in the Chat Log"
+    },
+    {
+      "file": "docs/demo/stills/04-connection-truth.png",
+      "description": "Connection truth surface in Settings"
+    },
+    {
+      "file": "docs/demo/stills/05-second-answer.png",
+      "description": "Second turn after returning to the companion surface"
+    }
+  ],
+  "pageErrors": []
+}

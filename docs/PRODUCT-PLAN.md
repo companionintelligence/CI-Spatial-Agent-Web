@@ -47,7 +47,7 @@ lives reliably in the owner's space.
 | XR | WebXR AR + VR sessions (Quest / Vision Pro / XREAL) + browser/iPad fallback |
 | Brand | Canonical CI teal tokens + Montserrat |
 | Distribution | GHCR images + **CI-Marketplace manifest** (runtipi) |
-| Quality | 38 test files / 624 passing tests on the clean layout worktree; L3/L5 harness coverage; strict L4 embodiment assertions still skipped |
+| Quality | 41 test files / 632 passing tests on the gauntlet branch; L3/L5 harness coverage; curated L6 demo media; strict L4 embodiment assertions still skipped |
 
 **What is still missing or unproven:** the canonical client does not yet have CI-Server memory
 wiring or memory provenance/forget controls; the BFF has no launched tool registry; the vanilla
@@ -102,10 +102,11 @@ Ratings: **P0** must-have · **P1** high-value · **P2** differentiator.
 ### Phase 0 — Foundation & evidence alignment (code present; product gate incomplete)
 
 Runtime config, BFF, branding, animation refactor, marketplace packaging, unit coverage, and the
-visual harness are present. Before calling this phase done, reconcile
+visual harness are present. A curated L6 demo now records the canonical web activation/response
+journey and the avatar harness media, while remaining explicit about demo-only boundaries. Before calling this phase done, reconcile
 `docs/ANIMATION-SYSTEM-REVIEW.md` and `docs/TESTING-PIPELINE.md` with the current source, and add
-the missing canonical-app embodiment probe. The clean baseline currently passes 38 test files / 624
-tests and the recursive build; that is strong foundation evidence, not a complete Being Test pass.
+the missing canonical-app embodiment probe. The gauntlet branch currently passes 41 test files / 632
+tests and the recursive build; that is strong foundation and demo evidence, not a complete Being Test pass.
 
 ### Phase 1 — Trustworthy Companion Loop (Q3 2026) — "it knows me and doesn't pretend"
 
@@ -238,7 +239,9 @@ tests and the recursive build; that is strong foundation evidence, not a complet
   proves it), remembers *your* life with sources and control, sees your room with visible grounding,
   and lives in AR/VR and the browser without losing voice or identity.
 - **Assets:** a 30–60s spatial demo reel (Quest passthrough + Vision Pro), a browser try-it link, a
-  one-pager, and marketplace screenshots. (Route through the `ci-marketing` skills / CI brand kit.)
+  one-pager, and marketplace screenshots. The current evidence package includes a roughly 20s silent
+  canonical web demo plus avatar motion stills/clips; it must not be marketed as memory-grounded
+  until the Phase 1 trust contract passes. (Route through the `ci-marketing` skills / CI brand kit.)
 
 ### 7.4 Metrics / KPIs
 - **Activation:** p90 install → first grounded spoken answer (≤ 5 min target); zero cases where a

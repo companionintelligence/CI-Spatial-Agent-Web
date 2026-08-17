@@ -148,3 +148,21 @@ app ships, a clip is a faithful record of production behavior — not a mock. Ad
   (14 GLB incl. HumGen Aria + 10 VRM; 24 unique files) load on the WebGL renderer via the
   harness — asserts `__avatarLoaded`, no page error, non-zero canvas. Green on headless
   SwiftShader.
+
+## Layer L6 — curated demo evidence
+
+L6 is a communication artifact, not a release gate. It records the canonical
+web surface and the instrumented avatar surface separately so a polished reel
+cannot be mistaken for proof of memory or agency:
+
+- `pnpm generate:system-demo` captures the real web app in deterministic
+  `script / demo-only` mode, including onboarding, activation labeling, two
+  visible turns, Chat Log, Settings, and five PNG stills under `docs/demo/`.
+- `pnpm generate:avatar-media -- --only=Greg --fps=30` captures the real avatar
+  harness as PNG stills plus MP4/WebM clips under `docs/visual-tests/`.
+- The demo manifest records `audio: silent capture` and the page-error list.
+  A clean media run is evidence of the tested flow, not a claim that
+  CI-Server memory, TTS, XR, or tools are connected.
+
+Current artifact: [`docs/demo/README.md`](demo/README.md). Round record:
+[`docs/gauntlet/ROUND-4-DEMO.md`](gauntlet/ROUND-4-DEMO.md).

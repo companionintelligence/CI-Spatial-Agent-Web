@@ -1,6 +1,6 @@
 # Product-plan Gauntlet Status
 
-Status: round 3 source critic complete; browser capture pending user-selected browser
+Status: round 4 demo evidence captured; seeded memory/browser/XR capture pending
 
 ## Goal
 
@@ -124,11 +124,23 @@ reliability.
   journey are not.
 - Browser evidence remains **not captured** pending a user-selected browser.
 
+## Round 4 — demo evidence and runtime correction
+
+- Demo record: [`ROUND-4-DEMO.md`](ROUND-4-DEMO.md)
+- Media package: [`docs/demo/README.md`](../demo/README.md)
+- Canonical web demo: roughly 20-second 1280×720 MP4/WebM with five PNG stills, run in
+  deterministic `script / demo-only` mode; the capture manifest reports zero
+  page or console errors after the runtime correction.
+- Avatar media: Greg body/face/lip-sync stills and MP4/WebM clips under
+  `docs/visual-tests/`, generated through the real harness services.
+- Runtime correction: memoized the XR store and stabilized LLM initialization
+  inputs after the first capture exposed a maximum-update-depth loop.
+- Evidence boundary: this is a demo/embodiment package, not proof of
+  CI-Server memory, TTS, microphone/STT, XR hardware, or tool agency.
+
 ## Next test
 
-Implement the CI-Server trust contract, then select the browser surface and run
-the revised first-conversation journey on the canonical web surface with a
-seeded private-memory fixture. Capture the disconnected, connected-but-empty,
-grounded-answer, interrupted-answer, memory-delete, and post-delete follow-up
-states. Repeat the contract under Vision Pro/XR. Do not add autonomous tools to
-the launch story until that journey passes the same six-test scorecard.
+Run the selected-browser six-state journey against a seeded CI-Server fixture:
+disconnected, connected-but-empty, grounded answer, interrupted answer,
+memory-delete receipt, and post-delete follow-up. Capture the same contract on
+the Vision Pro/XR surface before publishing a production reel.

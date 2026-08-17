@@ -206,7 +206,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const vadConfig = { ...defaultVadConfig, ...config.vad }
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
   const sttConfig = { ...defaultSTTConfig, ...config.stt }
-  const llmConfig = { ...defaultLLMConfig, ...config.llm }
+  const llmConfig = useMemo(() => ({ ...defaultLLMConfig, ...config.llm }), [config.llm])
   const appConfig = {
     autoSubmitEnabled: config.autoSubmitEnabled ?? defaultAppConfig.autoSubmitEnabled,
     bargeInEnabled: config.bargeInEnabled ?? defaultAppConfig.bargeInEnabled
@@ -228,13 +228,19 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const visemes = useVisemeService()
   const emotes = useEmoteService()
   const animations = useAnimationService()
+  const onLLMStatus = callbacks.onLLMStatus
+  const handleLLMStatus = useCallback(
+    (status: LLMStatusUpdate) => {
+      console.log('LLM status:', status)
+      onLLMStatus?.(status)
+    },
+    [onLLMStatus]
+  )
+
   // Initialize LLM service
   const llmService = useLLMService({
     config: llmConfig,
-    onStatus: (status: LLMStatusUpdate) => {
-      console.log('LLM status:', status)
-      callbacks.onLLMStatus?.(status)
-    },
+    onStatus: handleLLMStatus,
     onResponse: (response: LLMResponse) => {
       const breath = response.breath
       if (breath) {

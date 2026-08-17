@@ -36,6 +36,7 @@
     "test:l4": "playwright test -c playwright.config.capture.ts tests/scenarios",
     "test:capture": "playwright test -c playwright.config.capture.ts",
     "generate:avatar-media": "node scripts/generate-avatar-video.mjs",
+    "generate:system-demo": "node scripts/generate-system-demo.mjs",
     "test:report": "playwright show-report playwright-report"
   },
   "devDependencies": {

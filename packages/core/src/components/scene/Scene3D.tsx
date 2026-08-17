@@ -1,7 +1,7 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { SceneConfig } from './sceneTypes'
 import type { useAnimationService } from '../../services/animation/useAnimationService'
@@ -265,7 +265,10 @@ const SceneContent = ({
 }
 
 const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, ttsService, setXRStore, onSceneActionsReady, webGPUEnabled }: Scene3DProps) => {
-  const store = createXRStore()
+  // The XR store is an external state container. Recreating it on every render
+  // makes the parent callback fire again, which recreates the store and can
+  // spiral into a maximum-update-depth loop in the canonical app.
+  const store = useMemo(() => createXRStore(), [])
   const { capabilities, quality, isLoading } = useRendererConfig()
   const worldGroupRef = useRef<THREE.Group>(null)
   const recenterSceneRef = useRef<(() => void) | undefined>(undefined)
