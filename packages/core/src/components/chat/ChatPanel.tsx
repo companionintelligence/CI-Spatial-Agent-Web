@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { useXRLayout } from '../../utils/useXRLayout'
 
 import type { ConversationMessage } from '../../services/conversation/conversationType'
+import { activationStateLabel, type ActivationState } from '../../services/connection/connectionHealth'
 import { ToggleButton } from '../common/ToggleButton'
 import { ChatBubble } from './ChatBubble'
 
 interface ChatPanelProps {
   messages: ConversationMessage[]
+  activationState?: ActivationState
 }
 
-export const ChatPanel = ({ messages }: ChatPanelProps) => {
+export const ChatPanel = ({ messages, activationState = 'unverified' }: ChatPanelProps) => {
   const isMobile = window.innerWidth <= 768
   const { isXR } = useXRLayout()
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -144,6 +146,19 @@ export const ChatPanel = ({ messages }: ChatPanelProps) => {
               }}
             >
               Chat Log
+            </span>
+            <span
+              role="status"
+              aria-label={`Session: ${activationStateLabel(activationState)}`}
+              style={{
+                marginLeft: 'auto',
+                color: 'var(--muted-foreground)',
+                fontSize: isXR ? '0.78rem' : '0.68rem',
+                fontWeight: '500',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              Session: {activationStateLabel(activationState)}
             </span>
           </div>
 

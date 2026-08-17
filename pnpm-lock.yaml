@@ -100,6 +100,22 @@ importers:
         specifier: ^4.1.9
         version: 4.1.9(@opentelemetry/api@1.9.1)(@types/node@25.1.0)(@vitest/coverage-v8@4.1.9)(jsdom@29.1.1)(vite@7.3.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0))
 
+  apps/vanilla-client:
+    dependencies:
+      '@sentry/browser':
+        specifier: ^10.69.0
+        version: 10.69.0
+      three:
+        specifier: ^0.184.0
+        version: 0.184.0
+    devDependencies:
+      vite:
+        specifier: ^7.1.4
+        version: 7.3.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0)
+      vite-plugin-mkcert:
+        specifier: ^1.17.0
+        version: 1.17.12(vite@7.3.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0))
+
   apps/vision-pro:
     dependencies:
       '@ci-avatar/core':
@@ -4718,6 +4734,9 @@ packages:
   three@0.182.0:
     resolution: {integrity: sha512-GbHabT+Irv+ihI1/f5kIIsZ+Ef9Sl5A1Y7imvS5RQjWgtTPfPnZ43JmlYI7NtCRDK9zir20lQpfg8/9Yd02OvQ==}
 
+  three@0.184.0:
+    resolution: {integrity: sha512-wtTRjG92pM5eUg/KuUnHsqSAlPM296brTOcLgMRqEeylYTh/CdtvKUvCyyCQTzFuStieWxvZb8mVTMvdPyUpxg==}
+
   throat@5.0.0:
     resolution: {integrity: sha512-fcwX4mndzpLQKBS1DVYhGAcYaYt7vsHNIvQV+WXMvnow5cgjPphq5CaayLaGsjRdSCKZFNGt7/GYAuXaNOiYCA==}
 
@@ -4924,6 +4943,12 @@ packages:
     resolution: {integrity: sha512-vb9C9kcdzcIo/Oc3CLZVS03dL5pDlOFuhGlZYDCJ840BhWl/0nGeZWf3Qy7NlOayscY4Cm/QRgULCQkEZige5Q==}
     peerDependencies:
       vite: '>=2.0.0'
+
+  vite-plugin-mkcert@1.17.12:
+    resolution: {integrity: sha512-HhLyUZnvkKLuk9o+HBaMlGIa6CqPTfLbVlLFBjrkN4mpZ4saYFRfFx5R12a46UxmzWT9dO8fijmblVvCYvCD3A==}
+    engines: {node: '>=v18.0.0'}
+    peerDependencies:
+      vite: '>=3'
 
   vite@6.4.1:
     resolution: {integrity: sha512-+Oxm7q9hDoLMyJOYfUYBuHQo+dkAloi33apOPP56pzj+vsdJDzr+j1NISE5pyaAuKL4A3UD34qd0lx5+kfKp2g==}
@@ -9415,6 +9440,8 @@ snapshots:
 
   three@0.182.0: {}
 
+  three@0.184.0: {}
+
   throat@5.0.0: {}
 
   through2@4.0.2:
@@ -9619,6 +9646,14 @@ snapshots:
       node-html-parser: 5.4.2
       pathe: 0.2.0
       vite: 7.3.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0)
+
+  vite-plugin-mkcert@1.17.12(vite@7.3.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0)):
+    dependencies:
+      debug: 4.4.3
+      picocolors: 1.1.1
+      vite: 7.3.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0)
+    transitivePeerDependencies:
+      - supports-color
 
   vite@6.4.1(@types/node@25.1.0)(jiti@1.21.7)(terser@5.46.0)(tsx@4.23.0):
     dependencies:

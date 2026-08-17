@@ -94,8 +94,9 @@ input — the minimal text-only interaction surface.
 ├── packages/
 │   └── core/           # Shared services, components, and utilities
 ├── apps/
-│   ├── web/            # Standard web application
-│   └── vision-pro/     # Apple Vision Pro (WebSpatial) application
+│   ├── web/            # React/R3F standard web application
+│   ├── vision-pro/     # Apple Vision Pro (WebSpatial) application
+│   └── vanilla-client/ # Vanilla Three.js/WebGPU/WebXR client from Web-2
 ```
 
 ## Development
@@ -109,6 +110,12 @@ pnpm dev:web
 
 # Start Vision Pro dev server
 pnpm dev:vision
+
+# Start the vanilla WebGL/WebGPU/WebXR client
+pnpm dev:vanilla
+
+# Build only the vanilla client
+pnpm build:vanilla
 ```
 
 ## Docker / CI Hub

@@ -5,9 +5,17 @@ import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal } from 
 import {
   COMMON_OLLAMA_MODELS,
   defaultLLMConfig,
+  type ActivationState,
   type LLMConfig,
   type LLMProvider
 } from '../../services/llm/config/llmConfig'
+import {
+  activationStateLabel,
+  deriveActivationState,
+  fetchConnectionHealth,
+  type ConnectionCheckState,
+  type ConnectionHealth
+} from '../../services/connection/connectionHealth'
 import { LLMSettingsState } from '../../config/settingsStore'
 import { clearLocalOverrides, resolveLLMConfig, writeLocalOverrides } from '../../config/appConfigService'
 import { loadRuntimeConfig } from '../../config/runtimeConfig'
@@ -18,6 +26,8 @@ import { useXRLayout } from '../../utils/useXRLayout'
 interface SettingsPanelProps {
   isOpen: boolean
   onClose: () => void
+  activationState?: ActivationState
+  onActivationStateChange?: (state: ActivationState) => void
 }
 
 /** A labeled on/off switch row, token-styled. */
@@ -102,7 +112,7 @@ const FIELD_MAP: Record<LLMProvider, { urlKey?: keyof LLMConfig; modelKey?: keyo
   script: {}
 }
 
-export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
+export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified', onActivationStateChange }: SettingsPanelProps) => {
   const { isXR } = useXRLayout()
   // Phone-width card: the footer has room for two buttons and a short link, not
   // a sentence. Matches the isMobile breakpoint used across the overlay.
@@ -114,6 +124,9 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
   const [url, setUrl] = useState('')
   const [model, setModel] = useState('')
+  const [healthState, setHealthState] = useState<ConnectionCheckState>('idle')
+  const [health, setHealth] = useState<ConnectionHealth | null>(null)
+  const [healthError, setHealthError] = useState<string | null>(null)
 
   const fields = FIELD_MAP[provider]
 
@@ -153,6 +166,29 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     LLMSettingsState.set(resolveLLMConfig(runtime, {}))
     onClose()
   }, [onClose])
+
+  const checkConnection = useCallback(async () => {
+    setHealthState('checking')
+    setHealthError(null)
+
+    try {
+      const payload = await fetchConnectionHealth()
+      setHealth(payload)
+      onActivationStateChange?.(deriveActivationState(payload, provider))
+      if (!payload.reachable) {
+        setHealthState('error')
+      } else if (payload.tts && !payload.tts.reachable) {
+        setHealthState('degraded')
+      } else {
+        setHealthState('healthy')
+      }
+    } catch (error) {
+      setHealth(null)
+      setHealthState('error')
+      setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
+      onActivationStateChange?.('unverified')
+    }
+  }, [onActivationStateChange, provider])
 
   const modelOptions = useMemo(() => COMMON_OLLAMA_MODELS, [])
 
@@ -335,6 +371,78 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
             </datalist>
           </div>
         )}
+
+        <div
+          style={{
+            marginBottom: '1.25rem',
+            padding: '0.75rem',
+            borderRadius: 'var(--radius-md)',
+            border: '0.0625rem solid var(--border)',
+            background: 'color-mix(in srgb, var(--popover) 75%, transparent)'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              marginBottom: '0.45rem'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--card-foreground)' }}>
+                Connection truth
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+                Check chat, memory, and voice before your first answer.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void checkConnection()}
+              disabled={healthState === 'checking'}
+              style={{
+                flexShrink: 0,
+                border: '0.0625rem solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                color: 'var(--card-foreground)',
+                padding: '0.45rem 0.6rem',
+                fontSize: '0.75rem',
+                cursor: healthState === 'checking' ? 'wait' : 'pointer',
+                opacity: healthState === 'checking' ? 0.65 : 1
+              }}
+            >
+              {healthState === 'checking' ? 'Checking…' : 'Check connection'}
+            </button>
+          </div>
+
+          <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
+            <div style={{ marginBottom: '0.35rem' }}>Session: {activationStateLabel(activationState)}</div>
+            {healthState === 'idle' && 'Not checked yet.'}
+            {healthState === 'checking' && 'Checking the configured services…'}
+            {healthState === 'healthy' && 'Chat and voice are reachable.'}
+            {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
+            {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
+            {health && (
+              <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
+                <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>
+                <div>
+                  Memory:{' '}
+                  {health.memory
+                    ? health.memory.configured
+                      ? health.memory.reachable
+                        ? 'connected'
+                        : 'configured but unreachable'
+                      : 'not configured'
+                    : 'not reported'}
+                </div>
+                <div>TTS: {health.tts ? (health.tts.reachable ? 'reachable' : 'unreachable') : 'not reported'}</div>
+              </div>
+            )}
+          </div>
+        </div>
 
         <SectionHeader icon={<SlidersHorizontal size={13} aria-hidden />}>Behavior</SectionHeader>
         <ToggleRow

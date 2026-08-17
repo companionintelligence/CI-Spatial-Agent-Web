@@ -200,10 +200,12 @@ export function updateAnimation(state: AnimationState, delta: number) {
 
   if (!state.currentClip) return
 
-  // Drain a queued performance as soon as the current transition settles. Without this,
-  // anything queued behind an INFINITE clip (idle/walking never fire the mixer 'finished'
-  // event) would sit in the queue forever — the core "mixing not working" bug.
-  if (!state.isTransitioning && state.queue && state.queue.length > 0) {
+  // Drain a queued performance behind an infinite base clip as soon as its
+  // transition settles. Finite gestures must remain the active clip until the
+  // mixer emits `finished`; draining them here would cut a wave/dance short at
+  // the end of its blend window instead of letting the authored motion finish.
+  const currentClipIsInfinite = !Number.isFinite(state.currentClip.loopCount ?? Infinity)
+  if (currentClipIsInfinite && !state.isTransitioning && state.queue && state.queue.length > 0) {
     advanceToNext(state, now)
     return
   }

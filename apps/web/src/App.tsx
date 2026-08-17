@@ -4,6 +4,8 @@ import { useSimpleStore } from '@hexafield/simple-store/react'
 
 import {
   Viewport3D,
+  AvatarCaptionOverlay,
+  AvatarStatusPill,
   ChatOverlay,
   ChatPanel,
   LogoOverlay,
@@ -21,7 +23,9 @@ import {
   sceneConfig,
   useHasWebGPU,
   type SceneActions,
-  type EnvironmentPreset
+  type EnvironmentPreset,
+  type ActivationState,
+  type AvatarConversationStatus
 } from '@ci-avatar/core'
 
 // Module-local: only `App` is imported from this file (see main.tsx).
@@ -54,6 +58,7 @@ export const App = () => {
   const [llmSettings] = useSimpleStore(LLMSettingsState)
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [activationState, setActivationState] = useState<ActivationState>('unverified')
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
@@ -62,7 +67,10 @@ export const App = () => {
     () => ({
       ...config,
       // Live LLM config resolved from runtime /config.json + user overrides.
-      llm: llmSettings,
+      llm: {
+        ...llmSettings,
+        activation_state: activationState
+      },
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
       vad: {
@@ -70,7 +78,7 @@ export const App = () => {
         microphoneEnabled: appState.microphone
       }
     }),
-    [appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings]
+    [activationState, appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings]
   )
 
   const agent = useAgent(agentConfig)
@@ -81,6 +89,40 @@ export const App = () => {
 
   const hasWebGPU = useHasWebGPU()
   const webGPUEnabled = appState.webGPUEnabled && hasWebGPU
+  const [voiceStatus, setVoiceStatus] = useState<AvatarConversationStatus>('idle')
+  const [voiceCaption, setVoiceCaption] = useState('')
+  const [voiceAnalyser, setVoiceAnalyser] = useState<AnalyserNode | undefined>(undefined)
+
+  // TTS uses refs for frame-rate-sensitive state, so poll the small presentation
+  // surface instead of forcing the render loop to become React stateful.
+  useEffect(() => {
+    const updateVoiceSurface = () => {
+      const speechInfo = agent.services.tts.actions.getCurrentSpeechInfo()
+      const isSpeaking = Boolean(speechInfo.text)
+      const nextStatus: AvatarConversationStatus = isSpeaking
+        ? 'speaking'
+        : agent.state.llmLoading
+          ? 'loading'
+          : agent.state.llmThinking
+            ? 'thinking'
+            : agent.state.vadIsListening || agent.state.sttIsListening
+              ? 'listening'
+              : 'idle'
+      setVoiceStatus(nextStatus)
+      setVoiceAnalyser(agent.services.tts.actions.getAnalyser())
+      setVoiceCaption(isSpeaking ? speechInfo.text : agent.state.currentTranscript)
+    }
+    updateVoiceSurface()
+    const timer = window.setInterval(updateVoiceSurface, 100)
+    return () => window.clearInterval(timer)
+  }, [
+    agent.services.tts.actions,
+    agent.state.currentTranscript,
+    agent.state.llmLoading,
+    agent.state.llmThinking,
+    agent.state.sttIsListening,
+    agent.state.vadIsListening
+  ])
 
   useEffect(() => {
     const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
@@ -97,8 +139,9 @@ export const App = () => {
 
   const handleSkipOnboarding = useCallback(() => {
     setShowOnboarding(false)
+    setActivationState(llmSettings.llm_provider === 'script' ? 'demo-only' : 'unverified')
     window.localStorage.setItem('ci_avatar_onboarded', 'true')
-  }, [])
+  }, [llmSettings.llm_provider])
 
   return (
     <div className="app-container">
@@ -113,6 +156,25 @@ export const App = () => {
           onSceneActionsReady={setSceneActions}
           webGPUEnabled={webGPUEnabled}
         />
+        <AvatarStatusPill
+          status={voiceStatus}
+          analyser={voiceAnalyser}
+          micError={!agent.state.sttAllowed ? 'Microphone access is unavailable' : null}
+          onPillClick={() => {
+            agent.actions.toggleMicrophone(true)
+            agent.actions.startVADListening()
+          }}
+          onStopClick={() => {
+            agent.actions.stopSpeaking()
+            agent.actions.stopVADListening()
+            agent.actions.toggleMicrophone(false)
+          }}
+        />
+        <AvatarCaptionOverlay
+          visible={voiceStatus === 'listening' || voiceStatus === 'speaking'}
+          text={voiceCaption}
+          speaker={voiceStatus === 'listening' ? 'user' : 'avatar'}
+        />
         <LogoOverlay />
         <ChatOverlay config={appState} agent={agent} />
         <ControlOverlay
@@ -121,16 +183,22 @@ export const App = () => {
           agent={agent}
           xrStore={xrStore.current}
           sceneActions={sceneActions}
+          activationState={activationState}
+          onActivationStateChange={setActivationState}
         />
         <ChatPanel
           messages={agent.state.messages.map((id) => 
             agent.services.conversation.actions.getMessagebyId(id)
           )}
+          activationState={activationState}
         />
         <OnboardingOverlay
           isOpen={showOnboarding && !appState.microphone}
           onEnableMic={handleEnableMic}
           onSkip={handleSkipOnboarding}
+          activationState={activationState}
+          llmProvider={llmSettings.llm_provider}
+          onActivationStateChange={setActivationState}
         />
       </div>
     </div>

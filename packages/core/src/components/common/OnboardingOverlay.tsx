@@ -1,19 +1,65 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import { useXRLayout } from '../../utils/useXRLayout'
+import { type ActivationState, type LLMProvider } from '../../services/llm/config/llmConfig'
+import {
+  activationStateLabel,
+  deriveActivationState,
+  fetchConnectionHealth,
+  type ConnectionCheckState,
+  type ConnectionHealth
+} from '../../services/connection/connectionHealth'
 
 interface OnboardingOverlayProps {
   isOpen: boolean
   onEnableMic: () => void
   onSkip: () => void
+  activationState?: ActivationState
+  llmProvider?: LLMProvider
+  onActivationStateChange?: (state: ActivationState) => void
 }
 
-export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOverlayProps) => {
+export const OnboardingOverlay = ({
+  isOpen,
+  onEnableMic,
+  onSkip,
+  activationState = 'unverified',
+  llmProvider = 'proxy',
+  onActivationStateChange
+}: OnboardingOverlayProps) => {
   const { isXR } = useXRLayout()
+  const [healthState, setHealthState] = useState<ConnectionCheckState>('idle')
+  const [health, setHealth] = useState<ConnectionHealth | null>(null)
+  const [healthError, setHealthError] = useState<string | null>(null)
 
-  const cardStyle = useMemo(
+  const checkConnection = useCallback(async () => {
+    setHealthState('checking')
+    setHealthError(null)
+
+    try {
+      const payload = await fetchConnectionHealth()
+      setHealth(payload)
+      onActivationStateChange?.(deriveActivationState(payload, llmProvider))
+      if (!payload.reachable) {
+        setHealthState('error')
+      } else if (payload.tts && !payload.tts.reachable) {
+        setHealthState('degraded')
+      } else {
+        setHealthState('healthy')
+      }
+    } catch (error) {
+      setHealth(null)
+      setHealthState('error')
+      setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
+      onActivationStateChange?.('unverified')
+    }
+  }, [llmProvider, onActivationStateChange])
+
+  const cardStyle = useMemo<CSSProperties>(
     () => ({
       width: isXR ? '28rem' : '22rem',
       maxWidth: '90vw',
+      maxHeight: '90vh',
+      overflowY: 'auto',
       padding: isXR ? '1.5rem' : '1.25rem',
       borderRadius: '1rem',
       background: 'linear-gradient(180deg, rgba(16,25,30,0.85) 0%, rgba(17,43,48,0.85) 100%)',
@@ -47,7 +93,7 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
             marginBottom: '0.5rem'
           }}
         >
-          Enable Microphone
+          Start your companion
         </div>
         <div
           style={{
@@ -57,8 +103,76 @@ export const OnboardingOverlay = ({ isOpen, onEnableMic, onSkip }: OnboardingOve
             marginBottom: '1.25rem'
           }}
         >
-          For voice interaction, we need permission to access your microphone. You can skip and use
-          text chat instead.
+          Microphone permission and service connection are separate. Check the connection before
+          your first answer; you can skip the mic and use text chat.
+        </div>
+
+        <div
+          style={{
+            marginBottom: '1.25rem',
+            padding: '0.75rem',
+            borderRadius: '0.75rem',
+            border: '0.0625rem solid rgba(255,255,255,0.14)',
+            background: 'rgba(0,0,0,0.16)'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              marginBottom: '0.45rem'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Connection truth</div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.75 }}>Know what kind of session you are starting.</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void checkConnection()}
+              disabled={healthState === 'checking'}
+              style={{
+                flexShrink: 0,
+                background: 'transparent',
+                border: '0.0625rem solid rgba(255,255,255,0.25)',
+                color: '#FFFFFF',
+                padding: '0.45rem 0.6rem',
+                borderRadius: '0.55rem',
+                fontSize: '0.75rem',
+                cursor: healthState === 'checking' ? 'wait' : 'pointer',
+                opacity: healthState === 'checking' ? 0.65 : 1
+              }}
+            >
+              {healthState === 'checking' ? 'Checking…' : 'Check connection'}
+            </button>
+          </div>
+
+          <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', opacity: 0.85 }}>
+            <div style={{ marginBottom: '0.35rem' }}>Session: {activationStateLabel(activationState)}</div>
+            {healthState === 'idle' && 'Not checked yet.'}
+            {healthState === 'checking' && 'Checking the configured services…'}
+            {healthState === 'healthy' && 'Chat and voice are reachable.'}
+            {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
+            {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
+            {health && (
+              <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
+                <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>
+                <div>
+                  Memory:{' '}
+                  {health.memory
+                    ? health.memory.configured
+                      ? health.memory.reachable
+                        ? 'connected'
+                        : 'configured but unreachable'
+                      : 'not configured'
+                    : 'not reported'}
+                </div>
+                <div>TTS: {health.tts ? (health.tts.reachable ? 'reachable' : 'unreachable') : 'not reported'}</div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>

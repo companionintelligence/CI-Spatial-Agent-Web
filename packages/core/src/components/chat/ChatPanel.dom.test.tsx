@@ -50,8 +50,9 @@ describe('ChatPanel', () => {
   // conversation that has not started.
   it('says something in the empty state', () => {
     setViewportWidth(1440)
-    render(<ChatPanel messages={[]} />)
+    render(<ChatPanel messages={[]} activationState="chat-only" />)
     expect(screen.getByText(/Nothing here yet/i)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('Session: Chat-only')
   })
 
   it('drops the empty state as soon as there is a turn to show', () => {

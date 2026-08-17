@@ -66,7 +66,7 @@ export const useAnimationService = () => {
 
   const getAvailableClips = useCallback((): AnimationClip[] => {
     const personality = animationStateRef.current.currentPersonality
-    return getPersonalityAnimationClips(personality)
+    return getPersonalityAnimationClips(personality, animationStateRef.current.catalog ?? ANIMATION_CLIPS)
   }, [])
 
   const actions = useMemo(

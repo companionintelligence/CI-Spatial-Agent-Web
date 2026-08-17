@@ -83,7 +83,16 @@ async function loadAvatar(browser, avatar, shot) {
   await page.goto(`${BASE}/harness.html?avatar=${encodeURIComponent(avatar)}&shot=${shot}&bg=dark`, { waitUntil: 'load' })
   await page.waitForFunction(() => window.__harnessReady === true, null, { timeout: 20000 })
   await page.waitForFunction(() => window.__avatarLoaded === true, null, { timeout: 25000 })
-  await page.waitForTimeout(3800) // let the startup greet fully finish
+  await page.waitForTimeout(700)
+  await page.waitForFunction(
+    () => {
+      const diagnostics = window.__harness?.debugActions?.()
+      const current = String(diagnostics?.current ?? '').toLowerCase()
+      return Boolean(diagnostics && !diagnostics.transitioning && diagnostics.queue === 0 && current.includes('idle'))
+    },
+    null,
+    { timeout: 15000, polling: 100 }
+  )
   return { ctx, page }
 }
 

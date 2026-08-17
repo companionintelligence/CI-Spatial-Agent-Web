@@ -126,6 +126,9 @@ export interface GazeState {
 
 export interface EmoteState {
   targets: Partial<FacialTarget>
+  /** Keys owned by the current emotion baseline, kept separate so switching
+   * emotions can clear values that the next baseline does not mention. */
+  emotionTargets: Partial<FacialTarget>
   currentEmotion: EmotionType
   isPerforming: boolean
   performanceStartTime: number

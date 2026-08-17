@@ -22,6 +22,7 @@ import type { EmoteConfig } from './configs/emoteConfig'
  */
 export const initializeEmoteState = (): EmoteState => ({
   targets: {},
+  emotionTargets: {},
   currentEmotion: 'neutral',
   isPerforming: false,
   performanceStartTime: 0,
@@ -57,8 +58,14 @@ export const initializeEmoteState = (): EmoteState => ({
  * Reset the emote state to neutral, restoring all sub-states to their initialized values.
  */
 export const resetEmoteState = (state: EmoteState ): void => {
+  // Clear the exact values that were written to the live rig before replacing
+  // the state object. Dropping `targets` alone leaves GLB morphs frozen at the
+  // last emotion because the next frame has no key to write back as zero.
+  zeroAppliedTargets(state, Object.keys(state.targets))
+
   // Reset targets and emotion
   state.targets = {}
+  state.emotionTargets = {}
   state.currentEmotion = 'neutral'
   state.isPerforming = false
   state.performanceStartTime = 0
@@ -113,10 +120,20 @@ const applyEmotionInternal = (state: EmoteState, emotion: EmotionType): void => 
   const moodConfig = moodConfigurations[emotion.toLowerCase()]
   if (!moodConfig?.baseline) return
 
+  // Emotion baselines are sparse and intentionally omit neutral values. Clear
+  // the previous baseline's keys first so e.g. angry -> happy cannot leave
+  // frown/brow-down/nose-sneer residue on a mesh that the happy config never
+  // mentions.
+  for (const key of Object.keys(state.emotionTargets)) {
+    state.targets[key as keyof FacialTarget] = 0
+  }
+  state.emotionTargets = {}
+
   // Apply baseline expression values
   Object.entries(moodConfig.baseline).forEach(([key, value]) => {
     if (typeof value === 'number') {
       state.targets[key as keyof FacialTarget] = value
+      state.emotionTargets[key as keyof FacialTarget] = value
     }
   })
 
@@ -311,6 +328,33 @@ export const applyEmoteStateToMorphTargets = (
       }
     })
   }, 'Failed to apply emote state to morph targets')
+}
+
+/** Zero only the emote-owned keys on the currently bound rig. */
+const zeroAppliedTargets = (state: EmoteState, keys: string[]): void => {
+  if (state.vrm?.expressionManager) {
+    for (const key of keys) {
+      try {
+        state.vrm.expressionManager.setValue(key, 0)
+      } catch {
+        // Unsupported VRM expression names are intentionally ignored.
+      }
+    }
+  }
+
+  if (state.morphs && state.dictionary) {
+    for (const key of keys) {
+      const indices = state.dictionary[key]
+      if (!indices) continue
+      for (const part of state.morphs) {
+        for (const index of indices) {
+          if (part.morphTargetInfluences?.[index] !== undefined) {
+            part.morphTargetInfluences[index] = 0
+          }
+        }
+      }
+    }
+  }
 }
 
 /**
