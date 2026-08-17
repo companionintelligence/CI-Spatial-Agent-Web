@@ -118,10 +118,12 @@ tests and the recursive build; that is strong foundation evidence, not a complet
 - **P0 · Connection truth surface.** Test chat, TTS, and CI-Server separately before the first
   answer; show reachable/unreachable, memory empty/grounded, and the next recovery action in the
   onboarding/settings flow. The health endpoint must drive a user decision, not sit as an unused
-  diagnostic route.
+  diagnostic route. Model this as an explicit activation state machine — `unverified`, `demo-only`,
+  `chat-only`, or `memory-ready` — and carry the state into the first response.
 - **P0 · Demo/production separation.** Keep scripted responses for deterministic demos and tests,
   but do not silently use `llm_provider: 'script'` or directed fallback responses as evidence of a
-  connected private-memory companion. A failed proxy turn must become a visible connection state.
+  connected private-memory companion. Label `demo-only` explicitly, never count it as grounded
+  activation, and make a failed proxy turn a visible recoverable connection state.
 - **P0 · Embodied recovery gate.** Keep the current continuous render and TTS barge-in fixes under
   regression coverage; add canonical-app assertions for active clip, emotion, viseme activity,
   interruption, avatar switching, and recovery. Resolve the highest-impact remaining gaze, face
@@ -302,8 +304,9 @@ tests and the recursive build; that is strong foundation evidence, not a complet
    gaze/face/avatar-switch risks, and make the L4 gap explicit.
 2. **Spec the CI-Server trust contract** with CI-Engineering; implement `ciServer.ts` with provenance,
    uncertainty, consent, forget/delete, cancellation, and health diagnostics.
-3. **Build the connection wizard + diagnostics** panel over `/api/health`, then run the seeded
-   five-minute first-conversation journey in the canonical browser surface.
+3. **Build the connection wizard + activation state** over `/api/health`, then run the seeded
+   five-minute first-conversation journey in the canonical browser surface. The first response must
+   expose whether it is demo-only, chat-only, or memory-ready.
 4. **Add canonical embodiment instrumentation and gates:** avatar switch, gaze/face recovery,
    interruption, 20-turn soak, and Quest/XR performance evidence.
 5. **Only after the loop passes,** capture the Marketplace screenshot/demo reel and publish the public

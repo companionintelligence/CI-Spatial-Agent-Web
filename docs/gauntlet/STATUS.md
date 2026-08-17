@@ -1,6 +1,6 @@
 # Product-plan Gauntlet Status
 
-Status: round 1 builder pass complete; browser capture pending user-selected browser
+Status: round 2 source critic complete; browser capture pending user-selected browser
 
 ## Goal
 
@@ -89,10 +89,27 @@ reliability.
   browser/XR evidence. The Being Test score remains **0 full passes, 2
   partials, 4 fails/unproven** until those are independently tested.
 
+## Round 2 — first-answer activation gate critic
+
+- Critic record: [`ROUND-2-CRITIC.md`](ROUND-2-CRITIC.md)
+- Artifact under review: the Round 1 builder result and its source-backed tests.
+- Score: **0 full passes, 2 partials, 4 fails/unproven**; unchanged, but the
+  largest gap is now precise.
+- Verdict: the connection check is truthful but remains a Settings sidecar.
+  It is not consumed by onboarding or the LLM/session path, so a plausible
+  scripted/directed response can still be mistaken for a connected companion.
+- Decision: add an explicit activation state machine before vision, tools, or
+  further avatar polish: `unverified → demo-only | chat-only | memory-ready`.
+- Reference bar: Google universal-assistant continuity, Meta cross-surface
+  voice/memory control, and OpenAI production voice turn-taking are recorded
+  with links and translated into objective repository tests in the critic
+  record.
+- Browser evidence remains **not captured** pending a user-selected browser.
+
 ## Next test
 
-Run an independent source critic against the builder result, then select the
-browser surface and run the revised first-conversation journey on
+Build and test the activation state machine, then select the browser surface
+and run the revised first-conversation journey on
 the canonical web surface with a seeded private-memory fixture. Capture the
 disconnected, connected-but-empty, grounded-answer, interrupted-answer,
 memory-delete, and post-delete follow-up states. Do not add vision or autonomous
