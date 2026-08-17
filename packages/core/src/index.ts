@@ -2,7 +2,7 @@
 export { useLLMService } from './services/llm/llmService'
 export * from './services/llm/llmTypes'
 export { defaultLLMConfig, SYSTEM_PROMPT, AVAILABLE_LOCAL_MODELS } from './services/llm/config/llmConfig'
-export type { LLMConfig } from './services/llm/config/llmConfig'
+export type { ActivationState, LLMConfig, LLMProvider } from './services/llm/config/llmConfig'
 
 // Services - TTS (WhisperData is also in visemes, use tts version as canonical)
 export { useTTSService } from './services/tts/ttsService'

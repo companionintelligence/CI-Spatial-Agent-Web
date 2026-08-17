@@ -232,14 +232,50 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       // newer value and self-cancels.
       latestInterruptRef.current = request.interrupt
 
+      const activationState = config.activation_state
+      const responseCallback = (response: LLMResponse) => {
+        onResponse?.({ ...response, activationState })
+      }
+
+      if (activationState === 'unverified') {
+        onStatus?.({ color: 'error', text: 'Connection not verified' })
+        responseCallback({
+          text: '',
+          breath: 'I am not connected yet. Open Settings and run Check connection before we talk.',
+          ready: true,
+          final: true,
+          interrupt: request.interrupt
+        })
+        return
+      }
+
+      const canUseDirectedFallback = activationState === undefined || activationState === 'demo-only'
+
       // If model is loading or not ready, use directed responses as fallback
       if (state.loading || !state.ready) {
+        if (!canUseDirectedFallback) {
+          onStatus?.({ color: 'error', text: 'Verified connection is not ready' })
+          responseCallback({
+            text: '',
+            breath: 'Your connection is verified, but the language model is still starting. I will not use a scripted answer; please try again shortly.',
+            ready: true,
+            final: true,
+            interrupt: request.interrupt
+          })
+          return
+        }
+
         console.log('LLM: Model not ready, using directed responses as fallback')
 
         if (onStatus) {
           onStatus({
             color: 'loading',
-            text: state.loading ? 'Model loading, using fallback responses...' : 'Model not ready, using fallback responses...'
+            text:
+              activationState === 'demo-only'
+                ? 'Demo mode — no private memory'
+                : state.loading
+                  ? 'Model loading, using fallback responses...'
+                  : 'Model not ready, using fallback responses...'
           })
         }
 
@@ -250,7 +286,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
           interrupt: request.interrupt,
           messages: state.messages,
           latestInterrupt: getLatestInterrupt,
-          responseCallback: onResponse,
+          responseCallback,
           updateMessages: (userMsg: string, assistantMsg: string) => {
             setState((prev) => ({
               ...prev,
@@ -304,7 +340,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         interrupt: request.interrupt,
         messages: state.messages,
         latestInterrupt: getLatestInterrupt,
-        responseCallback: onResponse,
+        responseCallback,
         updateMessages: (userMsg: string, assistantMsg: string) => {
           setState((prev) => ({
             ...prev,
@@ -330,7 +366,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
           color: 'error',
           text: `${backend} backend unreachable`
         })
-        onResponse?.({
+        responseCallback({
           text: '',
           breath: `I couldn't reach my ${backend} language model backend. Please check that it is running and that this app is configured to point at it.`,
           ready: true,
@@ -424,7 +460,8 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
       config.openai_model,
       config.ollama_url,
       config.proxy_url,
-      config.proxy_model
+      config.proxy_model,
+      config.activation_state
     ]
   )
 

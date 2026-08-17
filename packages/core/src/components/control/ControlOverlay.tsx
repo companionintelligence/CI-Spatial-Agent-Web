@@ -4,6 +4,7 @@ import { ToggleButton } from '../common/ToggleButton'
 import type { XRStore } from '@react-three/xr'
 import { AppConfigState, type AppConfig } from '../../app/appConfig'
 import type { AgentService } from '../../services/useAgent'
+import type { ActivationState } from '../../services/llm/config/llmConfig'
 import { ControlPanel } from './ControlPanel'
 import { SettingsPanel } from './SettingsPanel'
 import type { SceneActions } from '../scene/Scene3D'
@@ -15,6 +16,8 @@ interface ControlOverlayProps {
   agent: AgentService
   xrStore: XRStore | null
   sceneActions?: SceneActions | null
+  activationState?: ActivationState
+  onActivationStateChange?: (state: ActivationState) => void
 }
 
 
@@ -23,7 +26,9 @@ export const ControlOverlay = memo(({
   handleAppStateChange,
   agent,
   xrStore,
-  sceneActions
+  sceneActions,
+  activationState,
+  onActivationStateChange
 }: ControlOverlayProps) => {
   const [isButtonsVisible, setIsButtonsVisible] = useState(true)
   const [showSettings, setShowSettings] = useState(false)
@@ -138,7 +143,12 @@ export const ControlOverlay = memo(({
       />
 
       {/* Connection settings */}
-      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsPanel
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        activationState={activationState}
+        onActivationStateChange={onActivationStateChange}
+      />
     </>
   )
 })

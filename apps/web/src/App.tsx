@@ -21,7 +21,8 @@ import {
   sceneConfig,
   useHasWebGPU,
   type SceneActions,
-  type EnvironmentPreset
+  type EnvironmentPreset,
+  type ActivationState
 } from '@ci-avatar/core'
 
 // Module-local: only `App` is imported from this file (see main.tsx).
@@ -54,6 +55,7 @@ export const App = () => {
   const [llmSettings] = useSimpleStore(LLMSettingsState)
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
+  const [activationState, setActivationState] = useState<ActivationState>('unverified')
   const setXRStore = useCallback((store: XRStore) => {
     xrStore.current = store
   }, [])
@@ -62,7 +64,10 @@ export const App = () => {
     () => ({
       ...config,
       // Live LLM config resolved from runtime /config.json + user overrides.
-      llm: llmSettings,
+      llm: {
+        ...llmSettings,
+        activation_state: activationState
+      },
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
       vad: {
@@ -70,7 +75,7 @@ export const App = () => {
         microphoneEnabled: appState.microphone
       }
     }),
-    [appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings]
+    [activationState, appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings]
   )
 
   const agent = useAgent(agentConfig)
@@ -97,8 +102,9 @@ export const App = () => {
 
   const handleSkipOnboarding = useCallback(() => {
     setShowOnboarding(false)
+    setActivationState(llmSettings.llm_provider === 'script' ? 'demo-only' : 'unverified')
     window.localStorage.setItem('ci_avatar_onboarded', 'true')
-  }, [])
+  }, [llmSettings.llm_provider])
 
   return (
     <div className="app-container">
@@ -121,16 +127,22 @@ export const App = () => {
           agent={agent}
           xrStore={xrStore.current}
           sceneActions={sceneActions}
+          activationState={activationState}
+          onActivationStateChange={setActivationState}
         />
         <ChatPanel
           messages={agent.state.messages.map((id) => 
             agent.services.conversation.actions.getMessagebyId(id)
           )}
+          activationState={activationState}
         />
         <OnboardingOverlay
           isOpen={showOnboarding && !appState.microphone}
           onEnableMic={handleEnableMic}
           onSkip={handleSkipOnboarding}
+          activationState={activationState}
+          llmProvider={llmSettings.llm_provider}
+          onActivationStateChange={setActivationState}
         />
       </div>
     </div>

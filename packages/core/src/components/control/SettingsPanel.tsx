@@ -5,9 +5,17 @@ import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal } from 
 import {
   COMMON_OLLAMA_MODELS,
   defaultLLMConfig,
+  type ActivationState,
   type LLMConfig,
   type LLMProvider
 } from '../../services/llm/config/llmConfig'
+import {
+  activationStateLabel,
+  deriveActivationState,
+  fetchConnectionHealth,
+  type ConnectionCheckState,
+  type ConnectionHealth
+} from '../../services/connection/connectionHealth'
 import { LLMSettingsState } from '../../config/settingsStore'
 import { clearLocalOverrides, resolveLLMConfig, writeLocalOverrides } from '../../config/appConfigService'
 import { loadRuntimeConfig } from '../../config/runtimeConfig'
@@ -18,29 +26,9 @@ import { useXRLayout } from '../../utils/useXRLayout'
 interface SettingsPanelProps {
   isOpen: boolean
   onClose: () => void
+  activationState?: ActivationState
+  onActivationStateChange?: (state: ActivationState) => void
 }
-
-interface HealthPayload {
-  status: 'ok' | 'degraded'
-  upstream: string
-  model: string
-  reachable: boolean
-  detail?: string
-  memory?: {
-    configured: boolean
-    reachable: boolean
-    detail?: string
-  }
-  tts?: {
-    upstream: string
-    model: string
-    voice: string
-    reachable: boolean
-    detail?: string
-  }
-}
-
-type HealthState = 'idle' | 'checking' | 'healthy' | 'degraded' | 'error'
 
 /** A labeled on/off switch row, token-styled. */
 function ToggleRow({
@@ -124,7 +112,7 @@ const FIELD_MAP: Record<LLMProvider, { urlKey?: keyof LLMConfig; modelKey?: keyo
   script: {}
 }
 
-export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
+export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified', onActivationStateChange }: SettingsPanelProps) => {
   const { isXR } = useXRLayout()
   // Phone-width card: the footer has room for two buttons and a short link, not
   // a sentence. Matches the isMobile breakpoint used across the overlay.
@@ -136,8 +124,8 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
   const [url, setUrl] = useState('')
   const [model, setModel] = useState('')
-  const [healthState, setHealthState] = useState<HealthState>('idle')
-  const [health, setHealth] = useState<HealthPayload | null>(null)
+  const [healthState, setHealthState] = useState<ConnectionCheckState>('idle')
+  const [health, setHealth] = useState<ConnectionHealth | null>(null)
   const [healthError, setHealthError] = useState<string | null>(null)
 
   const fields = FIELD_MAP[provider]
@@ -184,20 +172,9 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     setHealthError(null)
 
     try {
-      if (typeof fetch !== 'function') {
-        throw new Error('Connection checks are unavailable in this environment')
-      }
-
-      const response = await fetch('/api/health', {
-        cache: 'no-store',
-        headers: { accept: 'application/json' }
-      })
-      if (!response.ok) {
-        throw new Error(`Health check failed (${response.status})`)
-      }
-
-      const payload = (await response.json()) as HealthPayload
+      const payload = await fetchConnectionHealth()
       setHealth(payload)
+      onActivationStateChange?.(deriveActivationState(payload, provider))
       if (!payload.reachable) {
         setHealthState('error')
       } else if (payload.tts && !payload.tts.reachable) {
@@ -209,8 +186,9 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
       setHealth(null)
       setHealthState('error')
       setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
+      onActivationStateChange?.('unverified')
     }
-  }, [])
+  }, [onActivationStateChange, provider])
 
   const modelOptions = useMemo(() => COMMON_OLLAMA_MODELS, [])
 
@@ -441,6 +419,7 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           </div>
 
           <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
+            <div style={{ marginBottom: '0.35rem' }}>Session: {activationStateLabel(activationState)}</div>
             {healthState === 'idle' && 'Not checked yet.'}
             {healthState === 'checking' && 'Checking the configured services…'}
             {healthState === 'healthy' && 'Chat and voice are reachable.'}

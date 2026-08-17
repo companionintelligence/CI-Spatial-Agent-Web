@@ -1,6 +1,6 @@
 # Product-plan Gauntlet Status
 
-Status: round 2 source critic complete; browser capture pending user-selected browser
+Status: round 3 source critic complete; browser capture pending user-selected browser
 
 ## Goal
 
@@ -106,11 +106,29 @@ reliability.
   record.
 - Browser evidence remains **not captured** pending a user-selected browser.
 
+## Round 3 — activation state builder and source critic
+
+- Builder record: [`ROUND-3-BUILDER.md`](ROUND-3-BUILDER.md)
+- Critic record: [`ROUND-3-CRITIC.md`](ROUND-3-CRITIC.md)
+- Decision implemented: derive `unverified`, `demo-only`, `chat-only`, or
+  `memory-ready` from the shared health seam, carry it into the web and Vision
+  Pro/XR LLM sessions, and render it in onboarding, Settings, and the Chat Log.
+- The LLM path now blocks unverified turns, refuses silent directed fallback
+  for verified-but-starting sessions, and labels deterministic demo fallback.
+- Verification: **41 test files / 632 tests passed**, focused activation/UI/LLM
+  coverage passed, targeted changed-file lint had **0 errors**, and the
+  recursive build passed with the existing chunk-size and Browserslist
+  warnings.
+- Score: **0 full passes, 2 partials, 4 fails/unproven**. The activation gap
+  is closed as a source-level trust gate; the memory-grounding and embodied
+  journey are not.
+- Browser evidence remains **not captured** pending a user-selected browser.
+
 ## Next test
 
-Build and test the activation state machine, then select the browser surface
-and run the revised first-conversation journey on
-the canonical web surface with a seeded private-memory fixture. Capture the
-disconnected, connected-but-empty, grounded-answer, interrupted-answer,
-memory-delete, and post-delete follow-up states. Do not add vision or autonomous
-tools to the launch story until that journey passes the same six-test scorecard.
+Implement the CI-Server trust contract, then select the browser surface and run
+the revised first-conversation journey on the canonical web surface with a
+seeded private-memory fixture. Capture the disconnected, connected-but-empty,
+grounded-answer, interrupted-answer, memory-delete, and post-delete follow-up
+states. Repeat the contract under Vision Pro/XR. Do not add autonomous tools to
+the launch story until that journey passes the same six-test scorecard.
