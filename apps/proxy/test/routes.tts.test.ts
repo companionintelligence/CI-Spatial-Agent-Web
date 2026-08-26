@@ -94,3 +94,59 @@ describe('POST /api/tts', () => {
     expect(body.error).toContain('cosyvoice')
   })
 })
+
+describe('POST /api/tts/timed', () => {
+  const post = (body: unknown) =>
+    createApp().request('/api/tts/timed', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body)
+    })
+
+  it('returns 400 for empty text', async () => {
+    expect((await post({ text: '  ' })).status).toBe(400)
+  })
+
+  it('returns 501 — not 404 — when the upstream cannot report timings', async () => {
+    // The client must be able to tell "this upstream has no timings" from "this
+    // route does not exist", so it falls back to the acoustic tier deliberately.
+    vi.stubEnv('APP_TTS_UPSTREAM', 'cosyvoice')
+    const res = await post({ text: 'hello' })
+    expect(res.status).toBe(501)
+    expect((await res.json()) as { upstream: string }).toMatchObject({ upstream: 'cosyvoice' })
+  })
+
+  it('returns audio and timings from a timing-capable upstream', async () => {
+    vi.stubEnv('APP_TTS_UPSTREAM', 'headtts')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              audio: Buffer.from('wav').toString('base64'),
+              words: ['hello'],
+              wtimes: [0],
+              wdurations: [400],
+              visemes: ['kk', 'E'],
+              vtimes: [0, 200],
+              vdurations: [200, 200]
+            }),
+            { status: 200, headers: { 'content-type': 'application/json' } }
+          )
+      )
+    )
+
+    const res = await post({ text: 'hello' })
+    expect(res.status).toBe(200)
+    const payload = (await res.json()) as { audio: string; timings: { visemes: string[] } }
+    expect(payload.audio).toBe(Buffer.from('wav').toString('base64'))
+    expect(payload.timings.visemes).toEqual(['kk', 'E'])
+  })
+
+  it('surfaces an upstream failure as 502', async () => {
+    vi.stubEnv('APP_TTS_UPSTREAM', 'headtts')
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('down') }))
+    expect((await post({ text: 'hello' })).status).toBe(502)
+  })
+})

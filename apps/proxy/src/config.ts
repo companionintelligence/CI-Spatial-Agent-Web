@@ -9,7 +9,7 @@ export type UpstreamKind = 'ollama' | 'openai' | 'ci-server'
  * (see `upstreams/cosyvoice.ts`). Kept as its own enum so the chat and TTS
  * upstreams evolve independently.
  */
-export type TtsUpstreamKind = 'cosyvoice'
+export type TtsUpstreamKind = 'cosyvoice' | 'headtts'
 
 export interface ResolvedConfig {
   upstream: UpstreamKind
@@ -35,7 +35,7 @@ export interface ResolvedConfig {
 }
 
 const VALID_UPSTREAMS: UpstreamKind[] = ['ollama', 'openai', 'ci-server']
-const VALID_TTS_UPSTREAMS: TtsUpstreamKind[] = ['cosyvoice']
+const VALID_TTS_UPSTREAMS: TtsUpstreamKind[] = ['cosyvoice', 'headtts']
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '')

@@ -1,5 +1,7 @@
-import { VISEME_KEY_PREFIX } from '@ci-avatar/engine'
+import { VISEME_KEY_PREFIX, VisemeSchedule, scheduleFromWordTimings } from '@ci-avatar/engine'
 
+import { lipsyncPreProcessText, lipsyncWordsToVisemes } from '../visemes/lipsync/lipsyncQueue'
+import type { SpeechTimings } from '../tts/ttsService'
 import type { VisemeState } from '../visemes/visemeTypes'
 import type { VisemeWeights } from '../visemes/visemeTable'
 import { ARKIT_LIP_SYNC_TARGETS } from '../visemes/visemeTable'
@@ -23,7 +25,69 @@ import { ARKIT_LIP_SYNC_TARGETS } from '../visemes/visemeTable'
  * `sequence` branch becomes the normal path and `acoustic` degrades to amplitude
  * only. This function is the seam where that happens.
  */
-export type SpeechSourceKind = 'sequence' | 'acoustic' | 'none'
+export type SpeechSourceKind = 'scheduled' | 'sequence' | 'acoustic' | 'none'
+
+/**
+ * Holds a coarticulated viseme schedule built from the TTS engine's own timings.
+ *
+ * Rebuilt only when the timings' `revision` moves, which matters because browser
+ * boundary events arrive mid-utterance: the schedule grows word by word as the
+ * engine reports them, rather than being computed once from a guess.
+ */
+export class ScheduledSpeechSource {
+  private readonly schedule = new VisemeSchedule()
+  private revision = -1
+
+  /** Returns true when a usable schedule is loaded. */
+  update(timings: SpeechTimings | null | undefined): boolean {
+    if (!timings) {
+      if (this.revision !== -1) {
+        this.schedule.clear()
+        this.revision = -1
+      }
+      return false
+    }
+    if (timings.revision === this.revision) return this.schedule.length > 0
+
+    this.revision = timings.revision
+
+    // Tier A: the engine reported exact viseme shapes with timings. Use them.
+    if (timings.visemes?.length && timings.vtimes?.length && timings.vdurations?.length) {
+      this.schedule.setFromArrays(timings.visemes, timings.vtimes, timings.vdurations)
+      return this.schedule.length > 0
+    }
+
+    // Tier B/C: real WORD timings only. The letter-to-sound rules supply the
+    // shapes; the engine's measured spans supply the clock.
+    if (timings.words.length > 0) {
+      const built = scheduleFromWordTimings(
+        timings.words,
+        timings.wtimes,
+        timings.wdurations,
+        (word) => {
+          const parsed = lipsyncWordsToVisemes(lipsyncPreProcessText(word))
+          return parsed && parsed.visemes.length > 0
+            ? { visemes: parsed.visemes, times: parsed.times, durations: parsed.durations }
+            : null
+        }
+      )
+      this.schedule.setFromArrays(built.visemes, built.times, built.durations)
+      return this.schedule.length > 0
+    }
+
+    this.schedule.clear()
+    return false
+  }
+
+  /** Canonical `viseme:` contributions at `playbackSeconds` into the utterance. */
+  weightsAt(playbackSeconds: number): Record<string, number> {
+    return this.schedule.weightsAt(playbackSeconds)
+  }
+
+  get length(): number {
+    return this.schedule.length
+  }
+}
 
 /** Legacy VRM 5-expression target names → the Oculus viseme id they represent. */
 const VRM_TARGET_TO_VISEME: Readonly<Record<string, string>> = {
@@ -86,6 +150,8 @@ export function acousticContributions(weights: VisemeWeights): Record<string, nu
 }
 
 export interface SpeechSourceInput {
+  /** Schedule built from the engine's own timings — the preferred source. */
+  scheduled?: { source: ScheduledSpeechSource; playbackSeconds: number; loaded: boolean }
   visemeState?: VisemeState
   /** Blended FFT + phonetic weights, or null when there is no audio at all. */
   acoustic: VisemeWeights | null
@@ -106,7 +172,16 @@ export interface SpeechSourceResult {
 }
 
 export function selectSpeechSource(input: SpeechSourceInput): SpeechSourceResult {
-  const { visemeState, acoustic, isSpeaking, now } = input
+  const { scheduled, visemeState, acoustic, isSpeaking, now } = input
+
+  // Tier A/B/C: real timings from the engine that made the sound. Preferred over
+  // anything inferred, and the only source that can place a bilabial closure.
+  if (scheduled?.loaded && isSpeaking) {
+    const contributions = scheduled.source.weightsAt(scheduled.playbackSeconds)
+    if (Object.keys(contributions).length > 0) {
+      return { kind: 'scheduled', contributions, claimsMouth: true }
+    }
+  }
 
   if (visemeState && isSequenceActive(visemeState, now)) {
     const contributions = sequenceContributions(visemeState)

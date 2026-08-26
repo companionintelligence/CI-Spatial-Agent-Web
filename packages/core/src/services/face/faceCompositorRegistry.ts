@@ -10,7 +10,7 @@ import type { CompositorTrace, FaceCompositor } from '@ci-avatar/engine'
  */
 export interface FaceSpeechDebug {
   /** Which producer supplied the mouth, if any. */
-  kind: 'sequence' | 'acoustic' | 'none'
+  kind: 'scheduled' | 'sequence' | 'acoustic' | 'none'
   hasAnalyser: boolean
   /** Smoothed FFT energy, 0..1. */
   energy: number

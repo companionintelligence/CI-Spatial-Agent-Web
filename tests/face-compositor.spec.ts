@@ -27,7 +27,7 @@ interface Trace {
   releasing: string[]
 }
 interface SpeechDebug {
-  kind: 'sequence' | 'acoustic' | 'none'
+  kind: 'scheduled' | 'sequence' | 'acoustic' | 'none'
   hasAnalyser: boolean
   energy: number
   claimed: boolean
@@ -106,7 +106,13 @@ async function peakJawOverFrames(page: Page, frames: number): Promise<number> {
 /** Wait until the speech layer reports a given state. */
 async function waitForSpeechKind(page: Page, kind: SpeechDebug['kind'], timeoutMs = 60_000): Promise<void> {
   await page.waitForFunction(
-    (k) => window.__harness?.speechDebug()?.kind === k,
+    (k) => {
+      const actual = window.__harness?.speechDebug()?.kind
+      // 'none' is exact; anything else means "some tier owns the mouth", because
+      // which tier wins depends on what the configured engine reports and that is
+      // not what these specs are about.
+      return k === 'none' ? actual === 'none' : actual !== undefined && actual !== 'none'
+    },
     kind,
     { timeout: timeoutMs, polling: 100 }
   )

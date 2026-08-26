@@ -136,6 +136,8 @@ export { useResponsiveLayout } from './app/layoutService'
 
 // Runtime configuration
 export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
+export { resolveTTSConfig } from './config/appConfigService'
+export { TTSSettingsState } from './config/settingsStore'
 export type { RuntimeAppConfig } from './config/runtimeConfig'
 export {
   resolveLLMConfig,
