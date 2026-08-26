@@ -40,11 +40,12 @@ export interface SttAdapter {
  * float WAV (format 3) avoids a quantisation pass we would only be doing to
  * satisfy the file header.
  */
-export function pcmToWav(pcm: ArrayBuffer, sampleRate: number): Uint8Array {
+export function pcmToWav(pcm: ArrayBuffer, sampleRate: number): Uint8Array<ArrayBuffer> {
   const samples = new Float32Array(pcm)
   const dataBytes = samples.length * 4
-  const out = new Uint8Array(44 + dataBytes)
-  const view = new DataView(out.buffer)
+  const buffer = new ArrayBuffer(44 + dataBytes)
+  const out = new Uint8Array(buffer)
+  const view = new DataView(buffer)
 
   const ascii = (offset: number, text: string) => {
     for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i))
@@ -64,7 +65,7 @@ export function pcmToWav(pcm: ArrayBuffer, sampleRate: number): Uint8Array {
   ascii(36, 'data')
   view.setUint32(40, dataBytes, true)
 
-  new Float32Array(out.buffer, 44).set(samples)
+  new Float32Array(buffer, 44).set(samples)
   return out
 }
 

@@ -69,6 +69,18 @@ export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel } from './components/scene/avatar/AvatarModel'
 export { AvatarState } from './components/scene/avatar/avatarState'
 export {
+  appendMessage,
+  clearConversation,
+  loadConversation,
+  type StoredMessage
+} from './services/conversation/conversationStore'
+export {
+  budgetHistory,
+  estimateTokens,
+  willTrim,
+  type BudgetedMessage
+} from './services/conversation/historyBudget'
+export {
   ConversationStatusState,
   setConversationStatus,
   type ConversationStatus
