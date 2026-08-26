@@ -1,0 +1,27 @@
+{
+  "name": "@ci-avatar/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./face": "./src/face/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "three": "^0.182.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.182.0",
+    "eslint": "^9.39.2",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.9"
+  },
+  "peerDependencies": {
+    "three": "^0.182.0"
+  }
+}

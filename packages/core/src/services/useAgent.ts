@@ -19,6 +19,7 @@ import { defaultTTSConfig, type TTSConfig, type WhisperData } from './tts/ttsCon
 import { defaultSTTConfig, type STTConfig } from './stt/sttConfig'
 import { defaultLLMConfig, type LLMConfig } from './llm/config/llmConfig'
 import { shouldTriggerBargeIn } from '../integration/emotionIntegration'
+import { resetActiveFace } from './face/faceCompositorRegistry'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -302,6 +303,9 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     emotes.actions.onBargeIn()
     // Stop the avatar silently mouthing the rest of the interrupted sentence (H5).
     visemes.actions.reset()
+    // Close the mouth on THIS frame rather than over the compositor's release
+    // ramp: a barge-in that takes 200 ms to land reads as not being heard.
+    resetActiveFace()
     // Drop any queued gesture performances from the interrupted turn (M20).
     animations.actions.clearQueue()
   }, [tts.state.isSpeaking, tts.actions, emotes.actions, visemes.actions, animations.actions])

@@ -27,7 +27,11 @@ import {
   useTTSService,
   useVisemeService,
   type AnimationClip,
-  type EmotionType
+  type EmotionType,
+  getFaceCompositorTrace,
+  getFaceOverride,
+  getFaceSpeechDebug,
+  setFaceOverride
 } from '@ci-avatar/core'
 
 type Shot = 'face' | 'upper' | 'body'
@@ -386,28 +390,59 @@ function HarnessScene() {
       },
 
       /** Directly set GLB morph influences: {morphName: value}. Returns #applied. */
+      /**
+       * Drive facial weights deterministically for a capture.
+       *
+       * Publishes to the compositor's OVERRIDE layer rather than writing morph
+       * influences directly: the compositor writes the face every frame now, so
+       * a direct poke would be released back to rest before the shutter opened.
+       * Going through the same path the product uses also means these captures
+       * are evidence about the shipping pipeline, not about a test back door.
+       *
+       * Returns the number of entries the loaded rig can actually drive, so a
+       * capture against a head that lacks the morph fails loudly instead of
+       * silently photographing a neutral face.
+       */
       setMorph(entries: Record<string, number>) {
-        let n = 0
+        setFaceOverride({ ...(getFaceOverride() ?? {}), ...entries })
+        let drivable = 0
         three.scene.traverse((o) => {
           const mesh = o as THREE.Mesh
-          if (!mesh.morphTargetDictionary || !mesh.morphTargetInfluences) return
-          for (const [name, val] of Object.entries(entries)) {
-            const idx = mesh.morphTargetDictionary[name]
-            if (idx !== undefined) {
-              mesh.morphTargetInfluences[idx] = val
-              n++
-            }
+          if (!mesh.morphTargetDictionary) return
+          for (const name of Object.keys(entries)) {
+            if (mesh.morphTargetDictionary[name] !== undefined) drivable++
           }
         })
-        return n
+        return drivable
       },
 
       /** Zero all morph influences (reset the face). */
+      /**
+       * Drop the scripted override and let the autonomous producers have the face
+       * back. The compositor releases every key the override was holding, so the
+       * face returns to rest on its own ramp rather than snapping to zero.
+       */
       clearMorphs() {
+        setFaceOverride(null)
         three.scene.traverse((o) => {
           const mesh = o as THREE.Mesh
           if (mesh.morphTargetInfluences) mesh.morphTargetInfluences.fill(0)
         })
+      },
+
+      /**
+       * Which layer won each facial region on the last rendered frame.
+       *
+       * The regression surface for face arbitration: a test asserts that speech
+       * owned the jaw during an utterance, instead of a human squinting at a WebP.
+       */
+      compositorTrace() {
+        return getFaceCompositorTrace()
+      },
+
+      /** Why the mouth is (or is not) moving — see FaceSpeechDebug. */
+      speechDebug() {
+        return getFaceSpeechDebug()
       },
 
       /** VRM expression names + current values (diagnose VRM face driving). */
