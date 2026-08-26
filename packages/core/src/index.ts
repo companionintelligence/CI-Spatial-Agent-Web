@@ -144,6 +144,7 @@ export { useResponsiveLayout } from './app/layoutService'
 export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
 export { resolveSTTConfig, resolveTTSConfig } from './config/appConfigService'
 export { transcribeRemote } from './services/stt/remoteStt'
+export { getAudioGraph, resumeAudioGraph, setVoicePosition } from './services/tts/audioGraph'
 export { STTSettingsState, TTSSettingsState } from './config/settingsStore'
 export type { RuntimeAppConfig } from './config/runtimeConfig'
 export {
