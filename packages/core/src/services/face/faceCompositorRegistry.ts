@@ -88,3 +88,21 @@ export function setFaceOverride(entries: Record<string, number> | null): void {
 export function getFaceOverride(): Readonly<Record<string, number>> | null {
   return override
 }
+
+/**
+ * The mounted avatar's facial capability tier, or null when nothing is mounted.
+ *
+ * Surfaced so the UI can be honest about what a given head can do. Several
+ * avatars in the shipped roster are body-animation-only — a realistic VRM import
+ * with empty expression binds looks broken rather than limited, and "this avatar
+ * has no facial rig" is a far better answer than silence.
+ */
+let facialRig: import('./facialCapabilities').FacialRigInfo | null = null
+
+export function setActiveFacialRig(info: import('./facialCapabilities').FacialRigInfo | null): void {
+  facialRig = info
+}
+
+export function getActiveFacialRig(): import('./facialCapabilities').FacialRigInfo | null {
+  return facialRig
+}

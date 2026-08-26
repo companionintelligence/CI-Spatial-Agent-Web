@@ -66,7 +66,8 @@ export { Scene3D } from './components/scene/Scene3D'
 export { Viewport3D } from './components/scene/Viewport3D'
 export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
-export { AvatarModel, AvatarState } from './components/scene/avatar/AvatarModel'
+export { AvatarModel } from './components/scene/avatar/AvatarModel'
+export { AvatarState } from './components/scene/avatar/avatarState'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
 export { AvatarStatusPill } from './components/avatar/AvatarStatusPill'
 export type { AvatarStatusPillProps, AvatarConversationStatus } from './components/avatar/AvatarStatusPill'
@@ -186,11 +187,13 @@ export type { FacialRigInfo } from './services/face/facialCapabilities'
 // Face compositing — the single arbiter of facial weights, plus the harness seam.
 export { createFaceRig, NULL_FACE_RIG } from './services/face/faceRigFactory'
 export {
+  getActiveFacialRig,
   getFaceCompositorTrace,
   getFaceOverride,
   getFaceSpeechDebug,
   resetActiveFace,
   setActiveFaceCompositor,
+  setActiveFacialRig,
   setFaceOverride
 } from './services/face/faceCompositorRegistry'
 export { translateEmoteTargets } from './services/face/emoteVocabulary'

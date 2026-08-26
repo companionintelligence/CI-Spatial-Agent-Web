@@ -1,4 +1,4 @@
-import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
+import { useSimpleStore } from '@hexafield/simple-store/react'
 import { VRM, VRMCore, VRMLoaderPlugin, VRMUtils, MToonMaterialLoaderPlugin } from '@pixiv/three-vrm'
 import { MToonNodeMaterial } from '@pixiv/three-vrm/nodes'
 import { createVRMAnimationClip, VRMAnimation, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation'
@@ -12,6 +12,7 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 
 import { AvatarOptions } from './AvatarOptions'
+import { AvatarState } from './avatarState'
 import { Vector3 } from 'three'
 import {
   VRMA_CLIPS,
@@ -31,10 +32,20 @@ import { AudioLipSync } from '../../../services/visemes/audioLipSync'
 import { PhonemeTimingEngine, blendAudioAndText } from '../../../services/visemes/phonemeTiming'
 import { ARKIT_LIP_SYNC_TARGETS, type VisemeWeights } from '../../../services/visemes/visemeTable'
 import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
-import { DEFAULT_FACE_LAYERS, FACE_LAYERS, FaceCompositor, MOUTH_REGIONS, type FaceRig } from '@ci-avatar/engine'
+import {
+  DEFAULT_FACE_LAYERS,
+  FACE_LAYERS,
+  FaceCompositor,
+  MOUTH_REGIONS,
+  VRM_HUMAN_BONES,
+  resolveBones,
+  type FaceRig,
+  type NodeLike
+} from '@ci-avatar/engine'
 import {
   getFaceOverride,
   setActiveFaceCompositor,
+  setActiveFacialRig,
   setFaceSpeechDebug
 } from '../../../services/face/faceCompositorRegistry'
 import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFactory'
@@ -75,14 +86,6 @@ const useStableArray = <T,>(items: T[]): T[] => {
   return stableRef.current
 }
 
-export const AvatarState = createSimpleStore({
-  selectedModel: AVATAR_MODEL,
-  visemesEnabled: true,
-  selectedAnimation: "",
-  emotesEnabled: true,
-  animationsEnabled: true,
-  dynamicsEnabled: true
-})
 
 interface AvatarModelProps {
   visemeService?: ReturnType<typeof useVisemeService>
@@ -389,51 +392,49 @@ const AvatarModelComponent = ({
     // Bind the face rig for THIS avatar. Chosen from what the head actually
     // exposes rather than from the file extension — a VRM with an empty
     // expression manager still has ordinary morph targets worth driving.
-    const { rig, kind } = createFaceRig(morphTargets, vrm)
+    const { rig, kind, facial } = createFaceRig(morphTargets, vrm, avatarScene)
     faceRigRef.current = rig
+    setActiveFacialRig(facial)
     // A new head means new channels: clear the compositor's write cache so the
     // first frame on the new rig is a full write, not a diff against the old one.
     compositorRef.current.reset()
     setActiveFaceCompositor(compositorRef.current)
     if (import.meta.env?.DEV) {
-      console.debug(`[avatar] face rig: ${kind} (${morphTargets.length} morph meshes)`)
+      console.debug(
+        `[avatar] face rig: ${kind} · tier ${facial.tier} (${facial.names.length} channels, ${morphTargets.length} morph meshes)`
+      )
     }
     const compositorForThisAvatar = compositorRef.current
 
-    const findBone = (...names: string[]): THREE.Bone | undefined => {
-      for (const n of names) {
-        if (bones[n]) return bones[n]
-        const lc = n.toLowerCase().replace(/[^a-z0-9]/g, '')
-        const hit = Object.keys(bones).find((k) => {
-          const normalized = k.toLowerCase().replace(/[^a-z0-9]/g, '')
-          return normalized === lc || normalized === 'mixamorig' + lc
-        })
-        if (hit) return bones[hit]
-      }
-      return undefined
+    // Resolve the humanoid skeleton generically. This replaced a hand-written
+    // alias list that only knew the rigs in this repo's own hardcoded catalog,
+    // which is why "load any avatar" was never actually true. resolveBones()
+    // matches RPM, Mixamo, VRM humanoid, VRoid and underscore-suffix naming, and
+    // refuses to bind `head` to an RPM "Headphones" prop.
+    const nodes: THREE.Object3D[] = []
+    avatarScene.traverse((child) => nodes.push(child))
+    const resolved = resolveBones(nodes as unknown as NodeLike[], {
+      // A VRM declares its own humanoid mapping; that beats guessing from names.
+      humanoid: vrm?.humanoid
+        ? (slot) => {
+            const vrmName = VRM_HUMAN_BONES[slot]
+            return vrmName ? (vrm.humanoid.getRawBoneNode(vrmName as never) as NodeLike | null) : null
+          }
+        : undefined
+    })
+    for (const [slot, node] of Object.entries(resolved)) {
+      if (node) bones[slot] = node as unknown as THREE.Bone
     }
-    const alias = (canonical: string, ...cands: string[]) => {
-      const bone = findBone(canonical, ...cands)
-      if (bone) bones[canonical] = bone
+    // The dynamics engine addresses bones by their canonical capitalised names.
+    for (const [slot, Canonical] of Object.entries({
+      head: 'Head', neck: 'Neck', spine: 'Spine', spine1: 'Spine1', spine2: 'Spine2',
+      leftShoulder: 'LeftShoulder', rightShoulder: 'RightShoulder',
+      leftArm: 'LeftArm', rightArm: 'RightArm',
+      leftForeArm: 'LeftForeArm', rightForeArm: 'RightForeArm',
+      leftHand: 'LeftHand', rightHand: 'RightHand'
+    })) {
+      if (bones[slot] && !bones[Canonical]) bones[Canonical] = bones[slot]
     }
-    alias('neck', 'Neck')
-    alias('spine', 'Spine')
-    alias('spine1', 'Spine1', 'Chest')
-    alias('spine2', 'Spine2', 'chest', 'upperChest', 'UpperChest')
-    alias('head', 'Head')
-    alias('leftEye', 'LeftEye', 'eye_L')
-    alias('rightEye', 'RightEye', 'eye_R')
-    alias('leftShoulder', 'LeftShoulder')
-    alias('rightShoulder', 'RightShoulder')
-    alias('leftArm', 'LeftArm')
-    alias('rightArm', 'RightArm')
-    alias('leftForeArm', 'LeftForeArm', 'LeftLowerArm')
-    alias('rightForeArm', 'RightForeArm', 'RightLowerArm')
-    alias('leftHand', 'LeftHand')
-    alias('rightHand', 'RightHand')
-    if (bones.head && !bones.Head) bones.Head = bones.head
-    if (bones.neck && !bones.Neck) bones.Neck = bones.neck
-    if (bones.spine2 && !bones.Spine2) bones.Spine2 = bones.spine2
 
     bonesRef.current = bones
     previousBoneOffsetsRef.current = {}
@@ -483,6 +484,7 @@ const AvatarModelComponent = ({
       compositorForThisAvatar.reset(faceRigRef.current)
       faceRigRef.current = NULL_FACE_RIG
       setActiveFaceCompositor(null)
+      setActiveFacialRig(null)
     }
   }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera])
 
