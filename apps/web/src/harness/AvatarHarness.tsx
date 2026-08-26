@@ -31,6 +31,7 @@ import {
   getFaceCompositorTrace,
   getFaceOverride,
   getFaceSpeechDebug,
+  setConversationStatus,
   setFaceOverride
 } from '@ci-avatar/core'
 
@@ -449,6 +450,15 @@ function HarnessScene() {
       /** Why the mouth is (or is not) moving — see FaceSpeechDebug. */
       speechDebug() {
         return getFaceSpeechDebug()
+      },
+
+      /**
+       * Drive the conversational state the dynamics engine branches on.
+       * Until this was threaded through, the avatar was only ever told
+       * 'speaking' or 'idle', so listening/thinking behaviour never ran.
+       */
+      setConversationStatus(status: 'loading' | 'idle' | 'listening' | 'thinking' | 'speaking') {
+        setConversationStatus(status)
       },
 
       /** VRM expression names + current values (diagnose VRM face driving). */

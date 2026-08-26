@@ -68,6 +68,11 @@ export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel } from './components/scene/avatar/AvatarModel'
 export { AvatarState } from './components/scene/avatar/avatarState'
+export {
+  ConversationStatusState,
+  setConversationStatus,
+  type ConversationStatus
+} from './services/conversation/conversationStatus'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
 export { AvatarStatusPill } from './components/avatar/AvatarStatusPill'
 export type { AvatarStatusPillProps, AvatarConversationStatus } from './components/avatar/AvatarStatusPill'

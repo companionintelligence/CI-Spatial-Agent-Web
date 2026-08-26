@@ -13,6 +13,7 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 import { AvatarOptions } from './AvatarOptions'
 import { AvatarState } from './avatarState'
+import { ConversationStatusState } from '../../../services/conversation/conversationStatus'
 import { Vector3 } from 'three'
 import {
   VRMA_CLIPS,
@@ -210,9 +211,10 @@ const AvatarModelComponent = ({
   cameraTargetDrop = 0,
   webGPUEnabled
 }: AvatarModelProps) => {
-  const { camera: viewerCamera } = useThree()
+  const { camera: viewerCamera, gl: renderer } = useThree()
 
   const [state] = useSimpleStore(AvatarState)
+  const [{ status: conversationStatus }] = useSimpleStore(ConversationStatusState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
   const avatarOwnerTokenRef = useRef<symbol | undefined>(undefined)
@@ -387,6 +389,27 @@ const AvatarModelComponent = ({
       }
     })
 
+    // Ground the figure. A shadow-casting key light has been configured all
+    // along, but no mesh ever opted in, so nothing cast and nothing received —
+    // the avatar read as a cut-out floating in front of the background rather
+    // than as something standing in the scene.
+    //
+    // Gated on the renderer ACTUALLY having shadows enabled. Opting in
+    // unconditionally makes every frame render a shadow map, and on a software
+    // rasteriser (SwiftShader, which the capture suite and any GPU-blocked
+    // browser use) that is not "slower" — measured, it froze the render loop at
+    // five frames and never recovered. `quality.useShadows` is already false on
+    // those paths; this just respects it.
+    if (renderer.shadowMap?.enabled) {
+      avatarScene.traverse((child) => {
+        const mesh = child as THREE.Mesh
+        if (mesh.isMesh) {
+          mesh.castShadow = true
+          mesh.receiveShadow = true
+        }
+      })
+    }
+
     morphTargetsRef.current = morphTargets
 
     // Bind the face rig for THIS avatar. Chosen from what the head actually
@@ -486,7 +509,7 @@ const AvatarModelComponent = ({
       setActiveFaceCompositor(null)
       setActiveFacialRig(null)
     }
-  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera])
+  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera, renderer])
 
   // Startup animation sequence
   useEffect(() => {
@@ -628,7 +651,11 @@ const AvatarModelComponent = ({
       pointerX: threeState.pointer.x,
       pointerY: threeState.pointer.y,
       audioState,
-      conversationState: isSpeaking ? 'speaking' : 'idle'
+      // The real conversational state, not a two-value stand-in. This is what
+      // makes the avatar lean in while listening, avert its gaze while thinking,
+      // and blink faster under cognitive load — all of which the dynamics engine
+      // already implemented and none of which could ever fire before.
+      conversationState: isSpeaking ? 'speaking' : conversationStatus
     })
 
     // 5. Advance the services. These now only update their own internal state —
@@ -720,8 +747,13 @@ const AvatarModelComponent = ({
       }
     }
 
-    // 9. VRM spring bones
-    if (isVRM && vrm) vrm.springBoneManager?.update(delta)
+    // 9. VRM secondary motion. springBoneManager was already ticked; lookAt was
+    //    not, so a VRM's own eye-tracking sat inert while the rest of the rig
+    //    animated. Both are cheap and both are visible.
+    if (isVRM && vrm) {
+      vrm.springBoneManager?.update(delta)
+      vrm.lookAt?.update(delta)
+    }
   })
 
   const handleAvatarClick = useCallback(

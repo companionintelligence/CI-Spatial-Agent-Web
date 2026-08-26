@@ -25,6 +25,7 @@ import {
   type SceneActions,
   type EnvironmentPreset,
   type ActivationState,
+  setConversationStatus,
   type AvatarConversationStatus
 } from '@ci-avatar/core'
 
@@ -112,6 +113,8 @@ export const App = () => {
               ? 'listening'
               : 'idle'
       setVoiceStatus(nextStatus)
+      // Share it with the avatar's dynamics engine, not just the status pill.
+      setConversationStatus(nextStatus)
       setVoiceAnalyser(agent.services.tts.actions.getAnalyser())
       setVoiceCaption(isSpeaking ? speechInfo.text : agent.state.currentTranscript)
     }
