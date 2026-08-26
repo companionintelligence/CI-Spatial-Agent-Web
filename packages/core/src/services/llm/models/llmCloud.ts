@@ -52,13 +52,27 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
 
   console.log('LLM - sending request to remote', body)
 
+  // A barge-in has to cancel the request itself, not just ignore the answer.
+  // Without this the provider keeps generating (and billing) a reply nobody will
+  // hear, and the connection stays open behind the turn the user actually wants.
+  const controller = new AbortController()
+  const cancelIfSuperseded = () => {
+    if (latest() > interrupt) {
+      controller.abort()
+      return true
+    }
+    return false
+  }
+  const supersededPoll = setInterval(cancelIfSuperseded, 120)
+
   const props: RequestInit = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(llmAuth && { Authorization: `Bearer ${llmAuth}` })
     },
-    body
+    body,
+    signal: controller.signal
   }
 
   try {
@@ -70,7 +84,7 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
       return { success: false, error: new Error(`HTTP ${response.status}: ${response.statusText}`) }
     }
 
-    if (interrupt < latest()) {
+    if (cancelIfSuperseded()) {
       console.log('LLM: Cloud request outdated, stopping')
       return { success: false, error: new Error('Request outdated') }
     }
@@ -125,5 +139,7 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
   } catch (err) {
     console.error('LLM: reasoning catch error - bad remote url?', err)
     return { success: false, error: err as Error }
+  } finally {
+    clearInterval(supersededPoll)
   }
 }

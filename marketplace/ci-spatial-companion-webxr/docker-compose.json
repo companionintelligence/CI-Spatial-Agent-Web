@@ -31,6 +31,10 @@
         {
           "key": "APP_TTS_MODE",
           "value": "headtts"
+        },
+        {
+          "key": "APP_STT_REMOTE",
+          "value": "true"
         }
       ]
     },
@@ -70,6 +74,10 @@
         {
           "key": "APP_TTS_VOICE",
           "value": "${APP_TTS_VOICE}"
+        },
+        {
+          "key": "APP_STT_URL",
+          "value": "http://whisper:8081"
         }
       ]
     },
@@ -86,6 +94,18 @@
         {
           "key": "CI_TELEMETRY",
           "value": "${CI_TELEMETRY}"
+        }
+      ]
+    },
+    {
+      "name": "whisper",
+      "image": "ghcr.io/companionintelligence/ci-whisper:latest",
+      "internalPort": 8081,
+      "addToMainNetwork": true,
+      "environment": [
+        {
+          "key": "WHISPER_MODEL",
+          "value": "Systran/faster-whisper-small"
         }
       ]
     }

@@ -30,6 +30,8 @@ export interface ResolvedConfig {
   ttsUrl: string
   ttsModel: string
   ttsVoice: string
+  sttUrl: string
+  sttModel: string
   port: number
   requestTimeoutMs: number
 }
@@ -74,6 +76,8 @@ export function resolveConfig(env: NodeJS.ProcessEnv = process.env): ResolvedCon
     ttsUrl: stripTrailingSlash(env.APP_TTS_URL ?? 'http://host.docker.internal:8880'),
     ttsModel: env.APP_TTS_MODEL ?? 'cosyvoice2-0.5b',
     ttsVoice: env.APP_TTS_VOICE ?? 'default',
+    sttUrl: stripTrailingSlash(env.APP_STT_URL ?? 'http://host.docker.internal:8081'),
+    sttModel: env.APP_STT_MODEL ?? 'Systran/faster-whisper-small',
     port: Number(env.PORT ?? 8787),
     requestTimeoutMs: Number(env.APP_REQUEST_TIMEOUT_MS ?? 60000)
   }

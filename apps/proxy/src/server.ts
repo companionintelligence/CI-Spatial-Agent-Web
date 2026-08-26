@@ -10,6 +10,7 @@ import { resolveConfig } from './config.js'
 import { chatRoutes } from './routes/chat.js'
 import { configRoutes } from './routes/config.js'
 import { healthRoutes } from './routes/health.js'
+import { sttRoutes } from './routes/stt.js'
 import { ttsRoutes } from './routes/tts.js'
 
 /**
@@ -22,6 +23,7 @@ export function createApp(): Hono {
   app.route('/api', configRoutes)
   app.route('/api', chatRoutes)
   app.route('/api', ttsRoutes)
+  app.route('/api', sttRoutes)
 
   // Report unexpected route failures. The two branches below are a line-for-line
   // copy of Hono's own default error handler (`hono/dist/hono-base.js`), down to

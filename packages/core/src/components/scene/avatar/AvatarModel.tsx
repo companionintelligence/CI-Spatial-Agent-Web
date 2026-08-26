@@ -52,6 +52,7 @@ import {
 import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFactory'
 import { translateEmoteTargets } from '../../../services/face/emoteVocabulary'
 import { ScheduledSpeechSource, selectSpeechSource } from '../../../services/face/speechSource'
+import { mark as markLatency } from '../../../services/telemetry/latency'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
@@ -699,7 +700,11 @@ const AvatarModelComponent = ({
       isSpeaking
     })
     compositor.setAll(FACE_LAYERS.SPEECH, speech.contributions)
-    if (speech.claimsMouth) compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+    if (speech.claimsMouth) {
+      compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+      // The end of the chain: the first frame on which the mouth actually moves.
+      markLatency('first-viseme')
+    }
     setFaceSpeechDebug({
       kind: speech.kind,
       hasAnalyser: Boolean(analyser),
