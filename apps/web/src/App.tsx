@@ -19,12 +19,14 @@ import {
   defaultSTTConfig,
   defaultLLMConfig,
   LLMSettingsState,
+  STTSettingsState,
   TTSSettingsState,
   sceneConfig,
   useHasWebGPU,
   type SceneActions,
   type EnvironmentPreset,
   type ActivationState,
+  setConversationStatus,
   type AvatarConversationStatus
 } from '@ci-avatar/core'
 
@@ -56,6 +58,7 @@ export const App = () => {
   const [appState, setAppState] = useSimpleStore(AppConfigState)
   const [llmSettings] = useSimpleStore(LLMSettingsState)
   const [ttsSettings] = useSimpleStore(TTSSettingsState)
+  const [sttSettings] = useSimpleStore(STTSettingsState)
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activationState, setActivationState] = useState<ActivationState>('unverified')
@@ -74,6 +77,7 @@ export const App = () => {
       // Live voice config, same precedence as the LLM: an appliance pointed at
       // its HeadTTS sidecar gets phoneme-accurate lip-sync with no rebuild.
       tts: ttsSettings,
+      stt: sttSettings,
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
       vad: {
@@ -81,7 +85,7 @@ export const App = () => {
         microphoneEnabled: appState.microphone
       }
     }),
-    [activationState, appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings, ttsSettings]
+    [activationState, appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings, ttsSettings, sttSettings]
   )
 
   const agent = useAgent(agentConfig)
@@ -112,6 +116,8 @@ export const App = () => {
               ? 'listening'
               : 'idle'
       setVoiceStatus(nextStatus)
+      // Share it with the avatar's dynamics engine, not just the status pill.
+      setConversationStatus(nextStatus)
       setVoiceAnalyser(agent.services.tts.actions.getAnalyser())
       setVoiceCaption(isSpeaking ? speechInfo.text : agent.state.currentTranscript)
     }

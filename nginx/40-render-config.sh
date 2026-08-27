@@ -21,6 +21,9 @@ cat > /usr/share/nginx/html/config.json <<EOF
   "tts": {
     "mode": "${APP_TTS_MODE:-browser}",
     "voice": "${APP_TTS_VOICE:-}"
+  },
+  "stt": {
+    "remote": ${APP_STT_REMOTE:-false}
   }
 }
 EOF

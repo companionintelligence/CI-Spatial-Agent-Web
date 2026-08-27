@@ -104,6 +104,16 @@ export async function llmOllama(params: LLMParams): Promise<LLMResult> {
 
     for await (const chunk of response) {
       if (latest() > interrupt) {
+        // `break` alone leaves the model GENERATING on the other end: the
+        // async iterator stops being read, but nothing tells Ollama to stop
+        // producing. On a local box that is the GPU busy for the rest of a reply
+        // nobody will hear, and it delays the turn the user actually wants.
+        // `abort()` cancels the in-flight generation for real.
+        try {
+          ollama.abort()
+        } catch {
+          // Older clients have no abort(); breaking out is still correct.
+        }
         console.log('LLM: Ollama request outdated, stopping')
         break
       }

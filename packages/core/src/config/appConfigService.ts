@@ -1,6 +1,7 @@
 import { defaultLLMConfig, type LLMConfig } from '../services/llm/config/llmConfig'
 import type { RuntimeAppConfig } from './runtimeConfig'
 import { defaultTTSConfig, type TTSConfig } from '../services/tts/ttsConfig'
+import { defaultSTTConfig, type STTConfig } from '../services/stt/sttConfig'
 
 /**
  * Resolves the effective LLM config by layering three sources, highest wins:
@@ -59,6 +60,11 @@ export function resolveTTSConfig(
     ...stripEmpty(runtime.tts ?? {}),
     ...stripEmpty(overrides)
   }
+}
+
+/** Speech-input config, resolved like the others. */
+export function resolveSTTConfig(runtime: RuntimeAppConfig = {}): STTConfig {
+  return { ...defaultSTTConfig, ...stripEmpty(runtime.stt ?? {}) }
 }
 
 export function resolveLLMConfig(

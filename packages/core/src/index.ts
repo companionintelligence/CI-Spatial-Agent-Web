@@ -68,6 +68,11 @@ export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
 export { AvatarModel } from './components/scene/avatar/AvatarModel'
 export { AvatarState } from './components/scene/avatar/avatarState'
+export {
+  ConversationStatusState,
+  setConversationStatus,
+  type ConversationStatus
+} from './services/conversation/conversationStatus'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
 export { AvatarStatusPill } from './components/avatar/AvatarStatusPill'
 export type { AvatarStatusPillProps, AvatarConversationStatus } from './components/avatar/AvatarStatusPill'
@@ -137,8 +142,10 @@ export { useResponsiveLayout } from './app/layoutService'
 
 // Runtime configuration
 export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
-export { resolveTTSConfig } from './config/appConfigService'
-export { TTSSettingsState } from './config/settingsStore'
+export { resolveSTTConfig, resolveTTSConfig } from './config/appConfigService'
+export { transcribeRemote } from './services/stt/remoteStt'
+export { getAudioGraph, resumeAudioGraph, setVoicePosition } from './services/tts/audioGraph'
+export { STTSettingsState, TTSSettingsState } from './config/settingsStore'
 export type { RuntimeAppConfig } from './config/runtimeConfig'
 export {
   resolveLLMConfig,
@@ -198,3 +205,15 @@ export {
 } from './services/face/faceCompositorRegistry'
 export { translateEmoteTargets } from './services/face/emoteVocabulary'
 export { selectSpeechSource, isSequenceActive } from './services/face/speechSource'
+
+// Conversational latency instrumentation.
+export {
+  LATENCY_BUDGETS_MS,
+  beginTurn,
+  getLastLatencyTrace,
+  getLatencyTrace,
+  mark as markLatency,
+  overBudget,
+  type LatencyStage,
+  type LatencyTrace
+} from './services/telemetry/latency'

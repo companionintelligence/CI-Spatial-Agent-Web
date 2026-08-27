@@ -13,6 +13,7 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 import { AvatarOptions } from './AvatarOptions'
 import { AvatarState } from './avatarState'
+import { ConversationStatusState } from '../../../services/conversation/conversationStatus'
 import { Vector3 } from 'three'
 import {
   VRMA_CLIPS,
@@ -51,6 +52,8 @@ import {
 import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFactory'
 import { translateEmoteTargets } from '../../../services/face/emoteVocabulary'
 import { ScheduledSpeechSource, selectSpeechSource } from '../../../services/face/speechSource'
+import { mark as markLatency } from '../../../services/telemetry/latency'
+import { setVoicePosition } from '../../../services/tts/audioGraph'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
@@ -102,6 +105,11 @@ interface AvatarModelProps {
    *  which lifts the room UP the frame and cuts the dead wall above it. */
   cameraTargetDrop?: number
   webGPUEnabled?: boolean
+  /**
+   * Position the voice at the avatar's head via an HRTF panner. Off by default:
+   * correct in XR and in a room, wrong for a bust on a flat viewport.
+   */
+  spatialAudio?: boolean
 }
 
 // Custom hook to load external animation files, including VRMA animations.
@@ -208,11 +216,13 @@ const AvatarModelComponent = ({
   onHeadLocated,
   cameraDistance = 0.5,
   cameraTargetDrop = 0,
-  webGPUEnabled
+  webGPUEnabled,
+  spatialAudio = false
 }: AvatarModelProps) => {
-  const { camera: viewerCamera } = useThree()
+  const { camera: viewerCamera, gl: renderer } = useThree()
 
   const [state] = useSimpleStore(AvatarState)
+  const [{ status: conversationStatus }] = useSimpleStore(ConversationStatusState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
   const avatarOwnerTokenRef = useRef<symbol | undefined>(undefined)
@@ -312,6 +322,11 @@ const AvatarModelComponent = ({
       const cameraPosition = cameraPos.toArray() as [number, number, number]
 
       onHeadLocated?.(cameraTarget, cameraPosition)
+      // Place the voice at the head. In XR a voice from the middle of your own
+      // skull breaks presence more completely than any visual flaw; on a flat
+      // desktop bust it is off, because there is no room for it to be in.
+      if (spatialAudio) setVoicePosition(headWorldPos.toArray() as [number, number, number])
+      else setVoicePosition(null)
       if (isVRM) avatarRef.current.position.x += 0.2
     }
   }, [avatarRef.current])
@@ -386,6 +401,27 @@ const AvatarModelComponent = ({
         bones[child.name] = child
       }
     })
+
+    // Ground the figure. A shadow-casting key light has been configured all
+    // along, but no mesh ever opted in, so nothing cast and nothing received —
+    // the avatar read as a cut-out floating in front of the background rather
+    // than as something standing in the scene.
+    //
+    // Gated on the renderer ACTUALLY having shadows enabled. Opting in
+    // unconditionally makes every frame render a shadow map, and on a software
+    // rasteriser (SwiftShader, which the capture suite and any GPU-blocked
+    // browser use) that is not "slower" — measured, it froze the render loop at
+    // five frames and never recovered. `quality.useShadows` is already false on
+    // those paths; this just respects it.
+    if (renderer.shadowMap?.enabled) {
+      avatarScene.traverse((child) => {
+        const mesh = child as THREE.Mesh
+        if (mesh.isMesh) {
+          mesh.castShadow = true
+          mesh.receiveShadow = true
+        }
+      })
+    }
 
     morphTargetsRef.current = morphTargets
 
@@ -486,7 +522,7 @@ const AvatarModelComponent = ({
       setActiveFaceCompositor(null)
       setActiveFacialRig(null)
     }
-  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera])
+  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera, renderer])
 
   // Startup animation sequence
   useEffect(() => {
@@ -628,7 +664,11 @@ const AvatarModelComponent = ({
       pointerX: threeState.pointer.x,
       pointerY: threeState.pointer.y,
       audioState,
-      conversationState: isSpeaking ? 'speaking' : 'idle'
+      // The real conversational state, not a two-value stand-in. This is what
+      // makes the avatar lean in while listening, avert its gaze while thinking,
+      // and blink faster under cognitive load — all of which the dynamics engine
+      // already implemented and none of which could ever fire before.
+      conversationState: isSpeaking ? 'speaking' : conversationStatus
     })
 
     // 5. Advance the services. These now only update their own internal state —
@@ -672,7 +712,11 @@ const AvatarModelComponent = ({
       isSpeaking
     })
     compositor.setAll(FACE_LAYERS.SPEECH, speech.contributions)
-    if (speech.claimsMouth) compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+    if (speech.claimsMouth) {
+      compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+      // The end of the chain: the first frame on which the mouth actually moves.
+      markLatency('first-viseme')
+    }
     setFaceSpeechDebug({
       kind: speech.kind,
       hasAnalyser: Boolean(analyser),
@@ -720,8 +764,13 @@ const AvatarModelComponent = ({
       }
     }
 
-    // 9. VRM spring bones
-    if (isVRM && vrm) vrm.springBoneManager?.update(delta)
+    // 9. VRM secondary motion. springBoneManager was already ticked; lookAt was
+    //    not, so a VRM's own eye-tracking sat inert while the rest of the rig
+    //    animated. Both are cheap and both are visible.
+    if (isVRM && vrm) {
+      vrm.springBoneManager?.update(delta)
+      vrm.lookAt?.update(delta)
+    }
   })
 
   const handleAvatarClick = useCallback(
