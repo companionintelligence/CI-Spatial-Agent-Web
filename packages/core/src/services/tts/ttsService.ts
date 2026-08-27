@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 
+import { BoundaryTimeline } from '@ci-avatar/engine'
+
 import { cleanText } from './textUtils'
-import { approximateWhisperDataFromText } from './whisperDataGenerator'
 import { createSyntheticSpeechWav } from './syntheticSpeech'
 import { type TTSConfig, type WhisperData, defaultTTSConfig } from './ttsConfig'
 
@@ -55,7 +56,32 @@ interface QueuedMessage {
   status: 'pending' | 'generating' | 'ready' | 'playing' | 'completed' | 'error'
   audio?: ArrayBuffer
   whisperData?: WhisperData
+  /** Word/viseme timings from a timing-capable upstream (Tier A). */
+  timings?: { words: string[]; wtimes: number[]; wdurations: number[]; visemes?: string[]; vtimes?: number[]; vdurations?: number[] }
   error?: string
+}
+
+/**
+ * Timings for the utterance currently playing, from whichever engine produced it.
+ *
+ * This is the single seam the three lip-sync tiers meet at:
+ *  - Tier A (HeadTTS/Kokoro) fills `visemes`/`vtimes`/`vdurations` — exact phonetic
+ *    shapes with millisecond timing.
+ *  - Tier B/C fill only the word arrays; the letter-to-sound rules supply shapes
+ *    and these supply the clock.
+ *
+ * `revision` increments whenever the data changes, so a consumer can rebuild its
+ * schedule incrementally instead of diffing arrays every frame. Browser boundary
+ * events arrive DURING playback, so this genuinely does change mid-utterance.
+ */
+export interface SpeechTimings {
+  words: string[]
+  wtimes: number[]
+  wdurations: number[]
+  visemes?: string[]
+  vtimes?: number[]
+  vdurations?: number[]
+  revision: number
 }
 
 let globalId = 0
@@ -82,6 +108,26 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   const currentSpeechDurationRef = useRef<number>(0)
   const playbackStartTimeRef = useRef<number>(0)
   const generationRef = useRef(0)
+  // Real word timings for the utterance in flight. Populated from browser
+  // `boundary` events (Tier C) or from a timing-capable upstream (Tier A).
+  const boundaryTimelineRef = useRef(new BoundaryTimeline())
+  // `speechSynthesis.getVoices()` returns [] until the engine has enumerated,
+  // which on Chromium happens after a `voiceschanged` event — measured at 180
+  // voices only after waiting. Reading it synchronously on the first utterance
+  // therefore selected no voice at all and silently used the system default.
+  const cachedVoicesRef = useRef<SpeechSynthesisVoice[]>([])
+  const speechTimingsRef = useRef<SpeechTimings | null>(null)
+  const timingRevisionRef = useRef(0)
+
+  /**
+   * Publish the timeline's current state. Called on every boundary, so the
+   * consumer's schedule is rebuilt incrementally as words land rather than once
+   * at the end — by which point the utterance is over.
+   */
+  const publishTimings = useCallback((timeline: BoundaryTimeline) => {
+    const { words, wtimes, wdurations } = timeline.toWordTimings()
+    speechTimingsRef.current = { words, wtimes, wdurations, revision: ++timingRevisionRef.current }
+  }, [])
   // Once the Pocket TTS server proves unreachable (network-level failure), stop
   // hammering it for every message — degrade to silent text chat with one warning.
   const pocketUnreachable = useRef(false)
@@ -231,8 +277,8 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   // (CosyVoice2 by default) and streams the audio back, so the browser needs no
   // API key or CORS and everything stays local to the appliance. We drain the
   // streamed body into an ArrayBuffer here and hand it to the existing queue /
-  // playAudioBuffer path; lip-sync still comes from approximateWhisperDataFromText
-  // (the streamed audio carries no word timings).
+  // playAudioBuffer path. This upstream carries no word timings, so lip-sync
+  // falls to the acoustic tier (FFT energy + letter-to-sound shapes).
   const generateRemoteAudio = useCallback(
     async (message: QueuedMessage) => {
       // Same-origin BFF route. `config.url` may override for non-standard mounts,
@@ -260,6 +306,46 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       message.audio = await response.arrayBuffer()
     },
     [config.url, config.voice]
+  )
+
+  /**
+   * Tier A: same-origin BFF route that returns audio AND the engine's own word +
+   * viseme timings (`POST /api/tts/timed`, backed by HeadTTS/Kokoro).
+   *
+   * This is the only path where the mouth is driven by what the synthesizer
+   * actually produced rather than by something inferred after the fact. A 501
+   * means the configured upstream cannot report timings; that is a normal
+   * outcome, not an error, so we degrade to the plain streaming route and let
+   * the acoustic tier take the mouth.
+   */
+  const generateTimedAudio = useCallback(
+    async (message: QueuedMessage) => {
+      const response = await fetch('/api/tts/timed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: message.text, voice: config.voice, format: 'wav' })
+      })
+
+      if (response.status === 501) {
+        throw new Error('TIMED_TTS_UNSUPPORTED')
+      }
+      if (!response.ok) {
+        throw new Error(`Timed TTS API error: ${response.status} ${response.statusText}`)
+      }
+
+      const payload = (await response.json()) as {
+        audio?: string
+        timings?: { words: string[]; wtimes: number[]; wdurations: number[]; visemes?: string[]; vtimes?: number[]; vdurations?: number[] }
+      }
+      if (!payload.audio) throw new Error('Timed TTS returned no audio')
+
+      const binary = atob(payload.audio)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      message.audio = bytes.buffer
+      message.timings = payload.timings
+    },
+    [config.voice]
   )
 
   // Generate audio using Pocket TTS server
@@ -326,6 +412,17 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
           await generatePocketAudio(message)
         } else if (config.mode === 'synthetic') {
           await generateSyntheticAudio(message)
+        } else if (config.mode === 'headtts') {
+          try {
+            await generateTimedAudio(message)
+          } catch (err) {
+            // An upstream with no timing support is a configuration fact, not a
+            // failure: fall through to plain streamed audio and let the acoustic
+            // tier drive the mouth.
+            if ((err as Error).message !== 'TIMED_TTS_UNSUPPORTED') throw err
+            console.info('TTS: upstream reports no timings; using the acoustic lip-sync tier.')
+            await generateRemoteAudio(message)
+          }
         }
         message.status = 'ready'
       } catch (error) {
@@ -339,7 +436,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         message.error = errMessage
       }
     },
-    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio, generateSyntheticAudio]
+    [config.mode, generateRemoteAudio, generateBrowserAudio, generateLocalAudio, generatePocketAudio, generateSyntheticAudio, generateTimedAudio]
   )
 
   // Process the queue sequentially
@@ -395,10 +492,17 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
         nextMessage.status = 'playing'
         console.log(`Playing message ${nextMessage.id}`)
 
-        // Generate whisper data and notify speech start
-        const whisperData = approximateWhisperDataFromText(nextMessage.text, config.speed, 0)
+        // Announce the utterance. Word timings start EMPTY on purpose: the old
+        // code fabricated them here from a 150-WPM guess plus `Math.random()`
+        // inter-word pauses, which drifted more than a second across a long
+        // sentence. Real timings arrive below — from the engine's own boundary
+        // events, or from a timing-capable upstream — and are published through
+        // `getSpeechTimings()` as they land.
+        speechTimingsRef.current = nextMessage.timings
+          ? { ...nextMessage.timings, revision: ++timingRevisionRef.current }
+          : null
         if (onSpeechStart) {
-          onSpeechStart(nextMessage.text, whisperData)
+          onSpeechStart(nextMessage.text, nextMessage.timings ?? { words: [], wtimes: [], wdurations: [] })
         }
 
         try {
@@ -412,7 +516,7 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
               utterance.volume = window.globalTTSVolume ?? config.volume
 
               // Parse voice gender from config and select appropriate voice
-              const voices = speechSynthesis.getVoices()
+              const voices = cachedVoicesRef.current.length > 0 ? cachedVoicesRef.current : speechSynthesis.getVoices()
               const isMale = config.voice.toLowerCase().includes('male')
               const isFemale = config.voice.toLowerCase().includes('female')
 
@@ -445,13 +549,35 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
                   console.log(`TTS: Using ${gender} voice:`, selectedVoice.name, selectedVoice.lang);
                 }
               }
-              utterance.onend = () => resolve()
+              // Tier C lip-sync. `speechSynthesis` exposes no audio graph, so
+              // there is no FFT to read — but it does report when each word
+              // begins. That is real timing from the engine actually making the
+              // sound, and it is what makes the DEFAULT install lip-sync at all.
+              const timeline = boundaryTimelineRef.current
+              timeline.reset(nextMessage.text)
+              publishTimings(timeline)
+
+              // `elapsedTime` units differ between engines; BoundaryTimeline
+              // infers the unit for the utterance rather than guessing per event.
+              utterance.onboundary = (event: SpeechSynthesisEvent) => {
+                timeline.addBoundary(
+                  event.charIndex ?? 0,
+                  event.elapsedTime ?? 0,
+                  (event as SpeechSynthesisEvent & { charLength?: number }).charLength
+                )
+                publishTimings(timeline)
+              }
+
+              utterance.onend = (event) => {
+                timeline.finish(event.elapsedTime ?? 0)
+                publishTimings(timeline)
+                resolve()
+              }
               utterance.onerror = (event) => reject(new Error(`Browser TTS Error: ${event.error}`))
 
               currentSpeechTextRef.current = nextMessage.text
               currentSpeechDurationRef.current = nextMessage.text.length * 0.065
               playbackStartTimeRef.current = performance.now() / 1000
-              bumpRevision()
 
               speechSynthesis.speak(utterance)
             })
@@ -565,6 +691,9 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     currentSpeechTextRef.current = ''
     currentSpeechDurationRef.current = 0
     playbackStartTimeRef.current = 0
+    // Drop the schedule too: a stale one would keep shaping the mouth through
+    // the words the user just interrupted.
+    speechTimingsRef.current = null
     if (active) {
       try {
         active.stop()
@@ -597,6 +726,18 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     bumpRevision()
   }, [bumpRevision, onSpeechEnd])
 
+  // Keep the voice list warm so the first utterance can honour config.voice.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
+    const refresh = () => {
+      const voices = speechSynthesis.getVoices()
+      if (voices.length > 0) cachedVoicesRef.current = voices
+    }
+    refresh()
+    speechSynthesis.addEventListener?.('voiceschanged', refresh)
+    return () => speechSynthesis.removeEventListener?.('voiceschanged', refresh)
+  }, [])
+
   // Cleanup worker on unmount
   useEffect(() => {
     return () => {
@@ -623,6 +764,14 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
     return analyserNodeRef.current ?? undefined
   }, [])
 
+  /**
+   * Timings for the utterance currently playing, or null when nothing is.
+   * See SpeechTimings — this is where all three lip-sync tiers meet.
+   */
+  const getSpeechTimings = useCallback((): SpeechTimings | null => {
+    return speechTimingsRef.current
+  }, [])
+
   const getCurrentSpeechInfo = useCallback(() => {
     return {
       text: currentSpeechTextRef.current,
@@ -644,9 +793,10 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
       playAudioBuffer,
       getQueueStatus,
       getAnalyser,
-      getCurrentSpeechInfo
+      getCurrentSpeechInfo,
+      getSpeechTimings
     }),
-    [speak, stopSpeaking, playAudioBuffer, getQueueStatus, getAnalyser, getCurrentSpeechInfo]
+    [speak, stopSpeaking, playAudioBuffer, getQueueStatus, getAnalyser, getCurrentSpeechInfo, getSpeechTimings]
   )
 
   return useMemo(

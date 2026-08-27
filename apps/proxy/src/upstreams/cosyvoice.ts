@@ -1,4 +1,5 @@
 import type { ResolvedConfig } from '../config.js'
+import { createHeadTtsAdapter } from './headtts.js'
 
 /**
  * A synthesized-audio stream from a TTS upstream: the raw audio byte stream plus
@@ -110,9 +111,16 @@ export function createCosyVoiceAdapter(cfg: ResolvedConfig): TtsAdapter {
   }
 }
 
-/** Select the configured TTS adapter. Currently only CosyVoice2. */
+/**
+ * Select the configured TTS adapter.
+ *
+ * `headtts` is the only one that reports timings; everything else leaves the
+ * client on the acoustic tier. See upstreams/headtts.ts.
+ */
 export function selectTtsUpstream(cfg: ResolvedConfig): TtsAdapter {
   switch (cfg.ttsUpstream) {
+    case 'headtts':
+      return createHeadTtsAdapter(cfg)
     case 'cosyvoice':
     default:
       return createCosyVoiceAdapter(cfg)

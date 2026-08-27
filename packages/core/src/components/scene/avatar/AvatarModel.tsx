@@ -39,7 +39,7 @@ import {
 } from '../../../services/face/faceCompositorRegistry'
 import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFactory'
 import { translateEmoteTargets } from '../../../services/face/emoteVocabulary'
-import { selectSpeechSource } from '../../../services/face/speechSource'
+import { ScheduledSpeechSource, selectSpeechSource } from '../../../services/face/speechSource'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
@@ -232,6 +232,7 @@ const AvatarModelComponent = ({
   const faceRigRef = useRef<FaceRig>(NULL_FACE_RIG)
   const warnedUnmappedRef = useRef(false)
   const frameCounterRef = useRef(0)
+  const scheduledSpeechRef = useRef(new ScheduledSpeechSource())
   const prevWeightsRef = useRef<VisemeWeights | null>(null)
   const lastTextRef = useRef<string>('')
 
@@ -654,7 +655,16 @@ const AvatarModelComponent = ({
       }
     }
 
+    // Rebuild the coarticulated schedule when the engine reports new timings.
+    // Browser boundary events land mid-utterance, so this grows word by word.
+    const scheduleLoaded = scheduledSpeechRef.current.update(liveTtsService?.actions.getSpeechTimings())
+
     const speech = selectSpeechSource({
+      scheduled: {
+        source: scheduledSpeechRef.current,
+        playbackSeconds: Number.isFinite(spokenElapsed) ? spokenElapsed : 0,
+        loaded: scheduleLoaded
+      },
       visemeState: visemesEnabled ? visemeService?.state.viseme : undefined,
       acoustic: acousticWeights,
       isSpeaking

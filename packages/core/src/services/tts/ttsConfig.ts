@@ -26,7 +26,7 @@ export interface TTSConfig {
     speed: number
     pitch: number
     volume: number
-    mode: 'browser' | 'local' | 'remote' | 'pocket' | 'synthetic' // synthetic = deterministic render-probe PCM through the real analyser path
+    mode: 'browser' | 'local' | 'remote' | 'pocket' | 'synthetic' | 'headtts' // synthetic = deterministic render-probe PCM through the real analyser path
     apiKey?: string
     url?: string
     model?: string
@@ -52,7 +52,7 @@ export interface TTSConfig {
     // described itself as "an AI with a face, a voice and a body". Every richer
     // backend (pocket / local / remote) stays available as an opt-in upgrade via
     // VITE_TTS_MODE; only the fallback position changed.
-    mode: (import.meta.env.VITE_TTS_MODE || 'browser') as 'browser' | 'local' | 'remote' | 'pocket' | 'synthetic',
+    mode: (import.meta.env.VITE_TTS_MODE || 'browser') as 'browser' | 'local' | 'remote' | 'pocket' | 'synthetic' | 'headtts',
     apiKey: import.meta.env.VITE_TTS_API_KEY,
     url: import.meta.env.VITE_TTS_URL || 'https://api.openai.com/v1/audio/speech',
     model: import.meta.env.VITE_TTS_MODEL || 'tts-1',

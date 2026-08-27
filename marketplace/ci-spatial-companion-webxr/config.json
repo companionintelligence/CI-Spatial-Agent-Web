@@ -4,16 +4,16 @@
   "name": "Spatial Companion",
   "id": "ci-spatial-companion-webxr",
   "available": true,
-  "short_desc": "Talk to a 3D companion avatar in your space — WebXR (Quest / Vision Pro / iPad / browser), powered by your local Ollama models",
+  "short_desc": "Talk to a 3D companion avatar in your space \u2014 WebXR (Quest / Vision Pro / iPad / browser), powered by your local Ollama models",
   "author": "Companion Intelligence",
   "port": 8123,
   "categories": [
     "ai"
   ],
-  "description": "Spatial Companion is an immersive WebXR companion: a lip-synced 3D avatar you speak with by voice, rendered in AR/VR on Meta Quest and Apple Vision Pro, or in any WebGPU/WebGL browser and iPad.\n\nIt talks to models running locally on your device — no cloud round-trip. A built-in backend proxy brokers chat to your host's Ollama (or any OpenAI-compatible endpoint), so the browser never needs CORS exceptions or a public tunnel.\n\n**Getting started:**\n\n1. Install Ollama on your host machine (ollama.com) and pull a small model, e.g. `ollama pull gemma3:1b`.\n2. Install this app. It detects Ollama on the host automatically at the default URL below.\n3. Open the app, allow microphone access, and start talking. You can change the model or point at a different Ollama/proxy URL any time from the in-app Settings (⚙️) panel.\n\n**Features:**\n- Voice conversation with real-time speech-to-text, text-to-speech, and viseme lip-sync\n- Expressive VRM avatar with gesture/idle animation blending\n- WebXR AR + VR session support (Quest 3, Vision Pro, XREAL) with a browser/iPad fallback\n- Runtime-configurable LLM connection (no rebuild): set the Ollama URL and model at install time or in-app\n\nWarning: make sure your device has enough free RAM before running a model. Running a model that exceeds available memory can cause crashes or system instability.",
+  "description": "Spatial Companion is an immersive WebXR companion: a lip-synced 3D avatar you speak with by voice, rendered in AR/VR on Meta Quest and Apple Vision Pro, or in any WebGPU/WebGL browser and iPad.\n\nIt talks to models running locally on your device \u2014 no cloud round-trip. A built-in backend proxy brokers chat to your host's Ollama (or any OpenAI-compatible endpoint), so the browser never needs CORS exceptions or a public tunnel.\n\n**Getting started:**\n\n1. Install Ollama on your host machine (ollama.com) and pull a small model, e.g. `ollama pull gemma3:1b`.\n2. Install this app. It detects Ollama on the host automatically at the default URL below.\n3. Open the app, allow microphone access, and start talking. You can change the model or point at a different Ollama/proxy URL any time from the in-app Settings (\u2699\ufe0f) panel.\n\n**Features:**\n- Voice conversation with real-time speech-to-text, a local neural voice, and phoneme-accurate viseme lip-sync\n- Expressive VRM avatar with gesture/idle animation blending\n- WebXR AR + VR session support (Quest 3, Vision Pro, XREAL) with a browser/iPad fallback\n- Runtime-configurable LLM connection (no rebuild): set the Ollama URL and model at install time or in-app\n\nWarning: make sure your device has enough free RAM before running a model. Running a model that exceeds available memory can cause crashes or system instability.",
   "tipi_version": 1,
   "version": "0.1.0",
-  "source": "https://github.com/companionintelligence/CI-Spatial-Companion-WebXR",
+  "source": "https://github.com/companionintelligence/CI-Spatial-Agent-Web",
   "website": "https://avatars-zbe.pages.dev",
   "exposable": true,
   "supported_architectures": [
@@ -42,6 +42,14 @@
       "default": "gemma3:1b",
       "required": false,
       "hint": "Ollama model tag to chat with (e.g. gemma3:1b, llama3.1:8b). Pull it first with `ollama pull <model>`. Can also be changed in-app."
+    },
+    {
+      "type": "text",
+      "label": "Voice",
+      "env_variable": "APP_TTS_VOICE",
+      "default": "af_heart",
+      "required": false,
+      "hint": "Neural voice for the companion (Kokoro voices, e.g. af_heart, am_michael). Runs locally on this appliance; nothing is sent to a cloud TTS service."
     },
     {
       "type": "boolean",

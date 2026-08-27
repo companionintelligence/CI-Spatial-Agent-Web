@@ -124,7 +124,12 @@ function HarnessScene() {
   // The harness deliberately uses a silent synthetic TTS backend. It exercises
   // the production decoded-audio -> analyser -> AudioLipSync -> AvatarModel path
   // without depending on a network TTS server or browser SpeechSynthesis.
-  const tts = useTTSService({ config: { mode: 'synthetic', volume: 0 } })
+  // `?tts=browser` swaps the deterministic synthetic PCM for the real
+  // `speechSynthesis` engine, so the Tier C boundary-event path can be exercised
+  // against an engine that actually has voices. Default stays synthetic: it is
+  // reproducible and works in headless CI, which has no voices at all.
+  const ttsMode = (params.get('tts') as 'synthetic' | 'browser' | null) ?? 'synthetic'
+  const tts = useTTSService({ config: { mode: ttsMode, volume: 0 } })
   const ttsRef = useRef(tts)
   ttsRef.current = tts
   // Keep the prop identity stable while forwarding every read and command to
@@ -141,7 +146,8 @@ function HarnessScene() {
         playAudioBuffer: (audioBuffer, speechText) => ttsRef.current.actions.playAudioBuffer(audioBuffer, speechText),
         getQueueStatus: () => ttsRef.current.actions.getQueueStatus(),
         getAnalyser: () => ttsRef.current.actions.getAnalyser(),
-        getCurrentSpeechInfo: () => ttsRef.current.actions.getCurrentSpeechInfo()
+        getCurrentSpeechInfo: () => ttsRef.current.actions.getCurrentSpeechInfo(),
+        getSpeechTimings: () => ttsRef.current.actions.getSpeechTimings()
       }
     }),
     []
