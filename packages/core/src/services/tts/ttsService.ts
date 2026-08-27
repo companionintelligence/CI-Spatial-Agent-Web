@@ -3,6 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BoundaryTimeline } from '@ci-avatar/engine'
 
+import { getAudioGraph } from './audioGraph'
+import { mark as markLatency } from '../telemetry/latency'
+
 import { cleanText } from './textUtils'
 import { createSyntheticSpeechWav } from './syntheticSpeech'
 import { type TTSConfig, type WhisperData, defaultTTSConfig } from './ttsConfig'
@@ -141,73 +144,66 @@ export const useTTSService = (options: TTSServiceOptions = {}) => {
   }, [])
 
   const playAudioBuffer = useCallback(async (audioBuffer: ArrayBuffer, speechText?: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const audioContext = new AudioContext()
+    const graph = getAudioGraph()
+    if (!graph) return
 
-      audioContext
-        .decodeAudioData(audioBuffer.slice(0))
-        .then(async (decodedAudio) => {
-          if (audioContext.state === 'suspended' && typeof audioContext.resume === 'function') {
-            await audioContext.resume().catch(() => undefined)
-          }
-          const source = audioContext.createBufferSource()
-          const gainNode = audioContext.createGain()
-          let analyser: AnalyserNode | null = null
-          if (typeof audioContext.createAnalyser === 'function') {
-            try {
-              analyser = audioContext.createAnalyser()
-              analyser.fftSize = 256
-              analyser.smoothingTimeConstant = 0.8
-            } catch {
-              analyser = null
-            }
-          }
+    const { context: audioContext, analyser } = graph
+    // A context created before any user gesture starts suspended; resuming here
+    // means the first reply after the user interacts is audible rather than
+    // silently scheduled against a stopped clock.
+    if (audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume()
+      } catch {
+        // Retried on the next utterance.
+      }
+    }
 
-          // Use global volume if available, otherwise use config volume
-          const volume = window.globalTTSVolume ?? config.volume
-          gainNode.gain.value = volume
+    // Bytes are in hand and decodable — everything after this is scheduling.
+    markLatency('tts-first-byte')
+    const decodedAudio = await audioContext.decodeAudioData(audioBuffer.slice(0))
 
-          source.buffer = decodedAudio
-          if (analyser) {
-            // Analyze before the output gain so volume=0 render probes still
-            // exercise the exact production lip-sync signal path.
-            source.connect(analyser)
-            analyser.connect(gainNode)
-          } else {
-            source.connect(gainNode)
-          }
-          gainNode.connect(audioContext.destination)
+    return new Promise<void>((resolve) => {
+      const source = audioContext.createBufferSource()
+      const gainNode = audioContext.createGain()
+      gainNode.gain.value = window.globalTTSVolume ?? config.volume
 
-          // Register as active so barge-in can stop it and avatar dynamics can read FFT
-          activeSourceRef.current = source
-          activeContextRef.current = audioContext
-          analyserNodeRef.current = analyser
-          // AudioContext.currentTime may be exactly 0 on the first frame. The
-          // renderer uses >0 as the "timeline is active" guard, so keep the
-          // relative clock positive without changing its time domain.
-          playbackStartTimeRef.current = Math.max(audioContext.currentTime ?? 0, 0.000001)
-          currentSpeechDurationRef.current = decodedAudio?.duration ?? 0
-          if (speechText) {
-            currentSpeechTextRef.current = speechText
-          }
-          bumpRevision()
+      source.buffer = decodedAudio
+      source.connect(gainNode)
+      // Route through the SHARED analyser so lip-sync sees every utterance
+      // without a new node per chunk. It is already connected to the
+      // destination; connecting it again per source would stack gain.
+      if (analyser) gainNode.connect(analyser)
+      else gainNode.connect(audioContext.destination)
 
-          source.onended = () => {
-            if (activeSourceRef.current === source) {
-              activeSourceRef.current = null
-              activeContextRef.current = null
-              analyserNodeRef.current = null
-            }
-            bumpRevision()
-            resolve()
-          }
+      activeSourceRef.current = source
+      activeContextRef.current = audioContext
+      analyserNodeRef.current = analyser
+      playbackStartTimeRef.current = audioContext.currentTime
+      currentSpeechDurationRef.current = decodedAudio.duration
+      if (speechText) currentSpeechTextRef.current = speechText
+      bumpRevision()
 
-          source.start(0)
-        })
-        .catch((error) => {
-          console.error('Audio decode error:', error)
-          reject(error)
-        })
+      source.onended = () => {
+        try {
+          source.disconnect()
+          gainNode.disconnect()
+        } catch {
+          // Already torn down by a barge-in.
+        }
+        if (activeSourceRef.current === source) {
+          activeSourceRef.current = null
+          // The shared analyser outlives the source, but nothing is feeding it
+          // now — clear the ref so the render loop stops reading a silent node
+          // and treating the mouth as still speaking.
+          analyserNodeRef.current = null
+        }
+        resolve()
+      }
+
+      source.start(0)
+      // The moment sound actually reaches the user.
+      markLatency('first-audio')
     })
   }, [bumpRevision, config.volume])
 

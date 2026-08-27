@@ -142,8 +142,10 @@ export { useResponsiveLayout } from './app/layoutService'
 
 // Runtime configuration
 export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
-export { resolveTTSConfig } from './config/appConfigService'
-export { TTSSettingsState } from './config/settingsStore'
+export { resolveSTTConfig, resolveTTSConfig } from './config/appConfigService'
+export { transcribeRemote } from './services/stt/remoteStt'
+export { getAudioGraph, resumeAudioGraph, setVoicePosition } from './services/tts/audioGraph'
+export { STTSettingsState, TTSSettingsState } from './config/settingsStore'
 export type { RuntimeAppConfig } from './config/runtimeConfig'
 export {
   resolveLLMConfig,
@@ -203,3 +205,15 @@ export {
 } from './services/face/faceCompositorRegistry'
 export { translateEmoteTargets } from './services/face/emoteVocabulary'
 export { selectSpeechSource, isSequenceActive } from './services/face/speechSource'
+
+// Conversational latency instrumentation.
+export {
+  LATENCY_BUDGETS_MS,
+  beginTurn,
+  getLastLatencyTrace,
+  getLatencyTrace,
+  mark as markLatency,
+  overBudget,
+  type LatencyStage,
+  type LatencyTrace
+} from './services/telemetry/latency'
