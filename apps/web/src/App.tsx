@@ -16,10 +16,10 @@ import {
   AppConfigState,
   type AppConfig,
   defaultVadConfig,
-  defaultTTSConfig,
   defaultSTTConfig,
   defaultLLMConfig,
   LLMSettingsState,
+  TTSSettingsState,
   sceneConfig,
   useHasWebGPU,
   type SceneActions,
@@ -31,7 +31,6 @@ import {
 // Module-local: only `App` is imported from this file (see main.tsx).
 const config = {
   vad: defaultVadConfig,
-  tts: defaultTTSConfig,
   stt: defaultSTTConfig,
   llm: defaultLLMConfig
 }
@@ -56,6 +55,7 @@ export const App = () => {
   const xrStore = useRef<XRStore | null>(null)
   const [appState, setAppState] = useSimpleStore(AppConfigState)
   const [llmSettings] = useSimpleStore(LLMSettingsState)
+  const [ttsSettings] = useSimpleStore(TTSSettingsState)
   const [sceneActions, setSceneActions] = useState<SceneActions | null>(null)
   const [showOnboarding, setShowOnboarding] = useState(false)
   const [activationState, setActivationState] = useState<ActivationState>('unverified')
@@ -71,6 +71,9 @@ export const App = () => {
         ...llmSettings,
         activation_state: activationState
       },
+      // Live voice config, same precedence as the LLM: an appliance pointed at
+      // its HeadTTS sidecar gets phoneme-accurate lip-sync with no rebuild.
+      tts: ttsSettings,
       autoSubmitEnabled: appState.autoSubmitEnabled,
       bargeInEnabled: appState.bargeInEnabled,
       vad: {
@@ -78,7 +81,7 @@ export const App = () => {
         microphoneEnabled: appState.microphone
       }
     }),
-    [activationState, appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings]
+    [activationState, appState.autoSubmitEnabled, appState.bargeInEnabled, appState.microphone, llmSettings, ttsSettings]
   )
 
   const agent = useAgent(agentConfig)

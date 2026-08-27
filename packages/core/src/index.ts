@@ -136,6 +136,8 @@ export { useResponsiveLayout } from './app/layoutService'
 
 // Runtime configuration
 export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
+export { resolveTTSConfig } from './config/appConfigService'
+export { TTSSettingsState } from './config/settingsStore'
 export type { RuntimeAppConfig } from './config/runtimeConfig'
 export {
   resolveLLMConfig,
@@ -180,3 +182,16 @@ export {
 export type { FacialTier, FacialTierId } from './services/face/facialTiers'
 export { inspectFacialRig, facialNamesFromVRM, facialNamesFromScene } from './services/face/facialCapabilities'
 export type { FacialRigInfo } from './services/face/facialCapabilities'
+
+// Face compositing — the single arbiter of facial weights, plus the harness seam.
+export { createFaceRig, NULL_FACE_RIG } from './services/face/faceRigFactory'
+export {
+  getFaceCompositorTrace,
+  getFaceOverride,
+  getFaceSpeechDebug,
+  resetActiveFace,
+  setActiveFaceCompositor,
+  setFaceOverride
+} from './services/face/faceCompositorRegistry'
+export { translateEmoteTargets } from './services/face/emoteVocabulary'
+export { selectSpeechSource, isSequenceActive } from './services/face/speechSource'

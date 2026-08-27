@@ -17,3 +17,6 @@ apps/*/public/assets/props/
 # from env at boot; locally it is hand-written per environment. loadRuntimeConfig
 # resolves to {} when it is absent, so nothing needs a committed copy.
 apps/*/public/config.json
+
+# Playwright visual-matrix artifacts: regenerated on every capture run.
+docs/visual-tests/shots/*-verified.png

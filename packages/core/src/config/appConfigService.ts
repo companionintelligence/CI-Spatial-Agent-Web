@@ -1,5 +1,6 @@
 import { defaultLLMConfig, type LLMConfig } from '../services/llm/config/llmConfig'
 import type { RuntimeAppConfig } from './runtimeConfig'
+import { defaultTTSConfig, type TTSConfig } from '../services/tts/ttsConfig'
 
 /**
  * Resolves the effective LLM config by layering three sources, highest wins:
@@ -42,6 +43,21 @@ export function writeLocalOverrides(patch: Partial<LLMConfig>): Partial<LLMConfi
 export function clearLocalOverrides(): void {
   if (typeof localStorage !== 'undefined') {
     localStorage.removeItem(LLM_OVERRIDES_KEY)
+  }
+}
+
+/**
+ * Voice config, resolved with the same precedence as the LLM config:
+ * build-time defaults < container runtime config < local user overrides.
+ */
+export function resolveTTSConfig(
+  runtime: RuntimeAppConfig = {},
+  overrides: Partial<TTSConfig> = {}
+): TTSConfig {
+  return {
+    ...defaultTTSConfig,
+    ...stripEmpty(runtime.tts ?? {}),
+    ...stripEmpty(overrides)
   }
 }
 

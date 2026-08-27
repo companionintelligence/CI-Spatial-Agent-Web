@@ -31,12 +31,29 @@ import { AudioLipSync } from '../../../services/visemes/audioLipSync'
 import { PhonemeTimingEngine, blendAudioAndText } from '../../../services/visemes/phonemeTiming'
 import { ARKIT_LIP_SYNC_TARGETS, type VisemeWeights } from '../../../services/visemes/visemeTable'
 import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
+import { DEFAULT_FACE_LAYERS, FACE_LAYERS, FaceCompositor, MOUTH_REGIONS, type FaceRig } from '@ci-avatar/engine'
+import {
+  getFaceOverride,
+  setActiveFaceCompositor,
+  setFaceSpeechDebug
+} from '../../../services/face/faceCompositorRegistry'
+import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFactory'
+import { translateEmoteTargets } from '../../../services/face/emoteVocabulary'
+import { ScheduledSpeechSource, selectSpeechSource } from '../../../services/face/speechSource'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
 // no morph targets — body-animation only — so it's no longer the default.
 const AVATAR_MODEL = AvatarOptions.Greg
 const avatarOwners = new WeakMap<THREE.Object3D, symbol>()
+
+/**
+ * Grace period after an utterance's nominal end during which a text-driven
+ * (graph-less) speech source still counts as speaking. Covers the slack between
+ * an estimated duration and the real one without letting a stale text flag hold
+ * the mouth open forever.
+ */
+const SPEECH_TAIL_SECONDS = 0.25
 
 /**
  * Keep an array returned by a fixed hook map stable when its members are stable.
@@ -63,7 +80,8 @@ export const AvatarState = createSimpleStore({
   visemesEnabled: true,
   selectedAnimation: "",
   emotesEnabled: true,
-  animationsEnabled: true
+  animationsEnabled: true,
+  dynamicsEnabled: true
 })
 
 interface AvatarModelProps {
@@ -208,10 +226,17 @@ const AvatarModelComponent = ({
   const lipSyncRef = useRef<AudioLipSync | null>(null)
   const phonemeEngineRef = useRef<PhonemeTimingEngine>(new PhonemeTimingEngine())
   const dynamicsEngineRef = useRef<AvatarDynamicsEngine>(new AvatarDynamicsEngine())
+  // The single owner of every facial weight this avatar shows. Created once per
+  // mounted avatar; the rig it writes through is rebound when the model changes.
+  const compositorRef = useRef<FaceCompositor>(new FaceCompositor(DEFAULT_FACE_LAYERS))
+  const faceRigRef = useRef<FaceRig>(NULL_FACE_RIG)
+  const warnedUnmappedRef = useRef(false)
+  const frameCounterRef = useRef(0)
+  const scheduledSpeechRef = useRef(new ScheduledSpeechSource())
   const prevWeightsRef = useRef<VisemeWeights | null>(null)
   const lastTextRef = useRef<string>('')
 
-  const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled } = state
+  const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled, dynamicsEnabled } = state
 
   const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
     loader.register((parser: GLTFParser) => {
@@ -334,7 +359,7 @@ const AvatarModelComponent = ({
       if (child instanceof THREE.Mesh && child.morphTargetDictionary && child.morphTargetInfluences) {
         morphTargets.push(child)
         Object.entries(child.morphTargetDictionary).forEach(([name, index]) => {
-          if (name.startsWith('viseme_') || ARKIT_LIP_SYNC_TARGETS.includes(name as any) || name === 'jawOpen' || name === 'mouthOpen') {
+          if (name.startsWith('viseme_') || (ARKIT_LIP_SYNC_TARGETS as readonly string[]).includes(name) || name === 'jawOpen' || name === 'mouthOpen') {
             if (!visemeDict[name]) visemeDict[name] = []
             visemeDict[name].push(index)
           }
@@ -360,6 +385,20 @@ const AvatarModelComponent = ({
     })
 
     morphTargetsRef.current = morphTargets
+
+    // Bind the face rig for THIS avatar. Chosen from what the head actually
+    // exposes rather than from the file extension — a VRM with an empty
+    // expression manager still has ordinary morph targets worth driving.
+    const { rig, kind } = createFaceRig(morphTargets, vrm)
+    faceRigRef.current = rig
+    // A new head means new channels: clear the compositor's write cache so the
+    // first frame on the new rig is a full write, not a diff against the old one.
+    compositorRef.current.reset()
+    setActiveFaceCompositor(compositorRef.current)
+    if (import.meta.env?.DEV) {
+      console.debug(`[avatar] face rig: ${kind} (${morphTargets.length} morph meshes)`)
+    }
+    const compositorForThisAvatar = compositorRef.current
 
     const findBone = (...names: string[]): THREE.Bone | undefined => {
       for (const n of names) {
@@ -435,6 +474,16 @@ const AvatarModelComponent = ({
         camera: viewerCamera
       })
     }
+
+    return () => {
+      // Zero the face on the way out. Without this an unmounted avatar's last
+      // expression is still sitting in the morph influences when the same cached
+      // glTF scene is mounted again — drei caches by URL — and the new avatar
+      // appears already mid-smile.
+      compositorForThisAvatar.reset(faceRigRef.current)
+      faceRigRef.current = NULL_FACE_RIG
+      setActiveFaceCompositor(null)
+    }
   }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera])
 
   // Startup animation sequence
@@ -494,13 +543,27 @@ const AvatarModelComponent = ({
     const object = avatarRef.current
     if (!object || avatarOwners.get(object) !== avatarOwnerTokenRef.current) return
     if (typeof document !== 'undefined' && document.hidden) return
-    if (isVRM && vrm) vrm.expressionManager?.update()
+
+    // Open the frame. Producers publish below; the compositor writes once, at
+    // step 7. Note there is deliberately no `vrm.expressionManager.update()`
+    // here any more — the VRM face rig flushes on commit, and flushing a
+    // half-built frame here is what let a zeroed expression win the write.
+    const compositor = compositorRef.current
+    compositor.begin()
 
     // 1. Audio-Driven Lip Sync
     const liveTtsService = ttsServiceRef.current
     const analyser = liveTtsService?.actions.getAnalyser()
-    if (analyser && (!lipSyncRef.current || (lipSyncRef.current as unknown as { analyser: AnalyserNode }).analyser !== analyser)) {
-      lipSyncRef.current = new AudioLipSync(analyser)
+    if (analyser) {
+      if (!lipSyncRef.current || (lipSyncRef.current as unknown as { analyser: AnalyserNode }).analyser !== analyser) {
+        lipSyncRef.current = new AudioLipSync(analyser)
+      }
+    } else if (lipSyncRef.current) {
+      // The audio graph went away — playback finished, or a barge-in tore it down.
+      // Keeping the old AudioLipSync alive means `update()` goes on returning its
+      // last smoothed reading against a dead AnalyserNode, so `isSpeaking` stays
+      // true and the jaw hangs open long after the sound stopped. Drop it.
+      lipSyncRef.current = null
     }
 
     const audioState = lipSyncRef.current?.update() ?? null
@@ -525,75 +588,38 @@ const AvatarModelComponent = ({
       timedViseme = phonemeEngineRef.current.getActiveViseme(playbackTime)
     }
 
-    // 3. Blend Audio & Text into Viseme Weights
-    if (audioState || timedViseme) {
-      const weights = blendAudioAndText(
-        audioState || { energy: 0, lowBand: 0, midBand: 0, highBand: 0, isSpeaking: false },
-        timedViseme,
-        prevWeightsRef.current,
-        0.35
-      )
-      prevWeightsRef.current = weights
+    // 3. Blend audio + text into mouth weights. NOTHING is written to the rig
+    //    here: every producer below publishes to the compositor, which arbitrates
+    //    once and performs the only write of the frame.
+    const acousticWeights =
+      audioState || timedViseme
+        ? blendAudioAndText(
+            audioState || { energy: 0, lowBand: 0, midBand: 0, highBand: 0, isSpeaking: false },
+            timedViseme,
+            prevWeightsRef.current,
+            0.35
+          )
+        : null
+    if (acousticWeights) prevWeightsRef.current = acousticWeights
 
-      if (isVRM && vrm?.expressionManager) {
-        const vrmMap: Record<string, number> = {
-          aa: Math.max(weights.jawOpen, 0),
-          ee: Math.max(weights.mouthSmileLeft, weights.mouthStretchLeft, 0),
-          ih: Math.max(weights.mouthShrugUpper, weights.mouthStretchRight, 0),
-          oh: Math.max(weights.mouthFunnel, 0),
-          ou: Math.max(weights.mouthPucker, weights.mouthRollLower, 0)
-        }
-        for (const [exp, val] of Object.entries(vrmMap)) {
-          try {
-            vrm.expressionManager.setValue(exp, Math.min(1, Math.max(0, val)))
-          } catch {}
-        }
-      } else if (morphTargetsRef.current.length > 0) {
-        for (const mesh of morphTargetsRef.current) {
-          if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
-          for (const key of ARKIT_LIP_SYNC_TARGETS) {
-            const idx = mesh.morphTargetDictionary[key]
-            if (idx !== undefined) {
-              mesh.morphTargetInfluences[idx] = weights[key]
-            }
-          }
-          if (mesh.morphTargetDictionary['viseme_aa'] !== undefined) {
-            const oculusMap: Record<string, number> = {
-              viseme_aa: weights.jawOpen,
-              viseme_E: weights.mouthSmileLeft,
-              viseme_I: weights.mouthStretchLeft,
-              viseme_O: weights.mouthFunnel,
-              viseme_U: weights.mouthPucker,
-              viseme_PP: weights.mouthClose,
-              viseme_FF: weights.mouthRollLower,
-              viseme_TH: weights.tongueOut,
-              viseme_DD: weights.mouthShrugUpper,
-              viseme_kk: weights.mouthShrugLower,
-              viseme_CH: weights.mouthFunnel * 0.5,
-              viseme_SS: weights.mouthSmileRight,
-              viseme_nn: weights.mouthPressLeft,
-              viseme_RR: weights.mouthFunnel * 0.3
-            }
-            for (const [oKey, val] of Object.entries(oculusMap)) {
-              const oIdx = mesh.morphTargetDictionary[oKey]
-              if (oIdx !== undefined) {
-                mesh.morphTargetInfluences[oIdx] = val
-              }
-            }
-          }
-          if (mesh.morphTargetDictionary['jawOpen'] !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary['jawOpen']] = weights.jawOpen
-          }
-          if (mesh.morphTargetDictionary['mouthOpen'] !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary['mouthOpen']] = weights.jawOpen
-          }
-        }
-      }
-    }
-
-    // 4. Autonomous Facial Vitality Dynamics (Blinking, Saccades, Acoustic Brows)
-    const nativeSpeechActive = Boolean(speechInfo?.text || analyser)
-    const isSpeaking = Boolean(audioState?.isSpeaking || speechInfo?.text)
+    // 4. Autonomous facial vitality (blinks, saccades, gaze, acoustic brows).
+    //
+    // "Is it speaking" is answered by the audio graph whenever there IS one.
+    // The reported text is only a fallback for engines that expose no graph at
+    // all (browser `speechSynthesis`), and even then it is bounded by the
+    // utterance's own duration — the TTS service does not always clear the text
+    // when a single utterance ends, and trusting it unbounded is what left the
+    // mouth open indefinitely after the last word.
+    const spokenElapsed =
+      speechInfo && speechInfo.startTime > 0
+        ? (speechInfo.audioContext ? speechInfo.audioContext.currentTime : performance.now() / 1000) -
+          speechInfo.startTime
+        : Number.POSITIVE_INFINITY
+    const textSpeaking =
+      !analyser &&
+      Boolean(speechInfo?.text) &&
+      spokenElapsed < (speechInfo?.duration ?? 0) + SPEECH_TAIL_SECONDS
+    const isSpeaking = Boolean(audioState?.isSpeaking) || textSpeaking
     const dynamics = dynamicsEngineRef.current.update({
       elapsedTime: threeState.clock.getElapsedTime(),
       delta,
@@ -603,120 +629,68 @@ const AvatarModelComponent = ({
       conversationState: isSpeaking ? 'speaking' : 'idle'
     })
 
-    if (morphTargetsRef.current.length > 0) {
-      for (const mesh of morphTargetsRef.current) {
-        if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
-        for (const [key, val] of Object.entries(dynamics.blendshapes)) {
-          const idx = mesh.morphTargetDictionary[key]
-          if (idx !== undefined) {
-            mesh.morphTargetInfluences[idx] = val
-          }
-        }
-        if (dynamics.blendshapes.eyeBlinkLeft > 0) {
-          if (mesh.morphTargetDictionary['Blink'] !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary['Blink']] = dynamics.blendshapes.eyeBlinkLeft
-          }
-          if (mesh.morphTargetDictionary['eyesClosed'] !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary['eyesClosed']] = dynamics.blendshapes.eyeBlinkLeft
-          }
-        }
-      }
-    }
-
-    if (isVRM && vrm?.expressionManager) {
-      if (dynamics.blendshapes.eyeBlinkLeft > 0) {
-        try {
-          vrm.expressionManager.setValue('blink', dynamics.blendshapes.eyeBlinkLeft)
-        } catch {}
-      }
-    }
-
-    // 5. Update animation service
+    // 5. Advance the services. These now only update their own internal state —
+    //    the applyToRig / applyToVRM / applyToMorphTargets calls that used to
+    //    follow are gone, because they are what made three engines fight over the
+    //    same morph targets every frame.
     if (animationsEnabled && animationService) {
       animationService.actions.update(delta)
     }
-
-    // 6. Update viseme service (Whisper/legacy)
-    // When TTS is driving the real renderer, its analyser + timed text path owns
-    // the mouth. The legacy sequence service remains available for non-TTS
-    // consumers, but must not overwrite audio-driven morphs in the same frame.
-    if (visemesEnabled && visemeService && !nativeSpeechActive) {
+    if (visemesEnabled && visemeService) {
       visemeService.actions.update(delta)
-      visemeService.actions.applyToRig(delta)
     }
-
-    // 7. Update emote service
     if (emotesEnabled && emoteService) {
       emoteService.actions.update(delta)
-      if (isVRM && vrm) {
-        emoteService.actions.applyToVRM(vrm)
-      } else if (morphTargetsRef.current.length > 0) {
-        const dictionary = emoteService.state.emote.dictionary
-        if (dictionary) {
-          const validMorphs = morphTargetsRef.current.filter((mesh) => mesh.morphTargetInfluences !== undefined) as {
-            morphTargetInfluences: number[]
-          }[]
-          if (validMorphs.length > 0) {
-            emoteService.actions.applyToMorphTargets(validMorphs, dictionary)
-          }
-        }
+    }
+
+    // 6. Publish contributions, lowest layer first.
+    if (emotesEnabled && emoteService) {
+      const { weights, unmapped } = translateEmoteTargets(
+        emoteService.state.emote.targets as unknown as Record<string, unknown>
+      )
+      compositor.setAll(FACE_LAYERS.EMOTION, weights)
+      if (unmapped.length > 0 && !warnedUnmappedRef.current) {
+        warnedUnmappedRef.current = true
+        console.warn('[avatar] emote targets with no canonical mapping:', unmapped.join(', '))
       }
     }
 
-    // Emote targets and audio targets share mouth keys on ARKit/Oculus rigs.
-    // Re-apply the native speech result after emotes so a happy/surprised
-    // reaction cannot flatten the actual spoken mouth in the same render frame.
-    const nativeSpeechWeights = nativeSpeechActive ? prevWeightsRef.current : null
-    if (nativeSpeechWeights) {
-      if (isVRM && vrm?.expressionManager) {
-        const vrmMap: Record<string, number> = {
-          aa: Math.max(nativeSpeechWeights.jawOpen, 0),
-          ee: Math.max(nativeSpeechWeights.mouthSmileLeft, nativeSpeechWeights.mouthStretchLeft, 0),
-          ih: Math.max(nativeSpeechWeights.mouthShrugUpper, nativeSpeechWeights.mouthStretchRight, 0),
-          oh: Math.max(nativeSpeechWeights.mouthFunnel, 0),
-          ou: Math.max(nativeSpeechWeights.mouthPucker, nativeSpeechWeights.mouthRollLower, 0)
-        }
-        for (const [expression, value] of Object.entries(vrmMap)) {
-          try {
-            vrm.expressionManager.setValue(expression, Math.min(1, Math.max(0, value)))
-          } catch {}
-        }
-      } else {
-        for (const mesh of morphTargetsRef.current) {
-          if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
-          for (const key of ARKIT_LIP_SYNC_TARGETS) {
-            const index = mesh.morphTargetDictionary[key]
-            if (index !== undefined) mesh.morphTargetInfluences[index] = nativeSpeechWeights[key]
-          }
-          const oculusMap: Record<string, number> = {
-            viseme_aa: nativeSpeechWeights.jawOpen,
-            viseme_E: nativeSpeechWeights.mouthSmileLeft,
-            viseme_I: nativeSpeechWeights.mouthStretchLeft,
-            viseme_O: nativeSpeechWeights.mouthFunnel,
-            viseme_U: nativeSpeechWeights.mouthPucker,
-            viseme_PP: nativeSpeechWeights.mouthClose,
-            viseme_FF: nativeSpeechWeights.mouthRollLower,
-            viseme_TH: nativeSpeechWeights.tongueOut,
-            viseme_DD: nativeSpeechWeights.mouthShrugUpper,
-            viseme_kk: nativeSpeechWeights.mouthShrugLower,
-            viseme_CH: nativeSpeechWeights.mouthFunnel * 0.5,
-            viseme_SS: nativeSpeechWeights.mouthSmileRight,
-            viseme_nn: nativeSpeechWeights.mouthPressLeft,
-            viseme_RR: nativeSpeechWeights.mouthFunnel * 0.3
-          }
-          for (const [key, value] of Object.entries(oculusMap)) {
-            const index = mesh.morphTargetDictionary[key]
-            if (index !== undefined) mesh.morphTargetInfluences[index] = value
-          }
-          if (mesh.morphTargetDictionary.jawOpen !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary.jawOpen] = nativeSpeechWeights.jawOpen
-          }
-          if (mesh.morphTargetDictionary.mouthOpen !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary.mouthOpen] = nativeSpeechWeights.jawOpen
-          }
-        }
-      }
+    // Rebuild the coarticulated schedule when the engine reports new timings.
+    // Browser boundary events land mid-utterance, so this grows word by word.
+    const scheduleLoaded = scheduledSpeechRef.current.update(liveTtsService?.actions.getSpeechTimings())
+
+    const speech = selectSpeechSource({
+      scheduled: {
+        source: scheduledSpeechRef.current,
+        playbackSeconds: Number.isFinite(spokenElapsed) ? spokenElapsed : 0,
+        loaded: scheduleLoaded
+      },
+      visemeState: visemesEnabled ? visemeService?.state.viseme : undefined,
+      acoustic: acousticWeights,
+      isSpeaking
+    })
+    compositor.setAll(FACE_LAYERS.SPEECH, speech.contributions)
+    if (speech.claimsMouth) compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+    setFaceSpeechDebug({
+      kind: speech.kind,
+      hasAnalyser: Boolean(analyser),
+      energy: audioState?.energy ?? 0,
+      claimed: speech.claimsMouth,
+      text: currentText,
+      keys: Object.keys(speech.contributions).length,
+      frame: ++frameCounterRef.current
+    })
+
+    if (dynamicsEnabled) {
+      compositor.setAll(FACE_LAYERS.VITALITY, dynamics.blendshapes as Record<string, number>)
     }
+
+    // Scripted capture beats every autonomous producer, by design.
+    const override = getFaceOverride()
+    if (override) compositor.setAll(FACE_LAYERS.OVERRIDE, override)
+
+    // 7. One arbitration, one write.
+    compositor.applyTo(faceRigRef.current, delta)
 
     // 8. Apply procedural body/neck offsets after authored animation and emotes.
     // The resolver accepts canonical names, Mixamo names, and lower-case aliases.

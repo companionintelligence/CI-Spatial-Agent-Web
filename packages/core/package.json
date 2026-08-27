@@ -16,6 +16,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@ci-avatar/engine": "workspace:*",
     "@hexafield/simple-store": "^1.0.1",
     "@huggingface/transformers": "^3.7.1",
     "@mlc-ai/web-llm": "^0.2.79",

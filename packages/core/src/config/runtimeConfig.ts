@@ -1,4 +1,5 @@
 import type { LLMConfig } from '../services/llm/config/llmConfig'
+import type { TTSConfig } from '../services/tts/ttsConfig'
 
 /**
  * Runtime configuration delivered to a *built* container without a rebuild.
@@ -9,6 +10,12 @@ import type { LLMConfig } from '../services/llm/config/llmConfig'
  */
 export interface RuntimeAppConfig {
   llm?: Partial<LLMConfig>
+  /**
+   * Voice settings. Carried at runtime rather than baked in by Vite so an
+   * appliance can be pointed at its HeadTTS sidecar — and therefore switched
+   * from inferred to phoneme-accurate lip-sync — without rebuilding the image.
+   */
+  tts?: Partial<TTSConfig>
 }
 
 declare global {

@@ -1,0 +1,5 @@
+export { FaceCompositor, type FaceCompositorOptions } from './FaceCompositor'
+export { DEFAULT_FACE_LAYERS, FACE_LAYERS, type FaceLayerId } from './layers'
+export { ARKIT_52, MOUTH_REGIONS, VISEME_KEY_PREFIX, keysInRegion, regionOf, type FaceRegion } from './regions'
+export type { BlendMode, CompositorTrace, FaceRig, LayerSpec, RegionOwnership } from './types'
+export * from './rigs'

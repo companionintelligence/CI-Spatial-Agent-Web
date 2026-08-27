@@ -23,6 +23,15 @@ export default defineConfig({
   test: {
     projects: [
       {
+        // Renderer-free avatar engine (packages/engine) — pure arbitration logic.
+        test: {
+          name: 'engine-node',
+          environment: 'node',
+          globals: true,
+          include: ['packages/engine/src/**/*.node.test.ts']
+        }
+      },
+      {
         // Pure service logic — no DOM.
         test: {
           name: 'core-node',

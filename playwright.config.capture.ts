@@ -24,7 +24,12 @@ export default defineConfig({
   testDir: './tests',
   // Only the L4/L5 suites belong to this config; the legacy agent/audio/animation
   // specs stay on the root config (which targets 5173 + Ollama).
-  testMatch: ['**/render-matrix.spec.ts', '**/avatar-visual-matrix.spec.ts', '**/scenarios/**/*.spec.ts'],
+  testMatch: [
+    '**/render-matrix.spec.ts',
+    '**/avatar-visual-matrix.spec.ts',
+    '**/face-compositor.spec.ts',
+    '**/scenarios/**/*.spec.ts'
+  ],
 
   timeout: 120 * 1000,
   expect: { timeout: 30 * 1000 },

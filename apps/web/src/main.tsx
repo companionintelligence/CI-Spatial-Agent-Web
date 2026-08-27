@@ -1,6 +1,13 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { LLMSettingsState, ThemeProvider, loadRuntimeConfig, resolveLLMConfig } from '@ci-avatar/core'
+import {
+  LLMSettingsState,
+  TTSSettingsState,
+  ThemeProvider,
+  loadRuntimeConfig,
+  resolveLLMConfig,
+  resolveTTSConfig
+} from '@ci-avatar/core'
 
 // Self-hosted Montserrat (offline/CSP-safe for the appliance container).
 import '@fontsource/montserrat/200.css'
@@ -30,6 +37,7 @@ void initTelemetry()
 async function bootstrap() {
   const runtime = await loadRuntimeConfig()
   LLMSettingsState.set(resolveLLMConfig(runtime))
+  TTSSettingsState.set(resolveTTSConfig(runtime))
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
