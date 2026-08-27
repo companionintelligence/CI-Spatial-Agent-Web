@@ -251,6 +251,10 @@ const SceneContent = ({
             cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
             cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
             webGPUEnabled={webGPUEnabled}
+            // Spatialise the voice only in a room — an XR session or the diorama.
+            // On the flat studio bust there is nowhere for it to come from, and
+            // HRTF just makes a centred figure sound off-axis.
+            spatialAudio={sceneConfig.environment === 'datacenter-1970s'}
           />
         </group>
       </group>

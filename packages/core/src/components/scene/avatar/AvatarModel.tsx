@@ -53,6 +53,7 @@ import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFact
 import { translateEmoteTargets } from '../../../services/face/emoteVocabulary'
 import { ScheduledSpeechSource, selectSpeechSource } from '../../../services/face/speechSource'
 import { mark as markLatency } from '../../../services/telemetry/latency'
+import { setVoicePosition } from '../../../services/tts/audioGraph'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
@@ -104,6 +105,11 @@ interface AvatarModelProps {
    *  which lifts the room UP the frame and cuts the dead wall above it. */
   cameraTargetDrop?: number
   webGPUEnabled?: boolean
+  /**
+   * Position the voice at the avatar's head via an HRTF panner. Off by default:
+   * correct in XR and in a room, wrong for a bust on a flat viewport.
+   */
+  spatialAudio?: boolean
 }
 
 // Custom hook to load external animation files, including VRMA animations.
@@ -210,7 +216,8 @@ const AvatarModelComponent = ({
   onHeadLocated,
   cameraDistance = 0.5,
   cameraTargetDrop = 0,
-  webGPUEnabled
+  webGPUEnabled,
+  spatialAudio = false
 }: AvatarModelProps) => {
   const { camera: viewerCamera, gl: renderer } = useThree()
 
@@ -315,6 +322,11 @@ const AvatarModelComponent = ({
       const cameraPosition = cameraPos.toArray() as [number, number, number]
 
       onHeadLocated?.(cameraTarget, cameraPosition)
+      // Place the voice at the head. In XR a voice from the middle of your own
+      // skull breaks presence more completely than any visual flaw; on a flat
+      // desktop bust it is off, because there is no room for it to be in.
+      if (spatialAudio) setVoicePosition(headWorldPos.toArray() as [number, number, number])
+      else setVoicePosition(null)
       if (isVRM) avatarRef.current.position.x += 0.2
     }
   }, [avatarRef.current])
