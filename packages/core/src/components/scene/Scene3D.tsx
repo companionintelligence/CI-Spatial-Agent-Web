@@ -250,7 +250,10 @@ const SceneContent = ({
             onHeadLocated={handleHeadLocated}
             cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
             cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
-            webGPUEnabled={webGPUEnabled}
+            // NOTE: webGPUEnabled is deliberately NOT passed. It reports device
+            // capability, not what is rendering, and using it to pick a node
+            // material broke every VRM on any WebGPU-capable machine. The avatar
+            // asks the live renderer instead.
             // Spatialise the voice only in a room — an XR session or the diorama.
             // On the flat studio bust there is nowhere for it to come from, and
             // HRTF just makes a centred figure sound off-axis.

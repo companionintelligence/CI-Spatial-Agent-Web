@@ -104,7 +104,6 @@ interface AvatarModelProps {
    *  which is right for a bust. A wider shot uses it to pitch the camera down a little,
    *  which lifts the room UP the frame and cuts the dead wall above it. */
   cameraTargetDrop?: number
-  webGPUEnabled?: boolean
   /**
    * Position the voice at the avatar's head via an HRTF panner. Off by default:
    * correct in XR and in a room, wrong for a bust on a flat viewport.
@@ -216,7 +215,6 @@ const AvatarModelComponent = ({
   onHeadLocated,
   cameraDistance = 0.5,
   cameraTargetDrop = 0,
-  webGPUEnabled,
   spatialAudio = false
 }: AvatarModelProps) => {
   const { camera: viewerCamera, gl: renderer } = useThree()
@@ -251,13 +249,34 @@ const AvatarModelComponent = ({
 
   const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled, dynamicsEnabled } = state
 
+  /**
+   * Is the live renderer node-based?
+   *
+   * MToonNodeMaterial is a NODE material: its shader is assembled by the node
+   * system and it can only be compiled by a WebGPURenderer. Selecting it was
+   * gated on `webGPUEnabled`, which reports whether the DEVICE supports WebGPU
+   * and whether the user left the toggle on — not on what is actually rendering.
+   * Scene3D has never constructed a WebGPURenderer (the Canvas is r3f's default
+   * WebGL one), so on any machine where WebGPU is merely *available* every VRM
+   * loaded a node material into the WebGL program path and threw
+   * `resolveIncludes: Cannot read properties of undefined (reading 'replace')`
+   * on every frame — measured at 980 errors within nine seconds, with nothing
+   * on screen.
+   *
+   * Asking the renderer is the only question with a correct answer. When the
+   * WebGPU path is genuinely wired up, this starts returning true on its own.
+   */
+  const rendererIsNodeBased = Boolean(
+    (renderer as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer
+  )
+
   const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
     loader.register((parser: GLTFParser) => {
+      if (!rendererIsNodeBased) return new VRMLoaderPlugin(parser)
       const mtoonMaterialPlugin = new MToonMaterialLoaderPlugin(parser, {
         materialType: MToonNodeMaterial
       })
-
-      return new VRMLoaderPlugin(parser, webGPUEnabled ? { mtoonMaterialPlugin } : undefined)
+      return new VRMLoaderPlugin(parser, { mtoonMaterialPlugin })
     })
   })
 
