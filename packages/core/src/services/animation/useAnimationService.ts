@@ -35,7 +35,27 @@ export const useAnimationService = () => {
     resetAnimationState(animationStateRef.current)
   }, [])
 
+  /**
+   * Turn idle variety on or off.
+   *
+   * This used to call `setAnimationEnabled`, which is the MASTER gate for the
+   * whole animation service — not the cycling flag. So enabling "cycling" merely
+   * re-enabled animation, `cyclingState.cyclingEnabled` stayed false, and the
+   * weighted idle picker plus all six personality presets never ran once. The
+   * avatar sat in a single looping idle for the life of the app.
+   */
   const enableCycling = useCallback((enabled: boolean) => {
+    animationStateRef.current.cyclingState.cyclingEnabled = enabled
+  }, [])
+
+  /**
+   * The master gate for the whole animation service.
+   *
+   * Exposed because `enableCycling` was previously its only caller — by mistake —
+   * which meant there was no working way to enable idle variety AND no working
+   * way to stop animation either. Both capabilities existed; neither was reachable.
+   */
+  const setEnabled = useCallback((enabled: boolean) => {
     setAnimationEnabled(animationStateRef.current, enabled)
   }, [])
 
@@ -77,13 +97,14 @@ export const useAnimationService = () => {
         enqueueAnimation(animationStateRef.current, performanceData),
       clearQueue: () => clearAnimationQueue(animationStateRef.current),
       enableCycling,
+      setEnabled,
       reset,
       setup,
       update,
       getCurrentInfo,
       getAvailableClips,
     }),
-    [setPersonality, performAction, enqueueAnimation, clearAnimationQueue, enableCycling, reset, setup, update, getCurrentInfo, getAvailableClips]
+    [setPersonality, performAction, enqueueAnimation, clearAnimationQueue, enableCycling, reset, setup, update, getCurrentInfo, getAvailableClips, setEnabled]
   )
 
   const state = useMemo(

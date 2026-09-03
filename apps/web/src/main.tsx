@@ -2,10 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   LLMSettingsState,
+  STTSettingsState,
   TTSSettingsState,
   ThemeProvider,
   loadRuntimeConfig,
   resolveLLMConfig,
+  resolveSTTConfig,
   resolveTTSConfig
 } from '@ci-avatar/core'
 
@@ -38,6 +40,7 @@ async function bootstrap() {
   const runtime = await loadRuntimeConfig()
   LLMSettingsState.set(resolveLLMConfig(runtime))
   TTSSettingsState.set(resolveTTSConfig(runtime))
+  STTSettingsState.set(resolveSTTConfig(runtime))
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>

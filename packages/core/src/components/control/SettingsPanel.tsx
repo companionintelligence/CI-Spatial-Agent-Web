@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
-import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal } from 'lucide-react'
+import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal, UserRound } from 'lucide-react'
+import { resolveAvatarSource } from '@ci-avatar/engine'
 
 import {
   COMMON_OLLAMA_MODELS,
@@ -22,6 +23,11 @@ import { loadRuntimeConfig } from '../../config/runtimeConfig'
 import { AppConfigState } from '../../app/appConfig'
 import { useHasWebGPU } from '../../utils/useHasWebGPU'
 import { useXRLayout } from '../../utils/useXRLayout'
+import { AvatarOptions } from '../scene/avatar/AvatarOptions'
+import { AvatarState } from '../scene/avatar/avatarState'
+import { getActiveFacialRig } from '../../services/face/faceCompositorRegistry'
+
+const AVATAR_KEYS = Object.keys(AvatarOptions)
 
 interface SettingsPanelProps {
   isOpen: boolean
@@ -119,6 +125,27 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
   const isNarrow = typeof window !== 'undefined' && window.innerWidth <= 768
   const [settings] = useSimpleStore(LLMSettingsState)
   const [appConfig] = useSimpleStore(AppConfigState)
+  // Avatar selection. The shipping UI previously had none at all — the model was
+  // a module constant — so a user could not change or supply an avatar, and the
+  // engine's "any GLB/VRM" support was untestable by anyone but a developer.
+  const [avatarState] = useSimpleStore(AvatarState)
+  const [avatarUrlDraft, setAvatarUrlDraft] = useState('')
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const facialRig = getActiveFacialRig()
+  const avatarLabel =
+    AVATAR_KEYS.find((key) => AvatarOptions[key as keyof typeof AvatarOptions] === avatarState.selectedModel) ??
+    'custom'
+
+  const applyAvatar = useCallback((input: string) => {
+    const resolved = resolveAvatarSource(input, AvatarOptions)
+    if (!resolved.ok || !resolved.url) {
+      setAvatarError(resolved.message ?? 'Could not load that avatar.')
+      return
+    }
+    setAvatarError(null)
+    AvatarState.set((prev) => ({ ...prev, selectedModel: resolved.url! }))
+  }, [])
+
   const hasWebGPU = useHasWebGPU()
 
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
@@ -457,6 +484,55 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
           checked={appConfig.autoSubmitEnabled}
           onChange={(v) => AppConfigState.set((prev) => ({ ...prev, autoSubmitEnabled: v }))}
         />
+
+        <SectionHeader icon={<UserRound size={13} aria-hidden />}>Avatar</SectionHeader>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+          <label style={labelStyle} htmlFor="settings-avatar">
+            Character
+          </label>
+          <select
+            id="settings-avatar"
+            style={inputStyle}
+            value={AVATAR_KEYS.includes(avatarLabel) ? avatarLabel : 'custom'}
+            onChange={(e) => {
+              if (e.target.value === 'custom') return
+              applyAvatar(e.target.value)
+            }}
+          >
+            {AVATAR_KEYS.map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
+            <option value="custom">Custom URL…</option>
+          </select>
+
+          <label style={labelStyle} htmlFor="settings-avatar-url">
+            Custom avatar URL
+          </label>
+          <input
+            id="settings-avatar-url"
+            style={inputStyle}
+            placeholder="https://models.readyplayer.me/….glb  ·  or a .vrm URL"
+            value={avatarUrlDraft}
+            onChange={(e) => setAvatarUrlDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyAvatar(avatarUrlDraft)
+            }}
+            onBlur={() => avatarUrlDraft.trim() && applyAvatar(avatarUrlDraft)}
+          />
+          {avatarError && (
+            <div role="alert" style={{ fontSize: 11, color: 'var(--destructive, #f87171)' }}>
+              {avatarError}
+            </div>
+          )}
+          {facialRig && (
+            <div style={{ fontSize: 11, opacity: 0.7 }}>
+              Facial rig: <strong>{facialRig.info.label}</strong> · {facialRig.names.length} channels
+              {facialRig.tier === 'none' && ' — body animation only'}
+            </div>
+          )}
+        </div>
 
         <SectionHeader icon={<MonitorCog size={13} aria-hidden />}>Graphics</SectionHeader>
         <ToggleRow

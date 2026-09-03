@@ -227,6 +227,18 @@ const SceneContent = ({
       {/* XR enhancements for VR/AR */}
       <XREnhancements enabled={true} showGrid={false} />
 
+      {/* A contact shadow needs something to fall on. This plane is invisible
+          except for what the avatar casts onto it (ShadowMaterial writes only
+          shadow), so the studio viewport keeps its transparent background while
+          the figure stops floating. Skipped when shadows are off — a mesh that
+          can never darken is just an extra draw call. */}
+      {useShadows && sceneConfig.environment !== 'datacenter-1970s' && (
+        <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+          <planeGeometry args={[8, 8]} />
+          <shadowMaterial transparent opacity={0.32} />
+        </mesh>
+      )}
+
       <group ref={worldGroupRef} scale={worldScale}>
         {sceneConfig.environment === 'datacenter-1970s' && <DatacenterDiorama />}
         <group scale={resolveAvatarScale(sceneConfig.avatarSize)}>
@@ -238,7 +250,14 @@ const SceneContent = ({
             onHeadLocated={handleHeadLocated}
             cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
             cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
-            webGPUEnabled={webGPUEnabled}
+            // NOTE: webGPUEnabled is deliberately NOT passed. It reports device
+            // capability, not what is rendering, and using it to pick a node
+            // material broke every VRM on any WebGPU-capable machine. The avatar
+            // asks the live renderer instead.
+            // Spatialise the voice only in a room — an XR session or the diorama.
+            // On the flat studio bust there is nowhere for it to come from, and
+            // HRTF just makes a centred figure sound off-axis.
+            spatialAudio={sceneConfig.environment === 'datacenter-1970s'}
           />
         </group>
       </group>

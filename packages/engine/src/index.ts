@@ -1,2 +1,6 @@
 export * from './face'
 export * from './lipsync'
+export * from './rig'
+export * from './locomotion'
+export * from './motion'
+export * from './conversation'

@@ -31,6 +31,7 @@ import {
   getFaceCompositorTrace,
   getFaceOverride,
   getFaceSpeechDebug,
+  setConversationStatus,
   setFaceOverride
 } from '@ci-avatar/core'
 
@@ -169,6 +170,22 @@ function HarnessScene() {
     const w = window
     w.__harness = {
       listAvatars: () => Object.keys(AvatarOptions),
+
+      /**
+       * Every bone in the loaded rig.
+       *
+       * Added because "does this avatar have hair bones?" is a question about the
+       * ASSET, not the code, and there was no way to ask it — which is how a
+       * secondary-motion solver nearly shipped against a roster that has nothing
+       * for it to solve. Cheap, and it makes rig assumptions checkable.
+       */
+      listBones: () => {
+        const out: string[] = []
+        three.scene.traverse((o) => {
+          if ((o as THREE.Bone).isBone) out.push(o.name)
+        })
+        return out
+      },
       listClips: () => Object.keys(activeCatalog()),
       currentAvatar: () => AvatarState.get().selectedModel,
 
@@ -449,6 +466,15 @@ function HarnessScene() {
       /** Why the mouth is (or is not) moving — see FaceSpeechDebug. */
       speechDebug() {
         return getFaceSpeechDebug()
+      },
+
+      /**
+       * Drive the conversational state the dynamics engine branches on.
+       * Until this was threaded through, the avatar was only ever told
+       * 'speaking' or 'idle', so listening/thinking behaviour never ran.
+       */
+      setConversationStatus(status: 'loading' | 'idle' | 'listening' | 'thinking' | 'speaking') {
+        setConversationStatus(status)
       },
 
       /** VRM expression names + current values (diagnose VRM face driving). */

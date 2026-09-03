@@ -36,6 +36,7 @@ interface SpeechDebug {
   frame: number
 }
 interface Harness {
+  setConversationStatus(status: 'loading' | 'idle' | 'listening' | 'thinking' | 'speaking'): void
   setEmote(emotion: string, relaxTime?: number): void
   speak(text: string): Promise<number | null>
   faceSnapshot(): { jawOpen: number; blink: number; mouth: Record<string, number> }
@@ -54,6 +55,19 @@ declare global {
 
 /** Greg is an RPM "pro" GLB: ARKit-52 plus Oculus visemes — the richest rig we ship. */
 const AVATAR = 'Greg'
+
+/**
+ * A deliberately long utterance.
+ *
+ * These specs run under the capture config's SwiftShader flags, where the scene
+ * renders at roughly 1–5 fps. A two-second line spans only a handful of frames,
+ * so observing the speech layer mid-utterance became a coin flip — the suite
+ * passed by luck rather than by construction. The synthetic engine scales its
+ * duration with text length, so a long line buys tens of frames to observe.
+ */
+const LONG_UTTERANCE =
+  'Hello there, this is a lip sync check that runs for long enough to be observed ' +
+  'reliably even when the renderer is limping along in software mode on a build agent.'
 
 async function loadHarness(page: Page) {
   const errors: string[] = []
@@ -145,7 +159,7 @@ test.describe('face compositor', () => {
     await page.evaluate(() => window.__harness!.setEmote('happy', 10_000))
     await waitForFrames(page, 2)
 
-    await page.evaluate(() => window.__harness!.speak('Hello there, this is a lip sync check.'))
+    await page.evaluate((text) => window.__harness!.speak(text), LONG_UTTERANCE)
     // Wait for the SPEECH layer to actually take over rather than for a stopwatch.
     await waitForSpeechKind(page, 'acoustic')
 
@@ -162,7 +176,7 @@ test.describe('face compositor', () => {
   test('the mouth actually moves during speech', async ({ page }) => {
     await loadHarness(page)
     const restingJaw = (await snapshot(page)).jawOpen
-    await page.evaluate(() => window.__harness!.speak('Testing one two three, the quick brown fox.'))
+    await page.evaluate((text) => window.__harness!.speak(text), LONG_UTTERANCE)
     await waitForSpeechKind(page, 'acoustic')
     const peak = await peakJawOverFrames(page, 8)
 
@@ -174,7 +188,7 @@ test.describe('face compositor', () => {
 
   test('the mouth returns to rest after speech, and emotion gets the lips back', async ({ page }) => {
     await loadHarness(page)
-    await page.evaluate(() => window.__harness!.speak('A slightly longer line so the analyser has something to chew on.'))
+    await page.evaluate((text) => window.__harness!.speak(text), LONG_UTTERANCE)
     await waitForSpeechKind(page, 'acoustic')
     expect(await peakJawOverFrames(page, 6), 'sanity: the jaw opened before we test that it closes').toBeGreaterThan(0.05)
 
@@ -203,5 +217,40 @@ test.describe('face compositor', () => {
     await page.evaluate(() => window.__harness!.clearMorphs())
     await waitForFrames(page, 4)
     expect((await snapshot(page)).jawOpen, 'clearing the override releases the key').toBeLessThan(0.2)
+  })
+})
+
+test.describe('conversational vitality', () => {
+  test('thinking averts the gaze — behaviour that could never fire before', async ({ page }) => {
+    // The dynamics engine has always implemented gaze aversion under cognitive
+    // load, but the avatar was only ever told 'speaking' or 'idle', so this
+    // branch was unreachable dead code.
+    await loadHarness(page)
+    await page.evaluate(() => window.__harness!.setConversationStatus('idle'))
+    await waitForFrames(page, 6)
+    const idleGaze = (await snapshot(page)).mouth // placeholder read to sync a frame
+    expect(idleGaze).toBeDefined()
+
+    await page.evaluate(() => window.__harness!.setConversationStatus('thinking'))
+    await waitForFrames(page, 10)
+
+    const t = await trace(page)
+    const written = t?.written ?? {}
+    // Aversion drives the eyes up and away; some gaze channel must be non-trivial.
+    const gaze = ['eyeLookUpLeft', 'eyeLookUpRight', 'eyeLookInLeft', 'eyeLookOutRight']
+      .map((k) => written[k] ?? 0)
+      .reduce((a, b) => Math.max(a, b), 0)
+    expect(gaze, 'thinking must move the eyes off the viewer').toBeGreaterThan(0.05)
+    expect(ownerOf(t, 'gaze')?.winner).toBe('vitality')
+  })
+
+  test('listening raises the brows', async ({ page }) => {
+    await loadHarness(page)
+    await page.evaluate(() => window.__harness!.setConversationStatus('listening'))
+    await waitForFrames(page, 10)
+
+    const written = (await trace(page))?.written ?? {}
+    const brow = Math.max(written.browInnerUp ?? 0, written.browOuterUpLeft ?? 0)
+    expect(brow, 'an attentive brow raise while listening').toBeGreaterThan(0.05)
   })
 })

@@ -1,4 +1,4 @@
-import { createSimpleStore, useSimpleStore } from '@hexafield/simple-store/react'
+import { useSimpleStore } from '@hexafield/simple-store/react'
 import { VRM, VRMCore, VRMLoaderPlugin, VRMUtils, MToonMaterialLoaderPlugin } from '@pixiv/three-vrm'
 import { MToonNodeMaterial } from '@pixiv/three-vrm/nodes'
 import { createVRMAnimationClip, VRMAnimation, VRMAnimationLoaderPlugin } from '@pixiv/three-vrm-animation'
@@ -12,6 +12,8 @@ import type { GLTFParser } from 'three/examples/jsm/Addons.js'
 
 
 import { AvatarOptions } from './AvatarOptions'
+import { AvatarState } from './avatarState'
+import { ConversationStatusState } from '../../../services/conversation/conversationStatus'
 import { Vector3 } from 'three'
 import {
   VRMA_CLIPS,
@@ -31,15 +33,31 @@ import { AudioLipSync } from '../../../services/visemes/audioLipSync'
 import { PhonemeTimingEngine, blendAudioAndText } from '../../../services/visemes/phonemeTiming'
 import { ARKIT_LIP_SYNC_TARGETS, type VisemeWeights } from '../../../services/visemes/visemeTable'
 import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
-import { DEFAULT_FACE_LAYERS, FACE_LAYERS, FaceCompositor, MOUTH_REGIONS, type FaceRig } from '@ci-avatar/engine'
+import { SpringChain, detectSpringChains, type SpringBoneLike } from '@ci-avatar/engine'
+
+/** Scratch vector for the spring solver's world<->local conversions; avoids per-frame allocation. */
+const tmpVec3 = new THREE.Vector3()
+import {
+  DEFAULT_FACE_LAYERS,
+  FACE_LAYERS,
+  FaceCompositor,
+  MOUTH_REGIONS,
+  VRM_HUMAN_BONES,
+  resolveBones,
+  type FaceRig,
+  type NodeLike
+} from '@ci-avatar/engine'
 import {
   getFaceOverride,
   setActiveFaceCompositor,
+  setActiveFacialRig,
   setFaceSpeechDebug
 } from '../../../services/face/faceCompositorRegistry'
 import { createFaceRig, NULL_FACE_RIG } from '../../../services/face/faceRigFactory'
 import { translateEmoteTargets } from '../../../services/face/emoteVocabulary'
 import { ScheduledSpeechSource, selectSpeechSource } from '../../../services/face/speechSource'
+import { mark as markLatency } from '../../../services/telemetry/latency'
+import { setVoicePosition } from '../../../services/tts/audioGraph'
 
 // Default to a fully-rigged RPM pro model (visemes + ARKit morphs) so the default
 // companion lip-syncs and shows facial emotion. 'Liam' (LiamCES2) is a bare mesh with
@@ -75,14 +93,6 @@ const useStableArray = <T,>(items: T[]): T[] => {
   return stableRef.current
 }
 
-export const AvatarState = createSimpleStore({
-  selectedModel: AVATAR_MODEL,
-  visemesEnabled: true,
-  selectedAnimation: "",
-  emotesEnabled: true,
-  animationsEnabled: true,
-  dynamicsEnabled: true
-})
 
 interface AvatarModelProps {
   visemeService?: ReturnType<typeof useVisemeService>
@@ -98,7 +108,11 @@ interface AvatarModelProps {
    *  which is right for a bust. A wider shot uses it to pitch the camera down a little,
    *  which lifts the room UP the frame and cuts the dead wall above it. */
   cameraTargetDrop?: number
-  webGPUEnabled?: boolean
+  /**
+   * Position the voice at the avatar's head via an HRTF panner. Off by default:
+   * correct in XR and in a room, wrong for a bust on a flat viewport.
+   */
+  spatialAudio?: boolean
 }
 
 // Custom hook to load external animation files, including VRMA animations.
@@ -205,13 +219,16 @@ const AvatarModelComponent = ({
   onHeadLocated,
   cameraDistance = 0.5,
   cameraTargetDrop = 0,
-  webGPUEnabled
+  spatialAudio = false
 }: AvatarModelProps) => {
-  const { camera: viewerCamera } = useThree()
+  const { camera: viewerCamera, gl: renderer } = useThree()
 
   const [state] = useSimpleStore(AvatarState)
+  const [{ status: conversationStatus }] = useSimpleStore(ConversationStatusState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
+  // Secondary motion for rigs that have none of their own (i.e. everything that is not VRM).
+  const springChainsRef = useRef<SpringChain[]>([])
   const avatarOwnerTokenRef = useRef<symbol | undefined>(undefined)
   if (!avatarOwnerTokenRef.current) avatarOwnerTokenRef.current = Symbol('AvatarModel')
   const ttsServiceRef = useRef(ttsService)
@@ -238,13 +255,34 @@ const AvatarModelComponent = ({
 
   const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled, dynamicsEnabled } = state
 
+  /**
+   * Is the live renderer node-based?
+   *
+   * MToonNodeMaterial is a NODE material: its shader is assembled by the node
+   * system and it can only be compiled by a WebGPURenderer. Selecting it was
+   * gated on `webGPUEnabled`, which reports whether the DEVICE supports WebGPU
+   * and whether the user left the toggle on — not on what is actually rendering.
+   * Scene3D has never constructed a WebGPURenderer (the Canvas is r3f's default
+   * WebGL one), so on any machine where WebGPU is merely *available* every VRM
+   * loaded a node material into the WebGL program path and threw
+   * `resolveIncludes: Cannot read properties of undefined (reading 'replace')`
+   * on every frame — measured at 980 errors within nine seconds, with nothing
+   * on screen.
+   *
+   * Asking the renderer is the only question with a correct answer. When the
+   * WebGPU path is genuinely wired up, this starts returning true on its own.
+   */
+  const rendererIsNodeBased = Boolean(
+    (renderer as unknown as { isWebGPURenderer?: boolean }).isWebGPURenderer
+  )
+
   const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
     loader.register((parser: GLTFParser) => {
+      if (!rendererIsNodeBased) return new VRMLoaderPlugin(parser)
       const mtoonMaterialPlugin = new MToonMaterialLoaderPlugin(parser, {
         materialType: MToonNodeMaterial
       })
-
-      return new VRMLoaderPlugin(parser, webGPUEnabled ? { mtoonMaterialPlugin } : undefined)
+      return new VRMLoaderPlugin(parser, { mtoonMaterialPlugin })
     })
   })
 
@@ -309,6 +347,11 @@ const AvatarModelComponent = ({
       const cameraPosition = cameraPos.toArray() as [number, number, number]
 
       onHeadLocated?.(cameraTarget, cameraPosition)
+      // Place the voice at the head. In XR a voice from the middle of your own
+      // skull breaks presence more completely than any visual flaw; on a flat
+      // desktop bust it is off, because there is no room for it to be in.
+      if (spatialAudio) setVoicePosition(headWorldPos.toArray() as [number, number, number])
+      else setVoicePosition(null)
       if (isVRM) avatarRef.current.position.x += 0.2
     }
   }, [avatarRef.current])
@@ -384,58 +427,123 @@ const AvatarModelComponent = ({
       }
     })
 
+    // Ground the figure. A shadow-casting key light has been configured all
+    // along, but no mesh ever opted in, so nothing cast and nothing received —
+    // the avatar read as a cut-out floating in front of the background rather
+    // than as something standing in the scene.
+    //
+    // Gated on the renderer ACTUALLY having shadows enabled. Opting in
+    // unconditionally makes every frame render a shadow map, and on a software
+    // rasteriser (SwiftShader, which the capture suite and any GPU-blocked
+    // browser use) that is not "slower" — measured, it froze the render loop at
+    // five frames and never recovered. `quality.useShadows` is already false on
+    // those paths; this just respects it.
+    if (renderer.shadowMap?.enabled) {
+      avatarScene.traverse((child) => {
+        const mesh = child as THREE.Mesh
+        if (mesh.isMesh) {
+          mesh.castShadow = true
+          mesh.receiveShadow = true
+        }
+      })
+    }
+
     morphTargetsRef.current = morphTargets
 
     // Bind the face rig for THIS avatar. Chosen from what the head actually
     // exposes rather than from the file extension — a VRM with an empty
     // expression manager still has ordinary morph targets worth driving.
-    const { rig, kind } = createFaceRig(morphTargets, vrm)
+    const { rig, kind, facial } = createFaceRig(morphTargets, vrm, avatarScene)
     faceRigRef.current = rig
+    setActiveFacialRig(facial)
     // A new head means new channels: clear the compositor's write cache so the
     // first frame on the new rig is a full write, not a diff against the old one.
     compositorRef.current.reset()
     setActiveFaceCompositor(compositorRef.current)
     if (import.meta.env?.DEV) {
-      console.debug(`[avatar] face rig: ${kind} (${morphTargets.length} morph meshes)`)
+      console.debug(
+        `[avatar] face rig: ${kind} · tier ${facial.tier} (${facial.names.length} channels, ${morphTargets.length} morph meshes)`
+      )
     }
     const compositorForThisAvatar = compositorRef.current
 
-    const findBone = (...names: string[]): THREE.Bone | undefined => {
-      for (const n of names) {
-        if (bones[n]) return bones[n]
-        const lc = n.toLowerCase().replace(/[^a-z0-9]/g, '')
-        const hit = Object.keys(bones).find((k) => {
-          const normalized = k.toLowerCase().replace(/[^a-z0-9]/g, '')
-          return normalized === lc || normalized === 'mixamorig' + lc
-        })
-        if (hit) return bones[hit]
-      }
-      return undefined
+    // Resolve the humanoid skeleton generically. This replaced a hand-written
+    // alias list that only knew the rigs in this repo's own hardcoded catalog,
+    // which is why "load any avatar" was never actually true. resolveBones()
+    // matches RPM, Mixamo, VRM humanoid, VRoid and underscore-suffix naming, and
+    // refuses to bind `head` to an RPM "Headphones" prop.
+    const nodes: THREE.Object3D[] = []
+    avatarScene.traverse((child) => nodes.push(child))
+    const resolved = resolveBones(nodes as unknown as NodeLike[], {
+      // A VRM declares its own humanoid mapping; that beats guessing from names.
+      humanoid: vrm?.humanoid
+        ? (slot) => {
+            const vrmName = VRM_HUMAN_BONES[slot]
+            return vrmName ? (vrm.humanoid.getRawBoneNode(vrmName as never) as NodeLike | null) : null
+          }
+        : undefined
+    })
+    for (const [slot, node] of Object.entries(resolved)) {
+      if (node) bones[slot] = node as unknown as THREE.Bone
     }
-    const alias = (canonical: string, ...cands: string[]) => {
-      const bone = findBone(canonical, ...cands)
-      if (bone) bones[canonical] = bone
+    // The dynamics engine addresses bones by their canonical capitalised names.
+    for (const [slot, Canonical] of Object.entries({
+      head: 'Head', neck: 'Neck', spine: 'Spine', spine1: 'Spine1', spine2: 'Spine2',
+      leftShoulder: 'LeftShoulder', rightShoulder: 'RightShoulder',
+      leftArm: 'LeftArm', rightArm: 'RightArm',
+      leftForeArm: 'LeftForeArm', rightForeArm: 'RightForeArm',
+      leftHand: 'LeftHand', rightHand: 'RightHand'
+    })) {
+      if (bones[slot] && !bones[Canonical]) bones[Canonical] = bones[slot]
     }
-    alias('neck', 'Neck')
-    alias('spine', 'Spine')
-    alias('spine1', 'Spine1', 'Chest')
-    alias('spine2', 'Spine2', 'chest', 'upperChest', 'UpperChest')
-    alias('head', 'Head')
-    alias('leftEye', 'LeftEye', 'eye_L')
-    alias('rightEye', 'RightEye', 'eye_R')
-    alias('leftShoulder', 'LeftShoulder')
-    alias('rightShoulder', 'RightShoulder')
-    alias('leftArm', 'LeftArm')
-    alias('rightArm', 'RightArm')
-    alias('leftForeArm', 'LeftForeArm', 'LeftLowerArm')
-    alias('rightForeArm', 'RightForeArm', 'RightLowerArm')
-    alias('leftHand', 'LeftHand')
-    alias('rightHand', 'RightHand')
-    if (bones.head && !bones.Head) bones.Head = bones.head
-    if (bones.neck && !bones.Neck) bones.Neck = bones.neck
-    if (bones.spine2 && !bones.Spine2) bones.Spine2 = bones.spine2
 
     bonesRef.current = bones
+
+    // Secondary motion for non-VRM rigs that carry dangling bones.
+    //
+    // Inert on the shipped roster and known to be: the GLB avatars have 67 bones
+    // and zero hair/cloth joints (their hair is a static mesh), and every rig that
+    // DOES have dangling bones is a VRM, handled by its own spring-bone manager.
+    // This is here for Phase 3's custom-avatar URLs — VRoid/MMD/Mixamo rigs with
+    // hair joints and no solver of their own. Costs nothing when no chain is found.
+    //
+    // Bones an animation clip drives are excluded: the solver writes world
+    // positions after the mixer has posed the skeleton, so simulating a bone the
+    // clip owns makes that limb jitter.
+    springChainsRef.current = []
+    if (!isVRM && avatarRef.current) {
+      const animatedBoneNames = new Set<string>()
+      for (const clip of Object.values(actions ?? {})) {
+        for (const track of clip?.getClip().tracks ?? []) {
+          const dot = track.name.indexOf('.')
+          animatedBoneNames.add(dot > 0 ? track.name.slice(0, dot) : track.name)
+        }
+      }
+      const adapt = (o: THREE.Object3D): SpringBoneLike => ({
+        name: o.name,
+        getWorldPosition: (t: { x: number; y: number; z: number }) => {
+          o.getWorldPosition(tmpVec3)
+          t.x = tmpVec3.x
+          t.y = tmpVec3.y
+          t.z = tmpVec3.z
+          return t
+        },
+        setWorldPosition: (v: { x: number; y: number; z: number }) => {
+          tmpVec3.set(v.x, v.y, v.z)
+          // The solver speaks world space; a bone's transform is local to its parent.
+          if (o.parent) o.parent.worldToLocal(tmpVec3)
+          o.position.copy(tmpVec3)
+        },
+        get children() {
+          return o.children.map(adapt)
+        }
+      })
+      const chains = detectSpringChains(adapt(avatarRef.current), animatedBoneNames)
+      springChainsRef.current = chains.map((c) => new SpringChain(c))
+      if (chains.length > 0) {
+        console.debug(`[avatar] secondary motion: ${chains.length} spring chain(s)`)
+      }
+    }
     previousBoneOffsetsRef.current = {}
     sceneBaseRotationRef.current = avatarScene.rotation.clone()
     sceneBasePositionYRef.current = avatarScene.position.y
@@ -483,8 +591,9 @@ const AvatarModelComponent = ({
       compositorForThisAvatar.reset(faceRigRef.current)
       faceRigRef.current = NULL_FACE_RIG
       setActiveFaceCompositor(null)
+      setActiveFacialRig(null)
     }
-  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera])
+  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera, renderer, actions])
 
   // Startup animation sequence
   useEffect(() => {
@@ -626,7 +735,11 @@ const AvatarModelComponent = ({
       pointerX: threeState.pointer.x,
       pointerY: threeState.pointer.y,
       audioState,
-      conversationState: isSpeaking ? 'speaking' : 'idle'
+      // The real conversational state, not a two-value stand-in. This is what
+      // makes the avatar lean in while listening, avert its gaze while thinking,
+      // and blink faster under cognitive load — all of which the dynamics engine
+      // already implemented and none of which could ever fire before.
+      conversationState: isSpeaking ? 'speaking' : conversationStatus
     })
 
     // 5. Advance the services. These now only update their own internal state —
@@ -670,7 +783,11 @@ const AvatarModelComponent = ({
       isSpeaking
     })
     compositor.setAll(FACE_LAYERS.SPEECH, speech.contributions)
-    if (speech.claimsMouth) compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+    if (speech.claimsMouth) {
+      compositor.claim(FACE_LAYERS.SPEECH, MOUTH_REGIONS)
+      // The end of the chain: the first frame on which the mouth actually moves.
+      markLatency('first-viseme')
+    }
     setFaceSpeechDebug({
       kind: speech.kind,
       hasAnalyser: Boolean(analyser),
@@ -718,8 +835,18 @@ const AvatarModelComponent = ({
       }
     }
 
-    // 9. VRM spring bones
-    if (isVRM && vrm) vrm.springBoneManager?.update(delta)
+    // 9. VRM secondary motion. springBoneManager was already ticked; lookAt was
+    //    not, so a VRM's own eye-tracking sat inert while the rest of the rig
+    //    animated. Both are cheap and both are visible.
+    if (isVRM && vrm) {
+      vrm.springBoneManager?.update(delta)
+      vrm.lookAt?.update(delta)
+    } else {
+      // Non-VRM rigs get the same courtesy from our own solver. Last write of the
+      // frame, after the mixer and after the dynamics engine's scene offsets, so
+      // the chains hang off wherever the body actually ended up.
+      for (const chain of springChainsRef.current) chain.update(delta)
+    }
   })
 
   const handleAvatarClick = useCallback(

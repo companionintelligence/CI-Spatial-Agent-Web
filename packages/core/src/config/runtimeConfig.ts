@@ -1,4 +1,5 @@
 import type { LLMConfig } from '../services/llm/config/llmConfig'
+import type { STTConfig } from '../services/stt/sttConfig'
 import type { TTSConfig } from '../services/tts/ttsConfig'
 
 /**
@@ -16,6 +17,8 @@ export interface RuntimeAppConfig {
    * from inferred to phoneme-accurate lip-sync — without rebuilding the image.
    */
   tts?: Partial<TTSConfig>
+  /** Speech input. `remote: true` uses the appliance's own Whisper. */
+  stt?: Partial<STTConfig>
 }
 
 declare global {
