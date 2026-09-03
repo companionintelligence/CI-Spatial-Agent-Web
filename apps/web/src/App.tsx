@@ -1,6 +1,7 @@
 import type { XRStore } from '@react-three/xr'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
+import { ConversationMachine, toDisplayStatus } from '@ci-avatar/engine'
 
 import {
   Viewport3D,
@@ -100,21 +101,44 @@ export const App = () => {
   const [voiceCaption, setVoiceCaption] = useState('')
   const [voiceAnalyser, setVoiceAnalyser] = useState<AnalyserNode | undefined>(undefined)
 
+  /**
+   * The conversation's declared state machine.
+   *
+   * The polling below is a SENSOR — it reads whether TTS is producing audio,
+   * whether the LLM is in flight, whether a mic is open. It used to also be the
+   * decision, via a priority cascade of booleans, which is how combinations that
+   * should be impossible ("speaking" with no turn in flight, "thinking" forever
+   * after an error) became reachable. The sensor now raises EVENTS and the
+   * machine decides; illegal sequences are dropped and counted rather than
+   * producing a wrong avatar state.
+   */
+  const machineRef = useRef(new ConversationMachine())
+  const sensedRef = useRef({ speaking: false, thinking: false, listening: false })
+
   // TTS uses refs for frame-rate-sensitive state, so poll the small presentation
   // surface instead of forcing the render loop to become React stateful.
   useEffect(() => {
     const updateVoiceSurface = () => {
       const speechInfo = agent.services.tts.actions.getCurrentSpeechInfo()
       const isSpeaking = Boolean(speechInfo.text)
-      const nextStatus: AvatarConversationStatus = isSpeaking
-        ? 'speaking'
-        : agent.state.llmLoading
-          ? 'loading'
-          : agent.state.llmThinking
-            ? 'thinking'
-            : agent.state.vadIsListening || agent.state.sttIsListening
-              ? 'listening'
-              : 'idle'
+      const isThinking = agent.state.llmThinking
+      const isListening = agent.state.vadIsListening || agent.state.sttIsListening
+
+      // Edges, not levels: the machine wants "audio started", not "audio is on".
+      const machine = machineRef.current
+      const was = sensedRef.current
+      if (isListening && !was.listening) machine.send('MIC_OPENED')
+      if (isThinking && !was.thinking) machine.send('USER_SUBMITTED')
+      if (isSpeaking && !was.speaking) machine.send('AUDIO_STARTED')
+      if (!isSpeaking && was.speaking) machine.send('AUDIO_ENDED')
+      if (!isListening && was.listening && !isThinking && !isSpeaking) machine.send('MIC_CLOSED')
+      sensedRef.current = { speaking: isSpeaking, thinking: isThinking, listening: isListening }
+
+      // `loading` is a model-download concern, not a conversational state, so it
+      // sits outside the machine and simply outranks it in presentation.
+      const nextStatus: AvatarConversationStatus = agent.state.llmLoading
+        ? 'loading'
+        : toDisplayStatus(machine.current)
       setVoiceStatus(nextStatus)
       // Share it with the avatar's dynamics engine, not just the status pill.
       setConversationStatus(nextStatus)
