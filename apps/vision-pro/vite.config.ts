@@ -4,6 +4,11 @@ import { defineConfig } from 'vite'
 import { createHtmlPlugin } from 'vite-plugin-html'
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
+// `XR_ENV=avp` marks a build destined for the WebSpatial/visionOS container.
+// The dev:avp, build:avp and publish:avp scripts all set it; a plain `build` or
+// `preview` does not, and gets a self-contained browser bundle.
+const isSpatialBuild = process.env.XR_ENV === 'avp'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -31,10 +36,20 @@ export default defineConfig({
   ],
   build: {
     rollupOptions: {
-      external: [
-        '@webspatial/react-sdk/jsx-runtime',
-        '@webspatial/react-sdk/web/jsx-runtime'
-      ],
+      // The WebSpatial JSX runtime is externalised ONLY for the spatial build,
+      // where the container resolves the bare specifier itself.
+      //
+      // It used to be externalised unconditionally, which left
+      //   import "@webspatial/react-sdk/web/jsx-runtime"
+      // in the browser bundle as a bare specifier no browser can resolve. The
+      // built app therefore threw on load and rendered nothing outside the
+      // WebSpatial container — so `pnpm --filter @ci-avatar/vision-pro preview`
+      // has always been a blank page, and this app could not be developed or
+      // reviewed without a Vision Pro. Bundling it for the browser build fixes
+      // that and cannot affect the spatial build, which still externalises.
+      external: isSpatialBuild
+        ? ['@webspatial/react-sdk/jsx-runtime', '@webspatial/react-sdk/web/jsx-runtime']
+        : [],
       onwarn(warning, warn) {
         // @pixiv/three-vrm's MToonNodeMaterial keeps a runtime-guarded `FnCompat`
         // helper that calls three's pre-r168 `tslFn` only when REVISION < 168, and
