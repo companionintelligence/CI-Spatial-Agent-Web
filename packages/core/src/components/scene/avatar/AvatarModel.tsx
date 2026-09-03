@@ -33,6 +33,10 @@ import { AudioLipSync } from '../../../services/visemes/audioLipSync'
 import { PhonemeTimingEngine, blendAudioAndText } from '../../../services/visemes/phonemeTiming'
 import { ARKIT_LIP_SYNC_TARGETS, type VisemeWeights } from '../../../services/visemes/visemeTable'
 import { AvatarDynamicsEngine } from '../../../services/emote/avatarDynamics'
+import { SpringChain, detectSpringChains, type SpringBoneLike } from '@ci-avatar/engine'
+
+/** Scratch vector for the spring solver's world<->local conversions; avoids per-frame allocation. */
+const tmpVec3 = new THREE.Vector3()
 import {
   DEFAULT_FACE_LAYERS,
   FACE_LAYERS,
@@ -223,6 +227,8 @@ const AvatarModelComponent = ({
   const [{ status: conversationStatus }] = useSimpleStore(ConversationStatusState)
   const morphTargetsRef = useRef<THREE.Mesh[]>([])
   const bonesRef = useRef<Record<string, THREE.Bone>>({})
+  // Secondary motion for rigs that have none of their own (i.e. everything that is not VRM).
+  const springChainsRef = useRef<SpringChain[]>([])
   const avatarOwnerTokenRef = useRef<symbol | undefined>(undefined)
   if (!avatarOwnerTokenRef.current) avatarOwnerTokenRef.current = Symbol('AvatarModel')
   const ttsServiceRef = useRef(ttsService)
@@ -492,6 +498,52 @@ const AvatarModelComponent = ({
     }
 
     bonesRef.current = bones
+
+    // Secondary motion for non-VRM rigs that carry dangling bones.
+    //
+    // Inert on the shipped roster and known to be: the GLB avatars have 67 bones
+    // and zero hair/cloth joints (their hair is a static mesh), and every rig that
+    // DOES have dangling bones is a VRM, handled by its own spring-bone manager.
+    // This is here for Phase 3's custom-avatar URLs — VRoid/MMD/Mixamo rigs with
+    // hair joints and no solver of their own. Costs nothing when no chain is found.
+    //
+    // Bones an animation clip drives are excluded: the solver writes world
+    // positions after the mixer has posed the skeleton, so simulating a bone the
+    // clip owns makes that limb jitter.
+    springChainsRef.current = []
+    if (!isVRM && avatarRef.current) {
+      const animatedBoneNames = new Set<string>()
+      for (const clip of Object.values(actions ?? {})) {
+        for (const track of clip?.getClip().tracks ?? []) {
+          const dot = track.name.indexOf('.')
+          animatedBoneNames.add(dot > 0 ? track.name.slice(0, dot) : track.name)
+        }
+      }
+      const adapt = (o: THREE.Object3D): SpringBoneLike => ({
+        name: o.name,
+        getWorldPosition: (t: { x: number; y: number; z: number }) => {
+          o.getWorldPosition(tmpVec3)
+          t.x = tmpVec3.x
+          t.y = tmpVec3.y
+          t.z = tmpVec3.z
+          return t
+        },
+        setWorldPosition: (v: { x: number; y: number; z: number }) => {
+          tmpVec3.set(v.x, v.y, v.z)
+          // The solver speaks world space; a bone's transform is local to its parent.
+          if (o.parent) o.parent.worldToLocal(tmpVec3)
+          o.position.copy(tmpVec3)
+        },
+        get children() {
+          return o.children.map(adapt)
+        }
+      })
+      const chains = detectSpringChains(adapt(avatarRef.current), animatedBoneNames)
+      springChainsRef.current = chains.map((c) => new SpringChain(c))
+      if (chains.length > 0) {
+        console.debug(`[avatar] secondary motion: ${chains.length} spring chain(s)`)
+      }
+    }
     previousBoneOffsetsRef.current = {}
     sceneBaseRotationRef.current = avatarScene.rotation.clone()
     sceneBasePositionYRef.current = avatarScene.position.y
@@ -541,7 +593,7 @@ const AvatarModelComponent = ({
       setActiveFaceCompositor(null)
       setActiveFacialRig(null)
     }
-  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera, renderer])
+  }, [avatarScene, visemesEnabled, emotesEnabled, visemeService, emoteService, isVRM, vrm, viewerCamera, renderer, actions])
 
   // Startup animation sequence
   useEffect(() => {
@@ -789,6 +841,11 @@ const AvatarModelComponent = ({
     if (isVRM && vrm) {
       vrm.springBoneManager?.update(delta)
       vrm.lookAt?.update(delta)
+    } else {
+      // Non-VRM rigs get the same courtesy from our own solver. Last write of the
+      // frame, after the mixer and after the dynamics engine's scene offsets, so
+      // the chains hang off wherever the body actually ended up.
+      for (const chain of springChainsRef.current) chain.update(delta)
     }
   })
 
