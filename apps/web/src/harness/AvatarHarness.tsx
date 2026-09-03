@@ -170,6 +170,22 @@ function HarnessScene() {
     const w = window
     w.__harness = {
       listAvatars: () => Object.keys(AvatarOptions),
+
+      /**
+       * Every bone in the loaded rig.
+       *
+       * Added because "does this avatar have hair bones?" is a question about the
+       * ASSET, not the code, and there was no way to ask it — which is how a
+       * secondary-motion solver nearly shipped against a roster that has nothing
+       * for it to solve. Cheap, and it makes rig assumptions checkable.
+       */
+      listBones: () => {
+        const out: string[] = []
+        three.scene.traverse((o) => {
+          if ((o as THREE.Bone).isBone) out.push(o.name)
+        })
+        return out
+      },
       listClips: () => Object.keys(activeCatalog()),
       currentAvatar: () => AvatarState.get().selectedModel,
 
