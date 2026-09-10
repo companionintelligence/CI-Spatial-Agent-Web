@@ -34,7 +34,23 @@ jobs:
       - name: Build Web App
         run: pnpm --filter @ci-avatar/web build
 
+      # Skip deploy instead of failing when the Cloudflare secrets aren't
+      # configured. This step failed 90 of its last 91 runs over ~6 months on
+      # exactly this — a full checkout+install+build every push to main, just
+      # to fail at the last step. The build itself still runs and still
+      # verifies the app compiles; only the deploy is conditional.
+      - name: Check for Cloudflare secrets
+        id: secrets
+        run: |
+          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] && [ -n "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ] && [ -n "${{ secrets.CLOUDFLARE_PAGES_PROJECT }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Cloudflare Pages secrets are not configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_PAGES_PROJECT) — skipping deploy. Provision the secrets to enable it, or remove this workflow if this deploy target is no longer wanted."
+          fi
+
       - name: Deploy to Cloudflare Pages
+        if: steps.secrets.outputs.present == 'true'
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
