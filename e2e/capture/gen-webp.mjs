@@ -17,7 +17,7 @@ import { writeGalleryReadme } from './gallery-md.mjs'
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(scriptDir, '..', '..')
-const BASE = process.env.BASE || 'http://localhost:5199'
+const BASE = process.env.BASE || 'http://127.0.0.1:5178'
 const OUT = join(repoRoot, 'docs', 'visual-tests')
 const TMP = join(repoRoot, '.tmp', 'webp-frames')
 const onlyArg = (process.argv.find((a) => a.startsWith('--only=')) || '').slice('--only='.length)
@@ -186,8 +186,10 @@ async function captureEyes(browser, av, results) {
   try {
     const { ctx, page } = await loadAvatar(browser, av.name, 'face')
     await page.evaluate(() => window.__harness.captureClip('basic-idle') || window.__harness.captureClip('F_Standing_Idle_001') || window.__harness.captureClip('idle_loop'))
-    await page.evaluate(() => window.__harness.setServices({ emotes: false, visemes: false }))
-    await page.waitForTimeout(200)
+    // Disable ALL services including dynamics so our direct setMorph calls
+    // are not overwritten by the AvatarDynamicsEngine each frame.
+    await page.evaluate(() => window.__harness.setServices({ emotes: false, visemes: false, dynamics: false }))
+    await page.waitForTimeout(400)
     // One deliberate eye pose per encoded frame (2-frame holds; 3-frame smooth blinks).
     const C = {}
     const L = { eyeLookOutLeft: 1, eyeLookInRight: 1 }
@@ -233,6 +235,8 @@ async function captureBlends(browser, results) {
       process.stdout.write(`▶ ${pre}-${c.name} … `)
       try {
         await page.evaluate((code) => { const h = window.__harness; new Function('h', code)(h) }, c.clips)
+        // Give the mixer time to fully settle past the t=0 bind pose before capturing.
+        await page.waitForTimeout(600)
         const { sizeKb } = await grab(page, `${pre}-${c.name}`, c.ms, { trim: 1 })
         record(results, { name: `${pre}-${c.name}`, file: `${pre}-${c.name}.webp`, page: 'blends', avatar, group: 'blend', ok: true, sizeKb, caption: `${c.cap} (${avatar})` })
       } catch (e) {
@@ -249,7 +253,16 @@ async function captureBlends(browser, results) {
  * stage bounds the blast radius, and a crashed stage doesn't take the rest down.
  */
 async function stage(label, fn, results) {
-  const browser = await chromium.launch()
+  const browser = await chromium.launch({
+    headless: true,
+    args: [
+      '--use-gl=angle',
+      '--use-angle=metal',
+      '--enable-gpu-rasterization',
+      '--enable-webgl',
+      '--allow-insecure-localhost'
+    ]
+  })
   try {
     await fn(browser)
   } catch (e) {
