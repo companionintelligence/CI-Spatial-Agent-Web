@@ -241,12 +241,13 @@ function HarnessScene() {
 
       // ---- direct rig control (for crisp, deterministic FACE tests) ----
       // Toggle the per-frame services so direct morph writes aren't overwritten.
-      setServices(flags: { visemes?: boolean; emotes?: boolean; animations?: boolean }) {
+      setServices(flags: { visemes?: boolean; emotes?: boolean; animations?: boolean; dynamics?: boolean }) {
         AvatarState.set((s) => ({
           ...s,
           visemesEnabled: flags.visemes ?? s.visemesEnabled,
           emotesEnabled: flags.emotes ?? s.emotesEnabled,
-          animationsEnabled: flags.animations ?? s.animationsEnabled
+          animationsEnabled: flags.animations ?? s.animationsEnabled,
+          dynamicsEnabled: flags.dynamics ?? s.dynamicsEnabled
         }))
       },
 

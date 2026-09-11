@@ -42,7 +42,8 @@ export const AvatarState = createSimpleStore({
   visemesEnabled: true,
   selectedAnimation: "",
   emotesEnabled: true,
-  animationsEnabled: true
+  animationsEnabled: true,
+  dynamicsEnabled: true
 })
 
 interface AvatarModelProps {
@@ -178,7 +179,7 @@ const AvatarModelComponent = ({
   const prevWeightsRef = useRef<VisemeWeights | null>(null)
   const lastTextRef = useRef<string>('')
 
-  const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled } = state
+  const { selectedModel, visemesEnabled, emotesEnabled, animationsEnabled, dynamicsEnabled } = state
 
   const gltf = useLoader(GLTFLoader, selectedModel, (loader) => {
     loader.register((parser: GLTFParser) => {
@@ -497,41 +498,52 @@ const AvatarModelComponent = ({
     }
 
     // 4. Autonomous Facial Vitality Dynamics (Blinking, Saccades, Acoustic Brows)
-    const isSpeaking = audioState?.isSpeaking ?? false
-    const dynamics = dynamicsEngineRef.current.update({
-      elapsedTime: threeState.clock.getElapsedTime(),
-      delta,
-      pointerX: threeState.pointer.x,
-      pointerY: threeState.pointer.y,
-      audioState,
-      conversationState: isSpeaking ? 'speaking' : 'idle'
-    })
+    // When dynamicsEnabled=false (e.g. harness eye-capture tests), skip the engine entirely
+    // so directly scripted morph writes (setMorph) aren't overwritten each frame.
+    if (dynamicsEnabled) {
+      const isSpeaking = audioState?.isSpeaking ?? false
+      const dynamics = dynamicsEngineRef.current.update({
+        elapsedTime: threeState.clock.getElapsedTime(),
+        delta,
+        pointerX: threeState.pointer.x,
+        pointerY: threeState.pointer.y,
+        audioState,
+        conversationState: isSpeaking ? 'speaking' : 'idle'
+      })
 
-    if (morphTargetsRef.current.length > 0) {
-      for (const mesh of morphTargetsRef.current) {
-        if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
-        for (const [key, val] of Object.entries(dynamics.blendshapes)) {
-          const idx = mesh.morphTargetDictionary[key]
-          if (idx !== undefined) {
-            mesh.morphTargetInfluences[idx] = val
+      // Build the set of keys the dynamics engine will write. When emotesEnabled,
+      // suppress the brow keys — the emote service owns eyebrow blendshapes and
+      // the dynamics brow values would fight it and mute visible expressions.
+      const dynamicsBrows = ['browInnerUp', 'browOuterUpLeft', 'browOuterUpRight']
+
+      if (morphTargetsRef.current.length > 0) {
+        for (const mesh of morphTargetsRef.current) {
+          if (!mesh.morphTargetInfluences || !mesh.morphTargetDictionary) continue
+          for (const [key, val] of Object.entries(dynamics.blendshapes)) {
+            // Skip brow blendshapes when the emote service is active — it writes them.
+            if (emotesEnabled && dynamicsBrows.includes(key)) continue
+            const idx = mesh.morphTargetDictionary[key]
+            if (idx !== undefined) {
+              mesh.morphTargetInfluences[idx] = val
+            }
           }
-        }
-        if (dynamics.blendshapes.eyeBlinkLeft > 0) {
-          if (mesh.morphTargetDictionary['Blink'] !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary['Blink']] = dynamics.blendshapes.eyeBlinkLeft
-          }
-          if (mesh.morphTargetDictionary['eyesClosed'] !== undefined) {
-            mesh.morphTargetInfluences[mesh.morphTargetDictionary['eyesClosed']] = dynamics.blendshapes.eyeBlinkLeft
+          if (dynamics.blendshapes.eyeBlinkLeft > 0) {
+            if (mesh.morphTargetDictionary['Blink'] !== undefined) {
+              mesh.morphTargetInfluences[mesh.morphTargetDictionary['Blink']] = dynamics.blendshapes.eyeBlinkLeft
+            }
+            if (mesh.morphTargetDictionary['eyesClosed'] !== undefined) {
+              mesh.morphTargetInfluences[mesh.morphTargetDictionary['eyesClosed']] = dynamics.blendshapes.eyeBlinkLeft
+            }
           }
         }
       }
-    }
 
-    if (isVRM && vrm?.expressionManager) {
-      if (dynamics.blendshapes.eyeBlinkLeft > 0) {
-        try {
-          vrm.expressionManager.setValue('blink', dynamics.blendshapes.eyeBlinkLeft)
-        } catch {}
+      if (isVRM && vrm?.expressionManager) {
+        if (dynamics.blendshapes.eyeBlinkLeft > 0) {
+          try {
+            vrm.expressionManager.setValue('blink', dynamics.blendshapes.eyeBlinkLeft)
+          } catch {}
+        }
       }
     }
 
