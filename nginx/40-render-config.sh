@@ -17,8 +17,15 @@ cat > /usr/share/nginx/html/config.json <<EOF
     "proxy_model": "${APP_LLM_MODEL:-}",
     "ollama_url": "${APP_OLLAMA_URL:-}",
     "ollama_model": "${APP_LLM_MODEL:-gemma3:1b}"
+  },
+  "tts": {
+    "mode": "${APP_TTS_MODE:-browser}",
+    "voice": "${APP_TTS_VOICE:-}"
+  },
+  "stt": {
+    "remote": ${APP_STT_REMOTE:-false}
   }
 }
 EOF
 
-echo "[40-render-config] wrote /config.json (provider=${APP_LLM_PROVIDER:-proxy})"
+echo "[40-render-config] wrote /config.json (provider=${APP_LLM_PROVIDER:-proxy} tts=${APP_TTS_MODE:-browser})"

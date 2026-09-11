@@ -5,7 +5,7 @@ export interface WhisperConfig {
     quantized: boolean
     multilingual: boolean
   }
-  
+
 // Whisper data interface for visemes
 export interface WhisperData {
     words?: string[]
@@ -20,13 +20,13 @@ quantized: true,
 multilingual: false
 }
 
-  
+
 export interface TTSConfig {
     voice: string
     speed: number
     pitch: number
     volume: number
-    mode: 'browser' | 'local' | 'remote' | 'pocket' // browser = speechSynthesis API, local = vits-web worker, remote = API call, pocket = Pocket TTS server
+    mode: 'browser' | 'local' | 'remote' | 'pocket' | 'synthetic' | 'headtts' // synthetic = deterministic render-probe PCM through the real analyser path
     apiKey?: string
     url?: string
     model?: string
@@ -39,7 +39,7 @@ export interface TTSConfig {
       voice: string // predefined voice name (marius, javert, jean, alba, fantine, cosette, eponine, azelma) or URL
     }
   }
-  
+
   export const defaultTTSConfig: TTSConfig = {
     voice: import.meta.env.VITE_TTS_VOICE || 'marius',
     speed: parseFloat(import.meta.env.VITE_TTS_SPEED || "1.0") || 1.0,
@@ -52,7 +52,7 @@ export interface TTSConfig {
     // described itself as "an AI with a face, a voice and a body". Every richer
     // backend (pocket / local / remote) stays available as an opt-in upgrade via
     // VITE_TTS_MODE; only the fallback position changed.
-    mode: (import.meta.env.VITE_TTS_MODE || 'browser') as 'browser' | 'local' | 'remote' | 'pocket', // 'browser', 'local', 'remote' or 'pocket'
+    mode: (import.meta.env.VITE_TTS_MODE || 'browser') as 'browser' | 'local' | 'remote' | 'pocket' | 'synthetic' | 'headtts',
     apiKey: import.meta.env.VITE_TTS_API_KEY,
     url: import.meta.env.VITE_TTS_URL || 'https://api.openai.com/v1/audio/speech',
     model: import.meta.env.VITE_TTS_MODEL || 'tts-1',
@@ -66,4 +66,4 @@ export interface TTSConfig {
     }
   }
 
-  
+

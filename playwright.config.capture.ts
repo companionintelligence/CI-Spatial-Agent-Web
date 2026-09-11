@@ -24,7 +24,12 @@ export default defineConfig({
   testDir: './tests',
   // Only the L4/L5 suites belong to this config; the legacy agent/audio/animation
   // specs stay on the root config (which targets 5173 + Ollama).
-  testMatch: ['**/render-matrix.spec.ts', '**/scenarios/**/*.spec.ts'],
+  testMatch: [
+    '**/render-matrix.spec.ts',
+    '**/avatar-visual-matrix.spec.ts',
+    '**/face-compositor.spec.ts',
+    '**/scenarios/**/*.spec.ts'
+  ],
 
   timeout: 120 * 1000,
   expect: { timeout: 30 * 1000 },
@@ -63,7 +68,12 @@ export default defineConfig({
             '--enable-webgl',
             '--use-fake-ui-for-media-stream',
             '--use-fake-device-for-media-stream',
-            '--autoplay-policy=no-user-gesture-required'
+            '--autoplay-policy=no-user-gesture-required',
+            // Keep render probes on real RAFs when Chromium considers the
+            // software-WebGL tab backgrounded or occluded.
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
           ]
         }
       }

@@ -19,6 +19,9 @@ import { defaultTTSConfig, type TTSConfig, type WhisperData } from './tts/ttsCon
 import { defaultSTTConfig, type STTConfig } from './stt/sttConfig'
 import { defaultLLMConfig, type LLMConfig } from './llm/config/llmConfig'
 import { shouldTriggerBargeIn } from '../integration/emotionIntegration'
+import { resetActiveFace } from './face/faceCompositorRegistry'
+import { beginTurn, mark as markLatency } from './telemetry/latency'
+import { transcribeRemote } from './stt/remoteStt'
 
 // STT service result interface (defined locally in sttService.ts)
 interface STTPerformResult {
@@ -180,6 +183,13 @@ export interface AgentService {
   }
 }
 
+/**
+ * Sample rate the VAD emits. `@ricky0123/vad-web` resamples to 16 kHz for Silero
+ * regardless of the device's own rate, and the transcript is garbage if the
+ * server is told the wrong one.
+ */
+const VAD_SAMPLE_RATE = 16000
+
 // Default app behavior configuration
 const defaultAppConfig = {
   autoSubmitEnabled: true,
@@ -206,7 +216,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const vadConfig = { ...defaultVadConfig, ...config.vad }
   const ttsConfig = { ...defaultTTSConfig, ...config.tts }
   const sttConfig = { ...defaultSTTConfig, ...config.stt }
-  const llmConfig = { ...defaultLLMConfig, ...config.llm }
+  const llmConfig = useMemo(() => ({ ...defaultLLMConfig, ...config.llm }), [config.llm])
   const appConfig = {
     autoSubmitEnabled: config.autoSubmitEnabled ?? defaultAppConfig.autoSubmitEnabled,
     bargeInEnabled: config.bargeInEnabled ?? defaultAppConfig.bargeInEnabled
@@ -228,14 +238,23 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
   const visemes = useVisemeService()
   const emotes = useEmoteService()
   const animations = useAnimationService()
+  const onLLMStatus = callbacks.onLLMStatus
+  const handleLLMStatus = useCallback(
+    (status: LLMStatusUpdate) => {
+      console.log('LLM status:', status)
+      onLLMStatus?.(status)
+    },
+    [onLLMStatus]
+  )
+
   // Initialize LLM service
   const llmService = useLLMService({
     config: llmConfig,
-    onStatus: (status: LLMStatusUpdate) => {
-      console.log('LLM status:', status)
-      callbacks.onLLMStatus?.(status)
-    },
+    onStatus: handleLLMStatus,
     onResponse: (response: LLMResponse) => {
+      // First token of the reply — the number that decides whether the companion
+      // feels responsive or sluggish.
+      markLatency('llm-first-token')
       const breath = response.breath
       if (breath) {
         tts.actions.speak(breath)
@@ -296,6 +315,9 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     emotes.actions.onBargeIn()
     // Stop the avatar silently mouthing the rest of the interrupted sentence (H5).
     visemes.actions.reset()
+    // Close the mouth on THIS frame rather than over the compositor's release
+    // ramp: a barge-in that takes 200 ms to land reads as not being heard.
+    resetActiveFace()
     // Drop any queued gesture performances from the interrupted turn (M20).
     animations.actions.clearQueue()
   }, [tts.state.isSpeaking, tts.actions, emotes.actions, visemes.actions, animations.actions])
@@ -306,8 +328,37 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
     onVADResult: (result) => {
       callbacks.onVADResult?.(result)
     },
-    onSpeechStart: callbacks.onSpeechStart,
-    onSpeechEnd: callbacks.onSpeechEnd
+    onSpeechStart: () => {
+      // The user began speaking: this is when their turn starts, and every
+      // latency number should be measured from here rather than from whenever
+      // the transcript happened to finalize.
+      beginTurn()
+      callbacks.onSpeechStart?.()
+    },
+    onSpeechEnd: (audio: ArrayBuffer) => {
+      callbacks.onSpeechEnd?.(audio)
+      // Local transcription. The VAD has always captured this audio and dropped
+      // it on the floor; with `stt.remote` on we send it to the appliance's own
+      // Whisper instead of relying on webkitSpeechRecognition, which is
+      // Chromium-only and streams the microphone to Google.
+      if (!sttConfig.remote) return
+      void transcribeRemote(audio, VAD_SAMPLE_RATE, {
+        language: sttConfig.language.split('-')[0]
+      }).then((result) => {
+        if (!result.ok || !result.text) return
+        markLatency('stt-final')
+        const interrupt = Date.now()
+        interruptCounterRef.current = interrupt
+        conversation.actions.addMessage(result.text, true)
+        llmService.actions.processUserInput({
+          text: result.text,
+          human: true,
+          final: true,
+          bargein: appConfig.bargeInEnabled,
+          interrupt
+        })
+      })
+    }
   })
 
   // Initialize STT service
@@ -330,6 +381,7 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
           setCurrentInterimTranscript(result.text)
         }
 
+        markLatency('stt-final')
         interruptCounterRef.current = interrupt
         llmService.actions.processUserInput({
           text: result.text,
@@ -371,6 +423,8 @@ export const useAgent = (config: AgentConfig = {}, callbacks: AgentCallbacks = {
       if (message.trim()) {
         const userMessage = message.trim()
 
+        // A typed turn starts here; a spoken one starts at speech end (below).
+        beginTurn()
         conversation.actions.addMessage(userMessage, true)
 
         const interrupt = Date.now()

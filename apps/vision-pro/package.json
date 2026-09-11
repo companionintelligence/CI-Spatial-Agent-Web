@@ -16,9 +16,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "run:avp": "dotenv -e .env.local -- sh -c 'webspatial-builder run --base=$XR_DEV_SERVER'",
-    "build:avp": "dotenv -e .env.local -- sh -c 'webspatial-builder build --base=$XR_PRE_SERVER --bundle-id=$XR_BUNDLE_ID --teamId=$XR_TEAM_ID'",
-    "publish:avp": "dotenv -e .env.local -- sh -c 'webspatial-builder publish --base=$XR_PROD_SERVER --bundle-id=$XR_BUNDLE_ID --teamId=$XR_TEAM_ID --version=$XR_VERSION --u=$XR_DEV_NAME --p=$XR_DEV_PASSWORD'"
+    "run:avp": "dotenv -e .env.local -- sh -c 'XR_ENV=avp webspatial-builder run --base=$XR_DEV_SERVER'",
+    "build:avp": "dotenv -e .env.local -- sh -c 'XR_ENV=avp webspatial-builder build --base=$XR_PRE_SERVER --bundle-id=$XR_BUNDLE_ID --teamId=$XR_TEAM_ID'",
+    "publish:avp": "dotenv -e .env.local -- sh -c 'XR_ENV=avp webspatial-builder publish --base=$XR_PROD_SERVER --bundle-id=$XR_BUNDLE_ID --teamId=$XR_TEAM_ID --version=$XR_VERSION --u=$XR_DEV_NAME --p=$XR_DEV_PASSWORD'"
   },
   "dependencies": {
     "@ci-avatar/core": "workspace:*",
@@ -30,7 +30,8 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^15.7.2",
-    "three": "^0.182.0"
+    "three": "^0.182.0",
+    "@ci-avatar/engine": "workspace:*"
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

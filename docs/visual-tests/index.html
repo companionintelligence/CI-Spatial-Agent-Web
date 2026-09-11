@@ -1,114 +1,209 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Avatar Visual Tests — WebP capture gallery</title>
-    <style>
-      :root {
-        --bg: #061014;
-        --panel: #0c1e24;
-        --line: #16333b;
-        --primary: #abd4d8;
-        --ink: #e6f1f2;
-        --muted: #7fa0a6;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        background: radial-gradient(1200px 600px at 50% -10%, #0b2028, var(--bg));
-        color: var(--ink);
-        font: 15px/1.5 'Montserrat', system-ui, -apple-system, sans-serif;
-        padding: 40px 24px 80px;
-      }
-      header { max-width: 1180px; margin: 0 auto 28px; }
-      h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.02em; }
-      .sub { color: var(--muted); max-width: 74ch; }
-      .sub code { color: var(--primary); }
-      .count { color: var(--primary); font-weight: 600; }
-      h2 {
-        max-width: 1180px; margin: 40px auto 14px; font-size: 13px;
-        text-transform: uppercase; letter-spacing: 0.14em; color: var(--primary);
-        border-bottom: 1px solid var(--line); padding-bottom: 8px;
-      }
-      .grid {
-        max-width: 1180px; margin: 0 auto;
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px;
-      }
-      .card {
-        background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
-        overflow: hidden; display: flex; flex-direction: column;
-      }
-      .card img { width: 100%; display: block; background: #0a1416; aspect-ratio: 3 / 4; object-fit: contain; }
-      .card.face img { aspect-ratio: 1 / 1; }
-      .meta { padding: 9px 12px; }
-      .cap { font-size: 13px; }
-      .tag {
-        display: inline-block; margin-top: 6px; font-size: 11px; color: var(--muted);
-        border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px;
-      }
-      .err { color: #f3b0b0; max-width: 1180px; margin: 20px auto; }
-    </style>
-  </head>
-  <body>
-    <header>
-      <h1>Avatar Visual Tests <span class="count" id="count"></span></h1>
-      <p class="sub">
-        Animated WebP clips captured from the real avatar rig via the capture harness
-        (<code>apps/web/harness.html</code> → <code>e2e/capture/gen-webp.mjs</code>) — a faithful
-        record of the shipping animation / viseme / emote services across the full mixer catalog.
-        Regenerate with <code>node e2e/capture/gen-webp.mjs</code>. See <code>docs/TESTING-PIPELINE.md</code>.
-      </p>
-    </header>
-    <div id="app"></div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CI Spatial Companion — Avatar Animation & Video Matrix</title>
+  <style>
+    :root {
+      --bg: #070e12;
+      --card-bg: rgba(14, 26, 32, 0.85);
+      --border: rgba(255, 255, 255, 0.12);
+      --accent: #2dd4bf;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 32px 24px;
+      line-height: 1.5;
+    }
+    header {
+      max-width: 1300px;
+      margin: 0 auto 32px auto;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+    }
+    h1 { font-size: 26px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 10px; }
+    h1 span { color: var(--accent); font-size: 14px; background: rgba(45, 212, 191, 0.12); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--accent); }
+    p.sub { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+    .avatar-section {
+      max-width: 1300px;
+      margin: 0 auto 48px auto;
+    }
+    .avatar-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      font-size: 12px;
+      background: rgba(255,255,255,0.08);
+      padding: 2px 8px;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .media-container {
+      width: 100%;
+      height: 280px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    video, img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .card-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Spatial Companion Avatar Video Matrix <span>Automated Media Suite</span></h1>
+    <p class="sub">High-resolution frame captures and video clips across body animations, multi-band FFT audio lip-sync, ARKit blendshapes, and facial dynamics.</p>
+  </header>
 
-    <script>
-      // Section order + human labels; anything else falls through to its raw group name.
-      const SECTIONS = [
-        ['viseme', 'Visemes / lip-sync', true],
-        ['emote', 'Expression / emote', true],
-        ['idle', 'Body — idle', false],
-        ['communication', 'Body — communication', false],
-        ['gesture', 'Body — gesture', false],
-        ['expression', 'Body — expression / reaction', false],
-        ['action', 'Body — action', false],
-        ['movement', 'Body — movement', false],
-        ['vrma', 'VRM body animation (VRMA)', false],
-        ['blend', 'Blend / crossfade UX', false]
-      ]
-      const tag = (c) => (c.avatar ? `${c.avatar}${c.clip ? '' : ''}` : '')
-      function card(c, face) {
-        return `<figure class="card${face ? ' face' : ''}">
-          <img loading="lazy" src="${c.file}" alt="${c.caption || c.name}" />
-          <figcaption class="meta"><div class="cap">${c.caption || c.clip || c.name}</div>
-          ${c.avatar ? `<span class="tag">${c.avatar}</span>` : ''}</figcaption></figure>`
-      }
-      fetch('manifest.json')
-        .then((r) => r.json())
-        .then((m) => {
-          const ok = m.clips.filter((c) => c.ok)
-          document.getElementById('count').textContent = `· ${ok.length} clips @ ${m.fps} fps`
-          const byGroup = {}
-          for (const c of ok) (byGroup[c.group] ||= []).push(c)
-          const seen = new Set()
-          let html = ''
-          for (const [g, label, face] of SECTIONS) {
-            const items = byGroup[g]
-            if (!items || !items.length) continue
-            seen.add(g)
-            html += `<h2>${label} · ${items.length}</h2><div class="grid">${items.map((c) => card(c, face)).join('')}</div>`
-          }
-          for (const g of Object.keys(byGroup)) {
-            if (seen.has(g)) continue
-            html += `<h2>${g} · ${byGroup[g].length}</h2><div class="grid">${byGroup[g].map((c) => card(c, false)).join('')}</div>`
-          }
-          document.getElementById('app').innerHTML = html
-        })
-        .catch((e) => {
-          document.getElementById('app').innerHTML =
-            `<p class="err">Could not load manifest.json (${e}). Serve this folder over HTTP
-             (e.g. <code>npx serve docs/visual-tests</code>) — file:// blocks fetch.</p>`
-        })
-    </script>
-  </body>
+
+    <section class="avatar-section">
+      <div class="avatar-title">
+        Greg
+        <span class="badge">7 Scenarios Captured</span>
+      </div>
+      <div class="grid">
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-idle.mp4" controls autoplay loop muted playsinline poster="shots/greg-idle.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Idle Stance & Breathing</div>
+              <div class="card-meta">
+                <span>Shot: body</span>
+                <span>Duration: 2500ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-talking.mp4" controls autoplay loop muted playsinline poster="shots/greg-talking.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Conversational Talking</div>
+              <div class="card-meta">
+                <span>Shot: upper</span>
+                <span>Duration: 3000ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-waving.mp4" controls autoplay loop muted playsinline poster="shots/greg-waving.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Waving Gesture</div>
+              <div class="card-meta">
+                <span>Shot: upper</span>
+                <span>Duration: 2500ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-dance.mp4" controls autoplay loop muted playsinline poster="shots/greg-dance.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Dance Action</div>
+              <div class="card-meta">
+                <span>Shot: body</span>
+                <span>Duration: 3500ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-emote-happy.mp4" controls autoplay loop muted playsinline poster="shots/greg-emote-happy.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Happy Emotion & Micro-Expression</div>
+              <div class="card-meta">
+                <span>Shot: face</span>
+                <span>Duration: 2000ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-emote-surprised.mp4" controls autoplay loop muted playsinline poster="shots/greg-emote-surprised.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Surprised Reaction</div>
+              <div class="card-meta">
+                <span>Shot: face</span>
+                <span>Duration: 2000ms</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="media-container">
+              <video src="videos/greg-lipsync-speech.mp4" controls autoplay loop muted playsinline poster="shots/greg-lipsync-speech.png"></video>
+            </div>
+            <div class="card-body">
+              <div class="card-title">Phonetic Speech & Audio Lip-Sync</div>
+              <div class="card-meta">
+                <span>Shot: face</span>
+                <span>Duration: 3500ms</span>
+              </div>
+            </div>
+          </div>
+
+      </div>
+    </section>
+
+</body>
 </html>

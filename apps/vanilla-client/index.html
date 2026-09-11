@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0e14" />
+  <title>CI Spatial Companion — Agentic Character Engine</title>
+  <style>
+    :root {
+      --bg: #0b0e14;
+      --panel: rgba(16, 20, 30, 0.88);
+      --panel-border: rgba(120, 140, 180, 0.18);
+      --accent: #00ff88;
+      --accent-dim: #00b86b;
+      --warn: #ffb347;
+      --text: #e8edf6;
+      --text-dim: #8b95a8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: var(--bg); color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+    #scene-container { position: fixed; inset: 0; }
+    #scene-container canvas { display: block; }
+
+    /* ---------- splash ---------- */
+    #splash {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; background: var(--bg); transition: opacity 0.5s;
+    }
+    #splash.hidden { opacity: 0; pointer-events: none; }
+    #splash .logo { font-size: 42px; }
+    #splash .title { font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); }
+    #splash .spinner {
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 3px solid var(--panel-border); border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---------- HUD ---------- */
+    #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+    #hud > * { pointer-events: auto; }
+
+    #status-bar {
+      position: absolute; top: max(10px, env(safe-area-inset-top)); left: 12px;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      font-size: 12px;
+    }
+    .pill {
+      background: var(--panel); border: 1px solid var(--panel-border);
+      border-radius: 999px; padding: 4px 12px; backdrop-filter: blur(8px);
+      display: flex; align-items: center; gap: 6px; color: var(--text-dim);
+    }
+    .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; }
+    .pill .dot.on { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .pill .dot.busy { background: var(--warn); box-shadow: 0 0 6px var(--warn); animation: pulse 1s infinite; }
+    @keyframes pulse { 50% { opacity: 0.4; } }
+
+    #top-right {
+      position: absolute; top: max(10px, env(safe-area-inset-top)); right: 12px;
+      display: flex; gap: 8px;
+    }
+    .btn {
+      background: var(--panel); border: 1px solid var(--panel-border); color: var(--text);
+      border-radius: 10px; padding: 8px 14px; font-size: 13px; cursor: pointer;
+      backdrop-filter: blur(8px); transition: border-color 0.15s, background 0.15s;
+    }
+    .btn:hover:not(:disabled) { border-color: var(--accent-dim); }
+    .btn:disabled { opacity: 0.35; cursor: default; }
+    .btn.primary { border-color: var(--accent-dim); color: var(--accent); }
+
+    #chat-log {
+      position: absolute; left: 12px; bottom: 96px;
+      width: min(420px, calc(100vw - 24px)); max-height: 42vh;
+      overflow-y: auto; display: flex; flex-direction: column; gap: 6px;
+      mask-image: linear-gradient(to bottom, transparent, black 12%);
+      scrollbar-width: thin;
+    }
+    .msg {
+      border-radius: 12px; padding: 8px 12px; font-size: 14px; line-height: 1.4;
+      background: var(--panel); border: 1px solid var(--panel-border);
+      backdrop-filter: blur(8px); max-width: 95%; white-space: pre-wrap;
+    }
+    .msg.user { align-self: flex-end; border-color: rgba(0, 255, 136, 0.25); }
+    .msg.assistant { align-self: flex-start; }
+    .msg.action { font-size: 12px; color: var(--text-dim); font-style: italic; padding: 4px 12px; background: transparent; border: none; }
+
+    #input-row {
+      position: absolute; left: 12px; bottom: max(14px, env(safe-area-inset-bottom));
+      width: min(420px, calc(100vw - 24px)); display: flex; gap: 8px;
+    }
+    #chat-input {
+      flex: 1; background: var(--panel); border: 1px solid var(--panel-border);
+      color: var(--text); border-radius: 12px; padding: 12px 14px; font-size: 14px;
+      backdrop-filter: blur(8px); outline: none;
+    }
+    #chat-input:focus { border-color: var(--accent-dim); }
+    #ptt-btn {
+      width: 52px; min-width: 52px; height: 46px; border-radius: 12px; font-size: 19px;
+      display: flex; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none; touch-action: none;
+    }
+    #ptt-btn.listening { background: rgba(255, 60, 60, 0.25); border-color: #ff5050; }
+
+    /* ---------- viewfinder PiP (flat mode) ---------- */
+    #pip {
+      position: absolute; right: 12px; bottom: max(14px, env(safe-area-inset-bottom));
+      width: 240px; border-radius: 12px; overflow: hidden;
+      border: 1px solid var(--panel-border); background: #000; display: none;
+    }
+    #pip video { width: 100%; display: block; }
+    #pip canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    #pip .pip-tag {
+      position: absolute; top: 6px; left: 8px; font-size: 10px; color: var(--accent);
+      background: rgba(0,0,0,0.6); padding: 2px 7px; border-radius: 999px;
+    }
+
+    /* ---------- settings drawer ---------- */
+    #settings {
+      position: absolute; top: 54px; right: 12px; width: min(340px, calc(100vw - 24px));
+      background: var(--panel); border: 1px solid var(--panel-border); border-radius: 14px;
+      padding: 16px; backdrop-filter: blur(12px); display: none;
+      max-height: 75vh; overflow-y: auto;
+    }
+    #settings.open { display: block; }
+    #settings h3 { margin: 0 0 12px; font-size: 14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-dim); }
+    #settings label { display: block; font-size: 12px; color: var(--text-dim); margin: 10px 0 4px; }
+    #settings input[type="text"], #settings select {
+      width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--panel-border);
+      color: var(--text); border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none;
+    }
+    #settings .check-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text); }
+    #settings .row-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+    /* ---------- toasts ---------- */
+    #toasts {
+      position: absolute; top: 54px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; gap: 6px; align-items: center;
+    }
+    .toast {
+      background: var(--panel); border: 1px solid var(--warn); color: var(--text);
+      padding: 8px 16px; border-radius: 10px; font-size: 13px;
+      animation: toast-in 0.25s ease-out;
+    }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } }
+  </style>
+</head>
+<body>
+  <div id="scene-container"></div>
+
+  <div id="splash">
+    <div class="logo">🤖</div>
+    <div class="title">CI Spatial Companion</div>
+    <div class="spinner"></div>
+    <div id="splash-status" style="font-size:12px;color:var(--text-dim)">starting engine…</div>
+  </div>
+
+  <div id="hud">
+    <div id="status-bar">
+      <span class="pill"><span class="dot on" id="dot-backend"></span><span id="status-backend">—</span></span>
+      <span class="pill"><span class="dot" id="dot-agent"></span><span id="status-agent">idle</span></span>
+      <span class="pill"><span class="dot" id="dot-detect"></span><span id="status-detect">detector</span></span>
+    </div>
+
+    <div id="top-right">
+      <button class="btn" id="btn-camera" title="Toggle camera / viewfinder">📷</button>
+      <button class="btn" id="btn-come" title="Call the companion over">Come here</button>
+      <button class="btn primary" id="btn-ar" disabled>Enter AR</button>
+      <button class="btn primary" id="btn-vr" disabled>Enter VR</button>
+      <button class="btn" id="btn-settings" title="Settings">⚙️</button>
+    </div>
+
+    <div id="settings">
+      <h3>Settings</h3>
+      <label>AI base URL (OpenAI-compatible)</label>
+      <input type="text" id="set-ai-base" placeholder="/v1" />
+      <label>Model</label>
+      <input type="text" id="set-ai-model" placeholder="llama3.2-vision" />
+      <label>API key (optional)</label>
+      <input type="text" id="set-ai-key" placeholder="sk-…" />
+      <label>Avatar URL (glTF/GLB — Ready Player Me supported)</label>
+      <input type="text" id="set-avatar" placeholder="./gltf/robot/robot.gltf" />
+      <label>TTS mode</label>
+      <select id="set-tts">
+        <option value="auto">auto (endpoint → browser)</option>
+        <option value="openai">OpenAI-compatible /audio/speech</option>
+        <option value="piper">Piper HTTP</option>
+        <option value="browser">Browser speechSynthesis</option>
+        <option value="off">off</option>
+      </select>
+      <label>STT mode</label>
+      <select id="set-stt">
+        <option value="auto">auto (whisper → browser)</option>
+        <option value="whisper">Whisper /audio/transcriptions</option>
+        <option value="browser">Browser SpeechRecognition</option>
+        <option value="off">off</option>
+      </select>
+      <div class="check-row">
+        <input type="checkbox" id="set-frames" />
+        <label for="set-frames" style="margin:0">Attach camera frame to chat</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="set-detect" />
+        <label for="set-detect" style="margin:0">Object detection (Grounding DINO)</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="set-proactive" />
+        <label for="set-proactive" style="margin:0">Proactive comments on new objects</label>
+      </div>
+      <div class="row-actions">
+        <button class="btn primary" id="set-save">Save &amp; reload</button>
+        <button class="btn" id="set-reset">Reset</button>
+      </div>
+    </div>
+
+    <div id="chat-log"></div>
+
+    <div id="input-row">
+      <input id="chat-input" type="text" placeholder="Talk to your companion… (Enter)" autocomplete="off" />
+      <button class="btn" id="ptt-btn" title="Hold to talk (or hold Space)">🎤</button>
+    </div>
+
+    <div id="pip">
+      <span class="pip-tag">LIVE</span>
+    </div>
+
+    <div id="toasts"></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

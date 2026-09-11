@@ -87,14 +87,18 @@ The flagship environment features 11 meticulously modelled vintage mainframe pro
 ## 4. Codebase Consolidation Blueprint
 
 ### 4.1 Identified Code Overlap
-Currently, `CI-Spatial-Agent-Web` (React/R3F monorepo) and `CI-Spatial-Agent-Web-2` (Vanilla Three.js/WebGPU) duplicate:
+The canonical `CI-Spatial-Agent-Web` monorepo and the standalone
+`CI-Spatial-Agent-Web-2` (Vanilla Three.js/WebGPU) repo overlap in:
 1. GLTF/VRM loader routines & bone alias discovery.
 2. Audio FFT analysis & viseme mapping algorithms.
 3. Gaze tracking & saccade calculation.
 4. LLM/STT/TTS service integration.
 
-### 4.2 Proposed Monorepo Architecture
-Consolidate into `CI-Spatial-Agent-Web`:
+### 4.2 Staged Monorepo Architecture
+The first consolidation boundary is now in place: the vanilla client is staged at
+`apps/vanilla-client/` in `CI-Spatial-Agent-Web`, while `CI-Spatial-Agent-Web-2`
+remains standalone until the migration is reviewed and the duplicate repo can be
+retired safely.
 
 ```
 CI-Spatial-Agent-Web/

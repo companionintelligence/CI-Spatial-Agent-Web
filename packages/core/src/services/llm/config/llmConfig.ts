@@ -33,9 +33,11 @@ export const AVAILABLE_LOCAL_MODELS = [
   
 
 export type LLMProvider = 'script' | 'mlc' | 'ollama' | 'openai' | 'proxy' // | 'flowise' | 'anthropic'
+export type ActivationState = 'unverified' | 'demo-only' | 'chat-only' | 'memory-ready'
 
 export interface LLMConfig {
     llm_provider?: LLMProvider
+    activation_state?: ActivationState
     mlc_model?: string
     ollama_url?: string
     ollama_model?: string

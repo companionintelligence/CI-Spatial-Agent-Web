@@ -46,9 +46,22 @@ describe('GET /api/health', () => {
     const app = createApp()
     const res = await app.request('/api/health')
     expect(res.status).toBe(200)
-    const body = (await res.json()) as { upstream: string; model: string; reachable: boolean }
+    const body = (await res.json()) as {
+      status: 'ok' | 'degraded'
+      upstream: string
+      model: string
+      reachable: boolean
+      memory: { configured: boolean; reachable: boolean }
+      tts: { reachable: boolean }
+    }
+    expect(['ok', 'degraded']).toContain(body.status)
     expect(body.upstream).toBe('ollama')
     expect(body.model).toBe('gemma3:1b')
     expect(body).toHaveProperty('reachable')
+    expect(body.memory).toMatchObject({
+      configured: false,
+      reachable: false
+    })
+    expect(body.tts).toHaveProperty('reachable')
   })
 })

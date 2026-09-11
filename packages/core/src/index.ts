@@ -2,11 +2,12 @@
 export { useLLMService } from './services/llm/llmService'
 export * from './services/llm/llmTypes'
 export { defaultLLMConfig, SYSTEM_PROMPT, AVAILABLE_LOCAL_MODELS } from './services/llm/config/llmConfig'
-export type { LLMConfig } from './services/llm/config/llmConfig'
+export type { ActivationState, LLMConfig, LLMProvider } from './services/llm/config/llmConfig'
 
 // Services - TTS (WhisperData is also in visemes, use tts version as canonical)
 export { useTTSService } from './services/tts/ttsService'
 export { defaultTTSConfig } from './services/tts/ttsConfig'
+export { createSyntheticSpeechWav, syntheticSpeechDuration } from './services/tts/syntheticSpeech'
 export type { TTSConfig, WhisperData } from './services/tts/ttsConfig'
 
 // Services - STT
@@ -65,8 +66,34 @@ export { Scene3D } from './components/scene/Scene3D'
 export { Viewport3D } from './components/scene/Viewport3D'
 export { sceneConfig } from './components/scene/sceneTypes'
 export type { SceneConfig } from './components/scene/sceneTypes'
-export { AvatarModel, AvatarState } from './components/scene/avatar/AvatarModel'
+export { AvatarModel } from './components/scene/avatar/AvatarModel'
+export { AvatarState } from './components/scene/avatar/avatarState'
+export {
+  appendMessage,
+  clearConversation,
+  loadConversation,
+  type StoredMessage
+} from './services/conversation/conversationStore'
+export {
+  budgetHistory,
+  estimateTokens,
+  willTrim,
+  type BudgetedMessage
+} from './services/conversation/historyBudget'
+export {
+  ConversationStatusState,
+  setConversationStatus,
+  type ConversationStatus
+} from './services/conversation/conversationStatus'
 export { AvatarOptions } from './components/scene/avatar/AvatarOptions'
+export { AvatarStatusPill } from './components/avatar/AvatarStatusPill'
+export type { AvatarStatusPillProps, AvatarConversationStatus } from './components/avatar/AvatarStatusPill'
+export { AvatarCaptionOverlay } from './components/avatar/AvatarCaptionOverlay'
+export type { AvatarCaptionOverlayProps } from './components/avatar/AvatarCaptionOverlay'
+export { AvatarLightingRig } from './components/avatar/AvatarLightingRig'
+export type { AvatarLightingPreset } from './components/avatar/AvatarLightingRig'
+export { AVATAR_SIZE_SCALES, resolveAvatarScale } from './components/avatar/avatarSizing'
+export type { AvatarSizePreset } from './components/avatar/avatarSizing'
 export type { SceneActions } from './components/scene/Scene3D'
 // Re-exported so consumers that don't depend on @react-three/xr directly (apps/vision-pro)
 // can still type the store that ControlOverlay/Viewport3D require.
@@ -127,6 +154,10 @@ export { useResponsiveLayout } from './app/layoutService'
 
 // Runtime configuration
 export { loadRuntimeConfig, __resetRuntimeConfigCache } from './config/runtimeConfig'
+export { resolveSTTConfig, resolveTTSConfig } from './config/appConfigService'
+export { transcribeRemote } from './services/stt/remoteStt'
+export { getAudioGraph, resumeAudioGraph, setVoicePosition } from './services/tts/audioGraph'
+export { STTSettingsState, TTSSettingsState } from './config/settingsStore'
 export type { RuntimeAppConfig } from './config/runtimeConfig'
 export {
   resolveLLMConfig,
@@ -171,3 +202,30 @@ export {
 export type { FacialTier, FacialTierId } from './services/face/facialTiers'
 export { inspectFacialRig, facialNamesFromVRM, facialNamesFromScene } from './services/face/facialCapabilities'
 export type { FacialRigInfo } from './services/face/facialCapabilities'
+
+// Face compositing — the single arbiter of facial weights, plus the harness seam.
+export { createFaceRig, NULL_FACE_RIG } from './services/face/faceRigFactory'
+export {
+  getActiveFacialRig,
+  getFaceCompositorTrace,
+  getFaceOverride,
+  getFaceSpeechDebug,
+  resetActiveFace,
+  setActiveFaceCompositor,
+  setActiveFacialRig,
+  setFaceOverride
+} from './services/face/faceCompositorRegistry'
+export { translateEmoteTargets } from './services/face/emoteVocabulary'
+export { selectSpeechSource, isSequenceActive } from './services/face/speechSource'
+
+// Conversational latency instrumentation.
+export {
+  LATENCY_BUDGETS_MS,
+  beginTurn,
+  getLastLatencyTrace,
+  getLatencyTrace,
+  mark as markLatency,
+  overBudget,
+  type LatencyStage,
+  type LatencyTrace
+} from './services/telemetry/latency'

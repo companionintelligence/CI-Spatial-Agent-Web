@@ -3,7 +3,6 @@ import {
   ARKIT_LIP_SYNC_TARGETS,
   VISEME_WEIGHTS,
   getVisemeForChar,
-  getVisemeWeights,
   textToVisemeSequence
 } from './visemeTable'
 

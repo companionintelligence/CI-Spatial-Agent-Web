@@ -1,23 +1,39 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useSimpleStore } from '@hexafield/simple-store/react'
-import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal } from 'lucide-react'
+import { MonitorCog, Server, Settings as SettingsIcon, SlidersHorizontal, UserRound } from 'lucide-react'
+import { resolveAvatarSource } from '@ci-avatar/engine'
 
 import {
   COMMON_OLLAMA_MODELS,
   defaultLLMConfig,
+  type ActivationState,
   type LLMConfig,
   type LLMProvider
 } from '../../services/llm/config/llmConfig'
+import {
+  activationStateLabel,
+  deriveActivationState,
+  fetchConnectionHealth,
+  type ConnectionCheckState,
+  type ConnectionHealth
+} from '../../services/connection/connectionHealth'
 import { LLMSettingsState } from '../../config/settingsStore'
 import { clearLocalOverrides, resolveLLMConfig, writeLocalOverrides } from '../../config/appConfigService'
 import { loadRuntimeConfig } from '../../config/runtimeConfig'
 import { AppConfigState } from '../../app/appConfig'
 import { useHasWebGPU } from '../../utils/useHasWebGPU'
 import { useXRLayout } from '../../utils/useXRLayout'
+import { AvatarOptions } from '../scene/avatar/AvatarOptions'
+import { AvatarState } from '../scene/avatar/avatarState'
+import { getActiveFacialRig } from '../../services/face/faceCompositorRegistry'
+
+const AVATAR_KEYS = Object.keys(AvatarOptions)
 
 interface SettingsPanelProps {
   isOpen: boolean
   onClose: () => void
+  activationState?: ActivationState
+  onActivationStateChange?: (state: ActivationState) => void
 }
 
 /** A labeled on/off switch row, token-styled. */
@@ -102,18 +118,42 @@ const FIELD_MAP: Record<LLMProvider, { urlKey?: keyof LLMConfig; modelKey?: keyo
   script: {}
 }
 
-export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
+export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified', onActivationStateChange }: SettingsPanelProps) => {
   const { isXR } = useXRLayout()
   // Phone-width card: the footer has room for two buttons and a short link, not
   // a sentence. Matches the isMobile breakpoint used across the overlay.
   const isNarrow = typeof window !== 'undefined' && window.innerWidth <= 768
   const [settings] = useSimpleStore(LLMSettingsState)
   const [appConfig] = useSimpleStore(AppConfigState)
+  // Avatar selection. The shipping UI previously had none at all — the model was
+  // a module constant — so a user could not change or supply an avatar, and the
+  // engine's "any GLB/VRM" support was untestable by anyone but a developer.
+  const [avatarState] = useSimpleStore(AvatarState)
+  const [avatarUrlDraft, setAvatarUrlDraft] = useState('')
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const facialRig = getActiveFacialRig()
+  const avatarLabel =
+    AVATAR_KEYS.find((key) => AvatarOptions[key as keyof typeof AvatarOptions] === avatarState.selectedModel) ??
+    'custom'
+
+  const applyAvatar = useCallback((input: string) => {
+    const resolved = resolveAvatarSource(input, AvatarOptions)
+    if (!resolved.ok || !resolved.url) {
+      setAvatarError(resolved.message ?? 'Could not load that avatar.')
+      return
+    }
+    setAvatarError(null)
+    AvatarState.set((prev) => ({ ...prev, selectedModel: resolved.url! }))
+  }, [])
+
   const hasWebGPU = useHasWebGPU()
 
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
   const [url, setUrl] = useState('')
   const [model, setModel] = useState('')
+  const [healthState, setHealthState] = useState<ConnectionCheckState>('idle')
+  const [health, setHealth] = useState<ConnectionHealth | null>(null)
+  const [healthError, setHealthError] = useState<string | null>(null)
 
   const fields = FIELD_MAP[provider]
 
@@ -153,6 +193,29 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
     LLMSettingsState.set(resolveLLMConfig(runtime, {}))
     onClose()
   }, [onClose])
+
+  const checkConnection = useCallback(async () => {
+    setHealthState('checking')
+    setHealthError(null)
+
+    try {
+      const payload = await fetchConnectionHealth()
+      setHealth(payload)
+      onActivationStateChange?.(deriveActivationState(payload, provider))
+      if (!payload.reachable) {
+        setHealthState('error')
+      } else if (payload.tts && !payload.tts.reachable) {
+        setHealthState('degraded')
+      } else {
+        setHealthState('healthy')
+      }
+    } catch (error) {
+      setHealth(null)
+      setHealthState('error')
+      setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
+      onActivationStateChange?.('unverified')
+    }
+  }, [onActivationStateChange, provider])
 
   const modelOptions = useMemo(() => COMMON_OLLAMA_MODELS, [])
 
@@ -336,6 +399,78 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           </div>
         )}
 
+        <div
+          style={{
+            marginBottom: '1.25rem',
+            padding: '0.75rem',
+            borderRadius: 'var(--radius-md)',
+            border: '0.0625rem solid var(--border)',
+            background: 'color-mix(in srgb, var(--popover) 75%, transparent)'
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.75rem',
+              marginBottom: '0.45rem'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--card-foreground)' }}>
+                Connection truth
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--muted-foreground)' }}>
+                Check chat, memory, and voice before your first answer.
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void checkConnection()}
+              disabled={healthState === 'checking'}
+              style={{
+                flexShrink: 0,
+                border: '0.0625rem solid var(--border)',
+                borderRadius: 'var(--radius-md)',
+                background: 'transparent',
+                color: 'var(--card-foreground)',
+                padding: '0.45rem 0.6rem',
+                fontSize: '0.75rem',
+                cursor: healthState === 'checking' ? 'wait' : 'pointer',
+                opacity: healthState === 'checking' ? 0.65 : 1
+              }}
+            >
+              {healthState === 'checking' ? 'Checking…' : 'Check connection'}
+            </button>
+          </div>
+
+          <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
+            <div style={{ marginBottom: '0.35rem' }}>Session: {activationStateLabel(activationState)}</div>
+            {healthState === 'idle' && 'Not checked yet.'}
+            {healthState === 'checking' && 'Checking the configured services…'}
+            {healthState === 'healthy' && 'Chat and voice are reachable.'}
+            {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
+            {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
+            {health && (
+              <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
+                <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>
+                <div>
+                  Memory:{' '}
+                  {health.memory
+                    ? health.memory.configured
+                      ? health.memory.reachable
+                        ? 'connected'
+                        : 'configured but unreachable'
+                      : 'not configured'
+                    : 'not reported'}
+                </div>
+                <div>TTS: {health.tts ? (health.tts.reachable ? 'reachable' : 'unreachable') : 'not reported'}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
         <SectionHeader icon={<SlidersHorizontal size={13} aria-hidden />}>Behavior</SectionHeader>
         <ToggleRow
           label="Barge-in"
@@ -349,6 +484,55 @@ export const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
           checked={appConfig.autoSubmitEnabled}
           onChange={(v) => AppConfigState.set((prev) => ({ ...prev, autoSubmitEnabled: v }))}
         />
+
+        <SectionHeader icon={<UserRound size={13} aria-hidden />}>Avatar</SectionHeader>
+        <div style={{ display: 'grid', gap: 8, marginBottom: 12 }}>
+          <label style={labelStyle} htmlFor="settings-avatar">
+            Character
+          </label>
+          <select
+            id="settings-avatar"
+            style={inputStyle}
+            value={AVATAR_KEYS.includes(avatarLabel) ? avatarLabel : 'custom'}
+            onChange={(e) => {
+              if (e.target.value === 'custom') return
+              applyAvatar(e.target.value)
+            }}
+          >
+            {AVATAR_KEYS.map((key) => (
+              <option key={key} value={key}>
+                {key}
+              </option>
+            ))}
+            <option value="custom">Custom URL…</option>
+          </select>
+
+          <label style={labelStyle} htmlFor="settings-avatar-url">
+            Custom avatar URL
+          </label>
+          <input
+            id="settings-avatar-url"
+            style={inputStyle}
+            placeholder="https://models.readyplayer.me/….glb  ·  or a .vrm URL"
+            value={avatarUrlDraft}
+            onChange={(e) => setAvatarUrlDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') applyAvatar(avatarUrlDraft)
+            }}
+            onBlur={() => avatarUrlDraft.trim() && applyAvatar(avatarUrlDraft)}
+          />
+          {avatarError && (
+            <div role="alert" style={{ fontSize: 11, color: 'var(--destructive, #f87171)' }}>
+              {avatarError}
+            </div>
+          )}
+          {facialRig && (
+            <div style={{ fontSize: 11, opacity: 0.7 }}>
+              Facial rig: <strong>{facialRig.info.label}</strong> · {facialRig.names.length} channels
+              {facialRig.tier === 'none' && ' — body animation only'}
+            </div>
+          )}
+        </div>
 
         <SectionHeader icon={<MonitorCog size={13} aria-hidden />}>Graphics</SectionHeader>
         <ToggleRow

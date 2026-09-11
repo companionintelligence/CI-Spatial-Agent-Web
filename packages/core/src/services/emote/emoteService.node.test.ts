@@ -4,6 +4,7 @@ import { defaultEmoteConfig } from './configs/emoteConfig'
 import { moodConfigurations } from './configs/moodConfigurations'
 import {
   applyEmotion,
+  applyEmoteStateToMorphTargets,
   emoteUpdate,
   handleBargeIn,
   initializeEmoteState,
@@ -64,6 +65,16 @@ describe('applyEmotion — baseline target math', () => {
     expect(s.targets.browDownLeft).toBe(0.6)
     expect(s.targets.handFistLeft).toBe(1)
     expect(s.currentEmotion).toBe('angry')
+  })
+
+  it('clears sparse baseline keys when the emotion changes', () => {
+    const s = initializeEmoteState()
+    applyEmotion(s, 'angry')
+    applyEmotion(s, 'happy')
+
+    expect(s.targets.browDownLeft).toBe(0)
+    expect(s.targets.mouthFrownLeft).toBe(0)
+    expect(s.targets.mouthSmile).toBe(0.6)
   })
 
   it('is a safe no-op for an emotion with no mood config (alert)', () => {
@@ -152,6 +163,23 @@ describe('handleBargeIn', () => {
     expect(s.currentEmotion).toBe('neutral')
     expect(s.performanceStartTime).toBe(0)
     expect(s.relaxationTime).toBe(0)
+  })
+
+  it('zeros the bound GLB morphs instead of leaving an interrupted emotion frozen', () => {
+    const s = initializeEmoteState()
+    const morphs = [{ morphTargetInfluences: [0, 0] }]
+    setupEmoteStateForMorphTargets(s, morphs, {
+      browDownLeft: [0],
+      mouthFrownLeft: [1]
+    })
+
+    applyEmotion(s, 'angry')
+    applyEmoteStateToMorphTargets(s, morphs, s.dictionary!)
+    expect(morphs[0].morphTargetInfluences).toEqual([0.6, 0.7])
+
+    handleBargeIn(s)
+
+    expect(morphs[0].morphTargetInfluences).toEqual([0, 0])
   })
 })
 

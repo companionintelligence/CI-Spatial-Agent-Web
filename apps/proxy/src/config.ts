@@ -9,7 +9,7 @@ export type UpstreamKind = 'ollama' | 'openai' | 'ci-server'
  * (see `upstreams/cosyvoice.ts`). Kept as its own enum so the chat and TTS
  * upstreams evolve independently.
  */
-export type TtsUpstreamKind = 'cosyvoice'
+export type TtsUpstreamKind = 'cosyvoice' | 'headtts'
 
 export interface ResolvedConfig {
   upstream: UpstreamKind
@@ -30,12 +30,19 @@ export interface ResolvedConfig {
   ttsUrl: string
   ttsModel: string
   ttsVoice: string
+  sttUrl: string
+  sttModel: string
+  ciServerApiKey: string
+  /** How many knowledge-graph hits to pull per turn. */
+  memoryMaxResults: number
+  /** Which upstream actually generates tokens when memory is in front. */
+  memoryGenerationUpstream: UpstreamKind
   port: number
   requestTimeoutMs: number
 }
 
 const VALID_UPSTREAMS: UpstreamKind[] = ['ollama', 'openai', 'ci-server']
-const VALID_TTS_UPSTREAMS: TtsUpstreamKind[] = ['cosyvoice']
+const VALID_TTS_UPSTREAMS: TtsUpstreamKind[] = ['cosyvoice', 'headtts']
 
 function stripTrailingSlash(url: string): string {
   return url.replace(/\/+$/, '')
@@ -66,7 +73,7 @@ export function resolveConfig(env: NodeJS.ProcessEnv = process.env): ResolvedCon
     openaiUrl: stripTrailingSlash(env.APP_OPENAI_URL ?? 'https://api.openai.com/v1'),
     openaiApiKey,
     openaiModel: env.APP_OPENAI_MODEL ?? 'gpt-4o-mini',
-    ciServerUrl: stripTrailingSlash(env.APP_CISERVER_URL ?? ''),
+    ciServerUrl: stripTrailingSlash(env.APP_CISERVER_URL ?? 'http://host.docker.internal:3000'),
     ttsUpstream,
     // Default targets a CosyVoice2 OpenAI-compatible server on the host. 8880 is
     // the port used by common CosyVoice2 Docker images (e.g. vox-box); override
@@ -74,6 +81,11 @@ export function resolveConfig(env: NodeJS.ProcessEnv = process.env): ResolvedCon
     ttsUrl: stripTrailingSlash(env.APP_TTS_URL ?? 'http://host.docker.internal:8880'),
     ttsModel: env.APP_TTS_MODEL ?? 'cosyvoice2-0.5b',
     ttsVoice: env.APP_TTS_VOICE ?? 'default',
+    sttUrl: stripTrailingSlash(env.APP_STT_URL ?? 'http://host.docker.internal:8081'),
+    sttModel: env.APP_STT_MODEL ?? 'Systran/faster-whisper-small',
+    ciServerApiKey: env.APP_CI_SERVER_API_KEY ?? '',
+    memoryMaxResults: Number(env.APP_MEMORY_MAX_RESULTS ?? '6'),
+    memoryGenerationUpstream: (env.APP_MEMORY_GENERATION_UPSTREAM ?? 'ollama') as UpstreamKind,
     port: Number(env.PORT ?? 8787),
     requestTimeoutMs: Number(env.APP_REQUEST_TIMEOUT_MS ?? 60000)
   }

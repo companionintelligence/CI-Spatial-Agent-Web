@@ -74,6 +74,26 @@ async function verifyAnimationMovement(page: Page, samples = 3, intervalMs = 250
   return deltas > 0
 }
 
+async function waitForRenderedSpeech(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const h = (window as unknown as {
+        __harness?: {
+          speechInfo(): { hasAnalyser: boolean }
+          audioMetrics(): { mean: number; peak: number }
+          faceSnapshot(): { jawOpen: number; vrmMouth: number }
+        }
+      }).__harness
+      if (!h) return false
+      const speech = h.speechInfo()
+      const audio = h.audioMetrics()
+      const face = h.faceSnapshot()
+      return speech.hasAnalyser && (audio.mean > 0 || audio.peak > 0) && (face.jawOpen > 0.05 || face.vrmMouth > 0.05)
+    },
+    { timeout: 15_000, polling: 100 }
+  )
+}
+
 test.describe('Avatar Visual & Animation Matrix', () => {
   test('Roster agreement: AvatarOptions matches harness list', async ({ page }) => {
     const errors = await waitForHarness(page, AVATAR_KEYS[0])
@@ -84,6 +104,50 @@ test.describe('Avatar Visual & Animation Matrix', () => {
 
     expect(new Set(list)).toEqual(new Set(AVATAR_KEYS))
     expect(errors).toEqual([])
+  })
+
+  test('Finite body gestures finish before the queued idle takes over', async ({ page }) => {
+    await waitForHarness(page, 'Greg')
+    await page.waitForTimeout(4_000) // let the startup greet and its queued idle settle
+
+    await page.evaluate(() => {
+      window.__harness?.playAnimation('Waving', { loopCount: 1, blendTime: 250 })
+    })
+
+    // A settled crossfade is not the end of a finite authored gesture.
+    await page.waitForTimeout(650)
+    const during = await page.evaluate(() => window.__harness?.debugActions())
+    expect(during?.current).toBe('Waving')
+
+    await page.waitForFunction(
+      () => window.__harness?.debugActions().current !== 'Waving',
+      { timeout: 8_000, polling: 100 }
+    )
+
+    const after = await page.evaluate(() => window.__harness?.debugActions())
+    expect(after?.current).toBe('idle-stable')
+  })
+
+  test('Avatar state changes do not rebuild the active mixer action', async ({ page }) => {
+    await waitForHarness(page, 'Greg')
+    await page.waitForTimeout(4_000) // let the startup greet and its queued idle settle
+
+    await page.evaluate(() => {
+      window.__harness?.playAnimation('Clapping', { loopCount: Infinity, blendTime: 250 })
+    })
+    await page.waitForTimeout(700)
+    const before = await page.evaluate(() => window.__harness?.debugActions())
+    const beforeTime = before?.live.find((action) => action.name === 'Clapping')?.t ?? 0
+    expect(before?.current).toBe('Clapping')
+    expect(beforeTime).toBeGreaterThan(0.2)
+
+    await page.evaluate(() => window.__harness?.setServices({ emotes: false }))
+    await page.waitForTimeout(250)
+
+    const after = await page.evaluate(() => window.__harness?.debugActions())
+    const afterTime = after?.live.find((action) => action.name === 'Clapping')?.t ?? 0
+    expect(after?.current).toBe('Clapping')
+    expect(afterTime).toBeGreaterThan(beforeTime)
   })
 
   for (const name of AVATAR_KEYS) {
@@ -114,10 +178,10 @@ test.describe('Avatar Visual & Animation Matrix', () => {
 
       // 5. Test speech lip-sync trigger
       await page.evaluate(() => {
-        const h = (window as unknown as { __harness?: { speak(t: string): boolean } }).__harness
+        const h = (window as unknown as { __harness?: { speak(t: string): Promise<number | null> | boolean } }).__harness
         h?.speak('Hello world')
       })
-      await page.waitForTimeout(500)
+      await waitForRenderedSpeech(page)
 
       // 6. Capture visual reference screenshot
       const shotPath = join(SHOTS_DIR, `${name.toLowerCase()}-verified.png`)

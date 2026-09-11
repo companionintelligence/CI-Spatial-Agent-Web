@@ -1,6 +1,7 @@
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
 
 import type { LatestInterrupt } from './llmInterrupt'
+import type { ActivationState } from './config/llmConfig'
 
 export interface LLMMessage {
   role: 'user' | 'assistant' | 'system'
@@ -58,6 +59,7 @@ export interface LLMResponse {
   ready: boolean
   final: boolean
   interrupt: number
+  activationState?: ActivationState
   rcounter?: number
   bcounter?: number
 }
@@ -100,6 +102,5 @@ export interface LLMResult {
   thinkBlocks?: string[]
   error?: Error
 }
-
 
 

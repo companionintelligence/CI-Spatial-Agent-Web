@@ -157,6 +157,35 @@ describe('finished → advanceToNext → idle fallback', () => {
   })
 })
 
+describe('queued performances respect finite clip completion', () => {
+  it('does not drain a queued clip when only the crossfade has settled', () => {
+    const h = makeHarness(['idle_loop', 'surprise_greet'])
+    initializeDefaultAnimation(h.state, 'professional', ANIMATION_CLIPS.idle_loop)
+
+    startPerformance(h.state, {
+      clip: ANIMATION_CLIPS.surprise_greet,
+      immediate: true,
+      loopCount: 1,
+      blendTime: 300
+    }, 0)
+    startPerformance(h.state, {
+      clip: ANIMATION_CLIPS.idle_loop,
+      loopCount: Infinity,
+      blendTime: 2000
+    }, 0)
+
+    // The blend window is not the authored gesture duration. The queue must
+    // remain behind the finite clip until the mixer emits `finished`.
+    updateAnimation(h.state, 0.4)
+    expect(h.state.currentClip?.name).toBe('surprise_greet')
+    expect(getCurrentAnimationInfo(h.state).queueLength).toBe(1)
+
+    h.fireFinished('surprise_greet')
+    expect(h.state.currentClip?.name).toBe('idle_loop')
+    expect(getCurrentAnimationInfo(h.state).queueLength).toBe(0)
+  })
+})
+
 describe('configureAction — loop / clamp / additive mode wiring', () => {
   it('sets LoopOnce + clampWhenFinished for a finite (loopCount 1) clip', () => {
     const h = makeHarness(['idle_loop', 'surprise_greet'])

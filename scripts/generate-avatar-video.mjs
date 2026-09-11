@@ -123,6 +123,17 @@ async function stopCanvasRecording(page) {
 async function recordAvatarScenario(page, avatarName, scenario) {
   console.log(`  🎬 [${avatarName}] Running: ${scenario.label} (${scenario.id})`)
 
+  // Each scenario starts from a clean looping idle. Without this reset, the
+  // previous dance/gesture can leave the camera framing its translated pose,
+  // which makes the next face shot look cropped even though the renderer is
+  // healthy.
+  await page.evaluate(() =>
+    window.__harness?.captureClip('basic-idle') ||
+    window.__harness?.captureClip('F_Standing_Idle_001') ||
+    window.__harness?.captureClip('idle_loop')
+  )
+  await page.waitForTimeout(350)
+
   // 1. Switch framing shot
   await page.evaluate((shot) => {
     window.__harness?.setShot(shot)
@@ -371,7 +382,20 @@ async function run() {
       // Wait for harness and avatar rig initialization
       await page.waitForFunction(() => window.__harnessReady === true, null, { timeout: 30000 })
       await page.waitForFunction(() => window.__avatarLoaded === true, null, { timeout: 45000 })
-      await page.waitForTimeout(2000)
+      // The startup greeting is a real finite gesture. Wait for its mixer
+      // `finished` event and queued idle return before recording scenarios, so
+      // face stills/videos describe the requested scenario rather than a
+      // leftover raised arm from the greeting.
+      await page.waitForTimeout(700)
+      await page.waitForFunction(
+        () => {
+          const diagnostics = window.__harness?.debugActions?.()
+          const current = String(diagnostics?.current ?? '').toLowerCase()
+          return Boolean(diagnostics && !diagnostics.transitioning && diagnostics.queue === 0 && current.includes('idle'))
+        },
+        null,
+        { timeout: 15000, polling: 100 }
+      )
 
       const avatarResults = []
       for (const scenario of TEST_SCENARIOS) {

@@ -1,7 +1,7 @@
 import { Environment, OrbitControls } from '@react-three/drei'
 import { Canvas, useThree } from '@react-three/fiber'
 import { createXRStore, XR, type XRStore } from '@react-three/xr'
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { SceneConfig } from './sceneTypes'
 import type { useAnimationService } from '../../services/animation/useAnimationService'
@@ -9,6 +9,8 @@ import type { useEmoteService } from '../../services/emote/useEmoteService'
 import type { useVisemeService } from '../../services/visemes/useVisemeService'
 import type { useTTSService } from '../../services/tts/ttsService'
 import { AvatarModel } from './avatar/AvatarModel'
+import { AvatarLightingRig } from '../avatar/AvatarLightingRig'
+import { resolveAvatarScale } from '../avatar/avatarSizing'
 import { DatacenterDiorama } from './environment/DatacenterDiorama'
 import { GraphicsFallback } from './GraphicsFallback'
 import { useRendererConfig } from './rendering/useRendererConfig'
@@ -193,65 +195,71 @@ const SceneContent = ({
         maxDistance={10}
       />
 
-      {/* Enhanced lighting setup with quality-based shadows.
-          Every intensity here is scaled by the environment's rigScale — 1 for the plain
-          studio viewport, so those numbers are untouched. */}
-      <ambientLight intensity={0.5 * look.rigScale} color={0xffffff} />
-
-      {/* Key light - main directional light from front-right */}
-      <directionalLight
-        position={[3, 5, 5]}
-        intensity={1.5 * look.rigScale}
-        color={0xffffff}
-        castShadow={useShadows}
-        shadow-mapSize={[shadowMapSize, shadowMapSize]}
-        shadow-bias={-0.0001}
-        shadow-camera-near={0.5}
-        shadow-camera-far={15}
-        shadow-camera-left={-5}
-        shadow-camera-right={5}
-        shadow-camera-top={5}
-        shadow-camera-bottom={-5}
-      />
-      
-      {/* Fill light - softer light from left */}
-      <directionalLight
-        position={[-3, 3, 2]}
-        intensity={0.6 * look.rigScale}
-        color={0xeeeeff}
-      />
-
-      {/* Rim/back light for depth */}
-      <directionalLight
-        position={[0, 3, -5]}
-        intensity={0.4 * look.rigScale}
-        color={0xffeedd}
-      />
-
-      {/* Bottom fill light to reduce harsh shadows */}
-      <directionalLight
-        position={[0, -2, 2]}
-        intensity={0.3 * look.rigScale}
-        color={0xffffff}
-      />
-
-      <Environment preset="studio" background={false} environmentIntensity={look.iblIntensity} />
+      {sceneConfig.lightingPreset ? (
+        <AvatarLightingRig preset={sceneConfig.lightingPreset} />
+      ) : (
+        <>
+          {/* Enhanced lighting setup with quality-based shadows.
+              Every intensity here is scaled by the environment's rigScale — 1 for the plain
+              studio viewport, so those numbers are untouched. */}
+          <ambientLight intensity={0.5 * look.rigScale} color={0xffffff} />
+          <directionalLight
+            position={[3, 5, 5]}
+            intensity={1.5 * look.rigScale}
+            color={0xffffff}
+            castShadow={useShadows}
+            shadow-mapSize={[shadowMapSize, shadowMapSize]}
+            shadow-bias={-0.0001}
+            shadow-camera-near={0.5}
+            shadow-camera-far={15}
+            shadow-camera-left={-5}
+            shadow-camera-right={5}
+            shadow-camera-top={5}
+            shadow-camera-bottom={-5}
+          />
+          <directionalLight position={[-3, 3, 2]} intensity={0.6 * look.rigScale} color={0xeeeeff} />
+          <directionalLight position={[0, 3, -5]} intensity={0.4 * look.rigScale} color={0xffeedd} />
+          <directionalLight position={[0, -2, 2]} intensity={0.3 * look.rigScale} color={0xffffff} />
+          <Environment preset="studio" background={false} environmentIntensity={look.iblIntensity} />
+        </>
+      )}
 
       {/* XR enhancements for VR/AR */}
       <XREnhancements enabled={true} showGrid={false} />
 
+      {/* A contact shadow needs something to fall on. This plane is invisible
+          except for what the avatar casts onto it (ShadowMaterial writes only
+          shadow), so the studio viewport keeps its transparent background while
+          the figure stops floating. Skipped when shadows are off — a mesh that
+          can never darken is just an extra draw call. */}
+      {useShadows && sceneConfig.environment !== 'datacenter-1970s' && (
+        <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
+          <planeGeometry args={[8, 8]} />
+          <shadowMaterial transparent opacity={0.32} />
+        </mesh>
+      )}
+
       <group ref={worldGroupRef} scale={worldScale}>
         {sceneConfig.environment === 'datacenter-1970s' && <DatacenterDiorama />}
-        <AvatarModel
-          visemeService={visemeService}
-          emoteService={emoteService}
-          animationService={animationService}
-          ttsService={ttsService}
-          onHeadLocated={handleHeadLocated}
-          cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
-          cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
-          webGPUEnabled={webGPUEnabled}
-        />
+        <group scale={resolveAvatarScale(sceneConfig.avatarSize)}>
+          <AvatarModel
+            visemeService={visemeService}
+            emoteService={emoteService}
+            animationService={animationService}
+            ttsService={ttsService}
+            onHeadLocated={handleHeadLocated}
+            cameraDistance={isPortrait ? look.portraitCameraDistance : look.cameraDistance}
+            cameraTargetDrop={isPortrait ? look.portraitCameraTargetDrop : look.cameraTargetDrop}
+            // NOTE: webGPUEnabled is deliberately NOT passed. It reports device
+            // capability, not what is rendering, and using it to pick a node
+            // material broke every VRM on any WebGPU-capable machine. The avatar
+            // asks the live renderer instead.
+            // Spatialise the voice only in a room — an XR session or the diorama.
+            // On the flat studio bust there is nowhere for it to come from, and
+            // HRTF just makes a centred figure sound off-axis.
+            spatialAudio={sceneConfig.environment === 'datacenter-1970s'}
+          />
+        </group>
       </group>
 
       {/* Post-processing effects for enhanced visuals */}
@@ -265,7 +273,10 @@ const SceneContent = ({
 }
 
 const Scene3DComponent = ({ sceneConfig, visemeService, emoteService, animationService, ttsService, setXRStore, onSceneActionsReady, webGPUEnabled }: Scene3DProps) => {
-  const store = createXRStore()
+  // The XR store is an external state container. Recreating it on every render
+  // makes the parent callback fire again, which recreates the store and can
+  // spiral into a maximum-update-depth loop in the canonical app.
+  const store = useMemo(() => createXRStore(), [])
   const { capabilities, quality, isLoading } = useRendererConfig()
   const worldGroupRef = useRef<THREE.Group>(null)
   const recenterSceneRef = useRef<(() => void) | undefined>(undefined)

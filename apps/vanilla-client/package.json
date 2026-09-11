@@ -1,0 +1,25 @@
+{
+  "name": "@ci-avatar/vanilla-client",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Unified WebGL / WebXR / WebGPU agentic character engine — an embodied spatial AI companion for browsers and headsets.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "capture": "deno run -A tools/listing-capture/capture.mjs",
+    "capture-gif": "deno run -A tools/listing-capture/capture-gif.mjs"
+  },
+  "dependencies": {
+    "@sentry/browser": "^10.69.0",
+    "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "vite": "^7.1.4",
+    "vite-plugin-mkcert": "^1.17.0"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}

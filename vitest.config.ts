@@ -23,6 +23,24 @@ export default defineConfig({
   test: {
     projects: [
       {
+        // Transport-agnostic agent layer (packages/agent) — tools + spatial memory.
+        test: {
+          name: 'agent-node',
+          environment: 'node',
+          globals: true,
+          include: ['packages/agent/src/**/*.node.test.ts']
+        }
+      },
+      {
+        // Renderer-free avatar engine (packages/engine) — pure arbitration logic.
+        test: {
+          name: 'engine-node',
+          environment: 'node',
+          globals: true,
+          include: ['packages/engine/src/**/*.node.test.ts']
+        }
+      },
+      {
         // Pure service logic — no DOM.
         test: {
           name: 'core-node',
