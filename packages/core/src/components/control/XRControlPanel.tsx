@@ -39,7 +39,7 @@ import type { ThreeEvent } from '@react-three/fiber'
  * TODO: mount in Viewport3D/Scene3D when in-session (see steps above).
  */
 
-const PRIMARY = '#0f717a' // CI teal (canon --primary, light). Three.js needs a literal here.
+const PRIMARY = '#0a6358' // CI phthalo (canon --primary, light). Three.js needs a literal here.
 const GLASS = '#04222f'
 const FOREGROUND = '#e6f2f4'
 

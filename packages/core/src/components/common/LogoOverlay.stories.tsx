@@ -21,7 +21,7 @@ const INLINE_LOGO =
   encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="40" viewBox="0 0 180 40">
       <rect width="180" height="40" rx="6" fill="none"/>
-      <text x="90" y="26" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="18" font-weight="700" fill="#abd4d8">Companion</text>
+      <text x="90" y="26" text-anchor="middle" font-family="Manrope, sans-serif" font-size="18" font-weight="700" fill="#c5e8dc">Companion</text>
     </svg>`
   )
 

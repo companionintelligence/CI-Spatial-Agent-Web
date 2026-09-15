@@ -1,58 +1,69 @@
 /*
  * Companion Intelligence — canonical design tokens (shared across the org).
  *
- * Source of truth: CI-Hub/packages/frontend/src/styles/globals.css (authored in oklch).
- * This file is the framework-agnostic subset: it defines only the :root / .dark
- * custom properties so it can be consumed by BOTH the Tailwind-v3 vision-pro app
- * and the plain-CSS web app (and by the inline styles in @ci-avatar/core, which
- * reference these variables directly via var(--…)).
+ * Source of truth: CI-Common `styles/tokens/src/tokens.json` (the one
+ * hand-edited source; CI-Hub's own globals.css just imports the real
+ * `@companionintelligence/tokens` package now, so it's no longer something
+ * to re-transcribe from). This file is the framework-agnostic subset: it
+ * defines only the :root / .dark custom properties so it can be consumed by
+ * BOTH the Tailwind-v3 vision-pro app and the plain-CSS web app (and by the
+ * inline styles in @ci-avatar/core, which reference these variables directly
+ * via var(--…)).
  *
  * Do NOT add Tailwind v4 directives here (@import "tailwindcss", @theme inline,
  * @apply, @plugin, @config). Neither app in this repo is on Tailwind v4, and those
  * directives would break the build. Keep this file to raw CSS custom properties.
+ *
+ * Rewritten from a generic shadcn-default light theme with only --primary
+ * patched in (plus a pre-v0.3.0 --font-sans/--gradient-brand/ramp still on
+ * the retired teal/Montserrat) to the actual current canon — every value
+ * below round-trips to `styles/colors.md` in CI-Common. --primary's oklch
+ * strings were already correct (tokens.json stores them natively); the rest
+ * were shadcn defaults or pre-rework leftovers, not CI's palette.
  */
 
 :root {
   /* Typography */
-  --font-sans: "Montserrat", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+  --font-display: "Archivo Black", "Manrope", system-ui, sans-serif;
 
   --radius: 0.625rem;
 
   /* Light theme (default) */
-  --background: oklch(96.415% 0 0);
-  --foreground: oklch(15.775% 0.028 227.251);
-  --card: oklch(97.67% 0.003 286.351);
-  --card-foreground: oklch(19.008% 0.032 234.379);
-  --popover: oklch(100% 0 0);
-  --popover-foreground: oklch(19.008% 0.032 234.379);
-  --primary: oklch(44.962% 0.0779 181.548);
-  --primary-foreground: oklch(98.4% 0.003 247.858);
-  --secondary: oklch(96.8% 0.007 247.896);
-  --secondary-foreground: oklch(23.937% 0.038 233.156);
-  --muted: oklch(96.8% 0.007 247.896);
-  --muted-foreground: oklch(55.4% 0.046 257.417);
-  --accent: oklch(96.8% 0.007 247.896);
-  --accent-foreground: oklch(23.937% 0.038 233.156);
-  --destructive: oklch(62% 0.22 27);
-  --destructive-foreground: oklch(98.4% 0.003 247.858);
-  --border: oklch(92.9% 0.013 255.508);
-  --input: oklch(92.9% 0.013 255.508);
-  --ring: oklch(70.4% 0.04 256.788);
-  --chart-1: oklch(64.6% 0.222 41.116);
-  --chart-2: oklch(60% 0.118 184.704);
-  --chart-3: oklch(39.8% 0.07 227.392);
-  --chart-4: oklch(82.8% 0.189 84.429);
-  --chart-5: oklch(76.9% 0.188 70.08);
-  --sidebar: oklch(98.4% 0.003 247.858);
-  --sidebar-foreground: oklch(12.9% 0.042 264.695);
-  --sidebar-primary: oklch(20.8% 0.042 265.755);
-  --sidebar-primary-foreground: oklch(98.4% 0.003 247.858);
-  --sidebar-accent: oklch(96.8% 0.007 247.896);
-  --sidebar-accent-foreground: oklch(23.937% 0.038 233.156);
-  --sidebar-border: oklch(92.9% 0.013 255.508);
-  --sidebar-ring: oklch(69.074% 0.058 208.988);
+  --background: oklch(97.901% 0.0084 168.758); /* #f3faf7 */
+  --foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --card: oklch(97.427% 0.0109 167.806); /* #f0f9f5 */
+  --card-foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --popover: oklch(98.650% 0.0103 174.282); /* #f4fdfa */
+  --popover-foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --primary: oklch(44.962% 0.0779 181.548); /* #0a6358 phthalo */
+  --primary-foreground: oklch(98.193% 0.0181 155.826); /* #f0fdf4 */
+  --secondary: oklch(95.197% 0.0132 159.912); /* #e8f2ec */
+  --secondary-foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --muted: oklch(95.197% 0.0132 159.912); /* #e8f2ec */
+  --muted-foreground: oklch(41.662% 0.0316 174.745); /* #3a524b */
+  --accent: oklch(96.472% 0.0124 157.002); /* #edf6f0 */
+  --accent-foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --destructive: oklch(62.054% 0.2205 26.968); /* #ee3533 */
+  --destructive-foreground: oklch(98.415% 0.0034 247.858); /* #f8fafc */
+  --border: oklch(93.165% 0.0160 166.709); /* #dfece6 */
+  --input: oklch(93.165% 0.0160 166.709); /* #dfece6 */
+  --ring: oklch(44.962% 0.0779 181.548); /* #0a6358, equals --primary */
+  --chart-1: oklch(65.512% 0.2335 34.359); /* #ff3f00 — aliases heat, not the ramp */
+  --chart-2: oklch(44.962% 0.0779 181.548); /* #0a6358 */
+  --chart-3: oklch(49.030% 0.0860 216.772); /* #066c80 */
+  --chart-4: oklch(82.902% 0.1712 81.038); /* #ffb900 */
+  --chart-5: oklch(66.458% 0.1138 193.272); /* #00a9a7 */
+  --sidebar: oklch(97.901% 0.0084 168.758); /* #f3faf7 */
+  --sidebar-foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --sidebar-primary: oklch(44.962% 0.0779 181.548); /* #0a6358, equals --primary */
+  --sidebar-primary-foreground: oklch(98.193% 0.0181 155.826); /* #f0fdf4 */
+  --sidebar-accent: oklch(95.197% 0.0132 159.912); /* #e8f2ec */
+  --sidebar-accent-foreground: oklch(23.937% 0.0375 233.156); /* #0a222e */
+  --sidebar-border: oklch(93.165% 0.0160 166.709); /* #dfece6 */
+  --sidebar-ring: oklch(44.962% 0.0779 181.548); /* #0a6358 */
 
-  /* CI enriched palette v0.2.0 — brand teal ramp + accent hues + radius scale (mode-independent) */
+  /* CI enriched palette — brand teal ramp + accent hues + radius scale (mode-independent) */
   --teal-50: #eef7f8;
   --teal-100: #d3e9ec;
   --teal-200: #abd4d8;
@@ -66,7 +77,6 @@
   --teal-950: #041620;
   --aqua: #00a9a7;
   --aqua-light: #72ddd4;
-  --mint: #58ebbf;
   --teal-accent: #2c676d;
   --teal-mid: #409b9b;
   --radius-sm: calc(var(--radius, 0.625rem) - 4px);
@@ -76,87 +86,84 @@
   --radius-2xl: calc(var(--radius, 0.625rem) + 10px);
 
   /* enriched — semantic status + gradients + elevation (light) */
-  --success: #16a34a;
+  --success: #0f5132;
   --success-foreground: #ffffff;
-  --warning: #d97706;
+  --warning: #855500;
   --warning-foreground: #ffffff;
   --info: #0284c7;
   --info-foreground: #ffffff;
-  --gradient-brand: linear-gradient(135deg, #0f717a, #00a9a7);
-  --gradient-hero: linear-gradient(135deg, #e8f9f8, #abd4d8);
-  --gradient-aurora: radial-gradient(
-    120% 90% at 50% -10%,
-    rgba(80, 150, 150, 0.1),
-    transparent 60%
-  );
-  --shadow-sm: 0 1px 2px rgba(15, 113, 122, 0.08);
-  --shadow-md: 0 4px 12px rgba(15, 113, 122, 0.1);
-  --shadow-lg: 0 12px 30px rgba(15, 113, 122, 0.14);
+  --gradient-brand: linear-gradient(135deg, #0a6358, #00a9a7);
+  --gradient-hero: linear-gradient(135deg, #f3faf7, #abd4d8);
+  --gradient-aurora: radial-gradient(1200px circle at 50% -20%, rgba(232, 242, 236, 0.65), transparent 52%),
+    radial-gradient(900px circle at 80% 0%, rgba(10, 99, 88, 0.04), transparent 45%);
+  --shadow-sm: 0 1px 2px rgba(4, 22, 32, 0.04), 0 4px 12px -4px rgba(10, 99, 88, 0.05);
+  --shadow-md: 0 1px 3px rgba(4, 22, 32, 0.05), 0 6px 18px -6px rgba(10, 99, 88, 0.07);
+  --shadow-lg: 0 2px 4px rgba(4, 22, 32, 0.05), 0 10px 24px -8px rgba(10, 99, 88, 0.08);
 }
 
 /*
  * Companion Intelligence brand palette — dark theme
- * Shell #041620 → card/popover/secondary/muted #0a222e → sidebar accent #1d293d
- * Teal accents #2c676d / #409b9b, mint #58ebbf; body copy neutral grey.
+ * Shell #041620 → card #0c323c → popover #143e48 → sidebar accent #0a2e38.
+ * Teal accents #2c676d / #409b9b; primary is sage #c5e8dc, not mint — this
+ * repo used to carry an unused, unreferenced --mint (#58ebbf, the retired
+ * dark primary/ring) here; dropped rather than left as an unexplained
+ * leftover with nothing consuming it.
  */
 .dark {
-  --background: oklch(19.008% 0.032 234.379);
-  --foreground: oklch(69.112% 0.03 185.201);
+  --background: oklch(19.008% 0.0321 234.379); /* #041620 */
+  --foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
 
-  --card: oklch(23.937% 0.038 233.156);
-  --card-foreground: oklch(69.112% 0.03 185.201);
-  --popover: oklch(23.937% 0.038 233.156);
-  --popover-foreground: oklch(69.112% 0.03 185.201);
+  --card: oklch(29.574% 0.0452 218.869); /* #0c323c */
+  --card-foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
+  --popover: oklch(33.948% 0.0488 216.326); /* #143e48 */
+  --popover-foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
 
-  --primary: oklch(90.245% 0.0401 172.646);
-  --primary-foreground: oklch(19.008% 0.032 234.379);
+  --primary: oklch(90.245% 0.0401 172.646); /* #c5e8dc sage */
+  --primary-foreground: oklch(19.008% 0.0321 234.379); /* #041620 */
 
-  --secondary: oklch(23.937% 0.038 233.156);
-  --secondary-foreground: oklch(97.742% 0.004 236.496);
+  --secondary: oklch(28.610% 0.0453 213.908); /* #073038 */
+  --secondary-foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
 
-  --muted: oklch(23.937% 0.038 233.156);
-  --muted-foreground: oklch(67.595% 0.019 253.397);
+  --muted: oklch(28.610% 0.0453 213.908); /* #073038 */
+  --muted-foreground: oklch(77.305% 0.0262 212.266); /* #a3babf */
 
-  --accent: oklch(47.7468% 0.0615 204.345);
-  --accent-foreground: oklch(97.742% 0.004 236.496);
+  --accent: oklch(28.107% 0.0436 220.120); /* #0a2e38 */
+  --accent-foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
 
-  --destructive: oklch(69.638% 0.157 21.99);
-  --destructive-foreground: oklch(97.742% 0.004 236.496);
+  --destructive: oklch(69.638% 0.1573 21.990); /* #ef7070 */
+  --destructive-foreground: oklch(97.742% 0.0042 236.496); /* #f5f8fa */
 
-  --border: oklch(47.7468% 0.0615 204.345);
-  --input: oklch(63.571% 0.051 224.103);
-  --ring: oklch(84.973% 0.141 169.678);
+  --border: oklch(28.610% 0.0453 213.908); /* #073038 */
+  --input: oklch(28.107% 0.0436 220.120); /* #0a2e38 */
+  --ring: oklch(90.245% 0.0401 172.646); /* #c5e8dc, equals --primary */
 
-  --chart-1: oklch(84.973% 0.141 169.678);
-  --chart-2: oklch(63.5528% 0.0856 195.2151);
-  --chart-3: oklch(62.9189% 0.1072 191.5661);
-  --chart-4: oklch(69.074% 0.058 208.988);
-  --chart-5: oklch(47.7468% 0.0615 204.345);
+  --chart-1: oklch(90.245% 0.0401 172.646); /* #c5e8dc — stays sage, heat doesn't flip with theme */
+  --chart-2: oklch(63.553% 0.0856 195.215); /* #409b9b */
+  --chart-3: oklch(62.919% 0.1072 191.566); /* #079d99 */
+  --chart-4: oklch(69.074% 0.0582 208.988); /* #70a6af */
+  --chart-5: oklch(49.030% 0.0860 216.772); /* #066c80 */
 
-  --sidebar: oklch(19.008% 0.032 234.379);
-  --sidebar-foreground: oklch(97.742% 0.004 236.496);
-  --sidebar-primary: oklch(84.195% 0.043 203.701);
-  --sidebar-primary-foreground: oklch(19.008% 0.032 234.379);
-  --sidebar-accent: oklch(27.989% 0.041 260.329);
-  --sidebar-accent-foreground: oklch(97.742% 0.004 236.496);
-  --sidebar-border: oklch(47.7468% 0.0615 204.345);
-  --sidebar-ring: oklch(84.973% 0.141 169.678);
+  --sidebar: oklch(19.008% 0.0321 234.379); /* #041620 */
+  --sidebar-foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
+  --sidebar-primary: oklch(90.245% 0.0401 172.646); /* #c5e8dc, equals --primary */
+  --sidebar-primary-foreground: oklch(19.008% 0.0321 234.379); /* #041620 */
+  --sidebar-accent: oklch(28.107% 0.0436 220.120); /* #0a2e38 */
+  --sidebar-accent-foreground: oklch(95.422% 0.0110 211.038); /* #e8f2f4 */
+  --sidebar-border: oklch(28.610% 0.0453 213.908); /* #073038 */
+  --sidebar-ring: oklch(90.245% 0.0401 172.646); /* #c5e8dc */
 
   /* enriched — semantic status + gradients + elevation (dark) */
-  --success: #4ade80;
+  --success: #34d399;
   --success-foreground: #052e16;
   --warning: #fbbf24;
   --warning-foreground: #422006;
   --info: #38bdf8;
   --info-foreground: #082f49;
-  --gradient-aurora: radial-gradient(
-    120% 90% at 50% -10%,
-    rgba(64, 155, 155, 0.28),
-    transparent 60%
-  );
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 30px rgba(0, 0, 0, 0.45);
+  --gradient-aurora: radial-gradient(1200px circle at 50% -20%, rgba(200, 230, 217, 0.08), transparent 55%),
+    radial-gradient(800px circle at 15% 10%, rgba(4, 22, 32, 0.5), transparent 50%);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.22), 0 4px 12px -6px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.24), 0 6px 18px -8px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.26), 0 10px 24px -10px rgba(0, 0, 0, 0.36);
 }
 
 /*

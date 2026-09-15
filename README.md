@@ -34,8 +34,8 @@ The app is a full-viewport **3D avatar viewport** with a 2D HUD — logo, chat-l
 panel, chat input, and a floating control dock — composited on top. The shell is
 intentionally **dark-only**: it is an XR HUD, not a light-themable document
 surface, so the canon dark background (`--teal-950` `#041620`) is kept even under a
-light OS preference. It is on the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/style):
-teal `--primary` (`#0f717a` / hover `#abd4d8`) and Montserrat, sourced from the shared
+light OS preference. It is on the [Companion Intelligence design system](https://github.com/companionintelligence/CI-Common/tree/main/styles):
+phthalo `--primary` (`#0a6358` / dark `#c5e8dc`) and Manrope, sourced from the shared
 `:root` / `.dark` tokens in `packages/core/src/styles/globals.css`. The design system
 ships both light and dark palettes; this XR HUD deliberately renders the **dark**
 tokens only.

@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@ci-avatar/core": "workspace:*",
-    "@fontsource/montserrat": "^5.2.8",
+    "@fontsource/manrope": "^5.2.8",
     "@hexafield/simple-store": "^1.0.1",
     "@react-three/drei": "^10.6.1",
     "@react-three/fiber": "^9.3.0",
