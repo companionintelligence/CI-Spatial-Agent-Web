@@ -28,14 +28,10 @@ export default {
         border: 'var(--border)',
         input: 'var(--input)',
         ring: 'var(--ring)',
-        // Retained CI teal aliases (used by the first-wave normalization).
-        'ci-teal': '#abd4d8',
-        'ci-cyan': '#0f717a',
-        'dark-bg': '#041620',
-        'dark-bg-secondary': '#1B1E20',
       },
       fontFamily: {
-        'sans': ['Montserrat', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        'sans': ['Manrope', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        'display': ['Archivo Black', 'Manrope', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
         'inter': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
       },
       backdropBlur: {
@@ -55,9 +51,9 @@ export default {
         'gradient-button': 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)',
         'gradient-message-user': 'linear-gradient(135deg, rgba(0,131,145,0.25) 0%, rgba(0,131,145,0.12) 100%)',
         'gradient-message-assistant': 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-        'gradient-avatar-user': 'linear-gradient(135deg, #0f717a, #abd4d8)',
-        'gradient-avatar-assistant': 'linear-gradient(135deg, #abd4d8, #0f717a)',
-        'gradient-indicator': 'linear-gradient(45deg, #0f717a, #abd4d8)',
+        'gradient-avatar-user': 'linear-gradient(135deg, #0a6358, #c5e8dc)',
+        'gradient-avatar-assistant': 'linear-gradient(135deg, #c5e8dc, #0a6358)',
+        'gradient-indicator': 'linear-gradient(45deg, #0a6358, #c5e8dc)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

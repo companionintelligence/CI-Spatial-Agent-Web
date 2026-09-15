@@ -1,8 +1,8 @@
 import type { Preview } from '@storybook/react-vite'
 
-import '@fontsource/montserrat/400.css'
-import '@fontsource/montserrat/600.css'
-import '@fontsource/montserrat/700.css'
+import '@fontsource/manrope/400.css'
+import '@fontsource/manrope/600.css'
+import '@fontsource/manrope/700.css'
 import '@ci-avatar/core/styles/globals.css'
 
 /**
@@ -33,8 +33,8 @@ const preview: Preview = {
           padding: 24,
           borderRadius: 12,
           background: 'var(--background, #041620)',
-          fontFamily: 'var(--font-sans, Montserrat, system-ui, sans-serif)',
-          color: 'var(--foreground, #88a29e)',
+          fontFamily: 'var(--font-sans, Manrope, system-ui, sans-serif)',
+          color: 'var(--foreground, #e8f2f4)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center'

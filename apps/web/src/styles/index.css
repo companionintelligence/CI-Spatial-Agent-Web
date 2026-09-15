@@ -4,10 +4,15 @@
  * theme-aware surfaces (cards, popovers, panels) use the token vars from
  * @ci-avatar/core globals.css (:root / .dark) and follow the ThemeProvider.
  * We keep color-scheme: dark and do not ship a light shell.
+ *
+ * font-family and the link/button accent below used to redeclare --font-sans
+ * (Montserrat, retired at tokens v0.3.0) and hardcode the retired teal
+ * (#0f717a/#abd4d8) — both silently overrode the correct values
+ * @ci-avatar/core/styles/globals.css had already set, since this file
+ * imports after it (see main.tsx). Now just inherits font-family and
+ * references var(--primary)/var(--ring) instead of a second copy of canon.
  */
 :root {
-  --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-family: var(--font-sans);
   line-height: 1.5;
   font-weight: 400;
 
@@ -23,11 +28,11 @@
 
 a {
   font-weight: 500;
-  color: #0f717a;
+  color: var(--primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #abd4d8;
+  color: var(--ring);
 }
 
 body {
@@ -65,11 +70,11 @@ button {
   transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 button:hover {
-  border-color: #0f717a;
+  border-color: var(--primary);
 }
 button:focus,
 button:focus-visible {
-  outline: 2px solid #0f717a;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
@@ -84,7 +89,7 @@ button:focus-visible {
     background-color: #041620;
   }
   a:hover {
-    color: #abd4d8;
+    color: var(--ring);
   }
   button {
     background-color: rgba(255,255,255,0.06);

@@ -169,7 +169,7 @@ export const ChatPanel = ({ messages, activationState = 'unverified' }: ChatPane
               overflowY: 'auto',
               color: '#FFFFFF',
               fontFamily:
-                "var(--font-sans, 'Montserrat', system-ui, sans-serif)",
+                "var(--font-sans, 'Manrope', system-ui, sans-serif)",
               fontSize: isXR ? '1rem' : '0.875rem',
               paddingRight: isXR ? '0.75rem' : '0.5rem',
               // Custom scrollbar styling

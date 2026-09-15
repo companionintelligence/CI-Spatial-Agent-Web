@@ -65,7 +65,7 @@ export const EmotePalette = ({ selected, onSelect, title = 'Emotes' }: EmotePale
     backdropFilter: 'blur(var(--xr-glass-blur))',
     border: '0.0625rem solid var(--xr-glass-border)',
     color: 'var(--card-foreground)',
-    fontFamily: "var(--font-sans, 'Montserrat', system-ui, sans-serif)"
+    fontFamily: "var(--font-sans, 'Manrope', system-ui, sans-serif)"
   }
 
   return (

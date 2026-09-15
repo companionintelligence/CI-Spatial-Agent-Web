@@ -45,7 +45,7 @@ lives reliably in the owner's space.
 | LLM | Local (Ollama/WebLLM) + **new same-origin BFF proxy** (multi-upstream, streaming, abortable) |
 | Config | **Runtime `/config.json`** + in-app Settings; no rebuild to repoint |
 | XR | WebXR AR + VR sessions (Quest / Vision Pro / XREAL) + browser/iPad fallback |
-| Brand | Canonical CI teal tokens + Montserrat |
+| Brand | Canonical CI phthalo-mist tokens + Manrope |
 | Distribution | GHCR images + **CI-Marketplace manifest** (runtipi) |
 | Quality | 41 test files / 632 passing tests on the gauntlet branch; L3/L5 harness coverage; curated L6 demo media; strict L4 embodiment assertions still skipped |
 

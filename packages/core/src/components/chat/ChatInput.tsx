@@ -96,7 +96,7 @@ export const ChatInput = memo(({
                 color: '#FFFFFF',
                 overflow: 'auto',
                 fontFamily:
-                  "var(--font-sans, 'Montserrat', system-ui, sans-serif)",
+                  "var(--font-sans, 'Manrope', system-ui, sans-serif)",
                 fontSize: isXR ? '1.1rem' : '1rem',
                 lineHeight: isXR ? '1.6' : '1.5',
                 boxShadow: '0 0.0625rem 0.125rem rgba(0,0,0,0.03)',

@@ -11,12 +11,12 @@ import {
   resolveTTSConfig
 } from '@ci-avatar/core'
 
-// Self-hosted Montserrat (offline/CSP-safe for the appliance container).
-import '@fontsource/montserrat/200.css'
-import '@fontsource/montserrat/400.css'
-import '@fontsource/montserrat/500.css'
-import '@fontsource/montserrat/600.css'
-import '@fontsource/montserrat/700.css'
+// Self-hosted Manrope (offline/CSP-safe for the appliance container). Montserrat
+// was the pre-v0.3.0 canon font; Manrope's canon weights are 400/500/600/700 (no 200).
+import '@fontsource/manrope/400.css'
+import '@fontsource/manrope/500.css'
+import '@fontsource/manrope/600.css'
+import '@fontsource/manrope/700.css'
 // Canonical CI design tokens first, then app-specific overrides.
 import '@ci-avatar/core/styles/globals.css'
 import './styles/index.css'

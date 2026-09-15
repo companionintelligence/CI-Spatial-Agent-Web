@@ -215,9 +215,9 @@ importers:
       '@ci-avatar/engine':
         specifier: workspace:*
         version: link:../../packages/engine
-      '@fontsource/montserrat':
+      '@fontsource/manrope':
         specifier: ^5.2.8
-        version: 5.2.8
+        version: 5.3.0
       '@hexafield/simple-store':
         specifier: ^1.0.1
         version: 1.0.1(react@19.2.4)
@@ -1142,8 +1142,8 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@fontsource/montserrat@5.2.8':
-    resolution: {integrity: sha512-xTjLxSbSfCycDB0pwmNsfNvdfWPaDaRQ2LC6yt/ZI7SdvXG52zHnzNYC/09mzuAuWNJyShkteutfCoDgym56hQ==}
+  '@fontsource/manrope@5.3.0':
+    resolution: {integrity: sha512-obJ1Dv3+uCA6HlHgW8u4BGYxJR9In2HW7gjJhlflEvkrj1X1iSEwu0fToL+JYGC/FEKFfIz1sBuPduvcL2gIAA==}
 
   '@fortawesome/fontawesome-common-types@6.6.0':
     resolution: {integrity: sha512-xyX0X9mc0kyz9plIyryrRbl7ngsA9jz77mCZJsUkLl+ZKs0KWObgaEBoSgQiYWAsSmjz/yjl0F++Got0Mdp4Rw==}
@@ -5807,7 +5807,7 @@ snapshots:
 
   '@exodus/bytes@1.15.1': {}
 
-  '@fontsource/montserrat@5.2.8': {}
+  '@fontsource/manrope@5.3.0': {}
 
   '@fortawesome/fontawesome-common-types@6.6.0': {}
 
