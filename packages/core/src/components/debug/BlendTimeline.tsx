@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
 
+import { debugPanelStyle } from './debugPanelStyle'
+
 /**
  * BlendTimeline — a static SVG of an idle → gesture → idle animation crossfade.
  *
@@ -68,18 +70,8 @@ export const BlendTimeline = ({
     fontFamily: "var(--font-sans, 'Manrope', system-ui, sans-serif)"
   }
 
-  const containerStyle: CSSProperties = {
-    padding: '1rem',
-    borderRadius: 'var(--radius-lg)',
-    background: 'var(--xr-glass-bg)',
-    backdropFilter: 'blur(var(--xr-glass-blur))',
-    border: '0.0625rem solid var(--xr-glass-border)',
-    color: 'var(--card-foreground)',
-    fontFamily: "var(--font-sans, 'Manrope', system-ui, sans-serif)"
-  }
-
   return (
-    <div style={containerStyle}>
+    <div style={debugPanelStyle}>
       <div
         style={{
           display: 'flex',

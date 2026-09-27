@@ -32,7 +32,6 @@
  */
 
 import type { WebWorkerMLCEngine } from '@mlc-ai/web-llm'
-import * as webllm from '@mlc-ai/web-llm'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { llmCloud } from './models/llmCloud'
@@ -160,6 +159,7 @@ export const useLLMService = ({ config: configPartial = {}, onStatus, onResponse
         type: 'module'
       })
 
+      const webllm = await import('@mlc-ai/web-llm')
       const engine = await webllm.CreateWebWorkerMLCEngine(worker, safeModel, { initProgressCallback })
 
       completed(engine)

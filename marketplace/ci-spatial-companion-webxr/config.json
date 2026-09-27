@@ -14,14 +14,14 @@
   "tipi_version": 1,
   "version": "0.1.0",
   "source": "https://github.com/companionintelligence/CI-Spatial-Agent-Web",
-  "website": "https://avatars-zbe.pages.dev",
+  "website": "https://avatar.ci.computer",
   "exposable": true,
   "supported_architectures": [
     "arm64",
     "amd64"
   ],
   "created_at": 1783123200000,
-  "updated_at": 1783123200000,
+  "updated_at": 1790467200000,
   "dynamic_config": true,
   "pricing": {
     "type": "free"

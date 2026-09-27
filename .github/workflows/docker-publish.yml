@@ -24,6 +24,7 @@ jobs:
   publish:
     name: Build, screenshot-test, publish
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
@@ -100,7 +101,15 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: '.node-version'
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-1.48.0
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
       - name: Container screenshot test
         run: |
@@ -147,4 +156,4 @@ jobs:
             VITE_SENTRY_DSN=${{ secrets.SENTRY_DSN }}
             VITE_SENTRY_RELEASE=ci-spatial-companion-web@${{ github.sha }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=min

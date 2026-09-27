@@ -218,8 +218,8 @@ tests and the recursive build; that is strong foundation and demo evidence, not 
 1. **CI-Marketplace (appliance)** — *primary.* One-click install on the owner's box; the companion
    ships as the flagship app. Manifest + images ready; needs the screenshot gate + Server memory to
    be truly compelling.
-2. **Public web build (Cloudflare Pages)** — top-of-funnel demo at `avatars-zbe.pages.dev` (or a
-   branded domain). Bring-your-own-Ollama via the Settings panel; zero install.
+2. **Public web build (Cloudflare Pages)** — top-of-funnel demo live at `avatar.ci.computer`.
+   Bring-your-own-Ollama via the Settings panel; zero install.
 3. **Apple Vision Pro (App Store)** — via the existing WebSpatial packaging (`apps/vision-pro`).
    High-signal credibility channel; gated on App Review + a privacy policy.
 4. **Meta Quest (App Lab → Store)** — WebXR PWA / packaged; the standalone-headset audience.

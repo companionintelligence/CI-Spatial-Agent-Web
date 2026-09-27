@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {  defaultVadConfig, type VADConfig, type VADResult } from './vadConfig'
-import { MicVAD } from '@ricky0123/vad-web'
 
 // Type for VAD instance
 interface VADInstance {
@@ -48,6 +47,8 @@ export const useVADService = ({
 
   const initializeVAD = useCallback(async () => {
     try {
+      const { MicVAD } = await import('@ricky0123/vad-web')
+
       const originalWarn = console.warn
       console.warn = (...args) => {
         if (args[0]?.includes?.('onnxruntime') || 

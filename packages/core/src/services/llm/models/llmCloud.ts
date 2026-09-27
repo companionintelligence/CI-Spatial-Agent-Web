@@ -50,8 +50,6 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
     ...(isFlowise && { question: userMessage })
   })
 
-  console.log('LLM - sending request to remote', body)
-
   // A barge-in has to cancel the request itself, not just ignore the answer.
   // Without this the provider keeps generating (and billing) a reply nobody will
   // hear, and the connection stays open behind the turn the user actually wants.
@@ -76,7 +74,6 @@ export async function llmCloud(params: LLMParams): Promise<LLMResult> {
   }
 
   try {
-    console.log('LLM - sending request to', llmUrl, props)
     const response = await fetch(llmUrl, props)
 
     if (!response.ok) {
