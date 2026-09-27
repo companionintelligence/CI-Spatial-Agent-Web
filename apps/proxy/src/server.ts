@@ -34,14 +34,24 @@ export function createApp(): Hono {
   // and tests can stub it. `credentials` stays false: this BFF authenticates to
   // its upstream with a server-side key and never uses browser cookies, so
   // allowing them — which would also make `*` illegal — buys nothing.
-  app.use('/api/*', (c, next) =>
-    cors({
-      origin: (origin) => resolveAllowedOrigin(origin, resolveConfig().allowedOrigins),
+  //
+  // The empty-allowlist case returns `next()` without constructing the middleware
+  // at all, rather than letting it run and decline each origin. Hono's `cors()`
+  // is not inert when it declines: it still sets `Vary: Origin` on every response
+  // and still answers OPTIONS with a 204 instead of letting the router 404 it. Both
+  // are harmless, but they would be changes to the same-origin container and
+  // dev-server deployments, which have no reason to see any of this.
+  app.use('/api/*', (c, next) => {
+    const { allowedOrigins } = resolveConfig()
+    if (allowedOrigins.length === 0) return next()
+
+    return cors({
+      origin: (origin) => resolveAllowedOrigin(origin, allowedOrigins),
       allowMethods: ['GET', 'POST', 'OPTIONS'],
       allowHeaders: ['Content-Type'],
       maxAge: 86400
     })(c, next)
-  )
+  })
 
   app.route('/api', healthRoutes)
   app.route('/api', configRoutes)

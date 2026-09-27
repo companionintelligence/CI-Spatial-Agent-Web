@@ -40,6 +40,28 @@ describe('CORS — default (no APP_ALLOWED_ORIGINS)', () => {
 
     expect(res.headers.get('access-control-allow-origin')).toBeNull()
   })
+
+  it('sets no Vary: Origin either', async () => {
+    // Hono's cors() is not inert when it merely *declines* an origin — it still
+    // adds Vary: Origin to every response. Harmless, but it is a change to a
+    // deployment that asked for no CORS at all, and it makes a shared cache key
+    // on a header the response does not actually depend on. So the middleware is
+    // skipped outright when the allowlist is empty, and this is what proves it.
+    const res = await createApp().request('/api/health', {
+      headers: { Origin: PAGES_ORIGIN }
+    })
+
+    expect(res.headers.get('vary')).toBeNull()
+  })
+
+  it('lets the router handle OPTIONS rather than short-circuiting it', async () => {
+    // cors() answers every preflight with a 204 before the router sees it. With no
+    // allowlist the BFF has no OPTIONS route, so the honest answer is the router's
+    // 404 — the same thing the container returned before this middleware existed.
+    const res = await createApp().request('/api/chat', { method: 'OPTIONS' })
+
+    expect(res.status).toBe(404)
+  })
 })
 
 describe('CORS — with an allowlist', () => {
