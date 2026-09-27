@@ -1,13 +1,8 @@
-import { useCallback, useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
 import { useXRLayout } from '../../utils/useXRLayout'
 import { type ActivationState, type LLMProvider } from '../../services/llm/config/llmConfig'
-import {
-  activationStateLabel,
-  deriveActivationState,
-  fetchConnectionHealth,
-  type ConnectionCheckState,
-  type ConnectionHealth
-} from '../../services/connection/connectionHealth'
+import { useConnectionCheck } from '../../services/connection/useConnectionCheck'
+import { ConnectionStatusPanel } from './ConnectionStatusPanel'
 
 interface OnboardingOverlayProps {
   isOpen: boolean
@@ -27,43 +22,10 @@ export const OnboardingOverlay = ({
   onActivationStateChange
 }: OnboardingOverlayProps) => {
   const { isXR } = useXRLayout()
-  const [healthState, setHealthState] = useState<ConnectionCheckState>('idle')
-  const [health, setHealth] = useState<ConnectionHealth | null>(null)
-  const [healthError, setHealthError] = useState<string | null>(null)
-
-  const checkConnection = useCallback(async () => {
-    // Demo mode has no live backend by design (see handleSkipOnboarding's same
-    // branch in App.tsx) — hitting /api/health here would only ever 404 into
-    // the SPA fallback and surface a confusing raw JSON-parse error.
-    if (llmProvider === 'script') {
-      setHealth(null)
-      setHealthError(null)
-      setHealthState('demo')
-      onActivationStateChange?.('demo-only')
-      return
-    }
-
-    setHealthState('checking')
-    setHealthError(null)
-
-    try {
-      const payload = await fetchConnectionHealth()
-      setHealth(payload)
-      onActivationStateChange?.(deriveActivationState(payload, llmProvider))
-      if (!payload.reachable) {
-        setHealthState('error')
-      } else if (payload.tts && !payload.tts.reachable) {
-        setHealthState('degraded')
-      } else {
-        setHealthState('healthy')
-      }
-    } catch (error) {
-      setHealth(null)
-      setHealthState('error')
-      setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
-      onActivationStateChange?.('unverified')
-    }
-  }, [llmProvider, onActivationStateChange])
+  const { healthState, health, healthError, checkConnection } = useConnectionCheck(
+    llmProvider,
+    onActivationStateChange
+  )
 
   const cardStyle = useMemo<CSSProperties>(
     () => ({
@@ -160,31 +122,13 @@ export const OnboardingOverlay = ({
             </button>
           </div>
 
-          <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', opacity: 0.85 }}>
-            <div style={{ marginBottom: '0.35rem' }}>Session: {activationStateLabel(activationState)}</div>
-            {healthState === 'idle' && 'Not checked yet.'}
-            {healthState === 'checking' && 'Checking the configured services…'}
-            {healthState === 'healthy' && 'Chat and voice are reachable.'}
-            {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
-            {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
-            {healthState === 'demo' && 'Demo mode — no live backend to check.'}
-            {health && (
-              <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
-                <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>
-                <div>
-                  Memory:{' '}
-                  {health.memory
-                    ? health.memory.configured
-                      ? health.memory.reachable
-                        ? 'connected'
-                        : 'configured but unreachable'
-                      : 'not configured'
-                    : 'not reported'}
-                </div>
-                <div>TTS: {health.tts ? (health.tts.reachable ? 'reachable' : 'unreachable') : 'not reported'}</div>
-              </div>
-            )}
-          </div>
+          <ConnectionStatusPanel
+            activationState={activationState}
+            healthState={healthState}
+            health={health}
+            healthError={healthError}
+            textStyle={{ fontSize: '0.78rem', opacity: 0.85 }}
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>

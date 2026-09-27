@@ -10,13 +10,8 @@ import {
   type LLMConfig,
   type LLMProvider
 } from '../../services/llm/config/llmConfig'
-import {
-  activationStateLabel,
-  deriveActivationState,
-  fetchConnectionHealth,
-  type ConnectionCheckState,
-  type ConnectionHealth
-} from '../../services/connection/connectionHealth'
+import { useConnectionCheck } from '../../services/connection/useConnectionCheck'
+import { ConnectionStatusPanel } from '../common/ConnectionStatusPanel'
 import { LLMSettingsState } from '../../config/settingsStore'
 import { clearLocalOverrides, resolveLLMConfig, writeLocalOverrides } from '../../config/appConfigService'
 import { loadRuntimeConfig } from '../../config/runtimeConfig'
@@ -151,9 +146,7 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
   const [provider, setProvider] = useState<LLMProvider>(settings.llm_provider ?? 'proxy')
   const [url, setUrl] = useState('')
   const [model, setModel] = useState('')
-  const [healthState, setHealthState] = useState<ConnectionCheckState>('idle')
-  const [health, setHealth] = useState<ConnectionHealth | null>(null)
-  const [healthError, setHealthError] = useState<string | null>(null)
+  const { healthState, health, healthError, checkConnection } = useConnectionCheck(provider, onActivationStateChange)
 
   const fields = FIELD_MAP[provider]
 
@@ -193,40 +186,6 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
     LLMSettingsState.set(resolveLLMConfig(runtime, {}))
     onClose()
   }, [onClose])
-
-  const checkConnection = useCallback(async () => {
-    // Demo mode has no live backend by design — hitting /api/health here would
-    // only ever 404 into the SPA fallback and surface a confusing raw
-    // JSON-parse error (see OnboardingOverlay's same branch).
-    if (provider === 'script') {
-      setHealth(null)
-      setHealthError(null)
-      setHealthState('demo')
-      onActivationStateChange?.('demo-only')
-      return
-    }
-
-    setHealthState('checking')
-    setHealthError(null)
-
-    try {
-      const payload = await fetchConnectionHealth()
-      setHealth(payload)
-      onActivationStateChange?.(deriveActivationState(payload, provider))
-      if (!payload.reachable) {
-        setHealthState('error')
-      } else if (payload.tts && !payload.tts.reachable) {
-        setHealthState('degraded')
-      } else {
-        setHealthState('healthy')
-      }
-    } catch (error) {
-      setHealth(null)
-      setHealthState('error')
-      setHealthError(error instanceof Error ? error.message : 'Unable to check the connection')
-      onActivationStateChange?.('unverified')
-    }
-  }, [onActivationStateChange, provider])
 
   const modelOptions = useMemo(() => COMMON_OLLAMA_MODELS, [])
 
@@ -456,31 +415,13 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
             </button>
           </div>
 
-          <div role="status" aria-live="polite" style={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}>
-            <div style={{ marginBottom: '0.35rem' }}>Session: {activationStateLabel(activationState)}</div>
-            {healthState === 'idle' && 'Not checked yet.'}
-            {healthState === 'checking' && 'Checking the configured services…'}
-            {healthState === 'healthy' && 'Chat and voice are reachable.'}
-            {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
-            {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
-            {healthState === 'demo' && 'Demo mode — no live backend to check.'}
-            {health && (
-              <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
-                <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>
-                <div>
-                  Memory:{' '}
-                  {health.memory
-                    ? health.memory.configured
-                      ? health.memory.reachable
-                        ? 'connected'
-                        : 'configured but unreachable'
-                      : 'not configured'
-                    : 'not reported'}
-                </div>
-                <div>TTS: {health.tts ? (health.tts.reachable ? 'reachable' : 'unreachable') : 'not reported'}</div>
-              </div>
-            )}
-          </div>
+          <ConnectionStatusPanel
+            activationState={activationState}
+            healthState={healthState}
+            health={health}
+            healthError={healthError}
+            textStyle={{ fontSize: '0.78rem', color: 'var(--muted-foreground)' }}
+          />
         </div>
 
         <SectionHeader icon={<SlidersHorizontal size={13} aria-hidden />}>Behavior</SectionHeader>

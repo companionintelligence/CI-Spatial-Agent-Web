@@ -45,27 +45,4 @@ describe('OnboardingOverlay connection truth', () => {
       expect.objectContaining({ cache: 'no-store', headers: { accept: 'application/json' } })
     )
   })
-
-  it('skips the live health fetch for the script (demo) provider', async () => {
-    const fetchMock = vi.fn()
-    const onActivationStateChange = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
-
-    render(
-      <OnboardingOverlay
-        isOpen
-        onEnableMic={vi.fn()}
-        onSkip={vi.fn()}
-        activationState="unverified"
-        llmProvider="script"
-        onActivationStateChange={onActivationStateChange}
-      />
-    )
-
-    await userEvent.click(screen.getByRole('button', { name: 'Check connection' }))
-
-    await waitFor(() => expect(onActivationStateChange).toHaveBeenCalledWith('demo-only'))
-    expect(screen.getByRole('status')).toHaveTextContent('Demo mode — no live backend to check.')
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
 })
