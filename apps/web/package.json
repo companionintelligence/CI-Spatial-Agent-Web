@@ -14,7 +14,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build -o storybook-static",
-    "postbuild": "node ../../scripts/pages-poststrip.mjs dist"
+    "postbuild": "node ../../scripts/pages-poststrip.mjs dist && node ../../scripts/pages-config.mjs dist"
   },
   "dependencies": {
     "@ci-avatar/core": "workspace:*",

@@ -5,8 +5,9 @@ import { captureException, installCrashHandlers, isTelemetryEnabled, telemetry }
 import { pathToFileURL } from 'node:url'
 
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 
-import { resolveConfig } from './config.js'
+import { resolveAllowedOrigin, resolveConfig } from './config.js'
 import { chatRoutes } from './routes/chat.js'
 import { configRoutes } from './routes/config.js'
 import { healthRoutes } from './routes/health.js'
@@ -19,6 +20,29 @@ import { ttsRoutes } from './routes/tts.js'
  */
 export function createApp(): Hono {
   const app = new Hono()
+
+  // Cross-origin access, off unless APP_ALLOWED_ORIGINS names an origin.
+  //
+  // The container and dev-server deployments put the SPA and this proxy on one
+  // origin, so they send no CORS headers and this middleware never engages. A
+  // split deployment — the static Pages build at avatar.ci.computer, this proxy
+  // self-hosted behind a Cloudflare tunnel — is cross-origin, and the browser
+  // discards every /api/* response without them.
+  //
+  // The env is read per request (not captured once at startup) to match how the
+  // rest of the BFF resolves config, so a restart-free env change takes effect
+  // and tests can stub it. `credentials` stays false: this BFF authenticates to
+  // its upstream with a server-side key and never uses browser cookies, so
+  // allowing them — which would also make `*` illegal — buys nothing.
+  app.use('/api/*', (c, next) =>
+    cors({
+      origin: (origin) => resolveAllowedOrigin(origin, resolveConfig().allowedOrigins),
+      allowMethods: ['GET', 'POST', 'OPTIONS'],
+      allowHeaders: ['Content-Type'],
+      maxAge: 86400
+    })(c, next)
+  )
+
   app.route('/api', healthRoutes)
   app.route('/api', configRoutes)
   app.route('/api', chatRoutes)

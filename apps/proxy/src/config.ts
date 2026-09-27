@@ -39,6 +39,51 @@ export interface ResolvedConfig {
   memoryGenerationUpstream: UpstreamKind
   port: number
   requestTimeoutMs: number
+  /**
+   * Browser origins allowed to call this BFF cross-origin (env
+   * `APP_ALLOWED_ORIGINS`, comma-separated).
+   *
+   * Empty by default, which sends no CORS headers at all — the same-origin
+   * deployments (nginx reverse-proxying `/api/` in the container, Vite's dev
+   * proxy) never needed them and are unaffected.
+   *
+   * It is needed when the SPA and this proxy are on *different* origins: the
+   * static Cloudflare Pages build at `https://avatar.ci.computer` talking to a
+   * self-hosted proxy exposed over a Cloudflare tunnel. Without the origin
+   * listed here the browser blocks every `/api/*` response.
+   *
+   * A single `*` entry allows any origin. Credentials are never allowed either
+   * way, so a permissive list cannot be used to ride a user's cookies.
+   */
+  allowedOrigins: string[]
+}
+
+/**
+ * Normalize an origin for comparison against the `Origin` header the browser
+ * sends: scheme and host are case-insensitive, and the header never carries a
+ * trailing slash even when an operator writes one in the env var.
+ */
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/+$/, '').toLowerCase()
+}
+
+/** Parse `APP_ALLOWED_ORIGINS` into a deduplicated list, dropping blank entries. */
+export function parseAllowedOrigins(raw: string | undefined): string[] {
+  if (!raw) return []
+  return [...new Set(raw.split(',').map(normalizeOrigin).filter(Boolean))]
+}
+
+/**
+ * Resolve an `Origin` header against the allowlist, returning the value to echo
+ * in `Access-Control-Allow-Origin` or `null` to send no CORS headers.
+ *
+ * Echoes the request's own origin rather than `*` on a match, so the response
+ * stays correct behind a cache that varies on `Origin`.
+ */
+export function resolveAllowedOrigin(origin: string, allowed: string[]): string | null {
+  if (allowed.length === 0) return null
+  if (allowed.includes('*')) return origin
+  return allowed.includes(normalizeOrigin(origin)) ? origin : null
 }
 
 const VALID_UPSTREAMS: UpstreamKind[] = ['ollama', 'openai', 'ci-server']
@@ -87,6 +132,7 @@ export function resolveConfig(env: NodeJS.ProcessEnv = process.env): ResolvedCon
     memoryMaxResults: Number(env.APP_MEMORY_MAX_RESULTS ?? '6'),
     memoryGenerationUpstream: (env.APP_MEMORY_GENERATION_UPSTREAM ?? 'ollama') as UpstreamKind,
     port: Number(env.PORT ?? 8787),
-    requestTimeoutMs: Number(env.APP_REQUEST_TIMEOUT_MS ?? 60000)
+    requestTimeoutMs: Number(env.APP_REQUEST_TIMEOUT_MS ?? 60000),
+    allowedOrigins: parseAllowedOrigins(env.APP_ALLOWED_ORIGINS)
   }
 }
