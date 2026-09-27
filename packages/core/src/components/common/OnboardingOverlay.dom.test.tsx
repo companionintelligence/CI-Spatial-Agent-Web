@@ -12,6 +12,7 @@ describe('OnboardingOverlay connection truth', () => {
   it('moves a reachable non-memory provider into chat-only activation', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
       json: async () => ({
         status: 'ok',
         reachable: true,
@@ -43,5 +44,28 @@ describe('OnboardingOverlay connection truth', () => {
       '/api/health',
       expect.objectContaining({ cache: 'no-store', headers: { accept: 'application/json' } })
     )
+  })
+
+  it('skips the live health fetch for the script (demo) provider', async () => {
+    const fetchMock = vi.fn()
+    const onActivationStateChange = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(
+      <OnboardingOverlay
+        isOpen
+        onEnableMic={vi.fn()}
+        onSkip={vi.fn()}
+        activationState="unverified"
+        llmProvider="script"
+        onActivationStateChange={onActivationStateChange}
+      />
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Check connection' }))
+
+    await waitFor(() => expect(onActivationStateChange).toHaveBeenCalledWith('demo-only'))
+    expect(screen.getByRole('status')).toHaveTextContent('Demo mode — no live backend to check.')
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })

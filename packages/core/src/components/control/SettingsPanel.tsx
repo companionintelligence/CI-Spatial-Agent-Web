@@ -195,6 +195,17 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
   }, [onClose])
 
   const checkConnection = useCallback(async () => {
+    // Demo mode has no live backend by design — hitting /api/health here would
+    // only ever 404 into the SPA fallback and surface a confusing raw
+    // JSON-parse error (see OnboardingOverlay's same branch).
+    if (provider === 'script') {
+      setHealth(null)
+      setHealthError(null)
+      setHealthState('demo')
+      onActivationStateChange?.('demo-only')
+      return
+    }
+
     setHealthState('checking')
     setHealthError(null)
 
@@ -452,6 +463,7 @@ export const SettingsPanel = ({ isOpen, onClose, activationState = 'unverified',
             {healthState === 'healthy' && 'Chat and voice are reachable.'}
             {healthState === 'degraded' && 'Chat is reachable, but voice is unavailable.'}
             {healthState === 'error' && (healthError || 'Chat is unreachable. Check the service and try again.')}
+            {healthState === 'demo' && 'Demo mode — no live backend to check.'}
             {health && (
               <div style={{ display: 'grid', gap: '0.2rem', marginTop: '0.45rem' }}>
                 <div>Chat: {health.reachable ? 'reachable' : 'unreachable'}</div>

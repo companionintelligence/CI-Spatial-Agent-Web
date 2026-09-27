@@ -22,7 +22,7 @@ export interface ConnectionHealth {
   }
 }
 
-export type ConnectionCheckState = 'idle' | 'checking' | 'healthy' | 'degraded' | 'error'
+export type ConnectionCheckState = 'idle' | 'checking' | 'healthy' | 'degraded' | 'error' | 'demo'
 
 export async function fetchConnectionHealth(): Promise<ConnectionHealth> {
   if (typeof fetch !== 'function') {
@@ -35,6 +35,15 @@ export async function fetchConnectionHealth(): Promise<ConnectionHealth> {
   })
   if (!response.ok) {
     throw new Error(`Health check failed (${response.status})`)
+  }
+
+  // A static deployment with no backend proxy (e.g. this app's Cloudflare Pages
+  // build) has no route at /api/health, so the request falls through to the
+  // SPA's index.html fallback and comes back 200 with an HTML body. Catch that
+  // here instead of letting `.json()` throw a raw "Unexpected token '<'" at the user.
+  const contentType = response.headers?.get('content-type') ?? ''
+  if (!contentType.includes('application/json')) {
+    throw new Error('No backend proxy is reachable at this URL — this deployment has no live service configured')
   }
 
   const payload = (await response.json()) as ConnectionHealth

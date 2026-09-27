@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import { SettingsPanel } from './SettingsPanel'
 
@@ -57,6 +58,7 @@ describe('SettingsPanel layout', () => {
   it('exposes chat, memory, and voice reachability after a health check', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
+      headers: new Headers({ 'content-type': 'application/json' }),
       json: async () => ({
         status: 'degraded',
         upstream: 'ollama',
@@ -77,6 +79,10 @@ describe('SettingsPanel layout', () => {
     await screen.findByRole('button', { name: 'Check connection' })
     expect(screen.getByRole('status')).toHaveTextContent('Not checked yet.')
 
+    // The dialog's own default LLM provider is 'script' (no live backend by
+    // design — see the 'demo mode' test below), so exercising the real health
+    // fetch means picking a live provider first, same as a user would.
+    await userEvent.selectOptions(screen.getByLabelText('LLM provider'), 'proxy')
     screen.getByRole('button', { name: 'Check connection' }).click()
 
     await waitFor(() =>
@@ -92,5 +98,21 @@ describe('SettingsPanel layout', () => {
         headers: { accept: 'application/json' }
       })
     )
+  })
+
+  it('skips the live health fetch in demo mode instead of surfacing a raw parse error', async () => {
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<SettingsPanel isOpen onClose={vi.fn()} />)
+    // Default provider is 'script' (demo mode) when no runtime config overrides it.
+    expect(screen.getByLabelText('LLM provider')).toHaveValue('script')
+
+    screen.getByRole('button', { name: 'Check connection' }).click()
+
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Demo mode — no live backend to check.')
+    )
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 })
