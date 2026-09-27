@@ -4,6 +4,11 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 
+// The static (Cloudflare Pages) generator. Untyped .mjs on purpose — it is build
+// tooling, not app code — and imported here only to pin the two to one answer.
+// @ts-expect-error - plain .mjs build tooling, no declarations
+import { buildConfig } from '../scripts/pages-config.mjs'
+
 /**
  * `nginx/40-render-config.sh` is the container entrypoint that turns APP_* env
  * into the `/config.json` the SPA fetches at boot. It is the only place where
@@ -83,9 +88,12 @@ describe('40-render-config.sh', () => {
 
   // APP_STT_REMOTE is the one field interpolated bare, so it is the one that can
   // take the whole document down. Operators write truthy values every which way.
-  it.each(['true', 'TRUE', 'True', '1', 'yes', 'YES', 'on', 'On'])('reads %j as remote: true', (value) => {
-    expect(render({ APP_STT_REMOTE: value }).stt.remote).toBe(true)
-  })
+  it.each(['true', 'TRUE', 'True', '1', 'yes', 'YES', 'on', 'On', ' true ', '\t1'])(
+    'reads %j as remote: true',
+    (value) => {
+      expect(render({ APP_STT_REMOTE: value }).stt.remote).toBe(true)
+    }
+  )
 
   it.each(['false', 'FALSE', '0', 'no', 'off', '', ' ', 'junk', 'null', '{}', 'true false'])(
     'reads %j as remote: false',
@@ -111,6 +119,18 @@ describe('40-render-config.sh', () => {
     expect(config.llm.proxy_url).toBe('/api/chat", "injected": true, "x": "')
     expect(config).not.toHaveProperty('injected')
   })
+
+  // scripts/pages-config.mjs is the static-deploy generator for the same APP_*
+  // variables, so one env has to mean the same thing whether a deployment is
+  // served by nginx or by Pages. Drift between the two is the bug this pins.
+  it.each(['true', 'TRUE', ' true ', '1', 'yes', 'on', 'false', '0', '', ' ', 'no', 'off', 'nonsense'])(
+    'agrees with scripts/pages-config.mjs on %j',
+    (value) => {
+      const pages = buildConfig({ APP_STT_REMOTE: value }) as { stt: { remote: boolean } }
+
+      expect(render({ APP_STT_REMOTE: value }).stt.remote).toBe(pages.stt.remote)
+    }
+  )
 
   it('drops control characters rather than emitting them raw', () => {
     // A newline or tab inside a JSON string is a parse error; none of these

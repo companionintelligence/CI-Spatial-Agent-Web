@@ -1,7 +1,21 @@
 {
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
     "allow": [
-      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(node scripts/:*)",
+      "Bash(npx:*)",
 
       "Bash(git status)",
       "Bash(git diff*)",

@@ -1,4 +1,7 @@
-# Cloudflare Pages deployment config (project "avatars" → avatars-zbe.pages.dev).
+# Cloudflare Pages deployment config (project "avatars").
+#
+# Public URL:  https://avatar.ci.computer   (custom domain)
+# Project URL: https://avatars-zbe.pages.dev (always live; useful for previews)
 #
 # This is a pnpm monorepo; the web SPA builds to apps/web/dist. Without this file the
 # Pages build system finished the build but had no output directory to deploy ("deploy —"),
@@ -6,6 +9,17 @@
 #
 # Set the Pages project **build command** to `pnpm install && pnpm --filter @ci-avatar/web build`
 # in the dashboard (mirrors the Dockerfile — build only the web app, not proxy/vision-pro).
+#
+# The custom domain and its DNS record are ensured by `scripts/cloudflare-domain.mjs`,
+# which the pages-deploy workflow runs after each deploy. It is idempotent, so it is also
+# the way to provision the hostname the first time:
+#
+#   CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... \
+#     node scripts/cloudflare-domain.mjs --project avatars --domain avatar.ci.computer
+#
+# This deploy is STATIC — there is no /api on this origin. The SPA reads dist/config.json
+# (written at build time by scripts/pages-config.mjs from APP_* env) to find the
+# self-hosted proxy behind its Cloudflare tunnel. See docs/DEPLOYMENT.md.
 name = "avatars"
 pages_build_output_dir = "apps/web/dist"
 compatibility_date = "2026-07-01"

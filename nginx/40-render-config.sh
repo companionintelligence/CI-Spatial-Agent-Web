@@ -14,7 +14,10 @@
 # (packages/core/src/config/runtimeConfig.ts) swallows a parse failure and
 # resolves to `{}`, so a single bad byte here silently drops the *whole* runtime
 # config (proxy URL, model, TTS mode) back to build-time defaults, with nothing
-# in the logs. `APP_STT_REMOTE=1` used to be enough to do it.
+# in the logs. `APP_STT_REMOTE=yes` used to be enough to do it.
+#
+# scripts/pages-config.mjs is the static (Cloudflare Pages) counterpart of this
+# file: same APP_* variables, same shape. Keep the two in step.
 #
 # POSIX sh only (busybox ash in nginx:alpine) — no bashisms.
 set -eu
@@ -26,8 +29,13 @@ RENDER_CONFIG_OUT="${RENDER_CONFIG_OUT:-/usr/share/nginx/html/config.json}"
 # Coerce an env string to a real JSON boolean. Operators write 1/yes/on about as
 # often as `true`, and anything else — junk, empty-but-set, unset — is `false`
 # rather than invalid JSON.
+#
+# Deliberately identical to asBoolean() in scripts/pages-config.mjs, the static
+# (Cloudflare Pages) generator: the two read the same APP_* variables and must
+# agree on what they mean, so the same env describes a deployment however it is
+# served. Trim first, then lowercase, then match the same four spellings.
 json_bool() {
-  case "$(printf '%s' "${1:-}" | tr 'A-Z' 'a-z')" in
+  case "$(printf '%s' "${1:-}" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' | tr 'A-Z' 'a-z')" in
     1 | true | yes | on) printf 'true' ;;
     *) printf 'false' ;;
   esac

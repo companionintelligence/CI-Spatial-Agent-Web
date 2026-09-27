@@ -80,10 +80,17 @@ jobs:
         run: docker run -d --name proxy -e CI_TELEMETRY=off -p 8787:8787 ${{ steps.meta.outputs.sha_tag }}
 
       - name: Smoke test /api/health
+        # This is an ephemeral container with no real Ollama/CosyVoice reachable
+        # from the runner, so /api/health legitimately reports "degraded" (see
+        # the "make connection health truthful" change — status reflects actual
+        # upstream reachability, and routes.chat.test.ts itself asserts status
+        # is one of 'ok' | 'degraded'). The smoke test only needs to confirm the
+        # server booted and is serving valid health JSON, not that a chat
+        # upstream is reachable from CI.
         run: |
           for i in $(seq 1 30); do
             body="$(curl -s http://localhost:8787/api/health || true)"
-            if echo "$body" | grep -q '"status":"ok"'; then echo "healthy: $body"; exit 0; fi
+            if echo "$body" | grep -qE '"status":"(ok|degraded)"'; then echo "healthy: $body"; exit 0; fi
             sleep 1
           done
           echo "proxy never became healthy"; docker logs proxy; exit 1
