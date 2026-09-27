@@ -5,7 +5,7 @@
  * Handles breath chunking for TTS integration and interrupt management.
  */
 
-import * as webllm from '@mlc-ai/web-llm'
+import type * as webllm from '@mlc-ai/web-llm'
 
 import { readLatestInterrupt } from '../llmInterrupt'
 import type { LLMParams, LLMResult, WebLLMStreamChunk } from '../llmTypes'

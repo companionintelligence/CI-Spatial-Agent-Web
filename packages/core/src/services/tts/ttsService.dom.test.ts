@@ -84,6 +84,14 @@ async function flush() {
 
 const spokenTexts = (fn: ReturnType<typeof vi.fn>): string[] => fn.mock.calls.map((call) => call[0] as string)
 
+// A genuine `Response`, not a plain object literal — so if ttsService's fetch
+// handling ever starts reading `.headers` (or any other real Response member),
+// this mock keeps exercising it instead of silently drifting out of sync with
+// what `fetch` actually returns.
+function mockFetchResponse(body: BodyInit = new ArrayBuffer(8), init?: ResponseInit): Response {
+  return new Response(body, { status: 200, statusText: 'OK', ...init })
+}
+
 let useTTSService: typeof import('./ttsService').useTTSService
 
 beforeEach(async () => {
@@ -93,12 +101,7 @@ beforeEach(async () => {
   vi.spyOn(console, 'error').mockImplementation(() => {})
 
   globalThis.AudioContext = MockAudioContext as unknown as typeof AudioContext
-  globalThis.fetch = vi.fn(async () => ({
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    arrayBuffer: async () => new ArrayBuffer(8)
-  })) as unknown as typeof fetch
+  globalThis.fetch = vi.fn(async () => mockFetchResponse()) as unknown as typeof fetch
 
   // Fresh module → module-global id counter resets to 0.
   vi.resetModules()

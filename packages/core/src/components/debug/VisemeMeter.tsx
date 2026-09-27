@@ -1,5 +1,7 @@
 import type { CSSProperties } from 'react'
 
+import { debugPanelStyle } from './debugPanelStyle'
+
 /**
  * VisemeMeter — a presentational bar meter for lip-sync viseme weights.
  *
@@ -28,17 +30,11 @@ export const VisemeMeter = ({ values, title = 'Visemes', stripPrefix = 'viseme_'
   const entries = Object.entries(values)
 
   const containerStyle: CSSProperties = {
+    ...debugPanelStyle,
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
-    width: '100%',
-    padding: '1rem',
-    borderRadius: 'var(--radius-lg)',
-    background: 'var(--xr-glass-bg)',
-    backdropFilter: 'blur(var(--xr-glass-blur))',
-    border: '0.0625rem solid var(--xr-glass-border)',
-    color: 'var(--card-foreground)',
-    fontFamily: "var(--font-sans, 'Manrope', system-ui, sans-serif)"
+    width: '100%'
   }
 
   return (

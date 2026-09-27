@@ -1,4 +1,64 @@
-# Playwright Testing Summary for CI-XR-Web
+# Testing — CI-Spatial-Agent-Web
+
+This repo has two independent test systems. **Vitest** (unit/component tests) is what
+actually gates PR merges in CI; **Playwright** (documented in the rest of this file) is a
+separate end-to-end/browser suite that is not part of the required CI workflow.
+
+## Vitest — Unit & Component Tests
+
+The root `vitest.config.ts` defines a single Vitest 4 config with multiple **projects**
+(via the `test.projects` API). Each project pins its own `environment` and `include`
+glob, so a file's location and name — not a per-file `@vitest-environment` docblock —
+determine how it runs.
+
+| Project | Environment | Files (`include`) | Covers |
+| --- | --- | --- | --- |
+| `agent-node` | node | `packages/agent/src/**/*.node.test.ts` | Transport-agnostic agent layer (tools + spatial memory) |
+| `engine-node` | node | `packages/engine/src/**/*.node.test.ts` | Renderer-free avatar engine — pure arbitration logic |
+| `core-node` | node | `packages/core/src/**/*.node.test.ts` | Pure service logic, no DOM |
+| `core-dom` | jsdom | `packages/core/src/**/*.dom.test.{ts,tsx}` | Component + browser-API logic (React Testing Library, via `vitest.setup.ts`) |
+| `proxy` | node | `apps/proxy/test/**/*.test.ts` | Backend proxy / BFF unit + integration tests |
+| `web-node` | node | `apps/web/src/**/*.node.test.ts` | App-level logic outside `packages/core` (browser telemetry gate + scrubber) |
+| `scripts` | node | `scripts/**/*.test.mjs` | Repo tooling under `scripts/` (plain `.mjs`, no TS project of its own) |
+| `nginx-node` | node | `nginx/**/*.node.test.ts` | Container entrypoint that renders `/config.json` (test shells out through `sh`) |
+
+### Filename convention
+
+- **`*.node.test.ts`** → runs with `environment: 'node'`. Use for pure logic that doesn't
+  touch the DOM (three.js math, service logic, BFF/config-generator logic, etc.) — it's
+  cheaper and closer to how the code actually executes.
+- **`*.dom.test.{ts,tsx}`** → runs with `environment: 'jsdom'` plus
+  `@testing-library/react`/`@testing-library/jest-dom` (loaded by `vitest.setup.ts`). Use
+  for React components or anything that touches browser APIs.
+
+Matching one of the `include` globs above is what registers a new test file with a
+project — there's no separate manual registration step, but a file in the wrong location
+or with the wrong suffix simply won't be picked up by any project.
+
+### Running it
+
+```bash
+pnpm test           # vitest run — single pass across every project (this is what CI runs)
+pnpm test:watch     # vitest — interactive watch mode
+pnpm test:coverage  # vitest run --coverage
+```
+
+Scope a run to one project with Vitest's own `--project` flag, e.g.
+`pnpm test -- --project core-dom`.
+
+### CI gating
+
+`.github/workflows/test.yml` runs on every push/PR to `main` and its `Unit + component
+tests` step is just `pnpm test`. That step (alongside lint, the web typecheck/build, and
+a Storybook build smoke test) is what gates merges — the Playwright suite below has no
+job in that workflow and does not block a PR.
+
+## Playwright — End-to-End / Browser Tests
+
+Everything from here to the end of this file (`Overview` through `Conclusion`) documents
+the **Playwright** suite, which drives the built app in a real browser via `pnpm
+test:e2e`. It is a separate, heavier suite from the Vitest tests above and is not wired
+into `.github/workflows/test.yml`.
 
 ## Overview
 Successfully created comprehensive end-to-end testing infrastructure using Playwright to test the AI avatar web application.

@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 
 import type { EmotionType } from '../../services/emote/emoteTypes'
+import { debugPanelStyle } from './debugPanelStyle'
 
 /**
  * EmotePalette — a swatch grid of the avatar's expressive states.
@@ -56,16 +57,10 @@ export interface EmotePaletteProps {
 
 export const EmotePalette = ({ selected, onSelect, title = 'Emotes' }: EmotePaletteProps) => {
   const containerStyle: CSSProperties = {
+    ...debugPanelStyle,
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.75rem',
-    padding: '1rem',
-    borderRadius: 'var(--radius-lg)',
-    background: 'var(--xr-glass-bg)',
-    backdropFilter: 'blur(var(--xr-glass-blur))',
-    border: '0.0625rem solid var(--xr-glass-border)',
-    color: 'var(--card-foreground)',
-    fontFamily: "var(--font-sans, 'Manrope', system-ui, sans-serif)"
+    gap: '0.75rem'
   }
 
   return (

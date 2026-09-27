@@ -38,6 +38,18 @@ export default defineConfig({
           return
         }
         warn(warning)
+      },
+      output: {
+        // Split stable, rarely-changing vendor code into its own chunks so app
+        // code changes don't bust the (large) three.js/vrm/postfx download on
+        // every deploy, and so the browser can cache them independently.
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('/three/') || id.includes('three-mesh-bvh')) return 'vendor-three'
+          if (id.includes('@react-three/fiber') || id.includes('@react-three/drei')) return 'vendor-r3f'
+          if (id.includes('@pixiv/three-vrm')) return 'vendor-vrm'
+          if (id.includes('/postprocessing/')) return 'vendor-postfx'
+        }
       }
     }
   }

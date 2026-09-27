@@ -1,6 +1,9 @@
 name: Style canon lint
 
-on: [pull_request, push]
+on:
+  pull_request:
+  push:
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,7 +19,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: '.node-version'
 
       - name: Lint design canon (fails on non-teal --primary)
         run: node scripts/lint-canon.mjs .
