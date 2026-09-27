@@ -71,6 +71,9 @@
       "allowedVersions": {
         "@webspatial/vite-plugin>vite": "7"
       }
+    },
+    "overrides": {
+      "protobufjs": "^7.6.6"
     }
   }
 }
