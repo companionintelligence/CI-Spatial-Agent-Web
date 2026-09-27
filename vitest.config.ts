@@ -79,6 +79,16 @@ export default defineConfig({
           globals: true,
           include: ['apps/web/src/**/*.node.test.ts']
         }
+      },
+      {
+        // Repo tooling under scripts/ — plain .mjs, run by the build rather than
+        // imported by the app, so it has no TypeScript project of its own.
+        test: {
+          name: 'scripts',
+          environment: 'node',
+          globals: true,
+          include: ['scripts/**/*.test.mjs']
+        }
       }
     ]
   }

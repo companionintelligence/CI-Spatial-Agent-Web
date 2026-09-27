@@ -1,0 +1,29 @@
+# Cloudflare Pages response headers (https://developers.cloudflare.com/pages/configuration/headers/).
+# Copied verbatim into the deploy from apps/web/public; every other target ignores it.
+#
+# There is deliberately NO _redirects file next to this one. Pages already routes any path
+# that matches no asset to the SPA on its own (it does that whenever the build has no
+# top-level 404.html, which this one does not) — and a `/* /index.html 200` rule would make
+# things worse, not better: Pages applies _redirects "regardless of whether or not an asset
+# matches the incoming request", so a catch-all rewrite would serve index.html in place of
+# every hashed JS chunk and every avatar file.
+
+# WebXR needs an explicit grant for the immersive session, and for the camera in
+# passthrough/AR. Cloudflare's default Permissions-Policy includes neither, and without
+# xr-spatial-tracking a headset refuses `immersive-vr` outright.
+/*
+  Permissions-Policy: xr-spatial-tracking=(self), camera=(self), microphone=(self), fullscreen=(self)
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Hashed Vite bundles and packed media are content-addressed, so they can be cached
+# indefinitely. Pages' default TTL is short, which means re-fetching ~240 MB of avatar and
+# animation media on every visit — on a headset, on hotel wifi.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Never cache the deployment's own runtime config: it is what points this static build at a
+# backend, so a cached copy would pin returning visitors to an old tunnel URL.
+/config.json
+  Cache-Control: no-store

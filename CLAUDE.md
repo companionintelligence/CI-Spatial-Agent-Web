@@ -16,29 +16,57 @@ WebXR spatial companion — immersive XR interface for CI-Server with spatial au
 
 ## Stack
 
-- Three.js / WebXR
+- Three.js / WebXR / React Three Fiber
 - TypeScript / JavaScript
-- npm
+- pnpm workspaces (`apps/*`, `packages/*`)
 
 ## Key commands
 
 ```bash
 # Install dependencies
-npm install
+pnpm install
 
-# Start development server / service
-npm run dev
+# Start development server (web SPA on :5173)
+pnpm dev:web
 
-# Run tests
-npm test
+# Start the backend proxy / BFF on :8787 (Vite proxies /api to it)
+pnpm dev:proxy
 
-# Build for production
-npm run build
+# Lint, unit/component tests, production build
+pnpm lint
+pnpm test
+pnpm --filter @ci-avatar/web build
 ```
+
+`pnpm test` runs Vitest across six projects (see `vitest.config.ts`); Playwright e2e is
+separate (`pnpm test:e2e`). `predev`/`prebuild` run `scripts/pack-assets.mjs`, which packs
+the shared media from `/assets` into `apps/*/public` — those copies are gitignored.
 
 ## Package manager
 
-**npm** — use exclusively; do not mix with npm/yarn/pnpm/bun unless the repo explicitly requires it.
+**pnpm** (pinned by `package.json#packageManager`) — use exclusively; do not mix with
+npm/yarn/bun. `pnpm-workspace.yaml` defines the workspace, and `pnpm-lock.yaml` is the
+committed lockfile.
+
+## Claude Code on the web
+
+`.claude/hooks/session-start.sh` is a SessionStart hook that prepares a cloud container:
+it installs workspace dependencies and packs the shared assets, so `pnpm lint`, `pnpm test`
+and the web build work from the first turn. It is a no-op outside a remote session
+(`CLAUDE_CODE_REMOTE`). Chromium is preinstalled in the cloud image, so the hook tells
+Playwright not to re-download browsers.
+
+## Deployment
+
+- **Static SPA** → Cloudflare Pages, project `avatars`, at <https://avatar.ci.computer>.
+  That origin serves files only: there is no `/api` on it, so the browser is pointed at a
+  backend by `dist/config.json` (written at build time by `scripts/pages-config.mjs`), and
+  the backend must allow the origin via `APP_ALLOWED_ORIGINS`.
+- **Container** → two GHCR images (nginx-served SPA + proxy); nginx reverse-proxies
+  `/api/` so that path is same-origin and needs no CORS.
+
+Full runbook, including the idempotent `scripts/cloudflare-domain.mjs` that provisions the
+custom domain and DNS: `docs/DEPLOYMENT.md`.
 
 ## Cross-repo connections
 

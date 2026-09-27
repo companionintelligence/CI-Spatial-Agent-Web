@@ -4,10 +4,18 @@ on:
   push:
     branches:
       - main
+  # Lets the custom-domain step be run on demand after provisioning the secrets,
+  # without waiting for the next push to main.
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
+
+env:
+  # Public hostname this app is served from. The Pages project keeps its own
+  # *.pages.dev name as well; this is the one people are given.
+  PAGES_CUSTOM_DOMAIN: avatar.ci.computer
 
 jobs:
   deploy:
@@ -31,7 +39,24 @@ jobs:
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
+      # CF_PAGES makes scripts/pages-poststrip.mjs drop the one >25 MiB asset that
+      # Pages refuses, matching what a dashboard-triggered Pages build does.
+      #
+      # The APP_* variables are read by scripts/pages-config.mjs, which writes
+      # dist/config.json. That file is the only thing pointing this static deploy at
+      # a backend: the Pages origin serves no /api, so APP_PROXY_URL must be the
+      # ABSOLUTE URL of the self-hosted proxy behind its Cloudflare tunnel. Set
+      # them as repository variables (not secrets — they end up in a public file).
       - name: Build Web App
+        env:
+          CF_PAGES: '1'
+          APP_LLM_PROVIDER: ${{ vars.APP_LLM_PROVIDER }}
+          APP_PROXY_URL: ${{ vars.APP_PROXY_URL }}
+          APP_LLM_MODEL: ${{ vars.APP_LLM_MODEL }}
+          APP_OLLAMA_URL: ${{ vars.APP_OLLAMA_URL }}
+          APP_TTS_MODE: ${{ vars.APP_TTS_MODE }}
+          APP_TTS_VOICE: ${{ vars.APP_TTS_VOICE }}
+          APP_STT_REMOTE: ${{ vars.APP_STT_REMOTE }}
         run: pnpm --filter @ci-avatar/web build
 
       # Skip deploy instead of failing when the Cloudflare secrets aren't
@@ -59,3 +84,26 @@ jobs:
           directory: apps/web/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
           wranglerVersion: '3'
+
+      # Idempotent: attaches the custom domain to the Pages project and points the
+      # zone's CNAME at it, or reports that both already match and changes nothing.
+      # Runs after the deploy because a project with no deployment has no
+      # *.pages.dev subdomain to CNAME to yet.
+      #
+      # continue-on-error because the DNS half needs Zone:DNS:Edit and Zone:Read on
+      # top of the Pages permission the deploy uses. A token with only the Pages
+      # scope should not turn a good deploy red — the *.pages.dev URL is live either
+      # way, and the step's log says exactly what was missing.
+      - name: Ensure custom domain
+        if: steps.secrets.outputs.present == 'true'
+        continue-on-error: true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          # Passed as env rather than interpolated into the script body, so the value
+          # is never parsed as shell.
+          PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+        run: |
+          node scripts/cloudflare-domain.mjs \
+            --project "$PAGES_PROJECT" \
+            --domain "$PAGES_CUSTOM_DOMAIN"
