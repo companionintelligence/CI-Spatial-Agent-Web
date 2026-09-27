@@ -77,6 +77,34 @@ and the browser has to be told where. Two things make that work:
    proxy sends none by default, which is what keeps the same-origin container deployment
    unchanged.
 
+### Two deploy paths write to this project — set the build env on both
+
+The Pages project has the **Cloudflare dashboard git integration** connected *and* is
+deployed by `.github/workflows/pages-deploy.yml`. Both push to the same project, so
+whichever finishes last wins. This is visible on any PR: the
+`cloudflare-workers-and-pages` bot comments with a branch preview URL that the workflow
+never created.
+
+That matters because `dist/config.json` is generated from build env, and **the two paths
+read their env from different places**:
+
+| Path | Triggers on | Reads `APP_*` from |
+| --- | --- | --- |
+| Dashboard git integration | every push, every branch (previews included) | Pages project → Settings → **Environment variables** |
+| `pages-deploy.yml` | push to `main` | GitHub → **repository variables** |
+
+Set the values in **both**, or a deploy from the path you forgot ships without a backend
+URL. `config.json` is then simply absent — and because Pages falls back to the SPA for an
+unmatched path, requesting it returns `index.html` with HTTP 200 rather than a 404. The
+loader guards on the response's content type, so it correctly resolves to `{}` and the app
+falls back to build-time defaults; the symptom is a working site with no chat backend, not
+an error.
+
+If you would rather have one path, disconnect the dashboard git integration and keep the
+workflow (the workflow is the one that also ensures the custom domain), or delete the
+workflow and set everything in the dashboard. Keeping both is fine as long as their env
+agrees.
+
 ### Serving the backend from your own machine over a tunnel
 
 Run the BFF on your own hardware and expose it with a named Cloudflare tunnel. Unlike the
@@ -175,6 +203,20 @@ the SPA by itself, because the build ships no top-level `404.html`. Adding the u
 `/* /index.html 200` SPA rule would actively break the site: Pages applies `_redirects`
 *"regardless of whether or not an asset matches the incoming request"*, so a catch-all
 rewrite serves `index.html` in place of every hashed JS chunk and every avatar file.
+
+Both halves of that are confirmed against a live branch preview, not just the docs:
+
+```
+$ curl -sI <preview>/some/deep/client/route
+HTTP/2 200 ; content-type: text/html        # SPA fallback works with no _redirects
+
+$ curl -sI <preview>/assets/index-DuAor7ps.js
+HTTP/2 200 ; content-type: application/javascript
+cache-control: public, max-age=31536000, immutable   # asset served, not shadowed
+
+$ curl -sI <preview>/                       # _headers applied
+permissions-policy: xr-spatial-tracking=(self), camera=(self), ...
+```
 
 ## Local Ollama Over The Web (Quest 3 / iPad / XREAL)
 
