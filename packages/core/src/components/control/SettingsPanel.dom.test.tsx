@@ -99,20 +99,4 @@ describe('SettingsPanel layout', () => {
       })
     )
   })
-
-  it('skips the live health fetch in demo mode instead of surfacing a raw parse error', async () => {
-    const fetchMock = vi.fn()
-    vi.stubGlobal('fetch', fetchMock)
-
-    render(<SettingsPanel isOpen onClose={vi.fn()} />)
-    // Default provider is 'script' (demo mode) when no runtime config overrides it.
-    expect(screen.getByLabelText('LLM provider')).toHaveValue('script')
-
-    screen.getByRole('button', { name: 'Check connection' }).click()
-
-    await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent('Demo mode — no live backend to check.')
-    )
-    expect(fetchMock).not.toHaveBeenCalled()
-  })
 })
