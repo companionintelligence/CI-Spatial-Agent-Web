@@ -95,6 +95,14 @@ jobs:
       #
       # --commit-dirty=true because the checkout has build output in it by this
       # point; without it wrangler declines to attach the commit metadata.
+      #
+      # --branch is the ref this run is on, NOT a hardcoded "main". Cloudflare
+      # decides production vs preview from that name: the project's production
+      # branch deploys to production, anything else becomes a preview. Since this
+      # workflow also has a workflow_dispatch trigger, hardcoding "main" would mean
+      # a dispatch from any branch publishes that branch straight to the production
+      # hostname. GITHUB_REF_NAME keeps the push-to-main path a production deploy
+      # (identical behaviour) while making a dispatch from a branch a preview.
       - name: Deploy to Cloudflare Pages
         if: steps.secrets.outputs.present == 'true'
         env:
@@ -104,7 +112,7 @@ jobs:
         run: |
           npx --yes wrangler@4 pages deploy apps/web/dist \
             --project-name="$PAGES_PROJECT" \
-            --branch=main \
+            --branch="$GITHUB_REF_NAME" \
             --commit-hash="$GITHUB_SHA" \
             --commit-dirty=true
 
@@ -117,8 +125,12 @@ jobs:
       # top of the Pages permission the deploy uses. A token with only the Pages
       # scope should not turn a good deploy red — the *.pages.dev URL is live either
       # way, and the step's log says exactly what was missing.
+      # Restricted to main: the custom domain is a production-level binding on the
+      # Pages project, so a workflow_dispatch from a feature branch has no business
+      # attaching or repointing it. On a branch the deploy above still runs and
+      # produces a preview URL, which is what a dispatch is useful for.
       - name: Ensure custom domain
-        if: steps.secrets.outputs.present == 'true'
+        if: steps.secrets.outputs.present == 'true' && github.ref == 'refs/heads/main'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
