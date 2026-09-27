@@ -150,6 +150,30 @@ build-time defaults (the scripted demo persona), and chat has no backend.
 
 The deploy step is skipped with a warning, not failed, when these are absent.
 
+### This org's Actions policy blocks third-party actions — don't reintroduce one
+
+The workflow deploys by calling the **wrangler CLI over `npx`**, not with
+`cloudflare/pages-action` or `cloudflare/wrangler-action`. That is deliberate. This
+organisation's GitHub Actions policy allows only a specific set of actions, and the
+Cloudflare ones are not on it:
+
+```
+##[error]Unable to resolve actions. Cannot access repositories 'cloudflare/pages-action'.
+```
+
+A blocked action fails the job at *"Prepare all required actions"*, **before any step
+runs** — so the run dies in about seven seconds, no `if:` condition can guard it, and the
+log shows no step output to explain why. That is what made this workflow fail on ~90
+consecutive pushes to `main`, and it is why no Pages deploy ever reached
+`avatars-zbe.pages.dev` from CI. (The failures were previously attributed to the missing
+Cloudflare secrets, and a skip-when-absent check was added for them. That check is
+genuinely useful, but it never ran and could not have been the cause.)
+
+`actions/*` and `pnpm/action-setup` are allowed — `test.yml` uses the latter and passes,
+which is why the setup steps here mirror it. If you add a step that needs a new
+third-party action, expect it to be blocked the same way; either get it allowlisted, or do
+what the deploy step does and call the tool's CLI directly.
+
 ### Provisioning the custom domain
 
 `scripts/cloudflare-domain.mjs` ensures both halves of the wiring — the custom domain on

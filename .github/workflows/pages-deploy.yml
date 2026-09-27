@@ -27,8 +27,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Enable Corepack
-        run: corepack enable
+      # Mirrors test.yml's setup, which is the one proven to work under this org's
+      # Actions policy. (pnpm/action-setup is on the org allowlist; see the deploy
+      # step below for the action that is not.)
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -60,10 +63,21 @@ jobs:
         run: pnpm --filter @ci-avatar/web build
 
       # Skip deploy instead of failing when the Cloudflare secrets aren't
-      # configured. This step failed 90 of its last 91 runs over ~6 months on
-      # exactly this — a full checkout+install+build every push to main, just
-      # to fail at the last step. The build itself still runs and still
-      # verifies the app compiles; only the deploy is conditional.
+      # configured. The build itself still runs and still verifies the app
+      # compiles; only the deploy is conditional.
+      #
+      # NB: an earlier version of this comment blamed the workflow's long run of
+      # failures on these missing secrets. That was wrong, and the check below
+      # could never have fixed them: the job died at "Prepare all required
+      # actions", before any step executed, because this org's Actions policy
+      # does not allow `cloudflare/pages-action` —
+      #
+      #   Unable to resolve actions. Cannot access repositories
+      #   'cloudflare/pages-action'.
+      #
+      # which is why every one of those runs failed in about seven seconds. The
+      # deploy step below now calls the wrangler CLI over npx instead of using a
+      # third-party action, so there is nothing left for the policy to block.
       - name: Check for Cloudflare secrets
         id: secrets
         run: |
@@ -74,16 +88,33 @@ jobs:
             echo "::warning::Cloudflare Pages secrets are not configured (CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_PAGES_PROJECT) — skipping deploy. Provision the secrets to enable it, or remove this workflow if this deploy target is no longer wanted."
           fi
 
+      # The wrangler CLI over npx, rather than `cloudflare/pages-action` (blocked by
+      # this org's Actions policy — see above) or `cloudflare/wrangler-action`
+      # (third-party too, so it would be blocked the same way). wrangler reads
+      # CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID from the environment.
+      #
+      # --commit-dirty=true because the checkout has build output in it by this
+      # point; without it wrangler declines to attach the commit metadata.
+      #
+      # --branch is the ref this run is on, NOT a hardcoded "main". Cloudflare
+      # decides production vs preview from that name: the project's production
+      # branch deploys to production, anything else becomes a preview. Since this
+      # workflow also has a workflow_dispatch trigger, hardcoding "main" would mean
+      # a dispatch from any branch publishes that branch straight to the production
+      # hostname. GITHUB_REF_NAME keeps the push-to-main path a production deploy
+      # (identical behaviour) while making a dispatch from a branch a preview.
       - name: Deploy to Cloudflare Pages
         if: steps.secrets.outputs.present == 'true'
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
-          directory: apps/web/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          wranglerVersion: '3'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+        run: |
+          npx --yes wrangler@4 pages deploy apps/web/dist \
+            --project-name="$PAGES_PROJECT" \
+            --branch="$GITHUB_REF_NAME" \
+            --commit-hash="$GITHUB_SHA" \
+            --commit-dirty=true
 
       # Idempotent: attaches the custom domain to the Pages project and points the
       # zone's CNAME at it, or reports that both already match and changes nothing.
@@ -94,8 +125,12 @@ jobs:
       # top of the Pages permission the deploy uses. A token with only the Pages
       # scope should not turn a good deploy red — the *.pages.dev URL is live either
       # way, and the step's log says exactly what was missing.
+      # Restricted to main: the custom domain is a production-level binding on the
+      # Pages project, so a workflow_dispatch from a feature branch has no business
+      # attaching or repointing it. On a branch the deploy above still runs and
+      # produces a preview URL, which is what a dispatch is useful for.
       - name: Ensure custom domain
-        if: steps.secrets.outputs.present == 'true'
+        if: steps.secrets.outputs.present == 'true' && github.ref == 'refs/heads/main'
         continue-on-error: true
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
