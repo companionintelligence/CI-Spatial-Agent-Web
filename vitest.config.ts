@@ -9,9 +9,11 @@ import { defineConfig } from 'vitest/config'
  *   - `*.node.test.ts`      → pure logic (three.js math runs fine in node)
  *   - `*.dom.test.{ts,tsx}` → jsdom + @testing-library/react component logic
  *
- * A third `proxy` project runs the BFF (apps/proxy) unit + integration tests, and
- * a fourth `web-node` project covers app-level logic that lives outside
- * packages/core (apps/web/src/lib — the browser telemetry gate and scrubber).
+ * A third `proxy` project runs the BFF (apps/proxy) unit + integration tests, a
+ * fourth `web-node` project covers app-level logic that lives outside
+ * packages/core (apps/web/src/lib — the browser telemetry gate and scrubber),
+ * and a fifth `nginx-node` project runs the container's config-rendering shell
+ * script through `sh` and asserts what it emits.
  *
  * `resolve.dedupe` mirrors apps/web/vite.config.ts so a single React/three
  * instance is used under test.
@@ -78,6 +80,17 @@ export default defineConfig({
           environment: 'node',
           globals: true,
           include: ['apps/web/src/**/*.node.test.ts']
+        }
+      },
+      {
+        // The container entrypoint that renders /config.json from APP_* env. The
+        // test shells out to the real script, so it covers the sh quoting rather
+        // than a reimplementation of it.
+        test: {
+          name: 'nginx-node',
+          environment: 'node',
+          globals: true,
+          include: ['nginx/**/*.node.test.ts']
         }
       }
     ]

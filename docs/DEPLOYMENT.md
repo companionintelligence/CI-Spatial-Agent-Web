@@ -43,6 +43,11 @@ Users can further override the URL/model in-app via the **Settings (⚙️)** pa
 persist to `localStorage`. Precedence: `localStorage` > runtime `/config.json` > build-time
 `VITE_LLM_*` defaults.
 
+The boolean `APP_STT_REMOTE` accepts `1`, `true`, `yes` or `on` (any case); every other value —
+including empty and unset — is `false`. The generator normalises it rather than passing it through,
+because the SPA's loader treats an unparseable `/config.json` as "no config at all": one malformed
+value would silently drop the LLM and TTS settings too, with nothing in the container logs.
+
 ## Cloudflare Pages
 
 Production URL:
