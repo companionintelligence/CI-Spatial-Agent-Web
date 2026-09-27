@@ -50,6 +50,12 @@ Users can further override the URL/model in-app via the **Settings (⚙️)** pa
 persist to `localStorage`. Precedence: `localStorage` > runtime `/config.json` > build-time
 `VITE_LLM_*` defaults.
 
+The boolean `APP_STT_REMOTE` accepts `1`, `true`, `yes` or `on` (any case, surrounding whitespace
+ignored); every other value — including empty and unset — is `false`. Both generators
+(`nginx/40-render-config.sh` and `scripts/pages-config.mjs`) normalise it rather than passing it
+through, because the SPA's loader treats an unparseable `/config.json` as "no config at all": one
+malformed value would silently drop the LLM and TTS settings too, with nothing in the logs.
+
 ## Cloudflare Pages — `https://avatar.ci.computer`
 
 The static SPA is served from Cloudflare Pages (project **`avatars`**) at

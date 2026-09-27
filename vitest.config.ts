@@ -13,6 +13,11 @@ import { defineConfig } from 'vitest/config'
  * a fourth `web-node` project covers app-level logic that lives outside
  * packages/core (apps/web/src/lib — the browser telemetry gate and scrubber).
  *
+ * Two further projects cover the deploy-time config generators, which are not app
+ * code but produce the `/config.json` the app boots from: `scripts` (the plain
+ * .mjs tooling under scripts/) and `nginx-node` (the container entrypoint, run
+ * through `sh` so the test covers its real quoting).
+ *
  * `resolve.dedupe` mirrors apps/web/vite.config.ts so a single React/three
  * instance is used under test.
  */
@@ -88,6 +93,18 @@ export default defineConfig({
           environment: 'node',
           globals: true,
           include: ['scripts/**/*.test.mjs']
+        }
+      },
+      {
+        // The container entrypoint that renders /config.json from APP_* env — the
+        // nginx-side counterpart of scripts/pages-config.mjs above. The test shells
+        // out to the real script, so it covers the sh quoting rather than a
+        // reimplementation of it.
+        test: {
+          name: 'nginx-node',
+          environment: 'node',
+          globals: true,
+          include: ['nginx/**/*.node.test.ts']
         }
       }
     ]
