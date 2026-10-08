@@ -1,11 +1,15 @@
 name: Deploy Web App to Cloudflare Pages
 
+# >>> ci-local:gated original triggers below, restore with `ci-local restore`
+# on:
+#   push:
+#     branches:
+#       - main
+#   # Lets the custom-domain step be run on demand after provisioning the secrets,
+#   # without waiting for the next push to main.
+#   workflow_dispatch:
+# <<< ci-local:gated
 on:
-  push:
-    branches:
-      - main
-  # Lets the custom-domain step be run on demand after provisioning the secrets,
-  # without waiting for the next push to main.
   workflow_dispatch:
 
 concurrency:
