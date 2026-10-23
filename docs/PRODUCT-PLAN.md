@@ -228,7 +228,7 @@ tests and the recursive build; that is strong foundation and demo evidence, not 
 | Stage | When | Gate | Audience |
 |-------|------|------|----------|
 | **Private alpha** | Now → end Q3 2026 | Trustworthy Companion Loop: memory contract, controls, embodied recovery, 20-turn/XR evidence | Owner + insiders on the fleet |
-| **Marketplace beta** | Q4 2026 | Screenshot gate, diagnostics, privacy controls, spatial audio, release evidence | CI appliance owners |
+| **Marketplace** | Q4 2026 | Screenshot gate, diagnostics, privacy controls, spatial audio, release evidence | CI appliance owners |
 | **Public web demo** | Q4 2026 | Perf pass, brand polish | Prospects, spatial-computing community |
 | **Vision Pro / Quest** | Q1–Q2 2027 | Store review, privacy policy, perf | XR early adopters |
 | **GA across channels** | 2027 | Tools + personalization | All CI users |
@@ -279,7 +279,7 @@ tests and the recursive build; that is strong foundation and demo evidence, not 
 | Quarter | Milestone |
 |---------|-----------|
 | **Q3 2026** | Foundation/evidence alignment · CI-Server trust contract · onboarding + controls · **private alpha gate** |
-| **Q4 2026** | Spatial audio · on-device perf evidence · **Marketplace beta** · **public web demo** · grounded-vision spike |
+| **Q4 2026** | Spatial audio · on-device perf evidence · **Marketplace** · **public web demo** · grounded-vision spike |
 | **Q1 2027** | Confirmed tool registry · gaze + locomotion · **Vision Pro submission** · personalization v1 |
 | **Q2 2027** | Quest Store · cross-channel memory policy · safe agency hardening · **cross-channel GA** |
 
@@ -295,7 +295,7 @@ tests and the recursive build; that is strong foundation and demo evidence, not 
 | Divergent vanilla and canonical clients | Memory/tools behave differently by surface | Share versioned contracts or label the vanilla client experimental until convergence |
 | Standalone-headset performance | XR feels bad → churn | Phase 4 perf work early; quality slider + auto-throttle; test on-device |
 | WebXR passthrough-camera limits | Vision feature slips | Spike early; fall back to device-native camera bridges where WebXR can't |
-| App Store review (privacy, mic/camera) | Delays AVP/Quest launch | Privacy policy + on-device story up front; TestFlight/App Lab beta first |
+| App Store review (privacy, mic/camera) | Delays AVP/Quest launch | Privacy policy + on-device story up front; TestFlight/App Lab first |
 | Model RAM on appliances | Crashes on install | Default to small models (gemma3:1b); RAM-aware model picker; clear guidance |
 | Scope creep across 4 phases | Nothing ships | Ship the Trustworthy Companion Loop first; make vision/tools prove the same gates |
 
