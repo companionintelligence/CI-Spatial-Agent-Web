@@ -2,7 +2,7 @@
 
 <p align="center"><strong>WebXR and WebSpatial</strong></p>
 
-<p align="center"><a href="#documentation">Documentation</a> · <a href="#install-dependencies">Get started</a> · <a href="#license">License</a></p>
+<p align="center"><a href="#documentation">Documentation</a> · <a href="#install-dependencies">Get started</a> · <a href="#license">License</a> · <a href="https://docs.ci.computer/docs/reference/open-source-systems">Systems map</a></p>
 
 
 Embodied AI Avatar framework with WebXR and Vision Pro support.
