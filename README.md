@@ -227,6 +227,21 @@ the user's machine and must allow the app's origin via CORS (for Ollama set
 - `chat/` - Chat UI components
 - `control/` - Settings and control panels
 
+<!-- companion-hub-readme-deep-review -->
+
+## Browser and service flow
+
+```mermaid
+flowchart LR
+  User --> Client[Spatial Agent Web client]
+  Client --> HUD[HUD, chat, and controls]
+  Client --> Backend[Configured LLM or voice backend]
+  Client --> Vision[Vision Pro, WebGL, WebGPU, or WebXR client]
+  Client --> Hub[Optional Companion Hub deployment]
+```
+
+The README documents several client targets. Choose the Vision Pro dev server, vanilla WebGL/WebGPU/WebXR client, or Docker/Hub path explicitly; they are separate run targets. Backend URLs and credentials belong in local environment configuration, not in a committed screenshot or issue report.
+
 ## License
 
 Copyright Companion Intelligence - LifeScope Inc. Private and confidential.
