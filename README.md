@@ -1,6 +1,9 @@
-# CI Spatial Companion
+<h1 align="center">CI Spatial Companion</h1>
 
-WebXR and WebSpatial
+<p align="center"><strong>WebXR and WebSpatial</strong></p>
+
+<p align="center"><a href="#documentation">Documentation</a> · <a href="#install-dependencies">Get started</a> · <a href="#license">License</a></p>
+
 
 Embodied AI Avatar framework with WebXR and Vision Pro support.
 
