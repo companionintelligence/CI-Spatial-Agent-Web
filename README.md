@@ -2,8 +2,16 @@
 
 <p align="center"><strong>WebXR and WebSpatial</strong></p>
 
+[![release](https://img.shields.io/badge/release-not%20published-757575?style=flat-square)](https://github.com/companionintelligence/CI-Spatial-Agent-Web/releases)
+[![platform](https://img.shields.io/badge/platform-WebXR%20%C2%B7%20visionOS%20%C2%B7%20Web-0a6358?style=flat-square)](https://github.com/companionintelligence/CI-Spatial-Agent-Web)
+[![License](https://img.shields.io/badge/license-Commercial%20Standard-8a5a00?style=flat-square)](LICENSE.md)
+[![Discord](https://img.shields.io/badge/chat-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/yQp9hwpzAa)
+
 <p align="center"><a href="#documentation">Documentation</a> · <a href="#install-dependencies">Get started</a> · <a href="#license">License</a> · <a href="https://docs.ci.computer/docs/reference/open-source-systems">Systems map</a></p>
 
+<p align="center">
+  <a href="#docker--ci-hub"><img src="https://img.shields.io/badge/Run%20with%20Docker-Run%20with%20Docker-0a6358?style=for-the-badge&logo=docker&logoColor=white" alt="Run with Docker" height="30"></a>
+</p>
 
 Embodied AI Avatar framework with WebXR and Vision Pro support.
 
@@ -203,11 +211,33 @@ the user's machine and must allow the app's origin via CORS (for Ollama set
 
 ## Core Features
 
+| Feature | What it provides |
+|---|---|
+| **Conversation** | Stream text or speech input through configurable agent and LLM backends. |
+| **Embodied output** | Coordinate TTS, visemes, emotion selection and avatar animation. |
+| **Platform adapters** | Share a React/Three.js core across web, WebXR and visionOS. |
+| **Server boundary** | Use the Hono BFF to keep provider keys out of browser clients. |
+
+
 - **3D Avatar System**: VRM-based avatars with emotion and speech animation
 - **LLM Integration**: Local (WebLLM, Ollama) and cloud backends
 - **Voice Pipeline**: STT → LLM → TTS with viseme lip sync
 - **WebXR Support**: AR/VR experiences via @react-three/xr
 - **WebGPU Rendering**: Optional high-performance rendering
+
+
+## How it fits together
+
+Platform adapters collect text, speech and XR input; the shared conversation pipeline streams an agent response, then TTS, viseme timing and emotion drive the avatar renderer.
+
+```mermaid
+flowchart LR
+  Input[Web, WebXR or visionOS input] --> Core[Shared conversation core]
+  Core --> BFF[Optional Hono BFF]
+  BFF --> Agent[Agent or LLM backend]
+  Agent --> Speech[TTS and viseme timing]
+  Speech --> Avatar[Three.js or native avatar renderer]
+```
 
 ## Architecture
 
