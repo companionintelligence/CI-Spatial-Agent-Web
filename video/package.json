@@ -1,6 +1,7 @@
 {
   "name": "ci-spatial-companion-webxr-video",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
   "type": "module",
   "scripts": {
     "doctor": "ci-video doctor",

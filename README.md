@@ -4,7 +4,7 @@
 
 [![release](https://img.shields.io/badge/release-not%20published-757575?style=flat-square)](https://github.com/companionintelligence/CI-Spatial-Agent-Web/releases)
 [![platform](https://img.shields.io/badge/platform-WebXR%20%C2%B7%20visionOS%20%C2%B7%20Web-0a6358?style=flat-square)](https://github.com/companionintelligence/CI-Spatial-Agent-Web)
-[![License](https://img.shields.io/badge/license-Commercial%20Standard-8a5a00?style=flat-square)](LICENSE.md)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-0a6358?style=flat-square)](LICENSE)
 [![Discord](https://img.shields.io/badge/chat-Discord-5865F2?style=flat-square&logo=discord&logoColor=white)](https://discord.com/invite/yQp9hwpzAa)
 
 <p align="center"><a href="#documentation">Documentation</a> · <a href="#install-dependencies">Get started</a> · <a href="#license">License</a> · <a href="https://docs.ci.computer/docs/reference/open-source-systems">Systems map</a></p>
@@ -274,4 +274,8 @@ The README documents several client targets. Choose the Vision Pro dev server, v
 
 ## License
 
-Copyright Companion Intelligence - LifeScope Inc. Private and confidential.
+CI Spatial Companion is free for noncommercial use under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0). The full text is in [`LICENSE`](LICENSE); common questions are answered in the [License FAQ](docs/License-FAQ.md), or email support@companionintelligence.com.
+
+Some bundled avatar models carry their own, more restrictive terms. See [NOTICE.md](NOTICE.md) before redistributing them.
+
+> Required Notice: Copyright LifeScope INC, DBA Companion Intelligence (https://ci.computer)

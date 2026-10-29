@@ -1,6 +1,7 @@
 {
   "name": "@ci-avatar/proxy",
   "private": true,
+  "license": "PolyForm-Noncommercial-1.0.0",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/server.ts",
