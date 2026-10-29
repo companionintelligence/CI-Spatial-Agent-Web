@@ -135,6 +135,8 @@ package manager's own `licenses` command.
 
 ## first-party (internal)
 
+Licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). Bundled avatar models with their own terms are listed in [NOTICE.md](NOTICE.md).
+
 1. [`@ci-avatar/core`](https://github.com/companionintelligence/CI-Spatial-Agent-Web) `workspace:*` — runtime
 2. [`@ci-avatar/engine`](https://github.com/companionintelligence/CI-Spatial-Agent-Web) `workspace:*` — runtime
 3. [`@companionintelligence/video-kit`](https://github.com/companionintelligence/CI-Spatial-Agent-Web) `^0.1.0` — dev

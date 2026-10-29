@@ -28,3 +28,4 @@ CORS exceptions or a public tunnel, and no conversation leaves your network.
 
 - Ensure the device has enough free RAM for the chosen model before running it.
 - Source: <https://github.com/companionintelligence/CI-Spatial-Companion-WebXR>
+- License: PolyForm Noncommercial 1.0.0 (free for noncommercial use).

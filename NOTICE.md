@@ -10,11 +10,43 @@ for acknowledgements.
 None. Every third-party dependency in this repository is under a permissive
 licence (MIT, Apache-2.0, ISC, BSD or similar).
 
+## Bundled avatar models with their own terms
+
+The PolyForm Noncommercial license covers Companion Intelligence's own code and
+assets only. The VRM avatar files under `assets/avatars/vrm/` were obtained from
+third parties and keep the terms embedded in their VRM metadata, which is more
+restrictive than this repository's license in several respects (most mark
+redistribution as prohibited or the use as author-only). Do not extract,
+redistribute or reuse them outside this repository's own build without
+confirming the terms with the original author. Metadata read from the files
+on 2026-10-29:
+
+| File | Author | Embedded terms |
+| --- | --- | --- |
+| `casualman.vrm` | moop | Redistribution prohibited; author only; commercial use disallowed |
+| `casualperson.vrm` | moop | VRM 1.0 license; author only; personal non-profit use only |
+| `workboy.vrm` | moop | VRM 1.0 license; author only; personal non-profit use only |
+| `sportboy.vrm` | moop | Redistribution prohibited; author only; commercial use disallowed |
+| `sportwoman.vrm` | moop | Redistribution prohibited; author only; commercial use disallowed |
+| `erik.vrm` | not stated | Redistribution prohibited; author only; commercial use disallowed |
+| `maya.vrm` | not stated | Redistribution prohibited; author only; commercial use disallowed |
+| `scout.vrm` | not stated | Redistribution prohibited; author only; commercial use disallowed |
+| `kenji.vrm` | not stated | VRoid Hub terms (credit necessary; redistribution disallowed; no commercial use) |
+| `yuki.vrm` | not stated | VRoid Hub terms (credit necessary; redistribution allowed; no commercial use) |
+
+`assets/avatars/humgen-aria-01.vrm` is a Companion Intelligence generated avatar
+(authors: Companion Intelligence), covered by this repository's license. The
+GLB avatars in `assets/avatars/` (Ready Player Me / Mixamo derived and
+Companion Intelligence models) carry no machine-readable license metadata and
+should be reviewed separately before any redistribution.
+
 ## First-party code
 
 Except as noted above, the contents of this repository are
-Copyright © LifeScope INC, DBA Companion Intelligence (<https://ci.computer>),
-licensed under the terms in [LICENSE](LICENSE) / [LICENSE.md](LICENSE.md).
+Copyright (c) LifeScope INC, DBA Companion Intelligence (<https://ci.computer>),
+licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+
+Required Notice: Copyright LifeScope INC, DBA Companion Intelligence (https://ci.computer)
 
 ---
 
