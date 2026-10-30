@@ -31,6 +31,8 @@ import {
   type AvatarConversationStatus
 } from '@ci-avatar/core'
 
+import { rememberOnboarded, wasOnboarded } from './lib/onboardingFlag'
+
 // Module-local: only `App` is imported from this file (see main.tsx).
 const config = {
   vad: defaultVadConfig,
@@ -158,8 +160,7 @@ export const App = () => {
   ])
 
   useEffect(() => {
-    const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
-    if (!hasOnboarded) {
+    if (!wasOnboarded()) {
       setShowOnboarding(true)
     }
   }, [])
@@ -167,13 +168,13 @@ export const App = () => {
   const handleEnableMic = useCallback(() => {
     AppConfigState.set((prev) => ({ ...prev, microphone: true }))
     setShowOnboarding(false)
-    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+    rememberOnboarded()
   }, [])
 
   const handleSkipOnboarding = useCallback(() => {
     setShowOnboarding(false)
     setActivationState(llmSettings.llm_provider === 'script' ? 'demo-only' : 'unverified')
-    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+    rememberOnboarded()
   }, [llmSettings.llm_provider])
 
   return (
