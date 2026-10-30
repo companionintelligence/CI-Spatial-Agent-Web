@@ -264,7 +264,7 @@ those has been run, nor have iOS "Add to Home Screen", Android's install prompt 
 | `apps/web/public/icons/` | The visionOS app icon set from `apps/vision-pro/public/icons`: 192 and 512 copied as they are, the 512 maskable and the 180 apple-touch-icon are `sips -z` resizes of `icon1024maskable.png` and `icon512.png` |
 | `apps/web/public/sw.js` | The service worker. Its cache is named after a fingerprint of the files it precaches (below) |
 | `apps/web/public/offline/` | The page the worker shows when a page load cannot reach the network |
-| `apps/web/src/lib/registerServiceWorker.ts` | Registers the worker from the bundle, in production builds only. It never throws |
+| `apps/web/src/lib/registerServiceWorker.ts` | Registers the worker from the bundle, in production builds only. It catches its own errors, so the registration can no longer be what stops the app from starting |
 
 The worker is deliberately tiny. It caches three files (the offline page, its stylesheet and the mark) at
 install and never writes to a cache again. A page load goes to the network, and only a failed one gets the
@@ -274,10 +274,20 @@ animations and props, and the app is no use without them or the backend `config.
 would open to a scene with nothing in it and could strand visitors on an old build. Do not add a runtime cache
 without a size budget and an eviction policy.
 
-The cache name is `ci-avatar-offline-` plus 12 hex digits, a sha256 over each precached URL and the bytes of the
-file behind it. A browser fetches the precache again only when `sw.js` itself changes, so an edit to
-`offline/index.html`, `offline.css` or `mark.svg` that left the name alone would never reach a returning
-visitor. `pnpm test` fails when the name is out of date and prints the one to paste into `sw.js`.
+The cache name is `ci-avatar-offline-` plus 12 hex digits: the start of a sha256 over each precached URL and the
+bytes of the file behind it, with every CR removed so that a CRLF checkout (git on Windows with
+`core.autocrlf=true`, an editor that saves CRLF) gets the same name as CI. A browser fetches the precache again
+only when `sw.js` itself changes, so an edit to `offline/index.html`, `offline.css` or `mark.svg` that left the name
+alone would never reach a returning visitor. `pnpm test` fails when the name is out of date and prints the one to
+paste into `sw.js`. To work it out by hand, from `apps/web/public` (the digits are the end of `CACHE` in `sw.js`):
+
+```bash
+{
+  for pair in /offline/:offline/index.html /offline/offline.css:offline/offline.css /offline/mark.svg:offline/mark.svg; do
+    printf '%s\0' "${pair%%:*}"; tr -d '\r' < "${pair#*:}"; printf '\0'
+  done
+} | shasum -a 256 | cut -c1-12
+```
 
 To check installability after a change, serve a production build and ask Chrome (`Page.getInstallabilityErrors`
 over CDP, in a profile that is not incognito): `pnpm --filter @ci-avatar/web build`, then

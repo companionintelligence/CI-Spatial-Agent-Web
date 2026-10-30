@@ -32,11 +32,12 @@
 // Served from the site root so its scope is the whole origin.
 //
 // CACHE is named after the files in PRECACHE: the first 12 hex digits of a sha256 over
-// each URL, a NUL, the file's bytes and a NUL, in list order. A browser fetches the
-// precache again only when this file's bytes change, so an edit to the offline page that
-// left this name alone would leave every returning visitor on the old page. The test in
-// src/lib/pwa.node.test.ts recomputes the fingerprint from the files in apps/web/public
-// and fails with the name to paste here.
+// each URL, a NUL, the file's bytes with every CR (0x0D) removed, and a NUL, in list
+// order. A browser fetches the precache again only when this file's bytes change, so an
+// edit to the offline page that left this name alone would leave every returning visitor
+// on the old page. The test in src/lib/pwa.node.test.ts recomputes the fingerprint from
+// the files in apps/web/public and fails with the name to paste here. The CRs are left
+// out so a CRLF checkout (git on Windows, an editor that saves CRLF) asks for the same name.
 
 const CACHE = 'ci-avatar-offline-9431baaa533c'
 const OFFLINE_URL = '/offline/'

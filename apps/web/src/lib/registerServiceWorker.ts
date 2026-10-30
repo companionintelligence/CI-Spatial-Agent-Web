@@ -35,10 +35,11 @@ function warn(err: unknown) {
  *     one, which would load this same bundle from the app itself, from getting a worker
  *     between its WebView and its own files.
  *
- * It never throws. main.tsx calls it before the app renders, and the app works without a
- * worker, so nothing here may be able to stop the render: merely reading
- * `navigator.serviceWorker` raises a SecurityError in some contexts (a sandboxed iframe
- * without allow-same-origin, for one), so every access sits inside the try.
+ * It catches its own errors and never throws, so the registration can no longer be what
+ * stops the app from starting: main.tsx calls it before the app is mounted, the app works
+ * without a worker, and merely reading `navigator.serviceWorker` raises a SecurityError in
+ * some contexts (a document sandboxed without allow-same-origin, for one). Every access
+ * sits inside the try.
  */
 export function registerServiceWorker({
   production = import.meta.env.PROD,

@@ -98,9 +98,9 @@ describe('registerServiceWorker', () => {
   })
 })
 
-// main.tsx calls registerServiceWorker() before the app renders, so a throw from it would
-// leave the visitor with a blank page for the sake of an optional feature. Each of these is
-// a way a browser or a shell can make one of its accesses throw.
+// main.tsx calls registerServiceWorker() before the app is mounted, so a throw from it would
+// stop the app from starting for the sake of an optional feature. Each of these is a way a
+// browser or a shell can make one of its accesses throw.
 describe('registerServiceWorker never throws', () => {
   /** What Chrome raises for merely reading `navigator.serviceWorker` in a sandboxed iframe without allow-same-origin. */
   const securityError = () =>

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
@@ -67,15 +68,19 @@ function serviceWorkerFiles(source: string) {
 /** Where a URL the worker precaches lives in public/: a path that ends in / is that folder's index.html. */
 const publicFileFor = (url: string) => (url.endsWith('/') ? `${url.slice(1)}index.html` : url.slice(1))
 
+/** A file's bytes with every CR (0x0D) removed, so a CRLF and an LF checkout of the same text hash alike. */
+const withoutCR = (bytes: Buffer) => Buffer.from(bytes.filter((byte) => byte !== 0x0d))
+
 /**
- * The first 12 hex digits of a sha256 over every precached URL and the bytes of the file behind it
- * (URL, NUL, bytes, NUL, in list order). public/sw.js names its cache after this, so the name
- * changes whenever a precached file does.
+ * The first 12 hex digits of a sha256 over every precached URL and the bytes of the file behind it,
+ * every CR removed (URL, NUL, bytes, NUL, in list order). public/sw.js names its cache after this, so
+ * the name changes whenever a precached file does, and not when only its line endings do (a Windows
+ * checkout with core.autocrlf=true, or an editor that saves CRLF, must get the name CI gets).
  */
-function precacheFingerprint(precache: string[]) {
+function precacheFingerprint(precache: string[], root = WEB_PUBLIC) {
   const hash = createHash('sha256')
   for (const url of precache) {
-    hash.update(url).update('\0').update(readFileSync(join(WEB_PUBLIC, publicFileFor(url)))).update('\0')
+    hash.update(url).update('\0').update(withoutCR(readFileSync(join(root, publicFileFor(url))))).update('\0')
   }
   return hash.digest('hex').slice(0, 12)
 }
@@ -153,6 +158,9 @@ describe('the page head', () => {
 
 describe('the service worker files', () => {
   const { offline, precache } = serviceWorkerFiles(swSource)
+  const cacheName = /const CACHE = '([^']+)'/.exec(swSource)?.[1] ?? null
+  // The activate handler deletes the older caches by this prefix; the name must be built from the same one.
+  const cachePrefix = /key\.startsWith\('([^']+)'\)/.exec(swSource)?.[1] ?? null
 
   it('precaches the offline page, and every file it names is in public/', () => {
     expect(offline).toBe('/offline/')
@@ -170,15 +178,34 @@ describe('the service worker files', () => {
   // fingerprinted in its URL. Naming the cache after the files makes "edited a precached file, forgot
   // sw.js" a failing test instead of a page that never reaches returning visitors.
   it('names its cache after the files it precaches, so an edit that leaves sw.js alone fails here', () => {
-    const cache = /const CACHE = '([^']+)'/.exec(swSource)?.[1] ?? null
-    // The activate handler deletes the older caches by this prefix; the name must be built from the same one.
-    const prefix = /key\.startsWith\('([^']+)'\)/.exec(swSource)?.[1] ?? null
+    expect(cachePrefix).toBe('ci-avatar-offline-')
+    expect(cacheName).toMatch(/^ci-avatar-offline-[0-9a-f]{12}$/)
 
-    expect(prefix).toBe('ci-avatar-offline-')
-    expect(cache).toMatch(/^ci-avatar-offline-[0-9a-f]{12}$/)
+    const expected = `${cachePrefix}${precacheFingerprint(precache)}`
+    expect(cacheName, `a precached file changed: set CACHE in apps/web/public/sw.js to '${expected}'`).toBe(expected)
+  })
 
-    const expected = `${prefix}${precacheFingerprint(precache)}`
-    expect(cache, `a precached file changed: set CACHE in apps/web/public/sw.js to '${expected}'`).toBe(expected)
+  // The bytes are hashed with every CR removed: git on Windows (core.autocrlf=true) and editors that save
+  // CRLF would otherwise ask for a different name than the one committed, and the failure above would
+  // print a value that is wrong on the machine that has to paste it.
+  it('gives a CRLF copy of the precached files the committed name, and still changes it when a file changes', () => {
+    const root = mkdtempSync(join(tmpdir(), 'avatar-precache-'))
+    try {
+      for (const url of precache) {
+        const source = readFileSync(join(WEB_PUBLIC, publicFileFor(url)), 'utf8')
+        const target = join(root, publicFileFor(url))
+        mkdirSync(dirname(target), { recursive: true })
+        writeFileSync(target, source.replace(/\r?\n/g, '\r\n'))
+      }
+      expect(readFileSync(join(root, 'offline/index.html'), 'utf8')).toContain('\r\n')
+
+      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).toBe(cacheName)
+
+      appendFileSync(join(root, 'offline/offline.css'), '/* edited */\r\n')
+      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).not.toBe(cacheName)
+    } finally {
+      rmSync(root, { recursive: true, force: true })
+    }
   })
 
   it('has an offline page whose source needs nothing outside the precache list and carries no script of its own', () => {
