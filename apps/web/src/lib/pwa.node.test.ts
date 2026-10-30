@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -65,6 +66,19 @@ function serviceWorkerFiles(source: string) {
 
 /** Where a URL the worker precaches lives in public/: a path that ends in / is that folder's index.html. */
 const publicFileFor = (url: string) => (url.endsWith('/') ? `${url.slice(1)}index.html` : url.slice(1))
+
+/**
+ * The first 12 hex digits of a sha256 over every precached URL and the bytes of the file behind it
+ * (URL, NUL, bytes, NUL, in list order). public/sw.js names its cache after this, so the name
+ * changes whenever a precached file does.
+ */
+function precacheFingerprint(precache: string[]) {
+  const hash = createHash('sha256')
+  for (const url of precache) {
+    hash.update(url).update('\0').update(readFileSync(join(WEB_PUBLIC, publicFileFor(url)))).update('\0')
+  }
+  return hash.digest('hex').slice(0, 12)
+}
 
 const purposes = (icon: { purpose?: string }) => (icon.purpose ?? 'any').split(/\s+/)
 
@@ -152,7 +166,22 @@ describe('the service worker files', () => {
     expect(precache).toEqual(['/offline/', '/offline/offline.css', '/offline/mark.svg'])
   })
 
-  it('has an offline page that needs nothing outside the precache list, and runs no script', () => {
+  // A browser fetches the precache again only when sw.js itself changes, and the offline page is not
+  // fingerprinted in its URL. Naming the cache after the files makes "edited a precached file, forgot
+  // sw.js" a failing test instead of a page that never reaches returning visitors.
+  it('names its cache after the files it precaches, so an edit that leaves sw.js alone fails here', () => {
+    const cache = /const CACHE = '([^']+)'/.exec(swSource)?.[1] ?? null
+    // The activate handler deletes the older caches by this prefix; the name must be built from the same one.
+    const prefix = /key\.startsWith\('([^']+)'\)/.exec(swSource)?.[1] ?? null
+
+    expect(prefix).toBe('ci-avatar-offline-')
+    expect(cache).toMatch(/^ci-avatar-offline-[0-9a-f]{12}$/)
+
+    const expected = `${prefix}${precacheFingerprint(precache)}`
+    expect(cache, `a precached file changed: set CACHE in apps/web/public/sw.js to '${expected}'`).toBe(expected)
+  })
+
+  it('has an offline page whose source needs nothing outside the precache list and carries no script of its own', () => {
     const page = read('apps/web/public/offline/index.html')
     const urls = [...page.matchAll(/\s(?:href|src)="(\/[^"]*)"/g)].map((m) => m[1])
 
@@ -181,6 +210,17 @@ describe('response headers', () => {
 
   it('still never caches the runtime config that points the static deploy at its backend', () => {
     expect(headers).toMatch(/^\/config\.json\s*\n\s+Cache-Control:\s*no-store\b/m)
+  })
+
+  // Pages serves .webmanifest as application/manifest+json on its own. Stock nginx's mime.types has no
+  // entry for the extension (checked against 1.27.5 and master), so the container needs the type spelled
+  // out; default_type only applies to an extension the table does not know, and a `types {}` block would
+  // replace the whole inherited table.
+  it('has the container serve the manifest as application/manifest+json, without replacing the types table', () => {
+    const nginx = read('nginx/default.conf')
+
+    expect(nginx).toMatch(/location = \/manifest\.webmanifest \{[^}]*default_type application\/manifest\+json;/)
+    expect(nginx).not.toMatch(/^\s*types\s*\{/m)
   })
 })
 

@@ -33,7 +33,8 @@ import { initTelemetry } from './lib/telemetry'
 void initTelemetry()
 
 // Installable as an app, with an offline page. Production builds only; see
-// src/lib/registerServiceWorker.ts and public/sw.js.
+// src/lib/registerServiceWorker.ts and public/sw.js. It never throws, so a browser that
+// refuses service workers cannot get in the way of the render below.
 registerServiceWorker()
 
 /**

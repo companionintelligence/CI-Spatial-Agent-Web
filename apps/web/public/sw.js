@@ -29,10 +29,16 @@
 // delete the registration in src/lib/registerServiceWorker.ts. Until then an old copy
 // of this file is harmless: it serves a static page and nothing else.
 //
-// Served from the site root so its scope is the whole origin. Bump CACHE when any
-// file in PRECACHE changes: the offline page is not fingerprinted.
+// Served from the site root so its scope is the whole origin.
+//
+// CACHE is named after the files in PRECACHE: the first 12 hex digits of a sha256 over
+// each URL, a NUL, the file's bytes and a NUL, in list order. A browser fetches the
+// precache again only when this file's bytes change, so an edit to the offline page that
+// left this name alone would leave every returning visitor on the old page. The test in
+// src/lib/pwa.node.test.ts recomputes the fingerprint from the files in apps/web/public
+// and fails with the name to paste here.
 
-const CACHE = 'ci-avatar-offline-v1'
+const CACHE = 'ci-avatar-offline-9431baaa533c'
 const OFFLINE_URL = '/offline/'
 const PRECACHE = [OFFLINE_URL, '/offline/offline.css', '/offline/mark.svg']
 

@@ -85,4 +85,96 @@ describe('registerServiceWorker', () => {
     expect(warn).toHaveBeenCalledTimes(1)
     warn.mockRestore()
   })
+
+  it('is quiet when it has nothing to do: no warning outside production, without workers, or in a native shell', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+
+    registerServiceWorker({ production: false, win: fakeWindow().win })
+    registerServiceWorker({ production: true, win: fakeWindow({ serviceWorker: null }).win })
+    registerServiceWorker({ production: true, win: fakeWindow({ capacitor: { isNativePlatform: () => true } }).win })
+
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
+  })
+})
+
+// main.tsx calls registerServiceWorker() before the app renders, so a throw from it would
+// leave the visitor with a blank page for the sake of an optional feature. Each of these is
+// a way a browser or a shell can make one of its accesses throw.
+describe('registerServiceWorker never throws', () => {
+  /** What Chrome raises for merely reading `navigator.serviceWorker` in a sandboxed iframe without allow-same-origin. */
+  const securityError = () =>
+    new DOMException(
+      "Failed to read the 'serviceWorker' property from 'Navigator': Service worker is disabled because the context is sandboxed and lacks the 'allow-same-origin' flag.",
+      'SecurityError'
+    )
+
+  /** Runs the call with console.warn silenced, and returns what it returned and how often it warned. */
+  function attempt(win: RegistrationHost) {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    try {
+      return { started: registerServiceWorker({ production: true, win }), warned: warn.mock.calls.length }
+    } finally {
+      warn.mockRestore()
+    }
+  }
+
+  it('returns false when merely reading navigator.serviceWorker raises a SecurityError', () => {
+    const { win, addEventListener } = fakeWindow()
+    Object.defineProperty(win.navigator, 'serviceWorker', {
+      get() {
+        throw securityError()
+      }
+    })
+
+    expect(() => attempt(win)).not.toThrow()
+    expect(attempt(win)).toEqual({ started: false, warned: 1 })
+    expect(addEventListener).not.toHaveBeenCalled()
+  })
+
+  it('returns false when asking a Capacitor shell whether it is native throws', () => {
+    const { win, register } = fakeWindow({
+      capacitor: {
+        isNativePlatform: () => {
+          throw new Error('bridge not ready')
+        }
+      }
+    })
+
+    expect(attempt(win)).toEqual({ started: false, warned: 1 })
+    expect(register).not.toHaveBeenCalled()
+  })
+
+  it('returns false when reading the document state, or adding the load listener, throws', () => {
+    const noState = fakeWindow()
+    Object.defineProperty(noState.win.document, 'readyState', {
+      get() {
+        throw new Error('document is gone')
+      }
+    })
+    const noListener = fakeWindow({ readyState: 'loading', fireLoad: false })
+    noListener.addEventListener.mockImplementation(() => {
+      throw new Error('window is gone')
+    })
+
+    expect(attempt(noState.win)).toEqual({ started: false, warned: 1 })
+    expect(attempt(noListener.win)).toEqual({ started: false, warned: 1 })
+  })
+
+  it('catches a register() that throws instead of rejecting, now or from the load event', () => {
+    const boom = () => {
+      throw new Error('register is broken')
+    }
+    const now = fakeWindow({ serviceWorker: { register: vi.fn(boom) } })
+    const later = fakeWindow({ readyState: 'loading', fireLoad: false, serviceWorker: { register: vi.fn(boom) } })
+
+    expect(attempt(now.win)).toEqual({ started: true, warned: 1 })
+
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    expect(registerServiceWorker({ production: true, win: later.win })).toBe(true)
+    const [, onLoad] = later.addEventListener.mock.calls[0]
+    expect(() => onLoad()).not.toThrow()
+    expect(warn).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
+  })
 })

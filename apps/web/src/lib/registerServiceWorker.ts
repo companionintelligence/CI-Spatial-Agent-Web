@@ -17,6 +17,11 @@ export interface RegistrationHost {
   Capacitor?: { isNativePlatform?: () => boolean }
 }
 
+/** Not worth interrupting the visitor for: the app is an ordinary web page without the worker. */
+function warn(err: unknown) {
+  console.warn('Avatar Companion: could not register the service worker', err)
+}
+
 /**
  * Register the service worker once the page has loaded, so it never competes with the
  * app's first render. Returns whether a registration was started.
@@ -29,24 +34,37 @@ export interface RegistrationHost {
  *   - inside a Capacitor shell. None exists for this app today; the guard keeps a future
  *     one, which would load this same bundle from the app itself, from getting a worker
  *     between its WebView and its own files.
+ *
+ * It never throws. main.tsx calls it before the app renders, and the app works without a
+ * worker, so nothing here may be able to stop the render: merely reading
+ * `navigator.serviceWorker` raises a SecurityError in some contexts (a sandboxed iframe
+ * without allow-same-origin, for one), so every access sits inside the try.
  */
 export function registerServiceWorker({
   production = import.meta.env.PROD,
   win = globalThis as unknown as RegistrationHost
 }: { production?: boolean; win?: RegistrationHost } = {}): boolean {
   if (!production) return false
-  const serviceWorker = win.navigator.serviceWorker
-  if (!serviceWorker) return false
-  if (win.Capacitor?.isNativePlatform?.()) return false
 
-  const register = () => {
-    serviceWorker.register(SERVICE_WORKER_URL, { scope: '/' }).catch((err: unknown) => {
-      // Not worth interrupting the visitor for: the app is an ordinary web page without it.
-      console.warn('Avatar Companion: could not register the service worker', err)
-    })
+  try {
+    const serviceWorker = win.navigator.serviceWorker
+    if (!serviceWorker) return false
+    if (win.Capacitor?.isNativePlatform?.()) return false
+
+    const register = () => {
+      try {
+        serviceWorker.register(SERVICE_WORKER_URL, { scope: '/' }).catch(warn)
+      } catch (err) {
+        // A register() that throws instead of rejecting, from the load listener below.
+        warn(err)
+      }
+    }
+
+    if (win.document.readyState === 'complete') register()
+    else win.addEventListener('load', register, { once: true })
+    return true
+  } catch (err) {
+    warn(err)
+    return false
   }
-
-  if (win.document.readyState === 'complete') register()
-  else win.addEventListener('load', register, { once: true })
-  return true
 }

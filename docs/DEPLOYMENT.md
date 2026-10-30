@@ -251,16 +251,20 @@ permissions-policy: xr-spatial-tracking=(self), camera=(self), ...
 
 ### Installing it as an app (PWA)
 
-`avatar.ci.computer` (and the container, over HTTPS) can be installed from the browser: Chrome and
-Edge's "Install app", Android's "Add to Home screen", and the equivalent in other browsers. No store review.
+`avatar.ci.computer` can be installed from the browser, with no store review. What has been run is desktop
+Chrome 156 (mobile emulation, 412x915) against a production build and a Cloudflare Pages branch preview:
+Chrome reports no installability errors and the worker activates. Other Chromium browsers should offer install
+on the same grounds, and so should the container over HTTPS (the nginx path, or the Hub's Traefik), but none of
+those has been run, nor have iOS "Add to Home Screen", Android's install prompt or Quest Browser. The two
+`nginx/default.conf` blocks this adds (`/sw.js` and `/manifest.webmanifest`) have not been through `nginx -t`.
 
 | File | What it is |
 | --- | --- |
 | `apps/web/public/manifest.webmanifest` | Name, `display: standalone`, the canon dark `#041620` for theme and background, 192 and 512 icons plus a maskable one |
 | `apps/web/public/icons/` | The visionOS app icon set from `apps/vision-pro/public/icons`: 192 and 512 copied as they are, the 512 maskable and the 180 apple-touch-icon are `sips -z` resizes of `icon1024maskable.png` and `icon512.png` |
-| `apps/web/public/sw.js` | The service worker |
+| `apps/web/public/sw.js` | The service worker. Its cache is named after a fingerprint of the files it precaches (below) |
 | `apps/web/public/offline/` | The page the worker shows when a page load cannot reach the network |
-| `apps/web/src/lib/registerServiceWorker.ts` | Registers the worker from the bundle, in production builds only |
+| `apps/web/src/lib/registerServiceWorker.ts` | Registers the worker from the bundle, in production builds only. It never throws |
 
 The worker is deliberately tiny. It caches three files (the offline page, its stylesheet and the mark) at
 install and never writes to a cache again. A page load goes to the network, and only a failed one gets the
@@ -270,6 +274,11 @@ animations and props, and the app is no use without them or the backend `config.
 would open to a scene with nothing in it and could strand visitors on an old build. Do not add a runtime cache
 without a size budget and an eviction policy.
 
+The cache name is `ci-avatar-offline-` plus 12 hex digits, a sha256 over each precached URL and the bytes of the
+file behind it. A browser fetches the precache again only when `sw.js` itself changes, so an edit to
+`offline/index.html`, `offline.css` or `mark.svg` that left the name alone would never reach a returning
+visitor. `pnpm test` fails when the name is out of date and prints the one to paste into `sw.js`.
+
 To check installability after a change, serve a production build and ask Chrome (`Page.getInstallabilityErrors`
 over CDP, in a profile that is not incognito): `pnpm --filter @ci-avatar/web build`, then
 `pnpm --filter @ci-avatar/web preview`, and load the page in headless Chrome at a 412x915 viewport. An empty list
@@ -277,6 +286,27 @@ and an `activated` worker is the pass.
 
 To retire it, ship a `sw.js` that calls `self.registration.unregister()` and then remove
 `registerServiceWorker()` from `apps/web/src/main.tsx`. An old copy left behind is harmless.
+
+#### After a deploy
+
+The `_headers` rule that keeps `/sw.js` out of shared caches was verified only on the `*.pages.dev` preview.
+Production differs from it in two ways the preview cannot show: the `ci.computer` zone gives static
+paths with no explicit header a 4 h browser TTL (production's `/vite.svg` is `max-age=14400`, the preview serves
+`max-age=0`), and the edge adds a script of about 1.1 kB before `</body>` to the HTML it serves on
+`avatar.ci.computer`, which `*.pages.dev` does not. So the `/offline/` copy a production worker caches can contain
+that script (the page does not depend on it), and the new icons, `offline.css` and `mark.svg` can be held by the
+browser's HTTP cache for up to 4 h (the install fetches them with `cache: 'reload'`). The registration has the
+default `updateViaCache: 'imports'` (Chrome reported it), which keeps the HTTP cache out of the update check for
+`sw.js` itself, so that file is revalidated either way. After a production deploy, check:
+
+```bash
+curl -sI https://avatar.ci.computer/sw.js      # 200, a JavaScript content type, cache-control: no-cache
+curl -sI https://avatar.ci.computer/offline/   # 200
+curl -sI https://avatar.ci.computer/offline    # 308, location: /offline/
+```
+
+then run the installability check above against `https://avatar.ci.computer/` (empty list, `activated` worker).
+The same three requests work against a preview URL.
 
 ## Local Ollama Over The Web (Quest 3 / iPad / XREAL)
 

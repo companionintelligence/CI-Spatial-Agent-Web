@@ -8,6 +8,9 @@ import { describe, expect, it, vi } from 'vitest'
 
 const ORIGIN = 'https://avatar.ci.computer'
 const SW_SOURCE = readFileSync(fileURLToPath(new URL('../../public/sw.js', import.meta.url)), 'utf8')
+// The worker's cache is named after a fingerprint of the files it precaches, and pwa.node.test.ts pins
+// that value, so these tests read the name instead of repeating it.
+const CACHE_NAME = /const CACHE = '([^']+)'/.exec(SW_SOURCE)?.[1] ?? ''
 
 /** The shape of a fetch Request the worker reads; the real constructor refuses `navigate` and relative URLs. */
 interface WorkerRequest {
@@ -196,12 +199,13 @@ describe('public/sw.js: lifecycle', () => {
   it('on activation deletes its own older caches, leaves every other cache alone, and claims open pages', async () => {
     const worker = loadWorker({ network: SITE })
     await worker.lifecycle('install')
-    worker.storeFor('ci-avatar-offline-v0')
+    worker.storeFor('ci-avatar-offline-000000000000') // the cache of an earlier fingerprint
+    worker.storeFor('ci-avatar-offline-v1') // and the name from before the cache was fingerprinted
     worker.storeFor('some-other-apps-cache')
 
     await worker.lifecycle('activate')
 
-    expect([...worker.stores.keys()].sort()).toEqual(['ci-avatar-offline-v1', 'some-other-apps-cache'])
+    expect([...worker.stores.keys()].sort()).toEqual([CACHE_NAME, 'some-other-apps-cache'].sort())
     expect(worker.self.clients.claim).toHaveBeenCalledTimes(1)
   })
 })
@@ -249,7 +253,7 @@ describe('public/sw.js: page loads', () => {
 
   it('never hands a navigation a redirected response, which the browser refuses', async () => {
     const worker = loadWorker({ offline: true })
-    worker.storeFor('ci-avatar-offline-v1').set('/offline/', redirectedResponse('offline page'))
+    worker.storeFor(CACHE_NAME).set('/offline/', redirectedResponse('offline page'))
 
     const response = await worker.dispatch('/', { mode: 'navigate' })
 
@@ -277,10 +281,12 @@ describe('public/sw.js: everything else is left to the browser', () => {
   })
 
   // The app's weight is in these: the hashed bundles and the packed media share /assets/, and
-  // config.json is what points the static deploy at its backend.
+  // config.json is what points the static deploy at its backend. The hashes are made up; what is
+  // pinned is the /assets/ prefix, not any particular build.
   it.each([
-    ['the app entry chunk', '/assets/index-CLFXD8p2.js'],
-    ['a vendor chunk', '/assets/vendor-three-6JpbBHCS.js'],
+    ['an entry chunk', '/assets/main-AbCd1234.js'],
+    ['a lazy chunk', '/assets/lazy-engine-EfGh5678.js'],
+    ['a vendor chunk', '/assets/vendor-three-IjKl9012.js'],
     ['an avatar model', '/assets/avatars/humgen-aria-01.vrm'],
     ['an animation clip', '/assets/animations/Waving.glb'],
     ['a VRM animation', '/assets/animations/idle.vrma'],
@@ -317,7 +323,7 @@ describe('public/sw.js: everything else is left to the browser', () => {
 
     const navigations = ['/', '/?token=abc123&memory=https://memory.example.com', '/#/chat']
     for (const path of navigations) await worker.dispatch(path, { mode: 'navigate' })
-    for (const path of ['/assets/index-CLFXD8p2.js', '/assets/avatars/humgen-aria-01.vrm', '/config.json', '/api/chat']) {
+    for (const path of ['/assets/main-AbCd1234.js', '/assets/avatars/humgen-aria-01.vrm', '/config.json', '/api/chat']) {
       await worker.dispatch(path)
     }
     await worker.dispatch('/offline/offline.css')
@@ -325,6 +331,6 @@ describe('public/sw.js: everything else is left to the browser', () => {
     expect(worker.writes).toHaveLength(afterInstall)
     expect(worker.writes.every((w) => w.via === 'addAll')).toBe(true)
     // ...and what the install stored is exactly the offline page, nothing of the app.
-    expect([...(worker.stores.get('ci-avatar-offline-v1')?.keys() ?? [])]).toEqual(PRECACHED)
+    expect([...(worker.stores.get(CACHE_NAME)?.keys() ?? [])]).toEqual(PRECACHED)
   })
 })

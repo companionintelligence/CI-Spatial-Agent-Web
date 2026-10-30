@@ -13,8 +13,9 @@
   <body>
     <!-- What the service worker (public/sw.js) shows when a page load cannot reach the
          network. Static and self-contained: it is cached at install, so it may use only
-         the files the worker precaches, and it runs no script so it works with nothing
-         else to load. -->
+         the files the worker precaches. This source has no script of its own, so it needs
+         nothing else to load; the production edge adds a small script to the HTML it
+         serves, and the page does not depend on it. -->
     <main>
       <img src="/offline/mark.svg" alt="" width="72" height="72" />
       <h1>Avatar Companion is offline</h1>
