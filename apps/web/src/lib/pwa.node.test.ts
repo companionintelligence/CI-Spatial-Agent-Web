@@ -1,9 +1,10 @@
-import { createHash } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
+
+import { isKillSwitch, precacheFingerprint, publicFileFor, serviceWorkerFiles } from '../../../../scripts/check-pwa.mjs'
 
 // What makes avatar.ci.computer installable, checked against the files that ship: the web
 // manifest, the head that points at it, the icons it names, the worker's precache list and
@@ -31,6 +32,10 @@ const manifest = JSON.parse(read('apps/web/public/manifest.webmanifest')) as Man
 // Comments out first: the head carries prose that mentions tags.
 const indexHtml = read('apps/web/index.html').replace(/<!--[\s\S]*?-->/g, '')
 const swSource = read('apps/web/public/sw.js')
+// With the kill switch as public/sw.js the worker has been retired on purpose (docs/DEPLOYMENT.md:
+// "To retire it"), and what only the real worker has, an offline page it precaches, a cache name,
+// a registration in main.tsx, is no longer required.
+const RETIRED = isKillSwitch(swSource)
 
 const tags = (html: string, name: string) => [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, 'gi'))].map((m) => m[0])
 const attr = (tag: string | undefined, name: string) =>
@@ -51,38 +56,6 @@ function pngSize(file: string) {
   const bytes = readFileSync(file)
   if (bytes.length < 24 || bytes.toString('latin1', 1, 4) !== 'PNG') return null
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) }
-}
-
-/** What the worker names: the offline page and the files it precaches (each entry a quoted path or OFFLINE_URL). */
-function serviceWorkerFiles(source: string) {
-  const offline = /const OFFLINE_URL = '([^']+)'/.exec(source)?.[1] ?? null
-  const listed = /const PRECACHE = \[([^\]]*)\]/.exec(source)?.[1] ?? ''
-  const precache = listed
-    .split(',')
-    .map((item) => item.trim())
-    .map((item) => (item === 'OFFLINE_URL' ? offline : /^'([^']+)'$/.exec(item)?.[1]))
-    .filter((url): url is string => Boolean(url))
-  return { offline, precache }
-}
-
-/** Where a URL the worker precaches lives in public/: a path that ends in / is that folder's index.html. */
-const publicFileFor = (url: string) => (url.endsWith('/') ? `${url.slice(1)}index.html` : url.slice(1))
-
-/** A file's bytes with every CR (0x0D) removed, so a CRLF and an LF checkout of the same text hash alike. */
-const withoutCR = (bytes: Buffer) => Buffer.from(bytes.filter((byte) => byte !== 0x0d))
-
-/**
- * The first 12 hex digits of a sha256 over every precached URL and the bytes of the file behind it,
- * every CR removed (URL, NUL, bytes, NUL, in list order). public/sw.js names its cache after this, so
- * the name changes whenever a precached file does, and not when only its line endings do (a Windows
- * checkout with core.autocrlf=true, or an editor that saves CRLF, must get the name CI gets).
- */
-function precacheFingerprint(precache: string[], root = WEB_PUBLIC) {
-  const hash = createHash('sha256')
-  for (const url of precache) {
-    hash.update(url).update('\0').update(withoutCR(readFileSync(join(root, publicFileFor(url))))).update('\0')
-  }
-  return hash.digest('hex').slice(0, 12)
 }
 
 const purposes = (icon: { purpose?: string }) => (icon.purpose ?? 'any').split(/\s+/)
@@ -156,7 +129,7 @@ describe('the page head', () => {
   })
 })
 
-describe('the service worker files', () => {
+describe.skipIf(RETIRED)('the service worker files', () => {
   const { offline, precache } = serviceWorkerFiles(swSource)
   const cacheName = /const CACHE = '([^']+)'/.exec(swSource)?.[1] ?? null
   // The activate handler deletes the older caches by this prefix; the name must be built from the same one.
@@ -181,7 +154,7 @@ describe('the service worker files', () => {
     expect(cachePrefix).toBe('ci-avatar-offline-')
     expect(cacheName).toMatch(/^ci-avatar-offline-[0-9a-f]{12}$/)
 
-    const expected = `${cachePrefix}${precacheFingerprint(precache)}`
+    const expected = `${cachePrefix}${precacheFingerprint(WEB_PUBLIC, precache)}`
     expect(cacheName, `a precached file changed: set CACHE in apps/web/public/sw.js to '${expected}'`).toBe(expected)
   })
 
@@ -201,11 +174,11 @@ describe('the service worker files', () => {
 
       // Compared with the name the files in the repo ask for, not with the committed one: when CACHE is
       // stale only the test above fails, and it is the one that prints the name to paste.
-      const lf = `${cachePrefix}${precacheFingerprint(precache)}`
-      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).toBe(lf)
+      const lf = `${cachePrefix}${precacheFingerprint(WEB_PUBLIC, precache)}`
+      expect(`${cachePrefix}${precacheFingerprint(root, precache)}`).toBe(lf)
 
       appendFileSync(join(root, 'offline/offline.css'), '/* edited */\r\n')
-      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).not.toBe(lf)
+      expect(`${cachePrefix}${precacheFingerprint(root, precache)}`).not.toBe(lf)
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
@@ -220,13 +193,50 @@ describe('the service worker files', () => {
     expect(page).not.toMatch(/<script\b/i)
     expect(metaContent(page, 'robots')).toBe('noindex')
   })
+})
 
-  it('is registered from the bundle (src/main.tsx), not from a script in the page', () => {
+describe('the registration', () => {
+  it('is never a script in the page, and is a bare call in src/main.tsx until the worker is retired', () => {
+    expect(indexHtml).not.toMatch(/serviceWorker/)
+    // Retiring the worker deletes the call and its import (docs/DEPLOYMENT.md), and leaving them in is harmless.
+    if (RETIRED) return
+
     const main = read('apps/web/src/main.tsx')
-
     expect(main).toContain("import { registerServiceWorker } from './lib/registerServiceWorker'")
     expect(main).toMatch(/^registerServiceWorker\(\)$/m)
-    expect(indexHtml).not.toMatch(/serviceWorker/)
+  })
+})
+
+// The check in scripts/check-pwa.mjs runs inside `vite build`. These pin the text that has it reach every
+// way the app is built; the container image and the Pages build are the two a test here cannot run.
+describe('the build check', () => {
+  const viteConfig = read('apps/web/vite.config.ts')
+
+  it('runs inside vite build, which every build path goes through', () => {
+    expect(viteConfig).toContain("from '../../scripts/check-pwa.mjs'")
+    expect(viteConfig).toMatch(/apply: 'build'/)
+    expect(viteConfig).toMatch(/closeBundle\(\) \{[^}]*assertPwa\(/)
+    // Storybook builds through this config too, and its output is a component gallery with no worker in it.
+    expect(viteConfig).toContain("plugin.name.startsWith('storybook:')")
+
+    const deno = JSON.parse(read('apps/web/deno.json')) as { tasks: Record<string, string> }
+    expect(deno.tasks.build, 'the container build (deno task --cwd apps/web build) must run vite build').toContain('npm:vite build')
+    const pnpm = JSON.parse(read('apps/web/package.json')) as { scripts: Record<string, string> }
+    expect(pnpm.scripts.build).toContain('vite build')
+  })
+
+  it('has the container build copy scripts/ into its build context before it builds', () => {
+    const dockerfile = read('Dockerfile')
+    const copy = dockerfile.indexOf('\nCOPY . .\n')
+    const build = dockerfile.indexOf('deno task --cwd apps/web build')
+    expect(copy).toBeGreaterThan(-1)
+    expect(build).toBeGreaterThan(copy)
+
+    const ignored = read('.dockerignore')
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'))
+    expect(ignored.filter((line) => /^\/?(scripts|\*\*\/scripts|\*\.mjs|\*\*\/\*\.mjs)(\/.*)?$/.test(line))).toEqual([])
   })
 })
 
@@ -243,9 +253,8 @@ describe('response headers', () => {
   })
 
   // Pages serves .webmanifest as application/manifest+json on its own. Stock nginx's mime.types has no
-  // entry for the extension (checked against 1.27.5 and master), so the container needs the type spelled
-  // out; default_type only applies to an extension the table does not know, and a `types {}` block would
-  // replace the whole inherited table.
+  // entry for the extension, so the container needs the type spelled out; default_type only applies to an
+  // extension the table does not know, and a `types {}` block would replace the whole inherited table.
   it('has the container serve the manifest as application/manifest+json, without replacing the types table', () => {
     const nginx = read('nginx/default.conf')
 

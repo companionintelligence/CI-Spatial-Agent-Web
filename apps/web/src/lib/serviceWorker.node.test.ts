@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it, vi } from 'vitest'
 
+import { isKillSwitch } from '../../../../scripts/check-pwa.mjs'
+
 // public/sw.js, run against a fake Cache Storage and a fake fetch. The worker is plain
 // script (it is copied to dist/ as it is, never bundled), so it is loaded as text and
 // evaluated with the worker globals passed in.
@@ -11,6 +13,9 @@ const SW_SOURCE = readFileSync(fileURLToPath(new URL('../../public/sw.js', impor
 // The worker's cache is named after a fingerprint of the files it precaches, and pwa.node.test.ts pins
 // that value, so these tests read the name instead of repeating it.
 const CACHE_NAME = /const CACHE = '([^']+)'/.exec(SW_SOURCE)?.[1] ?? ''
+// With the kill switch as public/sw.js the worker has been retired on purpose (docs/DEPLOYMENT.md:
+// "To retire it"), and there is no worker of this shape to run these against.
+const RETIRED = isKillSwitch(SW_SOURCE)
 
 /** The shape of a fetch Request the worker reads; the real constructor refuses `navigate` and relative URLs. */
 interface WorkerRequest {
@@ -180,7 +185,7 @@ const SITE: Record<string, string> = {
 
 const PRECACHED = ['/offline/', '/offline/offline.css', '/offline/mark.svg']
 
-describe('public/sw.js: lifecycle', () => {
+describe.skipIf(RETIRED)('public/sw.js: lifecycle', () => {
   it('precaches the offline page, its stylesheet and the mark, straight from the network, and takes over at once', async () => {
     const worker = loadWorker({ network: SITE })
     await worker.lifecycle('install')
@@ -210,7 +215,7 @@ describe('public/sw.js: lifecycle', () => {
   })
 })
 
-describe('public/sw.js: page loads', () => {
+describe.skipIf(RETIRED)('public/sw.js: page loads', () => {
   it('is network first: an online page load is the network answer, and is not stored', async () => {
     const worker = loadWorker({ network: SITE })
     await worker.lifecycle('install')
@@ -262,7 +267,7 @@ describe('public/sw.js: page loads', () => {
   })
 })
 
-describe('public/sw.js: everything else is left to the browser', () => {
+describe.skipIf(RETIRED)('public/sw.js: everything else is left to the browser', () => {
   it('serves the files the offline page needs from the cache, and from the network if they are not there', async () => {
     const worker = loadWorker({ network: SITE })
     await worker.lifecycle('install')
