@@ -30,7 +30,9 @@ function warn(err: unknown) {
  *   - outside a production build, where the dev server would otherwise be served from a
  *     worker's idea of the page;
  *   - without `navigator.serviceWorker`, which browsers expose only on https or
- *     localhost, so a plain-http LAN address quietly stays an ordinary web page;
+ *     localhost. A plain-http LAN address has none, but the app needs a secure context
+ *     too (WebGPU is limited to one), so there the page does not start, with or without
+ *     a worker; the guard is for browsers and WebViews with no worker support at all;
  *   - inside a Capacitor shell. None exists for this app today; the guard keeps a future
  *     one, which would load this same bundle from the app itself, from getting a worker
  *     between its WebView and its own files.
