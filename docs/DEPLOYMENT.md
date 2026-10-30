@@ -227,6 +227,7 @@ it. It sets:
   without it, and Cloudflare's default policy does not include it.
 - immutable caching for `/assets/*`, which is content-addressed and ~240 MB of media.
 - `no-store` for `/config.json`, so a returning visitor is not pinned to an old backend URL.
+- `no-cache` for `/sw.js` (the service worker, see below), so an intermediary cannot hold a stale one.
 
 **There is deliberately no `_redirects` file.** Pages already routes an unmatched path to
 the SPA by itself, because the build ships no top-level `404.html`. Adding the usual
@@ -247,6 +248,35 @@ cache-control: public, max-age=31536000, immutable   # asset served, not shadowe
 $ curl -sI <preview>/                       # _headers applied
 permissions-policy: xr-spatial-tracking=(self), camera=(self), ...
 ```
+
+### Installing it as an app (PWA)
+
+`avatar.ci.computer` (and the container, over HTTPS) can be installed from the browser: Chrome and
+Edge's "Install app", Android's "Add to Home screen", and the equivalent in other browsers. No store review.
+
+| File | What it is |
+| --- | --- |
+| `apps/web/public/manifest.webmanifest` | Name, `display: standalone`, the canon dark `#041620` for theme and background, 192 and 512 icons plus a maskable one |
+| `apps/web/public/icons/` | The visionOS app icon set from `apps/vision-pro/public/icons`: 192 and 512 copied as they are, the 512 maskable and the 180 apple-touch-icon are `sips -z` resizes of `icon1024maskable.png` and `icon512.png` |
+| `apps/web/public/sw.js` | The service worker |
+| `apps/web/public/offline/` | The page the worker shows when a page load cannot reach the network |
+| `apps/web/src/lib/registerServiceWorker.ts` | Registers the worker from the bundle, in production builds only |
+
+The worker is deliberately tiny. It caches three files (the offline page, its stylesheet and the mark) at
+install and never writes to a cache again. A page load goes to the network, and only a failed one gets the
+offline page. Every other request, including `/assets/*`, `/config.json`, the proxy and anything cross-origin,
+is left to the browser: first paint is ~2.2 MB of script and style, `/assets/` carries ~240 MB of avatars,
+animations and props, and the app is no use without them or the backend `config.json` names, so a cached shell
+would open to a scene with nothing in it and could strand visitors on an old build. Do not add a runtime cache
+without a size budget and an eviction policy.
+
+To check installability after a change, serve a production build and ask Chrome (`Page.getInstallabilityErrors`
+over CDP, in a profile that is not incognito): `pnpm --filter @ci-avatar/web build`, then
+`pnpm --filter @ci-avatar/web preview`, and load the page in headless Chrome at a 412x915 viewport. An empty list
+and an `activated` worker is the pass.
+
+To retire it, ship a `sw.js` that calls `self.registration.unregister()` and then remove
+`registerServiceWorker()` from `apps/web/src/main.tsx`. An old copy left behind is harmless.
 
 ## Local Ollama Over The Web (Quest 3 / iPad / XREAL)
 

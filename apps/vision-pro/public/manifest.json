@@ -1,6 +1,6 @@
 {
   "name": "Avatar Companion",
-  "short_name": "Avatar Avatar",
+  "short_name": "Avatar",
   "description": "A XR AI agent with 3D avatars and conversational capabilities",
   "version": "0.0.0",
   "start_url": "/",

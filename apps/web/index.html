@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/assets/2024_CI__Logo_Banner_Color.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#041620" />
+    <!-- Installable as an app: public/manifest.webmanifest has display: standalone, and the
+         worker (public/sw.js, registered from src/lib/registerServiceWorker.ts) answers an
+         offline launch with /offline/. apple-mobile-web-app-title is the label under the
+         home-screen icon on iOS, which would otherwise take it from <title>. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Avatar" />
     <!-- Manrope is self-hosted via @fontsource (see main.tsx) so it works offline
          in the appliance container; no external font CDN. -->
     <meta

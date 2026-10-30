@@ -27,3 +27,8 @@
 # backend, so a cached copy would pin returning visitors to an old tunnel URL.
 /config.json
   Cache-Control: no-store
+
+# The service worker (public/sw.js). Browsers already skip the HTTP cache when they check a
+# worker script for changes; this keeps an intermediary that does not from holding a stale one.
+/sw.js
+  Cache-Control: no-cache
