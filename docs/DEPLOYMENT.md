@@ -62,9 +62,12 @@ The static SPA is served from Cloudflare Pages (project **`avatars`**) at
 **<https://avatar.ci.computer>**. The project's own `https://avatars-zbe.pages.dev`
 stays live alongside it and is what preview deploys use.
 
-`.github/workflows/pages-deploy.yml` builds `apps/web/dist` and deploys it on every push
-to `main`, then runs `scripts/cloudflare-domain.mjs` to make sure the hostname is still
-wired up.
+The deploy is Cloudflare's own git integration (the `Cloudflare Pages` check on a commit links
+to it): a push to `main` publishes production, every other branch gets a preview.
+`.github/workflows/pages-deploy.yml` is `workflow_dispatch`-only, like every workflow in this
+repo (`docs/CI.md`), so it runs only when someone dispatches it; when it does, it builds
+`apps/web/dist`, deploys it with wrangler and runs `scripts/cloudflare-domain.mjs` to make sure
+the hostname is still wired up.
 
 ### What "static" means here
 
@@ -85,9 +88,9 @@ and the browser has to be told where. Two things make that work:
 
 ### Two deploy paths write to this project — set the build env on both
 
-The Pages project has the **Cloudflare dashboard git integration** connected *and* is
-deployed by `.github/workflows/pages-deploy.yml`. Both push to the same project, so
-whichever finishes last wins. This is visible on any PR: the
+The Pages project has the **Cloudflare dashboard git integration** connected *and* can be
+deployed by `.github/workflows/pages-deploy.yml` when it is dispatched. Both push to the same
+project, so whichever finishes last wins. This is visible on any PR: the
 `cloudflare-workers-and-pages` bot comments with a branch preview URL that the workflow
 never created.
 
@@ -97,7 +100,7 @@ read their env from different places**:
 | Path | Triggers on | Reads `APP_*` from |
 | --- | --- | --- |
 | Dashboard git integration | every push, every branch (previews included) | Pages project → Settings → **Environment variables** |
-| `pages-deploy.yml` | push to `main` | GitHub → **repository variables** |
+| `pages-deploy.yml` | only when dispatched by hand | GitHub → **repository variables** |
 
 Set the values in **both**, or a deploy from the path you forgot ships without a backend
 URL. `config.json` is then simply absent — and because Pages falls back to the SPA for an
@@ -107,9 +110,9 @@ falls back to build-time defaults; the symptom is a working site with no chat ba
 an error.
 
 If you would rather have one path, disconnect the dashboard git integration and keep the
-workflow (the workflow is the one that also ensures the custom domain), or delete the
-workflow and set everything in the dashboard. Keeping both is fine as long as their env
-agrees.
+workflow (the workflow is the one that also ensures the custom domain; it would need its
+push trigger back, `ci-local restore`), or delete the workflow and set everything in the
+dashboard. Keeping both is fine as long as their env agrees.
 
 ### Serving the backend from your own machine over a tunnel
 
@@ -289,6 +292,9 @@ paste into `sw.js`. To work it out by hand, from `apps/web/public` (the digits a
 } | shasum -a 256 | cut -c1-12
 ```
 
+The loop names the three precached files, so change it together with `PRECACHE` in `sw.js`.
+Where `shasum` is missing (most Linux images), use `sha256sum` in its place.
+
 To check installability after a change, serve a production build and ask Chrome (`Page.getInstallabilityErrors`
 over CDP, in a profile that is not incognito): `pnpm --filter @ci-avatar/web build`, then
 `pnpm --filter @ci-avatar/web preview`, and load the page in headless Chrome at a 412x915 viewport. An empty list
@@ -299,24 +305,39 @@ To retire it, ship a `sw.js` that calls `self.registration.unregister()` and the
 
 #### After a deploy
 
-The `_headers` rule that keeps `/sw.js` out of shared caches was verified only on the `*.pages.dev` preview.
-Production differs from it in two ways the preview cannot show: the `ci.computer` zone gives static
-paths with no explicit header a 4 h browser TTL (production's `/vite.svg` is `max-age=14400`, the preview serves
-`max-age=0`), and the edge adds a script of about 1.1 kB before `</body>` to the HTML it serves on
-`avatar.ci.computer`, which `*.pages.dev` does not. So the `/offline/` copy a production worker caches can contain
-that script (the page does not depend on it), and the new icons, `offline.css` and `mark.svg` can be held by the
-browser's HTTP cache for up to 4 h (the install fetches them with `cache: 'reload'`). The registration has the
-default `updateViaCache: 'imports'` (Chrome reported it), which keeps the HTTP cache out of the update check for
-`sw.js` itself, so that file is revalidated either way. After a production deploy, check:
+The `_headers` rule that keeps `/sw.js` out of shared caches shows on the `*.pages.dev` host
+(`no-cache`), not on `avatar.ci.computer`. Production differs from the preview in two ways the
+preview cannot show: the `ci.computer` zone has a 4 h browser cache time that works as a floor
+on what Cloudflare caches, so `/sw.js` and `/vite.svg` come out as `max-age=14400` where the
+preview serves `no-cache` and `max-age=0` (measured 2026-10-30; `/config.json`, which is
+`no-store`, `/assets/*`, which is a year, and the HTML and the manifest, which Cloudflare does
+not cache, come through as sent; the zone setting itself was not read), and the edge adds a
+script of about 1.1 kB before `</body>` to the HTML it serves on `avatar.ci.computer`, which
+`*.pages.dev` does not. So the `/offline/` copy a production worker caches can contain that
+script (the page does not depend on it), and the new icons, `offline.css` and `mark.svg` can be
+held by the browser's HTTP cache for up to 4 h (the install fetches them with
+`cache: 'reload'`). The 4 h on `sw.js` itself holds nothing back: the registration has the
+default `updateViaCache: 'imports'` (Chrome reported it), so a browser skips the HTTP cache
+when it checks `sw.js` for changes, whatever its `max-age`. Chrome 156 installed a changed
+`sw.js` about 2 s after the check with `max-age=14400` and with `no-cache` alike; only
+`updateViaCache: 'all'` held it back, and `registerServiceWorker.node.test.ts` asserts the exact
+registration options, so adding it would fail a test. After a production deploy, check:
 
 ```bash
-curl -sI https://avatar.ci.computer/sw.js      # 200, a JavaScript content type, cache-control: no-cache
+curl -sI https://avatar.ci.computer/sw.js      # 200, a JavaScript content type, cache-control: max-age=14400
+curl -sI https://avatars-zbe.pages.dev/sw.js   # 200, a JavaScript content type, cache-control: no-cache
 curl -sI https://avatar.ci.computer/offline/   # 200
 curl -sI https://avatar.ci.computer/offline    # 308, location: /offline/
 ```
 
-then run the installability check above against `https://avatar.ci.computer/` (empty list, `activated` worker).
-The same three requests work against a preview URL.
+then run the installability check above against `https://avatar.ci.computer/` (empty list,
+`activated` worker). The same requests work against a preview URL, where `/sw.js` shows
+`no-cache`.
+
+Making production send `no-cache` too would be a change in the Cloudflare dashboard, not in
+this repo: a Cache Rule for `avatar.ci.computer/sw.js` whose Browser TTL is "Respect origin".
+That is the owner's to add if it is wanted. No such rule exists today, and nothing here
+depends on it.
 
 ## Local Ollama Over The Web (Quest 3 / iPad / XREAL)
 

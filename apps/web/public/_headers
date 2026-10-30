@@ -30,5 +30,7 @@
 
 # The service worker (public/sw.js). Browsers already skip the HTTP cache when they check a
 # worker script for changes; this keeps an intermediary that does not from holding a stale one.
+# On avatar.ci.computer the zone's 4 h browser cache time shows max-age=14400 instead; the
+# *.pages.dev host shows this value (docs/DEPLOYMENT.md, "After a deploy").
 /sw.js
   Cache-Control: no-cache
