@@ -24,10 +24,22 @@ function stripEmpty<T extends object>(obj: T): Partial<T> {
   return out
 }
 
-export function readLocalOverrides(): Partial<LLMConfig> {
-  if (typeof localStorage === 'undefined') return {}
+/**
+ * The browser's storage, or nothing when there is none or it cannot be reached: in a document
+ * sandboxed without allow-same-origin, or with site data blocked, merely reading `localStorage`
+ * throws a SecurityError, and `typeof localStorage` does not protect against that.
+ */
+function storage(): Storage | undefined {
   try {
-    return JSON.parse(localStorage.getItem(LLM_OVERRIDES_KEY) ?? '{}') as Partial<LLMConfig>
+    return typeof localStorage === 'undefined' ? undefined : localStorage
+  } catch {
+    return undefined
+  }
+}
+
+export function readLocalOverrides(): Partial<LLMConfig> {
+  try {
+    return JSON.parse(storage()?.getItem(LLM_OVERRIDES_KEY) ?? '{}') as Partial<LLMConfig>
   } catch {
     return {}
   }
@@ -35,15 +47,19 @@ export function readLocalOverrides(): Partial<LLMConfig> {
 
 export function writeLocalOverrides(patch: Partial<LLMConfig>): Partial<LLMConfig> {
   const next = { ...readLocalOverrides(), ...stripEmpty(patch) }
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(LLM_OVERRIDES_KEY, JSON.stringify(next))
+  try {
+    storage()?.setItem(LLM_OVERRIDES_KEY, JSON.stringify(next))
+  } catch {
+    // Full quota or blocked storage: the settings still apply for this visit.
   }
   return next
 }
 
 export function clearLocalOverrides(): void {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.removeItem(LLM_OVERRIDES_KEY)
+  try {
+    storage()?.removeItem(LLM_OVERRIDES_KEY)
+  } catch {
+    // Nothing could have been stored, so there is nothing to clear.
   }
 }
 

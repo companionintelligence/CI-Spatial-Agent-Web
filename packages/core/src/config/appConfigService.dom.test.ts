@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { defaultLLMConfig } from '../services/llm/config/llmConfig'
 import {
@@ -52,5 +52,42 @@ describe('local overrides storage', () => {
   it('falls back to {} on corrupt storage without throwing', () => {
     localStorage.setItem(LLM_OVERRIDES_KEY, '{not json')
     expect(readLocalOverrides()).toEqual({})
+  })
+})
+
+describe('when storage cannot be used', () => {
+  const denied = () => {
+    throw new DOMException(
+      "Failed to read the 'localStorage' property from 'Window': The document is sandboxed and lacks the 'allow-same-origin' flag.",
+      'SecurityError'
+    )
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  // A sandboxed document, or a profile that blocks site data: reading `localStorage` itself throws.
+  // `typeof localStorage` does not protect against that, and the app used to start from this call.
+  it('resolves the defaults when reading localStorage itself throws', () => {
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(denied)
+
+    expect(readLocalOverrides()).toEqual({})
+    expect(resolveLLMConfig()).toEqual(defaultLLMConfig)
+  })
+
+  it('still returns the merged settings, and does not throw, when the write or the clear is refused', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(denied)
+    vi.spyOn(Storage.prototype, 'removeItem').mockImplementation(denied)
+
+    expect(writeLocalOverrides({ ollama_model: 'phi3:3.8b' })).toEqual({ ollama_model: 'phi3:3.8b' })
+    expect(() => clearLocalOverrides()).not.toThrow()
+  })
+
+  it('does not throw from a write or a clear when localStorage itself throws', () => {
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(denied)
+
+    expect(writeLocalOverrides({ ollama_model: 'phi3:3.8b' })).toEqual({ ollama_model: 'phi3:3.8b' })
+    expect(() => clearLocalOverrides()).not.toThrow()
   })
 })

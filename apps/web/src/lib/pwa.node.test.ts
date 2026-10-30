@@ -188,7 +188,7 @@ describe('the service worker files', () => {
   // The bytes are hashed with every CR removed: git on Windows (core.autocrlf=true) and editors that save
   // CRLF would otherwise ask for a different name than the one committed, and the failure above would
   // print a value that is wrong on the machine that has to paste it.
-  it('gives a CRLF copy of the precached files the committed name, and still changes it when a file changes', () => {
+  it('gives a CRLF copy of the precached files the same name as the LF files, and still changes it when a file changes', () => {
     const root = mkdtempSync(join(tmpdir(), 'avatar-precache-'))
     try {
       for (const url of precache) {
@@ -199,10 +199,13 @@ describe('the service worker files', () => {
       }
       expect(readFileSync(join(root, 'offline/index.html'), 'utf8')).toContain('\r\n')
 
-      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).toBe(cacheName)
+      // Compared with the name the files in the repo ask for, not with the committed one: when CACHE is
+      // stale only the test above fails, and it is the one that prints the name to paste.
+      const lf = `${cachePrefix}${precacheFingerprint(precache)}`
+      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).toBe(lf)
 
       appendFileSync(join(root, 'offline/offline.css'), '/* edited */\r\n')
-      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).not.toBe(cacheName)
+      expect(`${cachePrefix}${precacheFingerprint(precache, root)}`).not.toBe(lf)
     } finally {
       rmSync(root, { recursive: true, force: true })
     }
