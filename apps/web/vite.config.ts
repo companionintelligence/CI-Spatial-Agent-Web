@@ -1,11 +1,55 @@
+import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react-swc'
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import basicSsl from '@vitejs/plugin-basic-ssl'
+
+import { assertPwa } from '../../scripts/check-pwa.mjs'
+
+/**
+ * Fail the build when the installable app's service worker disagrees with itself: the cache
+ * name public/sw.js declares must be the fingerprint of the offline files it precaches, those
+ * files must be in the output, and the bundle must register the worker (scripts/check-pwa.mjs).
+ *
+ * It runs here, rather than as an npm hook, because every way this app is built goes through
+ * `vite build`: pnpm's `build`, the Cloudflare Pages build and the container image's
+ * `deno task --cwd apps/web build`, which does not run pnpm's pre/post build hooks. A check that
+ * lived in a script would let through a deploy it never saw.
+ */
+function checkPwa(): Plugin {
+  let publicDir: string | false = false
+  let outDir: string | null = null
+  let skip = false
+  let failed = false
+
+  return {
+    name: 'ci-avatar-check-pwa',
+    apply: 'build',
+    configResolved(config) {
+      // Storybook builds through this config too: its output is a component gallery, not the app.
+      skip = config.plugins.some((plugin) => plugin.name.startsWith('storybook:'))
+      publicDir = config.publicDir
+      outDir = config.build.ssr ? null : resolve(config.root, config.build.outDir)
+    },
+    // A build that already failed reports its own error; checking its half-written output
+    // would replace that error with a misleading one.
+    buildEnd(error) {
+      if (error) failed = true
+    },
+    renderError() {
+      failed = true
+    },
+    closeBundle() {
+      if (!skip && !failed && publicDir && outDir) assertPwa({ publicDir, dist: outDir })
+    }
+  }
+}
 
 export default defineConfig({
   plugins: [
     ...(process.env.VITE_USE_SSL === 'true' ? [basicSsl()] : []),
-    react()
+    react(),
+    // Last, so it checks the output after every other plugin has had its say.
+    checkPwa()
   ],
   server: {
     host: true,

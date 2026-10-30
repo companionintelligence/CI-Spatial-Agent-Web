@@ -254,12 +254,10 @@ permissions-policy: xr-spatial-tracking=(self), camera=(self), ...
 
 ### Installing it as an app (PWA)
 
-`avatar.ci.computer` can be installed from the browser, with no store review. What has been run is desktop
-Chrome 156 (mobile emulation, 412x915) against a production build and a Cloudflare Pages branch preview:
-Chrome reports no installability errors and the worker activates. Other Chromium browsers should offer install
-on the same grounds, and so should the container over HTTPS (the nginx path, or the Hub's Traefik), but none of
-those has been run, nor have iOS "Add to Home Screen", Android's install prompt or Quest Browser. The two
-`nginx/default.conf` blocks this adds (`/sw.js` and `/manifest.webmanifest`) have not been through `nginx -t`.
+`avatar.ci.computer` can be installed from the browser, with no store review. The files below make it
+installable: a web manifest (`display: standalone`, 192, 512 and maskable icons), the head tags that point at it,
+and a service worker. The container serves the same files, and `nginx/default.conf` revalidates `/sw.js` and
+serves the manifest as `application/manifest+json`, which stock nginx has no type for.
 
 | File | What it is |
 | --- | --- |
@@ -268,6 +266,8 @@ those has been run, nor have iOS "Add to Home Screen", Android's install prompt 
 | `apps/web/public/sw.js` | The service worker. Its cache is named after a fingerprint of the files it precaches (below) |
 | `apps/web/public/offline/` | The page the worker shows when a page load cannot reach the network |
 | `apps/web/src/lib/registerServiceWorker.ts` | Registers the worker from the bundle, in production builds only. It catches its own errors, so the registration can no longer be what stops the app from starting |
+| `scripts/check-pwa.mjs` | The build check. `vite build` runs it (`apps/web/vite.config.ts`), so the pnpm build, the Pages build and the container build all do |
+| `docs/service-worker-kill-switch.js` | The worker that retires the worker (below) |
 
 The worker is deliberately tiny. It caches three files (the offline page, its stylesheet and the mark) at
 install and never writes to a cache again. A page load goes to the network, and only a failed one gets the
@@ -281,8 +281,11 @@ The cache name is `ci-avatar-offline-` plus 12 hex digits: the start of a sha256
 bytes of the file behind it, with every CR removed so that a CRLF checkout (git on Windows with
 `core.autocrlf=true`, an editor that saves CRLF) gets the same name as CI. A browser fetches the precache again
 only when `sw.js` itself changes, so an edit to `offline/index.html`, `offline.css` or `mark.svg` that left the name
-alone would never reach a returning visitor. `pnpm test` fails when the name is out of date and prints the one to
-paste into `sw.js`. To work it out by hand, from `apps/web/public` (the digits are the end of `CACHE` in `sw.js`):
+alone would never reach a returning visitor. `vite build` fails when the name is out of date, on every build path
+(`scripts/check-pwa.mjs`; the container image builds with `deno task --cwd apps/web build`, which does not run
+pnpm's build hooks), and so does `pnpm test`; both say which name to paste into `sw.js`. The same check requires
+every precached file to be under `/offline/`, the built `dist/sw.js` to match the built files, and the bundle to
+register `/sw.js`. To work it out by hand, from `apps/web/public` (the digits are the end of `CACHE` in `sw.js`):
 
 ```bash
 {
@@ -300,8 +303,20 @@ over CDP, in a profile that is not incognito): `pnpm --filter @ci-avatar/web bui
 `pnpm --filter @ci-avatar/web preview`, and load the page in headless Chrome at a 412x915 viewport. An empty list
 and an `activated` worker is the pass.
 
-To retire it, ship a `sw.js` that calls `self.registration.unregister()` and then remove
-`registerServiceWorker()` from `apps/web/src/main.tsx`. An old copy left behind is harmless.
+To retire it, in one change:
+
+1. Copy `docs/service-worker-kill-switch.js` over `apps/web/public/sw.js`. It has no fetch handler; on activation
+   it deletes every `ci-avatar-offline-*` cache and unregisters itself.
+2. Delete the `registerServiceWorker()` call and its import from `apps/web/src/main.tsx`.
+3. Deploy, and leave it deployed for weeks: a browser picks the new `sw.js` up on a page load, at most about once
+   a day.
+
+Reverting the commit that added the worker is not enough. With `/sw.js` gone, the browser's update check gets a
+404, fails, and the old worker stays installed and keeps answering page loads. Nothing else has to change: the kill
+switch's first line, `// avatar:service-worker-kill-switch`, is how `scripts/check-pwa.mjs` and the unit tests
+recognise it, and with it as `sw.js` they stop requiring the offline page, the precache list, the cache
+fingerprint and the registration in the bundle. The unit tests still check the manifest, the head tags and the
+`no-cache` rule for `/sw.js`. Until the worker is retired, an old copy of it only serves its offline page.
 
 #### After a deploy
 
