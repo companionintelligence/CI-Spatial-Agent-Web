@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline | Avatar Companion</title>
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#041620" />
+    <link rel="icon" type="image/svg+xml" href="/offline/mark.svg" />
+    <link rel="stylesheet" href="/offline/offline.css" />
+  </head>
+  <body>
+    <!-- What the service worker (public/sw.js) shows when a page load cannot reach the
+         network. Static and self-contained: it is cached at install, so it may use only
+         the files the worker precaches. This source has no script of its own, so it needs
+         nothing else to load; the production edge adds a small script to the HTML it
+         serves, and the page does not depend on it. -->
+    <main>
+      <img src="/offline/mark.svg" alt="" width="72" height="72" />
+      <h1>Avatar Companion is offline</h1>
+      <p>
+        Avatar Companion loads its avatars and models over the network, and this device cannot reach it right now.
+        Check your connection, then try again.
+      </p>
+      <p><a class="retry" href="">Try again</a></p>
+    </main>
+  </body>
+</html>
