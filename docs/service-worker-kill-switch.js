@@ -19,7 +19,7 @@
 // Reverting the commit that added the worker is NOT enough. With /sw.js gone, a browser's
 // update check gets a 404, the update fails, and the old worker stays installed and keeps
 // answering page loads. A worker only goes away when the browser finds a new /sw.js that
-// removes it, and browsers check on page loads, at most about once a day, so the file has
+// removes it, and browsers look for one when a page loads, so the file has
 // to stay up until every returning visitor has been seen.
 //
 // This worker has no fetch handler, so while it is installed every request goes straight

@@ -66,6 +66,19 @@ describe('docs/service-worker-kill-switch.js', () => {
     expect(KILL_SWITCH_SOURCE.split('\n')[0]).toBe('// avatar:service-worker-kill-switch')
   })
 
+  // The marker is the whole first line. A looser test (a word boundary after "switch") also accepted
+  // `...kill-switch-not`, so a file that merely began with the same words would have switched off every
+  // check of the real worker.
+  it('takes the whole first line for the marker, and nothing looser', () => {
+    const marker = '// avatar:service-worker-kill-switch'
+    for (const yes of [marker, `${marker}\n// x\n`, `${marker}   \n// x\n`, `${marker}\r\n// x\r\n`]) {
+      expect(isKillSwitch(yes), JSON.stringify(yes)).toBe(true)
+    }
+    for (const no of [`${marker}-not\n`, `${marker}: x\n`, `${marker}.js\n`, `\n${marker}\n`, `// x\n${marker}\n`, `/* ${marker} */\n`, '']) {
+      expect(isKillSwitch(no), JSON.stringify(no)).toBe(false)
+    }
+  })
+
   it('deletes by the prefix the worker names its caches with', () => {
     expect(/key\.startsWith\('([^']+)'\)/.exec(KILL_SWITCH_SOURCE)?.[1]).toBe(CACHE_PREFIX)
   })

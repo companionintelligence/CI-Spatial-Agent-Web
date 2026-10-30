@@ -308,8 +308,7 @@ To retire it, in one change:
 1. Copy `docs/service-worker-kill-switch.js` over `apps/web/public/sw.js`. It has no fetch handler; on activation
    it deletes every `ci-avatar-offline-*` cache and unregisters itself.
 2. Delete the `registerServiceWorker()` call and its import from `apps/web/src/main.tsx`.
-3. Deploy, and leave it deployed for weeks: a browser picks the new `sw.js` up on a page load, at most about once
-   a day.
+3. Deploy, and leave it deployed for weeks: a browser picks the new `sw.js` up when a page loads.
 
 Reverting the commit that added the worker is not enough. With `/sw.js` gone, the browser's update check gets a
 404, fails, and the old worker stays installed and keeps answering page loads. Nothing else has to change: the kill

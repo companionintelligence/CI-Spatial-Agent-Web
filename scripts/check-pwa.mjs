@@ -38,9 +38,10 @@ export const CACHE_PREFIX = 'ci-avatar-offline-'
 
 /**
  * public/sw.js can be the kill switch (docs/service-worker-kill-switch.js), which is how the
- * worker is retired, and then it starts with this line.
+ * worker is retired, and then its first line is this one and nothing else (trailing spaces and a
+ * CRLF are fine; `...kill-switch-not` or `...kill-switch: x` is not the marker).
  */
-const KILL_SWITCH_MARKER = /^\/\/ avatar:service-worker-kill-switch\b/
+const KILL_SWITCH_MARKER = /^\/\/ avatar:service-worker-kill-switch[ \t]*(?:\r?\n|$)/
 
 /** Whether this is the text of the kill switch rather than of the real worker. */
 export const isKillSwitch = (source) => KILL_SWITCH_MARKER.test(source)
