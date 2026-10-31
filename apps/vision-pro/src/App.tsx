@@ -60,6 +60,38 @@ const config = {
  */
 const PANEL_DEPTH = { chat: 24, controls: 40, logo: 8 } as const
 
+const ONBOARDED_KEY = 'ci_avatar_onboarded'
+
+/**
+ * The browser's storage, or nothing when there is none or it cannot be reached: in a document
+ * sandboxed without allow-same-origin, or with site data blocked, merely reading `localStorage`
+ * throws a SecurityError, and `typeof localStorage` does not protect against that.
+ */
+function storage(): Storage | undefined {
+  try {
+    return typeof localStorage === 'undefined' ? undefined : localStorage
+  } catch {
+    return undefined
+  }
+}
+
+/** Unreadable storage counts as not onboarded, so the overlay shows. */
+function hasOnboarded(): boolean {
+  try {
+    return Boolean(storage()?.getItem(ONBOARDED_KEY))
+  } catch {
+    return false
+  }
+}
+
+function markOnboarded(): void {
+  try {
+    storage()?.setItem(ONBOARDED_KEY, 'true')
+  } catch {
+    // Full or blocked storage: the overlay shows again next visit, which is harmless.
+  }
+}
+
 export const App = () => {
   useResponsiveLayout()
 
@@ -165,8 +197,7 @@ export const App = () => {
   ])
 
   useEffect(() => {
-    const hasOnboarded = window.localStorage.getItem('ci_avatar_onboarded')
-    if (!hasOnboarded) {
+    if (!hasOnboarded()) {
       setShowOnboarding(true)
     }
   }, [])
@@ -175,7 +206,7 @@ export const App = () => {
     AppConfigState.set((prev) => ({ ...prev, microphone: true }))
     agent.actions.initializeVAD()
     setShowOnboarding(false)
-    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+    markOnboarded()
   }, [agent.actions])
 
   const handleSkipOnboarding = useCallback(() => {
@@ -183,7 +214,7 @@ export const App = () => {
       current === 'unverified' && llmSettings.llm_provider === 'script' ? 'demo-only' : current
     )
     setShowOnboarding(false)
-    window.localStorage.setItem('ci_avatar_onboarded', 'true')
+    markOnboarded()
   }, [llmSettings.llm_provider])
 
   // `enable-xr` is only meaningful inside the WebSpatial container; elsewhere it is
